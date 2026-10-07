@@ -2818,35 +2818,8 @@
     }
 
     function orderText(o) {
-        const when = ATHR.muscatParts(o.ordered_at);
-        const lines = [
-            `رقم الطلب: ${o.order_no}`,
-            `اليوم: ${when.day}`,
-            `التاريخ: ${when.date}`,
-            `الوقت: ${when.time}`,
-            ...(giftTo(o)
-                ? ["🎁 الطلب هدية", `صاحب الهدية: ${o.customer_name || ""}`, `رقم صاحب الهدية: ${ATHR.phoneText(o.phone, o.country)}`, `المُهدى إليه: ${o.gift_name || ""}`, `رقم المُهدى إليه: ${ATHR.phoneText(o.gift_phone, o.country)}`]
-                : [`الاسم: ${o.customer_name || ""}`, `الهاتف: ${ATHR.phoneText(o.phone, o.country)}`]),
-            `الدولة: ${countryLabel(o.country)}`
-        ];
-        if (o.governorate) lines.push(`${(o.country || "OM") === "OM" ? "المحافظة" : "المدينة"}: ${o.governorate}`);
-        if (o.wilaya) lines.push(`الولاية: ${o.wilaya}`);
-        if (o.office) lines.push(`المكتب: ${o.office}`);
-        else if (o.address) lines.push(`العنوان: ${o.address}`);
-        if (o.notes) lines.push(`الملاحظات: ${o.notes}`);
-        if (o.delivery_name) lines.push(`طريقة التوصيل: ${o.delivery_name}`);
-        if (giftTo(o)) {
-            if (o.gift_occasion && o.gift_occasion !== "other") lines.push(`المناسبة: ${ATHR.giftOccasion(o.gift_occasion).name}`);
-            if (o.gift_message) lines.push(`رسالة الهدية: ${o.gift_message}`);
-            if (o.gift_hide_price) lines.push("لا تذكر السعر للمُهدى إليه");
-            if (cfg().sales.gift_card !== false) lines.push(`بطاقة الإهداء: ${siteLink(ATHR.giftCardPath(o))}`);
-        } else if (o.gift) lines.push(`🎁 الطلب هدية${o.gift_message ? `: ${o.gift_message}` : ""}`);
-        lines.push("المنتجات:", ...itemsList(o).map((l) => (l.startsWith("•") ? l : `• ${l}`)));
-        if (Number(o.discount) > 0) lines.push(`${o.discount_label || "الخصم"}: -${money(o.discount)}`);
-        lines.push(`التوصيل: ${Number(o.delivery_price) > 0 ? money(o.delivery_price) : "مجاني"}`);
-        lines.push(`الإجمالي: ${money(o.total)}`);
-        if (o.payment_name) lines.push(`الدفع: ${o.payment_name}`);
-        return lines.join("\n");
+        const card = giftTo(o) && cfg().sales.gift_card !== false;
+        return ATHR.orderText(o, cfg(), { cardUrl: card ? siteLink(ATHR.giftCardPath(o)) : "" });
     }
 
     // ---------- order sheet (manual / edit / paste) ----------
@@ -3004,23 +2977,37 @@
         return m ? Number(m[0].replace("٫", ".")) : 0;
     }
 
+    // يقرأ رسالة الطلب بالشكل الجديد (👤 من: … · رقم) والقديم (الاسم: / الهاتف:)
     function parseOrders(raw) {
         const text = ATHR.digits(raw).replace(/\r/g, "");
         const starts = [];
         const re = /رقم الطلب\s*[:：]/g;
         let m;
-        while ((m = re.exec(text))) starts.push(m.index);
+        while ((m = re.exec(text))) {
+            const lineStart = text.lastIndexOf("\n", m.index) + 1;
+            starts.push(lineStart);
+        }
         if (!starts.length) return [];
+        const strip = (l) => l.replace(/^[^؀-ۿA-Za-z0-9•*\-+]+/, "").trim();
         return starts.map((start, i) => {
             const end = i + 1 < starts.length ? starts[i + 1] : text.length;
-            const block = text.slice(start, end).split("\n").map((l) => l.trim());
+            const rawLines = text.slice(start, end).split("\n").map((l) => l.trim());
+            const block = rawLines.map(strip);
             const get = (label) => {
                 const line = block.find((l) => l.startsWith(label));
                 return line ? line.slice(label.length).replace(/^\s*[:：]\s*/, "").trim() : "";
             };
+            const byIcon = (icon) => {
+                const line = rawLines.find((l) => l.startsWith(icon));
+                return line ? strip(line) : "";
+            };
+            const split = (line) => line.split("·").map((x) => x.trim()).filter(Boolean);
             const items = block.filter((l) => /^[•\-*]/.test(l)).map((l) => l.replace(/^[•\-*]\s*/, ""));
-            const date = get("التاريخ");
-            const time = get("الوقت");
+
+            // التاريخ والوقت: «🗓️ الأربعاء 07/10/2026 · 9:29 م» أو «التاريخ:» و«الوقت:»
+            const whenLine = block.find((l) => /\d{1,2}\/\d{1,2}\/\d{4}/.test(l) && !/^رقم/.test(l)) || "";
+            const date = get("التاريخ") || whenLine;
+            const time = get("الوقت") || (whenLine.match(/\d{1,2}:\d{2}\s*(ص|م)?/) || [""])[0];
             let orderedAt = new Date().toISOString();
             const dm = date.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
             if (dm) {
@@ -3037,33 +3024,56 @@
                 const d = new Date(iso);
                 if (!Number.isNaN(d.getTime())) orderedAt = d.toISOString();
             }
+
+            // الزبون والهدية
+            const who = split(byIcon("👤").replace(/^من\s*[:：]\s*/, ""));
+            const giftLine = byIcon("🎁");
+            const to = /^إلى\s*[:：]/.test(giftLine) ? split(giftLine.replace(/^إلى\s*[:：]\s*/, "")) : [];
+            const isGift = Boolean(giftLine) || Boolean(get("صاحب الهدية"));
+
+            // المكان والتوصيل
+            const place = byIcon("📍");
+            const countryText = get("الدولة") || place;
+            const country = (ATHR_COUNTRIES.find((c) => countryText.includes(c.name) || countryText.includes(c.flag)) || ATHR_COUNTRIES[0]).code;
+            const placeParts = split(place).filter((x) => !ATHR_COUNTRIES.some((c) => x.includes(c.name)));
+            const isOm = country === "OM";
+            const phoneOf = (v) => (v ? ATHR.parsePhone(v, country).stored : null);
+            const name = who[0] || get("الاسم") || get("صاحب الهدية") || null;
+            const phone = who[1] || get("الهاتف") || get("رقم صاحب الهدية");
+
             const payText = get("الدفع");
             const payType = /تحويل|بنك/.test(payText) ? "bank" : /استلام|كاش|نقد/.test(payText) ? "cod" : /إلكتروني|الكتروني|بطاقة/.test(payText) ? "online" : payText ? "other" : "bank";
             const office = get("المكتب");
             const deliveryText = get("التوصيل");
             const noMatch = get("رقم الطلب").match(/[A-Z]{1,4}-[0-9A-Z]{3,10}/i);
-            const countryText = get("الدولة");
-            const country = (ATHR_COUNTRIES.find((c) => countryText.includes(c.name) || countryText.includes(c.flag)) || ATHR_COUNTRIES[0]).code;
+            const discountLine = block.find((l) => /^(خصم|الخصم)/.test(l)) || "";
+            const giftName = to[0] || get("المُهدى إليه") || null;
+            const giftPhone = to[1] || get("رقم المُهدى إليه");
             return {
                 order_no: noMatch ? noMatch[0].toUpperCase() : null,
                 ordered_at: orderedAt,
                 source: "paste",
-                customer_name: get("الاسم") || null,
+                customer_name: name,
                 country,
-                phone: get("الهاتف") ? ATHR.parsePhone(get("الهاتف"), country).stored : null,
-                governorate: get("المحافظة") || get("المدينة") || null,
-                wilaya: get("الولاية") || null,
+                phone: phone ? phoneOf(phone) : null,
+                governorate: get("المحافظة") || get("المدينة") || (!isOm ? placeParts[0] || null : null),
+                wilaya: get("الولاية") || (isOm ? placeParts[0] || null : null),
                 address: office ? null : (get("العنوان") || null),
                 office: office || null,
-                notes: get("الملاحظات") || null,
-                delivery_name: get("طريقة التوصيل") || null,
+                notes: get("الملاحظات") || get("ملاحظة") || null,
+                delivery_name: get("طريقة التوصيل") || byIcon("🚚") || null,
                 delivery_price: /مجاني/.test(deliveryText) ? 0 : parseNumber(deliveryText),
-                discount: Math.abs(parseNumber((block.find((l) => /^(خصم|الخصم)/.test(l)) || "").replace(/^[^:：]*[:：]/, ""))),
-                discount_label: ((block.find((l) => /^(خصم|الخصم)/.test(l)) || "").split(/[:：]/)[0] || "").trim().slice(0, 80) || null,
+                discount: Math.abs(parseNumber(discountLine.replace(/^[^:：]*[:：]/, ""))),
+                discount_label: (discountLine.split(/[:：]/)[0] || "").trim().slice(0, 80) || null,
                 total: parseNumber(get("الإجمالي")),
                 payment_name: payText || null,
                 payment_type: payType,
                 items_text: items.join("\n") || null,
+                gift: isGift,
+                gift_name: isGift ? giftName : null,
+                gift_phone: isGift && giftPhone ? phoneOf(giftPhone) : null,
+                gift_message: isGift ? (get("رسالة الهدية") || null) : null,
+                gift_hide_price: isGift && block.some((l) => l.includes("لا تذكر السعر")),
                 status: "new"
             };
         });

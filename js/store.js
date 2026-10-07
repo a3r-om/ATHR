@@ -939,26 +939,22 @@
     // WHATSAPP MESSAGES
     // =====================================================
 
-    function productLines(lines) {
-        return lines.map((l) => `• ${ATHR.productLabel(l.product, C())} × ${l.qty} = ${money(l.total)}`);
-    }
-
     function quickOrderMessage(lines, totals) {
         return ATHR.withLang("ar", () => quickOrderMessageAr(lines, totals));
     }
 
     function quickOrderMessageAr(lines, totals) {
         const cfg = C();
-        const no = ATHR.newOrderNo();
-        const when = ATHR.muscatParts();
         const c = CC();
-        const out = [fill(cfg.texts.wa_first_line), `رقم الطلب: ${no}`, `اليوم: ${when.day}`, `التاريخ: ${when.date}`, `الوقت: ${when.time}`];
-        if (!isBase()) out.push(`الدولة: ${c.flag} ${c.name}`);
-        out.push("", "المنتجات:", ...productLines(lines));
-        if (totals.discount > 0) out.push(`${totals.discountLabel}: -${money(totals.discount)}`);
-        out.push(`الإجمالي: ${money(totals.afterDiscount)} (بدون التوصيل)${approx(totals.afterDiscount)}`);
+        const decimals = Number.isInteger(Number(cfg.order.decimals)) ? Number(cfg.order.decimals) : 3;
+        const num = (v) => Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        const out = [fill(cfg.texts.wa_first_line), `🧾 رقم الطلب: ${ATHR.newOrderNo()}`];
+        if (!isBase()) out.push(`📍 ${c.flag} ${c.name}`);
+        out.push("", ...lines.map((l) => `• ${ATHR.productLabel(l.product, cfg)}${l.qty > 1 ? ` ×${l.qty}` : ""} · ${num(l.total)}`));
+        if (totals.discount > 0) out.push(`${totals.discountLabel}: -${num(totals.discount)}`);
+        out.push(`💰 المجموع: ${money(totals.afterDiscount)} (بدون التوصيل)${approx(totals.afterDiscount)}`);
         out.push("", isBase() ? "اسمي وولايتي وعنواني:" : "اسمي ومدينتي وعنواني:");
-        return out.join("\n");
+        return out.filter((l, i) => l !== "" || i > 0).join("\n");
     }
 
     function quickOrder(lines) {
@@ -973,52 +969,12 @@
 
     function orderMessageAr(order) {
         const cfg = C();
-        const when = ATHR.muscatParts(order.ordered_at);
-        const c = ATHR.country(cfg, order.country);
-        const isOm = c.code === "OM";
-        const out = [
-            fill(cfg.texts.wa_first_line),
-            `رقم الطلب: ${order.order_no}`,
-            `اليوم: ${when.day}`,
-            `التاريخ: ${when.date}`,
-            `الوقت: ${when.time}`,
-            ""
-        ];
-        const giftTo = order.gift && (order.gift_name || order.gift_phone);
-        if (giftTo) {
-            out.push("🎁 الطلب هدية",
-                `صاحب الهدية: ${order.customer_name}`,
-                `رقم صاحب الهدية: ${ATHR.phoneText(order.phone, c.code)}`,
-                `المُهدى إليه: ${order.gift_name || ""}`,
-                `رقم المُهدى إليه: ${ATHR.phoneText(order.gift_phone, c.code)}`);
-        } else {
-            out.push(`الاسم: ${order.customer_name}`, `الهاتف: ${ATHR.phoneText(order.phone, c.code)}`);
-        }
-        out.push(`الدولة: ${c.flag} ${c.name}`);
-        if (order.governorate) out.push(`${isOm ? "المحافظة" : "المدينة"}: ${order.governorate}`);
-        if (order.wilaya) out.push(`الولاية: ${order.wilaya}`);
-        out.push(order.delivery_type === "office" ? `المكتب: ${order.office}` : `العنوان: ${order.address}`);
-        if (order.notes) out.push(`الملاحظات: ${order.notes}`);
-        out.push(`طريقة التوصيل: ${order.delivery_name}`);
-        if (giftTo) {
-            const occ = ATHR.giftOccasion(order.gift_occasion);
-            if (order.gift_occasion && order.gift_occasion !== "other") out.push(`المناسبة: ${occ.emoji} ${occ.name}`);
-            if (order.gift_message) out.push(`رسالة الهدية: ${order.gift_message}`);
-            if (order.gift_hide_price) out.push("🤫 لا تذكر السعر للمُهدى إليه");
-            if (cfg.sales.gift_card !== false) out.push(`💌 بطاقة الإهداء: ${new URL(ATHR.giftCardPath(order), location.origin).href}`);
-        } else if (order.gift) {
-            out.push("🎁 الطلب هدية");
-            if (order.gift_message) out.push(`رسالة الهدية: ${order.gift_message}`);
-        }
-        out.push("", "المنتجات:");
-        order.items.forEach((it) => out.push(`• ${it.label} × ${it.qty} = ${money(it.total)}`));
-        if (order.discount > 0) out.push(`${order.discount_label || "الخصم"}: -${money(order.discount)}`);
-        out.push(`التوصيل: ${order.delivery_price > 0 ? money(order.delivery_price) : "مجاني"}${order.ship_kg ? ` (${order.ship_kg} كيلو تقريبًا)` : ""}`);
-        out.push(`الإجمالي: ${money(order.total)}${isOm ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, c.code)})`}`);
-        out.push(`الدفع: ${order.payment_name}`);
-        const last = fill(cfg.texts.wa_last_line || "").trim();
-        if (last) out.push("", last);
-        return out.join("\n");
+        const card = order.gift && order.gift_name && cfg.sales.gift_card !== false;
+        return ATHR.orderText(order, cfg, {
+            first: fill(cfg.texts.wa_first_line),
+            last: fill(cfg.texts.wa_last_line || ""),
+            cardUrl: card ? new URL(ATHR.giftCardPath(order), location.origin).href : ""
+        });
     }
 
     // =====================================================

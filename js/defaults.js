@@ -608,6 +608,65 @@ ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
     occasion: order.gift_occasion
 })}`);
 
+// =====================================================
+// رسالة الطلب (واتساب ونسخ الطلب): قصيرة وواضحة، بالعربي دائماً
+// =====================================================
+ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" } = {}) {
+    return ATHR.withLang("ar", () => {
+        const cfg = config;
+        const c = ATHR.country(cfg, order.country || ATHR.BASE_COUNTRY);
+        const isBaseCountry = c.code === ATHR.BASE_COUNTRY;
+        const decimals = Number.isInteger(Number(cfg.order.decimals)) ? Number(cfg.order.decimals) : 3;
+        const num = (v) => Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        const when = ATHR.muscatParts(order.ordered_at || new Date());
+        const phone = (v) => ATHR.phoneText(v, c.code);
+        const giftTo = order.gift && (order.gift_name || order.gift_phone);
+        const out = [];
+        const block = (lines) => {
+            const list = lines.filter(Boolean);
+            if (!list.length) return;
+            if (out.length) out.push("");
+            out.push(...list);
+        };
+
+        block([String(first || "").trim(), `🧾 رقم الطلب: ${order.order_no}`, `🗓️ ${when.day} ${when.date} · ${when.time}`]);
+
+        const occ = ATHR.giftOccasion(order.gift_occasion);
+        block([
+            `👤 ${giftTo ? "من: " : ""}${order.customer_name || ""}${order.phone ? ` · ${phone(order.phone)}` : ""}`,
+            giftTo ? `🎁 إلى: ${order.gift_name || ""}${order.gift_phone ? ` · ${phone(order.gift_phone)}` : ""}` : order.gift ? "🎁 الطلب هدية" : "",
+            order.gift && order.gift_occasion && order.gift_occasion !== "other" ? `🎉 المناسبة: ${occ.emoji} ${occ.name}` : "",
+            order.gift && order.gift_message ? `💬 رسالة الهدية: ${order.gift_message}` : "",
+            giftTo && order.gift_hide_price ? "🤫 لا تذكر السعر للمُهدى إليه" : ""
+        ]);
+
+        const place = isBaseCountry
+            ? [order.wilaya, order.governorate].filter(Boolean).join("، ")
+            : [`${c.flag} ${c.name}`, order.governorate, order.wilaya].filter(Boolean).join(" · ");
+        block([
+            place ? `📍 ${place}` : "",
+            order.delivery_name ? `🚚 ${order.delivery_name}` : "",
+            order.office ? `🏢 المكتب: ${order.office}` : order.address ? `🏠 العنوان: ${order.address}` : "",
+            order.notes ? `📝 ملاحظة: ${order.notes}` : ""
+        ]);
+
+        const items = Array.isArray(order.items) && order.items.length
+            ? order.items.map((it) => `• ${it.label || it.name}${Number(it.qty) > 1 ? ` ×${it.qty}` : ""} · ${num(it.total)}`)
+            : String(order.items_text || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => (l.startsWith("•") ? l : `• ${l}`));
+        const local = isBaseCountry ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, c.code)})`;
+        block([
+            ...items,
+            Number(order.discount) > 0 ? `${order.discount_label || "الخصم"}: -${num(order.discount)}` : "",
+            order.delivery_name || Number(order.delivery_price) > 0 ? `التوصيل: ${Number(order.delivery_price) > 0 ? num(order.delivery_price) : "مجاني"}` : "",
+            `💰 الإجمالي: ${ATHR.money(order.total, cfg)}${local}`,
+            order.payment_name ? `💳 الدفع: ${order.payment_name}` : ""
+        ]);
+
+        block([cardUrl ? `💌 بطاقة الإهداء: ${cardUrl}` : "", String(last || "").trim()]);
+        return out.join("\n");
+    });
+};
+
 // الرقم كما يُكتب في الرسائل: رقم عماني محلي كما هو، وغيره بالمفتاح الدولي
 ATHR.phoneText = function (phone, code) {
     const digits = ATHR.digits(phone || "").replace(/[^\d]/g, "");
