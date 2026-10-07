@@ -505,3 +505,44 @@ html.theme-dark .ag-ico svg { stroke: #F1B7C0; }
 .price-note s { opacity: .7; }
 .tag.sale { background: #E8F5EE; color: #1F7A4D; }
 html.theme-dark .tag.sale { background: #173326; color: #8FD9B0; }
+
+/* العملاء والعروض */
+.adm-orders-tile.alt { background: var(--a-surface); color: var(--a-text); border: 1px solid var(--a-line); box-shadow: none; }
+.adm-orders-tile.alt .aot-ico { background: color-mix(in srgb, var(--a-primary) 10%, var(--a-surface)); }
+.adm-orders-tile.alt .aot-ico svg { stroke: var(--a-primary); }
+.adm-orders-tile.alt .aot-go svg { stroke: var(--a-muted); }
+.adm-orders-tile.alt small { opacity: 1; color: var(--a-muted); }
+html.theme-dark .adm-orders-tile.alt .aot-ico svg { stroke: #F1B7C0; }
+.cust-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cust-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cust { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 12px; border: 1px solid var(--a-line); border-radius: 14px; background: var(--a-surface); }
+.cust.off { opacity: .7; }
+.cust-main { display: grid; gap: 1px; min-width: 0; }
+.cust-main b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cust-phone { font-size: 13.5px; text-align: right; }
+.cust-ctrl { display: grid; justify-items: center; gap: 2px; }
+.cust-ctrl small { font-size: 11px; color: var(--a-muted); }
+.cust-note { padding: 4px 2px; }
+.offer-preview { display: grid; gap: 6px; }
+.offer-preview pre, .offer-msg { margin: 0; padding: 12px; border-radius: 12px; background: #DCF8C6; color: #111; font: inherit; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow: auto; }
+html.theme-dark .offer-preview pre, html.theme-dark .offer-msg { background: #1F3B2C; color: #E8F5E9; }
+.offer-progress { height: 8px; border-radius: 99px; background: var(--a-bg); overflow: hidden; }
+.offer-progress span { display: block; height: 100%; background: var(--a-ok); border-radius: inherit; transition: width .3s; }
+.offer-who { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 16px; }
+.offer-send { background: #1E8E52 !important; border-color: #1E8E52 !important; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; font-size: 16px; }
+.offer-send svg { width: 22px; height: 22px; fill: #fff; }
+.offer-send .wa-glyph { fill: #1E8E52; }
+
+/* معاينة مصغّرة لبطاقة الهدية */
+.gift-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gm-stage { border-radius: 14px; padding: 14px 10px; display: grid; justify-items: center; align-content: center; gap: 8px; background: linear-gradient(180deg, color-mix(in srgb, var(--g-bg) 84%, #fff), color-mix(in srgb, var(--g-bg) 78%, #000)); }
+.gm-box { position: relative; width: 64px; height: 60px; }
+.gm-body { position: absolute; left: 6px; right: 6px; bottom: 0; height: 38px; border-radius: 6px; background: linear-gradient(90deg, transparent 42%, var(--gold2) 42% 58%, transparent 58%), linear-gradient(160deg, var(--wine1), var(--wine2) 60%, var(--wine3)); box-shadow: 0 6px 12px rgba(0, 0, 0, .3); }
+.gm-lid { position: absolute; z-index: 1; left: 0; right: 0; top: 10px; height: 14px; border-radius: 5px; background: linear-gradient(90deg, transparent 41%, var(--gold2) 41% 59%, transparent 59%), linear-gradient(165deg, var(--wine1), var(--wine2)); }
+.gm-lid::before { content: ""; position: absolute; left: 50%; top: -11px; width: 26px; height: 12px; transform: translateX(-50%); border-radius: 50% 50% 4px 4px; border: 4px solid var(--gold2); border-bottom: 0; }
+.gm-title { color: #fff; font-family: var(--g-font), system-ui, sans-serif; font-size: 15px; text-align: center; line-height: 1.4; }
+.gm-card { border-radius: 12px; background: var(--g-paper); color: var(--g-ink); padding: 12px 10px; display: grid; justify-items: center; align-content: center; text-align: center; gap: 2px; box-shadow: 0 0 0 3px var(--g-paper), 0 0 0 4.5px var(--gold2); margin: 5px; }
+.gm-name { font-family: var(--g-font), system-ui, sans-serif; font-size: 22px; color: var(--g-accent); line-height: 1.3; }
+.gm-msg { font-family: var(--g-font), system-ui, sans-serif; font-size: 13px; line-height: 1.6; }
+.gm-card small { color: var(--g-muted); font-size: 11.5px; }
+.gm-from { color: var(--g-accent); font-family: var(--g-font), system-ui, sans-serif; }

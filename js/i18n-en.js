@@ -334,11 +334,26 @@
         "اضغط على الصندوق لتفتحها": "Tap the box to open it",
         "افتحها مرة ثانية": "Open it again",
         "هدية مختارة لك بكل حب": "A gift chosen with love for you",
-        "من": "From"
+        "من": "From",
+        "أرسلوا لي العروض والخصومات على واتساب": "Send me offers and discounts on WhatsApp",
+        "تعذر إرسال الطلب. حاول مرة أخرى.": "Couldn't send the order. Please try again."
     };
 
     // نصوص المتجر العامة بالإنجليزي (تُستبدل بما تكتبه في لوحة التحكم ← النصوص بالإنجليزي)
     ATHR.EN_TEXTS = {
+        "gift.kicker": "A special gift for you",
+        "gift.title": "{to}, you've got a gift!",
+        "gift.button": "Open your gift",
+        "gift.hint": "Tap the box to open it",
+        "gift.closing": "With love,",
+        "gift.footer": "Your gift from {store} is on its way 🎁",
+        "gift.empty_msg": "A gift chosen with love for you",
+        "gift.wa": "🎁✨ *{to}, you've got a gift!* ✨🎁\n\nA gift chosen with love for you by *{from}* 💝\n{occasion}\n\n💌 *A message for you:*\n“{message}”\n\n👇 Open your gift card:\n{link}\n\n🚚 Your gift from {store} is on its way",
+        "gift.banner_title": "Send it as a gift to someone you love",
+        "gift.banner_text": "We deliver it in your name with a digital gift card carrying your message — and no price.",
+        "gift.banner_button": "Start",
+        "gift.cta_title": "Send as a gift",
+        "gift.cta_sub": "A digital gift card in your name — price never shown",
         "texts.hero_title": "Cups that leave a mark",
         "texts.hero_text": "Club and character designs on matte-finish cups. Pick your design and send your order on WhatsApp.",
         "texts.hero_features": ["Delivery to all GCC countries", "Free in Oman over {free}", "Cash on delivery in Oman & UAE"],

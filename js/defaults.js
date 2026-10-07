@@ -139,6 +139,7 @@ const ATHR_DEFAULTS = {
         gift_button: true,
         gift_prepaid: false,
         gift_banner: true,
+        marketing_default: true,
         gift_card: true,
         best_title: "الأكثر طلباً",
         new_title: "وصل حديثاً",
@@ -167,6 +168,38 @@ const ATHR_DEFAULTS = {
         reviews_share_text: "شاركنا رأيك",
         reviews_share_msg: "السلام عليكم، هذا رأيي في منتجات {name}:",
         reviews: []
+    },
+
+    // بطاقة الإهداء: نصوصها وألوانها وخطها ورسالة واتساب للمُهدى إليه (كلها تتعدل من لوحة التحكم ← الهدية)
+    gift: {
+        kicker: "هدية خاصة لك",
+        title: "{to}، وصلتك هدية!",
+        button: "افتح هديتك",
+        hint: "اضغط على الصندوق لتفتحها",
+        closing: "مع خالص المحبة،",
+        footer: "هديتك في الطريق إليك من {store} 🎁",
+        empty_msg: "هدية مختارة لك بكل حب",
+        font: "Aref Ruqaa",
+        colors: { bg: "#4A0A14", box: "#8E1A2C", ribbon: "#F2C964", paper: "#FFF8EC", ink: "#3B2A20", accent: "#8E1A2C" },
+        stars: true,
+        confetti: true,
+        tag: true,
+        vibrate: true,
+        wa: "🎁✨ *{to}، وصلتك هدية!* ✨🎁\n\nهدية مختارة لك بكل حب من *{from}* 💝\n{occasion}\n\n💌 *رسالة لك:*\n«{message}»\n\n👇 افتح بطاقة هديتك:\n{link}\n\n🚚 هديتك في الطريق إليك من {store}",
+        banner_title: "أرسلها هدية لمن تحب",
+        banner_text: "نوصلها باسمك مع بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر.",
+        banner_button: "ابدأ",
+        cta_title: "أرسله هدية",
+        cta_sub: "بطاقة إهداء رقمية باسمك، وبدون ذكر السعر",
+        occasions: {
+            birthday: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
+            graduation: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
+            wedding: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
+            newborn: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
+            eid: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
+            thanks: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
+            other: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" }
+        }
     },
 
     // تصميم الصور بالذكاء الاصطناعي (المفتاح نفسه محفوظ بسرية في قاعدة البيانات وليس هنا)
@@ -569,7 +602,39 @@ ATHR.GIFT_OCCASIONS = [
     { id: "other", emoji: "🎁", name: "بدون مناسبة", title: "وصلتك هدية", msgs: ["هدية بسيطة لشخص غالي ❤️", "حبيت أفرحك بهذي الهدية 🎁"], name_en: "Just because", title_en: "A gift for you", msgs_en: ["A little gift for someone special ❤️", "Just wanted to make you smile 🎁"], for: "", for_en: "" }
 ];
 
-ATHR.giftOccasion = (id) => ATHR.GIFT_OCCASIONS.find((o) => o.id === id) || ATHR.GIFT_OCCASIONS[ATHR.GIFT_OCCASIONS.length - 1];
+// المناسبات بعد تعديلاتك من لوحة التحكم (الخانة الفارغة تأخذ النص الأصلي)
+ATHR.giftOccasions = function (config, { all = true } = {}) {
+    const own = (config && config.gift && config.gift.occasions) || {};
+    const list = ATHR.GIFT_OCCASIONS.map((base) => {
+        const o = own[base.id] || {};
+        const pick = (k) => (typeof o[k] === "string" && o[k].trim() ? o[k].trim() : base[k]);
+        const msgs = typeof o.msgs === "string" && o.msgs.trim() ? o.msgs.split("\n").map((m) => m.trim()).filter(Boolean) : base.msgs;
+        const changed = (k) => typeof o[k] === "string" && o[k].trim();
+        return {
+            ...base,
+            emoji: pick("emoji"),
+            name: pick("name"),
+            title: pick("title"),
+            for: pick("for"),
+            msgs,
+            // إذا غيّرت النص العربي نستعمله بالإنجليزي أيضاً بدل الترجمة القديمة
+            ...(changed("name") ? { name_en: "" } : {}),
+            ...(changed("title") ? { title_en: "" } : {}),
+            ...(changed("for") ? { for_en: "" } : {}),
+            ...(typeof o.msgs === "string" && o.msgs.trim() ? { msgs_en: [] } : {}),
+            enabled: o.enabled !== false || base.id === "other"
+        };
+    });
+    return all ? list : list.filter((o) => o.enabled);
+};
+
+ATHR.giftOccasion = (id, config) => {
+    const list = ATHR.giftOccasions(config);
+    return list.find((o) => o.id === id) || list[list.length - 1];
+};
+
+// تعبئة نص البطاقة: {to} {from} {store}
+ATHR.giftFill = (text, vars) => String(text ?? "").replace(/\{(to|from|store)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
 
 function athrB64url(text) {
     const bytes = new TextEncoder().encode(text);
@@ -602,18 +667,29 @@ ATHR.giftDecode = function (code) {
 };
 
 // رسالة واتساب للمُهدى إليه: جميلة وفيها رسالة صاحب الهدية ورابط البطاقة
-ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store }) {
-    const t = ATHR.t;
-    const o = ATHR.giftOccasion(occasion);
-    const text = String(msg || "").trim();
-    const blocks = [
-        [`🎁✨ *${t("{name}، وصلتك هدية!", { name: to })}* ✨🎁`],
-        [from ? t("هدية مختارة لك بكل حب من *{from}* 💝", { from }) : t("هدية مختارة لك بكل حب 💝"), ATHR.L(o, "for")],
-        text ? [`💌 *${t("رسالة لك:")}*`, `«${text}»`] : [],
-        [t("👇 افتح بطاقة هديتك:"), link],
-        [t("🚚 هديتك في الطريق إليك من {store}", { store })]
-    ];
-    return blocks.map((b) => b.filter(Boolean).join("\n")).filter(Boolean).join("\n\n");
+ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store, config }) {
+    const tpl = (config && ATHR.ct(config, "gift.wa")) || ATHR_DEFAULTS.gift.wa;
+    const o = ATHR.giftOccasion(occasion, config);
+    const values = {
+        to: to || "",
+        from: from || "",
+        store: store || "",
+        occasion: o.id === "other" ? "" : ATHR.L(o, "for") || "",
+        message: String(msg || "").trim(),
+        link: link || ""
+    };
+    const out = [];
+    String(tpl).split("\n").forEach((line) => {
+        const had = /\{(to|from|store|occasion|message|link)\}/.test(line);
+        const filled = line.replace(/\{(to|from|store|occasion|message|link)\}/g, (m, k) => values[k]);
+        // سطر صار فارغاً لأن قيمته غير موجودة (مثل رسالة لم تُكتب) يُحذف، ومعه عنوانه الذي ينتهي بنقطتين
+        if (had && !filled.replace(/[\s«»"“”*_~]/g, "")) {
+            if (out.length && /[:：]\**\s*$/.test(out[out.length - 1])) out.pop();
+            return;
+        }
+        out.push(filled.replace(/\*\s*\*/g, "").replace(/(من|by)\s+💝/, "💝"));
+    });
+    return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 };
 
 ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
@@ -646,7 +722,7 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
 
         block([String(first || "").trim(), `🧾 رقم الطلب: ${order.order_no}`, `🗓️ ${when.day} ${when.date} · ${when.time}`]);
 
-        const occ = ATHR.giftOccasion(order.gift_occasion);
+        const occ = ATHR.giftOccasion(order.gift_occasion, cfg);
         block([
             `👤 ${giftTo ? "من: " : ""}${order.customer_name || ""}${order.phone ? ` · ${phone(order.phone)}` : ""}`,
             giftTo ? `🎁 إلى: ${order.gift_name || ""}${order.gift_phone ? ` · ${phone(order.gift_phone)}` : ""}` : order.gift ? "🎁 الطلب هدية" : "",
@@ -850,7 +926,11 @@ ATHR.FONT_PARAMS = {
     "Vazirmatn": "Vazirmatn:wght@400;600;700",
     "Noto Naskh Arabic": "Noto+Naskh+Arabic:wght@400;600;700",
     "Zain": "Zain:wght@400;700",
-    "Baloo Bhaijaan 2": "Baloo+Bhaijaan+2:wght@400;600;700"
+    "Baloo Bhaijaan 2": "Baloo+Bhaijaan+2:wght@400;600;700",
+    "Aref Ruqaa": "Aref+Ruqaa:wght@400;700",
+    "Rakkas": "Rakkas",
+    "Lemonada": "Lemonada:wght@500;700",
+    "Marhey": "Marhey:wght@500;700"
 };
 
 ATHR.isHex = (x) => /^#[0-9a-f]{6}$/i.test(String(x || ""));

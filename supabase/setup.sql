@@ -673,3 +673,76 @@ grant execute on function public.ai_secret(text) to service_role;
 -- =====================================================
 alter table public.orders
     add column if not exists gift_occasion text check (gift_occasion is null or gift_occasion ~ '^[a-z_]{2,20}$');
+
+-- =====================================================
+-- الإصدار 9: العملاء (لإرسال العروض) — يُحفظ كل زبون تلقائياً مع طلبه
+-- =====================================================
+alter table public.orders
+    add column if not exists marketing_ok boolean not null default true;
+
+create table if not exists public.customers (
+    phone text primary key check (phone ~ '^[0-9]{8,15}$'),
+    name text check (name is null or char_length(name) <= 120),
+    country text not null default 'OM' check (country ~ '^[A-Z]{2}$'),
+    marketing boolean not null default true,
+    orders_count int not null default 0,
+    total_spent numeric(12,3) not null default 0,
+    first_order_at timestamptz,
+    last_order_at timestamptz,
+    last_offer_at timestamptz,
+    note text check (note is null or char_length(note) <= 500),
+    created_at timestamptz not null default now()
+);
+alter table public.customers enable row level security;
+revoke all on public.customers from anon;
+grant select, update, delete on public.customers to authenticated;
+drop policy if exists "admin reads customers" on public.customers;
+create policy "admin reads customers" on public.customers for select to authenticated using ((select public.is_admin()));
+drop policy if exists "admin updates customers" on public.customers;
+create policy "admin updates customers" on public.customers for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+drop policy if exists "admin deletes customers" on public.customers;
+create policy "admin deletes customers" on public.customers for delete to authenticated using ((select public.is_admin()));
+
+create or replace function private.athr_phone_intl(p text, c text)
+returns text
+language sql
+immutable
+as $$
+    select case
+        when p is null or regexp_replace(p, '\D', '', 'g') = '' then null
+        when coalesce(c, 'OM') = 'OM' and regexp_replace(p, '\D', '', 'g') ~ '^[0-9]{8}$' then '968' || regexp_replace(p, '\D', '', 'g')
+        else regexp_replace(p, '\D', '', 'g')
+    end
+$$;
+
+create or replace function private.athr_track_customer()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    ph text := private.athr_phone_intl(new.phone, new.country);
+begin
+    if ph is null or ph !~ '^[0-9]{8,15}$' then
+        return new;
+    end if;
+    insert into public.customers as c (phone, name, country, marketing, orders_count, total_spent, first_order_at, last_order_at)
+    values (ph, nullif(btrim(coalesce(new.customer_name, '')), ''), coalesce(new.country, 'OM'), coalesce(new.marketing_ok, true), 1, coalesce(new.total, 0), new.ordered_at, new.ordered_at)
+    on conflict (phone) do update set
+        name = coalesce(excluded.name, c.name),
+        country = excluded.country,
+        marketing = case when new.source = 'web' then excluded.marketing else c.marketing end,
+        orders_count = c.orders_count + 1,
+        total_spent = c.total_spent + excluded.total_spent,
+        first_order_at = least(c.first_order_at, excluded.first_order_at),
+        last_order_at = greatest(c.last_order_at, excluded.last_order_at);
+    return new;
+end;
+$$;
+revoke execute on function private.athr_track_customer() from public, anon, authenticated;
+
+drop trigger if exists athr_track_customer on public.orders;
+create trigger athr_track_customer
+    after insert on public.orders
+    for each row execute function private.athr_track_customer();

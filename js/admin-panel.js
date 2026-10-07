@@ -32,7 +32,11 @@
         statsDays: 30,
         stats: null,
         ai: null,
-        aiStatus: null
+        aiStatus: null,
+        customers: [],
+        customersLoaded: false,
+        custFilter: { q: "", kind: "all" },
+        offer: null
     };
 
     const CHANNELS = {
@@ -54,7 +58,8 @@
         ["look", "المظهر", "palette", "الألوان والخطوط والشعار والوضع الداكن"],
         ["texts", "النصوص", "text", "العناوين والجمل ورسائل واتساب"],
         ["order", "الطلب والتوصيل", "truck", "التوصيل والدفع والدول والعملات"],
-        ["sales", "المبيعات والهدايا", "tag", "الخصومات والعروض والهدايا"],
+        ["sales", "المبيعات والعروض", "tag", "الخصومات والعروض والعملاء"],
+        ["gift", "الهدية", "gift", "شكل البطاقة والألوان والخط والرسالة"],
         ["contact", "التواصل والآراء", "chat", "واتساب والقائمة وآراء العملاء"]
     ];
 
@@ -72,7 +77,9 @@
         sparkle: '<path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8 1.8-5Z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/>',
         eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
         back: '<path d="M9.5 6l6 6-6 6"/>',
-        dots: '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>'
+        dots: '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>',
+        users: '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5c.8-3.4 3.2-5 6-5s5.2 1.6 6 5"/><circle cx="17" cy="9.5" r="2.6"/><path d="M16 14.6c2.6 0 4.4 1.4 5 4.4"/>',
+        gift: '<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5V20h14v-7.5M12 8.5V20M12 8.5C10 4 6.5 5 7.5 7.2 8.2 8.5 12 8.5 12 8.5ZM12 8.5c2-4.5 5.5-3.5 4.5-1.3-.7 1.3-4.5 1.3-4.5 1.3Z"/>'
     };
     const icon = (key) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key] || ""}</svg>`;
 
@@ -390,7 +397,7 @@
         $$(".adm-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === A.tab)));
         const errors = A.errors.length ? `<div class="adm-errors" role="alert"><strong>لم يتم النشر. صحّح التالي:</strong><ul>${A.errors.map((e) => `<li><button type="button" class="adm-link" data-tab="${e.tab}">${esc(tabLabel(e.tab))}</button>: ${esc(e.msg)}</li>`).join("")}</ul></div>` : "";
         const banner = isDirty() && !A.errors.length ? `<div class="adm-note">لديك تعديلات غير منشورة. لن يراها الزبائن حتى تضغط «نشر التغييرات».</div>` : "";
-        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, contact: tabContact };
+        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, gift: tabGift, contact: tabContact };
         body.innerHTML = errors + banner + views[A.tab]();
         if (keepScroll) body.scrollTop = scroll;
         else body.scrollTop = 0;
@@ -417,6 +424,11 @@
             <button class="adm-orders-tile" type="button" data-a="open-orders">
                 <span class="aot-ico">${icon("receipt")}</span>
                 <span class="aot-txt"><b>الطلبات والتقييمات والأداء</b><small id="homeOrders">دفتر الطلبيات</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>
+            <button class="adm-orders-tile alt" type="button" data-a="open-customers">
+                <span class="aot-ico">${icon("users")}</span>
+                <span class="aot-txt"><b>العملاء والعروض</b><small>أسماء وأرقام زبائنك، وأرسل لهم الخصومات</small></span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
             <div class="adm-quick">${quick.map(([a, ic, label]) => `<button class="aq" type="button" data-a="${a}">${icon(ic)}<span>${label}</span></button>`).join("")}</div>
@@ -782,6 +794,149 @@
         };
     }
 
+
+    // =====================================================
+    // TAB: GIFT — تحكم كامل في الهدية وبطاقة الإهداء
+    // =====================================================
+
+    const GIFT_FONTS = ["Aref Ruqaa", "Reem Kufi", "Amiri", "El Messiri", "Lalezar", "Rakkas", "Lemonada", "Marhey", "Cairo", "Tajawal", "Changa", "IBM Plex Sans Arabic"];
+    const GIFT_SAMPLE = { to: "سارة", from: "مريم", msg: "كل عام وأنت بخير يا أغلى الناس ❤️", occasion: "birthday" };
+
+    function giftFontLink() {
+        const param = ATHR.FONT_PARAMS[cfg().gift.font];
+        let link = document.getElementById("admGiftFont");
+        if (!param) return;
+        const href = `https://fonts.googleapis.com/css2?family=${param}&display=swap`;
+        if (!link) {
+            link = document.createElement("link");
+            link.id = "admGiftFont";
+            link.rel = "stylesheet";
+            document.head.appendChild(link);
+        }
+        if (link.getAttribute("href") !== href) link.setAttribute("href", href);
+    }
+
+    function giftMini() {
+        const g = cfg().gift;
+        return `<div class="gift-mini gift-page" id="giftMini" style="${esc(ATHR.views.giftStyle({ cfg: cfg() }))}">
+            <div class="gm-stage">
+                <div class="gm-box"><span class="gm-lid"></span><span class="gm-body"></span></div>
+                <b class="gm-title">${esc(ATHR.giftFill(g.title, { to: GIFT_SAMPLE.to, from: GIFT_SAMPLE.from, store: ATHR.storeName(cfg()) }))}</b>
+            </div>
+            <div class="gm-card">
+                <small>${esc("إلى")}</small>
+                <b class="gm-name">${esc(GIFT_SAMPLE.to)}</b>
+                <span class="gm-msg">${esc(GIFT_SAMPLE.msg)}</span>
+                <small>${esc(g.closing)} <b class="gm-from">${esc(GIFT_SAMPLE.from)}</b></small>
+            </div>
+        </div>`;
+    }
+
+    function giftWaSample() {
+        return ATHR.withLang("ar", () => ATHR.giftWhatsApp({
+            ...GIFT_SAMPLE,
+            link: siteLink(`${ATHR.base()}gift/?c=…`),
+            store: ATHR.storeName(cfg()),
+            config: cfg()
+        }));
+    }
+
+    function refreshGiftPreview() {
+        const mini = $("#giftMini");
+        if (mini) mini.outerHTML = giftMini();
+        const wa = $("#giftWaPreview");
+        if (wa) wa.textContent = giftWaSample();
+    }
+
+    function tabGift() {
+        const s = cfg().sales;
+        const D = ATHR_DEFAULTS.gift;
+        giftFontLink();
+        const occ = ATHR.GIFT_OCCASIONS.map((o) => {
+            const base = `config.gift.occasions.${o.id}`;
+            return `<li class="item-card">
+                ${o.id === "other" ? `<b>${o.emoji} ${esc(o.name)} <small class="adm-muted">(يظهر دائماً)</small></b>` : toggle(`${base}.enabled`, `${o.emoji} ${o.name}`)}
+                <div class="two">
+                    ${text(`${base}.emoji`, "الرمز", { placeholder: o.emoji, max: 8 })}
+                    ${text(`${base}.name`, "الاسم في صفحة الطلب", { placeholder: o.name, max: 30 })}
+                </div>
+                ${text(`${base}.title`, "العنوان في البطاقة", { placeholder: o.title, max: 40 })}
+                ${o.id === "other" ? "" : text(`${base}.for`, "سطر المناسبة في رسالة واتساب", { placeholder: o.for, max: 60 })}
+                ${area(`${base}.msgs`, "رسائل مقترحة للزبون (كل سطر رسالة)", { rows: 2, placeholder: o.msgs.join("\n") })}
+            </li>`;
+        }).join("");
+        return `
+            <section class="adm-card gift-top">
+                <div class="adm-row-between">
+                    <div><h2>🎁 الهدية وبطاقة الإهداء</h2><p class="adm-muted">غيّر الشكل والألوان والخط والنصوص والرسالة، ثم شاهدها قبل النشر.</p></div>
+                </div>
+                ${giftMini()}
+                <button class="ab ab-primary ab-block" type="button" data-a="gift-preview">👁️ معاينة البطاقة كاملة (قبل النشر)</button>
+            </section>
+            ${card("التشغيل", `
+                ${toggle("config.sales.gift_enabled", "تفعيل «هدية لشخص» في إتمام الطلب", { rerender: true, help: "يختار الزبون «لي» أو «هدية لشخص»، ويكتب رقمه ورقم المُهدى إليه وولايته وعنوانه ورسالة الهدية." })}
+                ${s.gift_enabled ? `${toggle("config.sales.gift_card", "بطاقة إهداء رقمية للمُهدى إليه", { help: "صفحة الصندوق والبطاقة التي تتحكم في شكلها هنا. يرسلها صاحب الهدية بعد الطلب، ورابطها يصلك في رسالة الطلب." })}
+                ${toggle("config.sales.gift_banner", "بنر «أرسلها هدية» في الصفحة الرئيسية")}
+                ${toggle("config.sales.gift_button", "زر «أرسله هدية» في صفحة المنتج والسلة")}
+                ${toggle("config.sales.gift_prepaid", "الهدايا بالدفع المسبق فقط", { help: "يُخفي «الدفع عند الاستلام» في طلبات الهدايا حتى لا يُطلب المبلغ من المُهدى إليه." })}` : ""}`)}
+            ${card("الألوان", `
+                <div class="two">
+                    ${colorField("config.gift.colors.bg", "خلفية الصفحة")}
+                    ${colorField("config.gift.colors.box", "لون الصندوق")}
+                </div>
+                <div class="two">
+                    ${colorField("config.gift.colors.ribbon", "لون الشريطة والذهبي")}
+                    ${colorField("config.gift.colors.paper", "لون ورقة البطاقة")}
+                </div>
+                <div class="two">
+                    ${colorField("config.gift.colors.ink", "لون الكتابة")}
+                    ${colorField("config.gift.colors.accent", "لون الاسم")}
+                </div>
+                <div class="inline">
+                    <button class="ab-mini" type="button" data-gift-theme="classic">عنابي وذهبي</button>
+                    <button class="ab-mini" type="button" data-gift-theme="night">كحلي وفضي</button>
+                    <button class="ab-mini" type="button" data-gift-theme="rose">وردي ناعم</button>
+                    <button class="ab-mini" type="button" data-gift-theme="green">أخضر ملكي</button>
+                    <button class="ab-mini" type="button" data-gift-theme="black">أسود فاخر</button>
+                </div>`, "اختر ألواناً جاهزة أو لوّن كل جزء بنفسك.")}
+            ${card("الخط", `
+                ${select("config.gift.font", "خط الاسم والعنوان والرسالة", [...GIFT_FONTS.map((f) => [f, f === "Aref Ruqaa" ? "Aref Ruqaa (رقعة مزخرف)" : f]), ["system", "خط الجوال العادي"]], { rerender: true })}`)}
+            ${card("المؤثرات", `
+                ${toggle("config.gift.stars", "نجوم تلمع في الخلفية")}
+                ${toggle("config.gift.confetti", "قصاصات ملونة عند الفتح")}
+                ${toggle("config.gift.tag", "بطاقة صغيرة باسم المُهدى إليه على الصندوق")}
+                ${toggle("config.gift.vibrate", "اهتزاز خفيف للجوال عند الفتح")}`)}
+            ${card("نصوص صفحة البطاقة", `
+                ${text("config.gift.kicker", "الجملة الصغيرة فوق العنوان", { placeholder: D.kicker, max: 60 })}
+                ${text("config.gift.title", "العنوان", { placeholder: D.title, max: 80 })}
+                ${text("config.gift.button", "زر الفتح", { placeholder: D.button, max: 30 })}
+                ${text("config.gift.hint", "التلميح تحت الزر", { placeholder: D.hint, max: 60 })}
+                ${text("config.gift.closing", "قبل اسم صاحب الهدية", { placeholder: D.closing, max: 40 })}
+                ${text("config.gift.empty_msg", "الرسالة إذا لم يكتب الزبون رسالة", { placeholder: D.empty_msg, max: 120 })}
+                ${text("config.gift.footer", "السطر الأخير في البطاقة", { placeholder: D.footer, max: 80 })}`,
+                "{to} = اسم المُهدى إليه · {from} = اسم صاحب الهدية · {store} = اسم المتجر")}
+            ${card("رسالة واتساب للمُهدى إليه", `
+                ${area("config.gift.wa", "نص الرسالة", { rows: 12, placeholder: D.wa })}
+                <div class="offer-preview"><small class="adm-muted">هكذا تصل (مثال):</small><pre id="giftWaPreview">${esc(giftWaSample())}</pre></div>
+                <button class="ab-mini" type="button" data-gift-wa-reset>الرجوع للرسالة الأصلية</button>`,
+                "{to} المُهدى إليه · {from} صاحب الهدية · {occasion} سطر المناسبة · {message} رسالة صاحب الهدية · {link} رابط البطاقة · {store} المتجر. السطر الذي قيمته فارغة يُحذف تلقائياً، والكلام بين *نجمتين* يظهر عريضاً في واتساب.")}
+            ${card("المناسبات", `<ul class="items">${occ}</ul>`, "اترك الخانة فارغة لتبقى على النص الأصلي. أطفئ أي مناسبة لا تريدها في صفحة الطلب.")}
+            ${card("البنر وزر الهدية", `
+                ${text("config.gift.banner_title", "عنوان البنر في الصفحة الرئيسية", { placeholder: D.banner_title, max: 60 })}
+                ${text("config.gift.banner_text", "النص تحت العنوان", { placeholder: D.banner_text, max: 120 })}
+                ${text("config.gift.banner_button", "زر البنر", { placeholder: D.banner_button, max: 20 })}
+                ${text("config.gift.cta_title", "زر الهدية في صفحة المنتج", { placeholder: D.cta_title, max: 30 })}
+                ${text("config.gift.cta_sub", "السطر الصغير تحت زر الهدية", { placeholder: D.cta_sub, max: 80 })}`)}`;
+    }
+
+    const GIFT_THEMES = {
+        classic: { bg: "#4A0A14", box: "#8E1A2C", ribbon: "#F2C964", paper: "#FFF8EC", ink: "#3B2A20", accent: "#8E1A2C" },
+        night: { bg: "#0E1B33", box: "#1F3B70", ribbon: "#D9DEE8", paper: "#F7F8FB", ink: "#1F2A3D", accent: "#1F3B70" },
+        rose: { bg: "#7A2E4A", box: "#E07A9A", ribbon: "#FFE1A8", paper: "#FFF5F7", ink: "#4A2533", accent: "#C24D74" },
+        green: { bg: "#0D3B2E", box: "#16664F", ribbon: "#E8C66A", paper: "#FBF8EE", ink: "#21342C", accent: "#16664F" },
+        black: { bg: "#111111", box: "#222222", ribbon: "#D4AF37", paper: "#FFFDF7", ink: "#1E1E1E", accent: "#8C6A12" }
+    };
+
     // =====================================================
     // TAB 2: AD
     // =====================================================
@@ -1088,13 +1243,11 @@
                 "الخصم على مجموع الطلب حسب عدد القطع. لا يجتمع مع خصم الباقات، ويُطبَّق تلقائياً الأفضل للزبون. يظهر للزبون في صفحة المنتج وفي السلة («أضف قطعة ووفّر 10%»).")
             + card("بعد الإضافة للسلة", `
                 ${toggle("config.sales.upsell_show", "نافذة «أُضيف إلى سلتك» مع اقتراحات وإكمال الطقم", { help: "تقترح على الزبون إكمال الطقم ومنتجات مناسبة، وتوضح كم بقي للتوصيل المجاني أو للخصم التالي." })}`)
-            + card("🎁 إرسال هدية لشخص", `
-                ${toggle("config.sales.gift_enabled", "تفعيل «هدية لشخص» في إتمام الطلب", { rerender: true, help: "يختار الزبون «لي» أو «هدية لشخص»، ثم يكتب رقمه ورقم المُهدى إليه واسمه وولايته وعنوانه ورسالة الهدية." })}
-                ${cfg().sales.gift_enabled ? `${toggle("config.sales.gift_banner", "بنر «أرسلها هدية لمن تحب» في الصفحة الرئيسية", { help: "بطاقة جذابة أعلى المتجر، ويظهر «أرسل هدية» أيضاً في القائمة ⋮." })}
-                ${toggle("config.sales.gift_card", "بطاقة إهداء رقمية للمُهدى إليه", { help: "صفحة جميلة يفتحها المُهدى إليه من جواله: صندوق هدية يتفتح، واسمه، والمناسبة، ورسالة الهدية، بدون أي سعر. يرسلها صاحب الهدية بعد الطلب، ورابطها يصلك في رسالة الطلب أيضاً." })}
-                ${toggle("config.sales.gift_button", "زر «أرسله هدية» في صفحة المنتج والسلة", { help: "زر واضح يأخذ الزبون مباشرة لطلب الهدية." })}
-                ${toggle("config.sales.gift_prepaid", "الهدايا بالدفع المسبق فقط", { help: "يُخفي «الدفع عند الاستلام» في طلبات الهدايا حتى لا يُطلب المبلغ من المُهدى إليه." })}` : ""}`,
-                "يصلك طلب الهدية في واتساب ولوحة الطلبات مع رقم صاحب الهدية ورقم المُهدى إليه، وتنبيه «لا تذكر السعر» لو طلبه الزبون.")
+            + card("👥 العملاء والعروض", `
+                ${toggle("config.sales.marketing_default", "خيار «أرسلوا لي العروض والخصومات» مفعّل تلقائياً للزبون", { help: "يظهر للزبون في صفحة الطلب، ويقدر يطفئه. من يطفئه لا يدخل في إرسال العروض." })}
+                <button class="ab ab-soft ab-sm" type="button" data-a="open-customers">فتح قائمة العملاء</button>`,
+                "كل زبون يطلب يُحفظ اسمه ورقمه تلقائياً في «العملاء»، وتقدر ترسل له العروض والخصومات عبر واتساب.")
+            + card("🎁 الهدية", `<button class="ab ab-soft ab-sm" type="button" data-tab="gift">فتح إعدادات الهدية</button>`, "كل إعدادات الهدية (التشغيل، شكل البطاقة، الألوان، الخط، الرسالة، المناسبات) صارت في قسم «الهدية».")
             + card("عناوين أقسام الصفحة الرئيسية", `
                 ${text("config.sales.best_title", "عنوان الأكثر طلباً", { placeholder: d.best_title })}
                 ${text("config.sales.sets_title", "عنوان الأطقم", { placeholder: d.sets_title })}
@@ -1822,6 +1975,17 @@
             renderOrdersList();
             return;
         }
+        if (t.id === "custSearch") {
+            A.custFilter.q = t.value;
+            renderCustomers();
+            return;
+        }
+        if (t.id === "offerText") {
+            storage.set(OFFER_KEY, t.value);
+            const pre = $("#offerPreview");
+            if (pre) pre.textContent = offerText(t.value, (A.offer && A.offer.targets[0]) || { name: "أحمد" });
+            return;
+        }
         if (t.dataset.priceBase || t.dataset.pricePct) {
             priceFromSheet(t.dataset.priceBase || t.dataset.pricePct);
             return;
@@ -1850,6 +2014,7 @@
         else value = t.value;
         setPath(t.dataset.bind, value);
         saveDraft();
+        if (t.dataset.bind.startsWith("config.gift.")) refreshGiftPreview();
     }
 
     async function onChange(e) {
@@ -1989,6 +2154,16 @@
             renderPanel();
             return;
         }
+        if (d.giftTheme && GIFT_THEMES[d.giftTheme]) {
+            cfg().gift.colors = { ...GIFT_THEMES[d.giftTheme] };
+            afterChange();
+            return;
+        }
+        if (d.giftWaReset !== undefined) {
+            cfg().gift.wa = ATHR_DEFAULTS.gift.wa;
+            afterChange();
+            return;
+        }
         if (d.priceQuick !== undefined && d.id) {
             priceFromSheet(d.id, Number(d.priceQuick));
             refreshSheet();
@@ -2004,12 +2179,37 @@
             await aiClick(d);
             return;
         }
+        if (d.a && /^(offer|cust)-/.test(d.a) && await customersClick(d)) return;
+        if (d.custKind) {
+            A.custFilter.kind = d.custKind;
+            $$("[data-cust-kind]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.custKind === d.custKind)));
+            renderCustomers();
+            return;
+        }
+        if (d.custMk) { toggleMarketing(d.custMk); return; }
+        if (d.custWa) {
+            const c = A.customers.find((x) => x.phone === d.custWa);
+            if (c) window.open(ATHR.waLink(custWa(c), ""), "_blank", "noopener");
+            return;
+        }
+        if (d.offerTpl !== undefined) {
+            const tpl = OFFER_TEMPLATES[Number(d.offerTpl)];
+            const box = $("#offerText");
+            if (tpl && box) {
+                box.value = tpl[1];
+                storage.set(OFFER_KEY, tpl[1]);
+                const pre = $("#offerPreview");
+                if (pre) pre.textContent = offerText(tpl[1], (A.offer && A.offer.targets[0]) || { name: "أحمد" });
+            }
+            return;
+        }
 
         switch (d.a) {
             case "close": close(); return;
             case "retry": open(A.view); return;
             case "close-sheet": closeSheet(); return;
             case "preview": preview(); return;
+            case "gift-preview": preview(`${ATHR.base()}gift/?c=${ATHR.giftCode(GIFT_SAMPLE)}`); return;
             case "account": openAccount(); return;
             case "discard": discard(); return;
             case "publish": publish(); return;
@@ -2044,7 +2244,8 @@
             case "orders-sheet-close": closeOrderSheet(); return;
             case "paste-import": importPasted(); return;
             case "open-panel": location.hash = "#admin"; open("admin"); return;
-            case "open-orders": location.hash = "#orders"; open("orders"); return;
+            case "open-orders": A.book = "orders"; location.hash = "#orders"; open("orders"); return;
+            case "open-customers": A.book = "customers"; location.hash = "#orders"; open("orders"); return;
             default: break;
         }
 
@@ -2164,7 +2365,7 @@
             if (o && o.gift_phone) {
                 const link = siteLink(ATHR.giftCardPath(o));
                 const from = String(o.customer_name || "").trim().split(/\s+/)[0];
-                const text = ATHR.withLang("ar", () => ATHR.giftWhatsApp({ to: o.gift_name, from, msg: o.gift_message, occasion: o.gift_occasion, link, store: ATHR.storeName(cfg()) }));
+                const text = ATHR.withLang("ar", () => ATHR.giftWhatsApp({ to: o.gift_name, from, msg: o.gift_message, occasion: o.gift_occasion, link, store: ATHR.storeName(cfg()), config: cfg() }));
                 window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), text), "_blank", "noopener");
             }
             return;
@@ -2209,7 +2410,7 @@
         toast("رجعت لآخر نسخة منشورة");
     }
 
-    function preview() {
+    function preview(path) {
         const data = {
             config: A.draft.config,
             categories: A.draft.categories.map((c, i) => ({ ...c, sort_order: i + 1 })),
@@ -2220,7 +2421,7 @@
         el.innerHTML = "";
         document.body.classList.remove("locked");
         A.view = null;
-        ATHR.store.preview(data);
+        ATHR.store.preview(data, path);
     }
 
     function openAccount() {
@@ -2550,7 +2751,7 @@
 
     function renderBook() {
         const pending = A.reviews.filter((r) => r.status === "pending").length;
-        const tabs = [["orders", "الطلبات"], ["reviews", `التقييمات${pending ? ` (${pending})` : ""}`], ["stats", "الأداء"]];
+        const tabs = [["orders", "الطلبات"], ["customers", "العملاء"], ["reviews", `التقييمات${pending ? ` (${pending})` : ""}`], ["stats", "الأداء"]];
         root().innerHTML = `
             <div class="adm-shell">
                 <header class="adm-top">
@@ -2576,6 +2777,12 @@
                         </select>
                     </div>
                 </div>` : ""}
+                ${A.book === "customers" ? `<div class="ob-tools">
+                    <input class="ai" type="search" id="custSearch" placeholder="ابحث باسم العميل أو رقمه" value="${esc(A.custFilter.q)}">
+                    <div class="seg" role="group" aria-label="تصفية العملاء">
+                        ${[["all", "الكل"], ["marketing", "يقبلون العروض"], ["repeat", "رجعوا مرة ثانية"], ["away", "غائبون +60 يوم"]].map(([v, l]) => `<button type="button" data-cust-kind="${v}" aria-pressed="${A.custFilter.kind === v}">${l}</button>`).join("")}
+                    </div>
+                </div>` : ""}
                 <main class="adm-body" id="ordersBody"></main>
                 ${A.book === "orders" ? `<footer class="adm-foot ob-foot">
                     <button class="ab ab-ghost" type="button" data-a="orders-paste">لصق رسالة طلب من واتساب</button>
@@ -2585,8 +2792,209 @@
             <div class="adm-sheet" id="admSheet" hidden></div>`;
         if (A.book === "reviews") renderReviews();
         else if (A.book === "stats") renderStats();
+        else if (A.book === "customers") renderCustomers();
         else renderOrdersList();
         if (!A.reviewsLoaded) loadReviews().then(() => { if (A.view === "orders") { const tab = $('[data-book="reviews"]'); const n = A.reviews.filter((r) => r.status === "pending").length; if (tab) tab.textContent = `التقييمات${n ? ` (${n})` : ""}`; } }).catch(() => {});
+    }
+
+    // =====================================================
+    // CUSTOMERS: قائمة العملاء من الطلبات + إرسال العروض عبر واتساب
+    // =====================================================
+
+    const OFFER_KEY = "athr_offer_tpl";
+    const OFFER_TEMPLATES = [
+        ["خصم", "هلا {name} 👋\n\nعندنا لك عرض خاص في {store} 🎁\n✨ خصم 10% على كل الكاسات لمدة 3 أيام فقط\n\nتسوّق الآن 👇\n{link}"],
+        ["منتج جديد", "هلا {name} 👋\n\nوصلت تصاميم جديدة في {store} 🔥\nشوفها قبل لا تخلص 👇\n{link}"],
+        ["عرض العيد", "عيدكم مبارك يا {name} 🌙✨\n\nبمناسبة العيد: هدية مع كل طلب من {store} 🎁\n\nاطلب الآن 👇\n{link}"],
+        ["شكراً لك", "شكراً لك يا {name} على ثقتك في {store} 🤍\n\nإذا عجبك طلبك شاركنا رأيك، ونسعد نخدمك دائماً 👇\n{link}"]
+    ];
+    const OPT_OUT_LINE = "(لإيقاف العروض أرسل: إيقاف)";
+
+    async function loadCustomers() {
+        const { data, error } = await sb.from("customers").select("*").order("last_order_at", { ascending: false }).limit(5000);
+        if (error) throw error;
+        A.customers = data || [];
+        A.customersLoaded = true;
+    }
+
+    function custWa(c) {
+        return ATHR.customerWhatsapp(c.phone, "XX");
+    }
+
+    function filteredCustomers() {
+        const q = (A.custFilter.q || "").trim().toLowerCase();
+        const now = Date.now();
+        return A.customers.filter((c) => {
+            if (A.custFilter.kind === "marketing" && !c.marketing) return false;
+            if (A.custFilter.kind === "repeat" && !(c.orders_count > 1)) return false;
+            if (A.custFilter.kind === "away" && !(c.last_order_at && now - new Date(c.last_order_at).getTime() > 60 * 864e5)) return false;
+            if (!q) return true;
+            return `${c.name || ""} ${c.phone}`.toLowerCase().includes(q);
+        });
+    }
+
+    function sinceText(date) {
+        if (!date) return "";
+        const days = Math.floor((Date.now() - new Date(date).getTime()) / 864e5);
+        return days <= 0 ? "اليوم" : days === 1 ? "أمس" : days < 30 ? `منذ ${days} يوم` : `منذ ${Math.round(days / 30)} شهر`;
+    }
+
+    function renderCustomers() {
+        const body = $("#ordersBody");
+        if (!body) return;
+        if (!A.customersLoaded) {
+            body.innerHTML = `<div class="adm-empty">جاري تحميل العملاء...</div>`;
+            loadCustomers().then(() => { if (A.view === "orders" && A.book === "customers") renderCustomers(); })
+                .catch(() => { body.innerHTML = `<div class="adm-empty">تعذر تحميل العملاء. تأكد من الإنترنت.</div>`; });
+            return;
+        }
+        const all = A.customers;
+        const list = filteredCustomers();
+        const optedIn = list.filter((c) => c.marketing);
+        const flag = (code) => (ATHR_COUNTRIES.find((x) => x.code === code) || ATHR_COUNTRIES[0]).flag;
+        body.innerHTML = `
+            <div class="ob-stats">
+                <div><small>العملاء</small><b>${all.length}</b></div>
+                <div><small>يقبلون العروض</small><b>${all.filter((c) => c.marketing).length}</b></div>
+                <div><small>طلبوا أكثر من مرة</small><b>${all.filter((c) => c.orders_count > 1).length}</b></div>
+            </div>
+            ${all.length ? `<div class="cust-actions">
+                <button class="ab ab-primary" type="button" data-a="offer-open"${optedIn.length ? "" : " disabled"}>📣 أرسل عرضاً (${optedIn.length})</button>
+                <button class="ab-mini" type="button" data-a="cust-copy"${optedIn.length ? "" : " disabled"}>نسخ الأرقام</button>
+                <button class="ab-mini" type="button" data-a="cust-csv">تنزيل ملف العملاء</button>
+            </div>` : ""}
+            ${list.length ? `<ul class="cust-list">${list.map((c) => `<li class="cust${c.marketing ? "" : " off"}">
+                <div class="cust-main">
+                    <b>${esc(c.name || "بدون اسم")}${c.country && c.country !== "OM" ? ` <span aria-hidden="true">${flag(c.country)}</span>` : ""}</b>
+                    <span dir="ltr" class="cust-phone">+${esc(c.phone)}</span>
+                    <small class="adm-muted">${c.orders_count} ${c.orders_count === 1 ? "طلب" : c.orders_count === 2 ? "طلبان" : "طلبات"} · ${money(c.total_spent)} · آخر طلب ${esc(sinceText(c.last_order_at))}${c.last_offer_at ? ` · آخر عرض ${esc(sinceText(c.last_offer_at))}` : ""}</small>
+                </div>
+                <div class="cust-ctrl">
+                    <button type="button" class="vis-switch" role="switch" aria-checked="${Boolean(c.marketing)}" data-cust-mk="${esc(c.phone)}" aria-label="يستقبل العروض" title="${c.marketing ? "يستقبل العروض" : "لا يستقبل العروض"}"><span></span></button>
+                    <small>العروض</small>
+                </div>
+                <button type="button" class="ab-mini wa" data-cust-wa="${esc(c.phone)}">واتساب</button>
+            </li>`).join("")}</ul>` : `<div class="adm-empty">${all.length ? "لا يوجد عملاء مطابقون." : "يظهر هنا كل زبون يطلب من المتجر: اسمه ورقمه وعدد طلباته، وتقدر ترسل لهم العروض من هنا."}</div>`}
+            <p class="adm-muted cust-note">يُحفظ العميل تلقائياً مع أول طلب. في صفحة الطلب يظهر للزبون خيار «أرسلوا لي العروض والخصومات»، ومن يطفئه أو تطفئ أنت مفتاح «العروض» عنده لا يدخل في إرسال العروض.</p>`;
+    }
+
+    function offerTemplate() {
+        return storage.get(OFFER_KEY) || OFFER_TEMPLATES[0][1];
+    }
+
+    function offerText(tpl, c) {
+        const first = String(c.name || "").trim().split(/\s+/)[0] || "";
+        const link = new URL(`${ATHR.base()}?ref=whatsapp`, location.origin).href;
+        let text = String(tpl || "").replace(/\{name\}/g, first).replace(/\{store\}/g, ATHR.storeName(cfg())).replace(/\{link\}/g, link);
+        text = text.replace(/[ \t]+\n/g, "\n").replace(/ {2,}/g, " ").replace(/^(هلا|مرحبا|أهلاً)\s+👋/m, "$1 👋");
+        if (!text.includes("إيقاف")) text += `\n\n${OPT_OUT_LINE}`;
+        return text;
+    }
+
+    function openOffer() {
+        const targets = filteredCustomers().filter((c) => c.marketing);
+        A.offer = { targets, i: 0, sent: 0, started: false };
+        renderOffer();
+    }
+
+    function renderOffer() {
+        const st = A.offer;
+        if (!st) return;
+        const tpl = offerTemplate();
+        if (!st.started) {
+            const sample = st.targets[0] || { name: "أحمد", phone: "96890000000" };
+            openOrderSheet(`
+                <div class="adm-sheet-head"><h2>📣 أرسل عرضاً لعملائك</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>
+                <div class="af-stack">
+                    <div class="pct-chips">${OFFER_TEMPLATES.map(([label], i) => `<button type="button" class="ab-mini" data-offer-tpl="${i}">${esc(label)}</button>`).join("")}</div>
+                    <label class="af"><span>نص العرض</span><textarea class="ai" id="offerText" rows="8">${esc(tpl)}</textarea>
+                        <small>{name} = اسم العميل الأول · {store} = اسم المتجر · {link} = رابط المتجر. يُضاف سطر «لإيقاف العروض» تلقائياً.</small></label>
+                    <div class="offer-preview"><small class="adm-muted">هكذا تصل الرسالة لـ${esc(sample.name || "العميل")}:</small><pre id="offerPreview">${esc(offerText(tpl, sample))}</pre></div>
+                    <p class="adm-sentence">يُرسل إلى <b>${st.targets.length}</b> عميل يقبلون العروض${A.custFilter.kind !== "all" || A.custFilter.q ? " (حسب التصفية الحالية)" : ""}. واتساب لا يسمح بالإرسال الجماعي التلقائي، لذلك تضغط «أرسل» لكل عميل، وننقلك للتالي تلقائياً.</p>
+                    <button class="ab ab-primary ab-block" type="button" data-a="offer-start"${st.targets.length ? "" : " disabled"}>ابدأ الإرسال</button>
+                </div>`);
+            return;
+        }
+        const c = st.targets[st.i];
+        if (!c) {
+            openOrderSheet(`
+                <div class="adm-sheet-head"><h2>تم ✅</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>
+                <div class="af-stack"><p class="adm-sentence">أرسلت العرض لـ <b>${st.sent}</b> عميل من ${st.targets.length}.</p>
+                <button class="ab ab-primary ab-block" type="button" data-a="orders-sheet-close">إغلاق</button></div>`);
+            renderCustomers();
+            return;
+        }
+        openOrderSheet(`
+            <div class="adm-sheet-head"><h2>📣 إرسال العرض</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>
+            <div class="af-stack offer-run">
+                <div class="offer-progress"><span style="width:${Math.round((st.i / st.targets.length) * 100)}%"></span></div>
+                <p class="adm-muted">العميل ${st.i + 1} من ${st.targets.length} · أُرسل ${st.sent}</p>
+                <div class="offer-who"><b>${esc(c.name || "بدون اسم")}</b><span dir="ltr">+${esc(c.phone)}</span></div>
+                <pre class="offer-msg">${esc(offerText(tpl, c))}</pre>
+                <button class="ab ab-primary ab-block offer-send" type="button" data-a="offer-send">${ATHR.views.waIcon()}أرسل لـ${esc(String(c.name || "العميل").split(" ")[0])} في واتساب</button>
+                <div class="inline"><button class="ab-mini" type="button" data-a="offer-skip">تخطي</button><button class="ab-mini" type="button" data-a="offer-stop">إيقاف</button></div>
+            </div>`);
+    }
+
+    async function offerSend() {
+        const st = A.offer;
+        const c = st && st.targets[st.i];
+        if (!c) return;
+        window.open(ATHR.waLink(custWa(c), offerText(offerTemplate(), c)), "_blank", "noopener");
+        st.sent++;
+        st.i++;
+        const at = new Date().toISOString();
+        c.last_offer_at = at;
+        sb.from("customers").update({ last_offer_at: at }).eq("phone", c.phone).then(() => {}, () => {});
+        renderOffer();
+    }
+
+    function customersCsv() {
+        const rows = [["الاسم", "الرقم", "الدولة", "عدد الطلبات", "المجموع", "أول طلب", "آخر طلب", "يقبل العروض"]];
+        filteredCustomers().forEach((c) => rows.push([c.name || "", `+${c.phone}`, c.country || "", c.orders_count, Number(c.total_spent).toFixed(3), (c.first_order_at || "").slice(0, 10), (c.last_order_at || "").slice(0, 10), c.marketing ? "نعم" : "لا"]));
+        const csv = "﻿" + rows.map((r) => r.map((x) => `"${String(x).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `athr-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    async function toggleMarketing(phone) {
+        const c = A.customers.find((x) => x.phone === phone);
+        if (!c) return;
+        c.marketing = !c.marketing;
+        renderCustomers();
+        const { error } = await sb.from("customers").update({ marketing: c.marketing }).eq("phone", phone);
+        if (error) {
+            c.marketing = !c.marketing;
+            renderCustomers();
+            toast("تعذر الحفظ. تأكد من الإنترنت.");
+        } else toast(c.marketing ? "سيستقبل العروض" : "لن يستقبل العروض");
+    }
+
+    async function customersClick(d) {
+        switch (d.a) {
+            case "offer-open": openOffer(); return true;
+            case "offer-start":
+                storage.set(OFFER_KEY, $("#offerText") ? $("#offerText").value : offerTemplate());
+                A.offer.started = true;
+                renderOffer();
+                return true;
+            case "offer-send": await offerSend(); return true;
+            case "offer-skip": A.offer.i++; renderOffer(); return true;
+            case "offer-stop": A.offer.i = A.offer.targets.length; renderOffer(); return true;
+            case "cust-copy": {
+                const nums = filteredCustomers().filter((c) => c.marketing).map((c) => `+${c.phone}`).join("\n");
+                ATHR.store.copyText(nums, `نُسخت ${filteredCustomers().filter((c) => c.marketing).length} أرقام`);
+                return true;
+            }
+            case "cust-csv": customersCsv(); return true;
+            default: return false;
+        }
     }
 
     // ---------- reviews ----------
@@ -2812,7 +3220,7 @@
                     ${giftTo(o) ? `<small class="adm-muted">صاحب الهدية</small>` : ""}
                     <b>${esc(o.customer_name || "بدون اسم")}</b>
                     ${o.phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : ""}
-                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${o.gift_occasion && o.gift_occasion !== "other" ? ` · ${esc(ATHR.giftOccasion(o.gift_occasion).emoji)} ${esc(ATHR.giftOccasion(o.gift_occasion).name)}` : ""}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
+                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${o.gift_occasion && o.gift_occasion !== "other" ? ` · ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).emoji)} ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).name)}` : ""}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
                     <b>${esc(o.gift_name || "")}</b>
                     ${o.gift_phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : ""}` : ""}
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>

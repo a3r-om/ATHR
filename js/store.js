@@ -1124,12 +1124,21 @@
 
     // خط عربي مزخرف لبطاقة الإهداء فقط
     function giftFont() {
-        if (document.getElementById("giftFont")) return;
-        const link = document.createElement("link");
-        link.id = "giftFont";
-        link.rel = "stylesheet";
-        link.href = "https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&display=swap";
-        document.head.appendChild(link);
+        const font = (C().gift || {}).font || "Aref Ruqaa";
+        const param = ATHR.FONT_PARAMS[font];
+        let link = document.getElementById("giftFont");
+        if (!param) {
+            if (link) link.remove();
+            return;
+        }
+        const href = `https://fonts.googleapis.com/css2?family=${param}&display=swap`;
+        if (!link) {
+            link = document.createElement("link");
+            link.id = "giftFont";
+            link.rel = "stylesheet";
+            document.head.appendChild(link);
+        }
+        if (link.getAttribute("href") !== href) link.setAttribute("href", href);
     }
 
     function giftEnd() {
@@ -1146,7 +1155,7 @@
     const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion"];
 
     function giftSugs(occasion) {
-        const o = ATHR.giftOccasion(occasion);
+        const o = ATHR.giftOccasion(occasion, C());
         return L(o, "msgs").map((m) => `<button type="button" class="sug" data-gift-sug="${esc(m)}">${esc(m)}</button>`).join("");
     }
     const locStash = { self: null, gift: null };
@@ -1215,6 +1224,8 @@
                             ${field("name", gift ? t("اسمك") : t("الاسم الكامل"), `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
                             ${field("phone", gift ? t("رقمك (واتساب)") : t("رقم الهاتف (واتساب)"), `<span class="phone-wrap">${senderDial}<input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${senderRule.example}" value="${esc(myPhone)}" required></span>`, esc(t("رقم {country}: {hint}", { country: L(sender, "name"), hint: L(senderRule, "hint") })))}
                             ${gift ? "" : locationField(c, saved, false)}
+                            <input type="hidden" name="mk_seen" value="1">
+                            <label class="check-line mk-line"><input type="checkbox" name="marketing_ok" value="1"${(keep && keep.mk_seen ? Boolean(keep.marketing_ok) : base.marketing_ok !== undefined ? base.marketing_ok !== false : cfg.sales.marketing_default !== false) ? " checked" : ""}><span>${esc(t("أرسلوا لي العروض والخصومات على واتساب"))}</span></label>
                         </div>
                         ${gift ? `<div class="panel form gift-panel">
                             <h2>${V.icon.gift}${esc(t("بيانات المُهدى إليه"))}</h2>
@@ -1224,7 +1235,7 @@
                             ${field("gift_phone", t("رقم المُهدى إليه"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="gift_phone" type="tel" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="${rule.example}" value="${esc(saved.gift_phone || "")}" required></span>`, esc(t("نتواصل معه لتنسيق التوصيل فقط.")))}
                             ${locationField(c, saved, true)}
                             <div class="field occ-field"><span>${esc(t("المناسبة"))}</span>
-                                <div class="occ-chips" role="radiogroup" aria-label="${esc(t("المناسبة"))}">${ATHR.GIFT_OCCASIONS.map((o) => `<label class="occ"><input type="radio" name="gift_occasion" value="${o.id}"${(saved.gift_occasion || "other") === o.id ? " checked" : ""}><span>${o.emoji} ${esc(L(o, "name"))}</span></label>`).join("")}</div>
+                                <div class="occ-chips" role="radiogroup" aria-label="${esc(t("المناسبة"))}">${ATHR.giftOccasions(cfg, { all: false }).map((o) => `<label class="occ"><input type="radio" name="gift_occasion" value="${o.id}"${(saved.gift_occasion || "other") === o.id ? " checked" : ""}><span>${o.emoji} ${esc(L(o, "name"))}</span></label>`).join("")}</div>
                             </div>
                             ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("اكتب رسالتك أو اختر من المقترحات"))}">${esc(saved.gift_message || "")}</textarea>`)}
                             <div class="msg-sugs" id="msgSugs">${giftSugs(saved.gift_occasion)}</div>
@@ -1422,6 +1433,22 @@
         const ok = validateCheckout(form);
         if (!ok) return;
         placing = true;
+        try {
+            await submitOrder(ok);
+        } catch (error) {
+            console.error("Order failed:", error);
+            const button = $("#placeOrder");
+            if (button) {
+                button.disabled = false;
+                button.textContent = t("تأكيد الطلب");
+            }
+            toast(t("تعذر إرسال الطلب. حاول مرة أخرى."));
+        } finally {
+            placing = false;
+        }
+    }
+
+    async function submitOrder(ok) {
         const cfg = C();
         const { values, name, phone, d, p, gift, senderCode, giftPhone } = ok;
         const isOm = S.country === "OM";
@@ -1449,7 +1476,8 @@
             gift_name: gift ? String(values.gift_name || "").trim().slice(0, 120) : null,
             gift_phone: gift ? giftPhone.stored : null,
             gift_hide_price: gift && Boolean(values.gift_hide_price),
-            gift_occasion: gift ? ATHR.giftOccasion(values.gift_occasion).id : null,
+            gift_occasion: gift ? ATHR.giftOccasion(values.gift_occasion, cfg).id : null,
+            marketing_ok: Boolean(values.marketing_ok),
             delivery_name: d.name,
             delivery_type: d.type === "office" ? "office" : "home",
             delivery_price: tt.ship,
@@ -1488,9 +1516,9 @@
             // في الهدية نحفظ اسمك ورقمك فقط، ويبقى عنوانك السابق كما هو
             const prev = storage.get(KEYS.customer, null) || {};
             storage.set(KEYS.customer, gift
-                ? { ...prev, name, country: senderCode, phone: senderCode === "OM" ? phone.local : "", phoneLocal: phone.local, ...(prev.country && prev.country !== senderCode ? { gov: "", wilaya: "", address: "", office: "" } : {}) }
+                ? { ...prev, name, marketing_ok: Boolean(values.marketing_ok), country: senderCode, phone: senderCode === "OM" ? phone.local : "", phoneLocal: phone.local, ...(prev.country && prev.country !== senderCode ? { gov: "", wilaya: "", address: "", office: "" } : {}) }
                 : {
-                    name, country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
+                    name, marketing_ok: Boolean(values.marketing_ok), country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
                     gov: isOm ? "" : values.gov, wilaya: values.wilaya || "", address: values.address || "", office: values.office || "",
                     delivery: d.id, payment: p.id
                 });
@@ -1522,10 +1550,10 @@
     function giftDoneHTML(order, code) {
         const cfg = C();
         if (!order.gift || !order.gift_name || cfg.sales.gift_card === false) return "";
-        const occ = ATHR.giftOccasion(order.gift_occasion);
+        const occ = ATHR.giftOccasion(order.gift_occasion, cfg);
         const cardUrl = new URL(ATHR.giftCardPath(order), location.origin).href;
         const from = String(order.customer_name || "").trim().split(/\s+/)[0];
-        const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, link: cardUrl, store: ATHR.storeName(cfg) });
+        const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, link: cardUrl, store: ATHR.storeName(cfg), config: cfg });
         const wa = order.gift_phone ? ATHR.waLink(ATHR.customerWhatsapp(order.gift_phone, code), text) : "";
         return `<div class="panel gift-done">
             <div class="gd-card">
@@ -1868,7 +1896,7 @@
             const card = $("#giftCard");
             if (stage && card && !stage.classList.contains("opening")) {
                 stage.classList.add("opening");
-                try { navigator.vibrate && navigator.vibrate([30, 60, 40]); } catch { /* اختياري */ }
+                try { if ((C().gift || {}).vibrate !== false && navigator.vibrate) navigator.vibrate([30, 60, 40]); } catch { /* اختياري */ }
                 setTimeout(() => {
                     stage.hidden = true;
                     card.hidden = false;
@@ -2264,13 +2292,13 @@
             S.preview = false;
             applyData(fresh);
         },
-        preview(data) {
+        preview(data, path) {
             S.preview = true;
             S.media.clear();
             (data.products || []).forEach((p) => {
                 if (Array.isArray(p.media)) S.media.set(p.id, p.media.map((m, i) => ({ media_type: m.type, media_url: m.url, sort_order: i })));
             });
-            history.replaceState(null, "", BASE);
+            history.replaceState(null, "", path || BASE);
             applyData({ ...data, reviews: S.reviews });
             window.scrollTo(0, 0);
         },
