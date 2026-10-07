@@ -324,7 +324,17 @@
         "تحويل بنكي آمن": "Secure bank transfer",
         "التفاصيل كاملة": "Full details",
         "الدفع: {names}": "Payment: {names}",
-        "الدفع في {countries}: {names}": "Payment in {countries}: {names}"
+        "الدفع في {countries}: {names}": "Payment in {countries}: {names}",
+        "هدية مختارة لك بكل حب من *{from}* 💝": "A gift chosen with love for you by *{from}* 💝",
+        "هدية مختارة لك بكل حب 💝": "A gift chosen with love for you 💝",
+        "رسالة لك:": "A message for you:",
+        "👇 افتح بطاقة هديتك:": "👇 Open your gift card:",
+        "🚚 هديتك في الطريق إليك من {store}": "🚚 Your gift from {store} is on its way",
+        "هدية خاصة لك": "A special gift for you",
+        "اضغط على الصندوق لتفتحها": "Tap the box to open it",
+        "افتحها مرة ثانية": "Open it again",
+        "هدية مختارة لك بكل حب": "A gift chosen with love for you",
+        "من": "From"
     };
 
     // نصوص المتجر العامة بالإنجليزي (تُستبدل بما تكتبه في لوحة التحكم ← النصوص بالإنجليزي)

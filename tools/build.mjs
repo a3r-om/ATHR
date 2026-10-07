@@ -336,7 +336,7 @@ async function main() {
         if (o.robots) lines.push(`<meta name="robots" content="${o.robots}">`);
         if (o.canonical) lines.push(`<link rel="canonical" href="${esc(o.canonical)}">`);
         if (o.verify && verification) lines.push(`<meta name="google-site-verification" content="${esc(verification)}">`);
-        if (!o.robots) {
+        if (!o.robots || o.og) {
             const img = o.image || shareImage;
             lines.push(
                 `<meta property="og:site_name" content="${esc(name)}">`,
@@ -653,9 +653,18 @@ async function main() {
     }
 
     ["cart", "checkout", "done", "review", "search", "gift"].forEach((route) => {
+        // بطاقة الإهداء: معاينة جميلة عند إرسال رابطها في واتساب
+        const giftHead = route === "gift" ? {
+            og: true,
+            ogTitle: `🎁 ${V.titles(v, { name: "gift" }).replace(/^🎁\s*/, "")}`,
+            description: `افتح بطاقة هديتك 🎁 هدية مختارة لك بكل حب من ${name}`,
+            canonical: `${SITE}gift/`,
+            image: `${SITE}images/gift-og.jpg`,
+            imageAlt: "صندوق هدية"
+        } : {};
         writeFile(`${route}/index.html`, page({
             route,
-            headHTML: head({ title: V.titles(v, { name: route }), robots: "noindex,follow" }),
+            headHTML: head({ title: V.titles(v, { name: route }), robots: "noindex,follow", ...giftHead }),
             view: route === "search" ? V.search(v, "") : loader,
             prerendered: route === "search"
         }));

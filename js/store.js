@@ -632,7 +632,7 @@
             case "checkout": renderCheckout(); break;
             case "done": renderDone(route.no); break;
             case "review": renderReview(route); break;
-            case "gift": view.innerHTML = V.giftPage(v(), ATHR.giftDecode(route.c)); break;
+            case "gift": giftFont(); view.innerHTML = V.giftPage(v(), ATHR.giftDecode(route.c)); break;
             default: renderNotFound();
         }
 
@@ -1122,6 +1122,16 @@
         toast(t("اختر الهدية ثم اضغط «أرسله هدية» 🎁"));
     }
 
+    // خط عربي مزخرف لبطاقة الإهداء فقط
+    function giftFont() {
+        if (document.getElementById("giftFont")) return;
+        const link = document.createElement("link");
+        link.id = "giftFont";
+        link.rel = "stylesheet";
+        link.href = "https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&display=swap";
+        document.head.appendChild(link);
+    }
+
     function giftEnd() {
         session.del(KEYS.giftIntent);
     }
@@ -1515,7 +1525,7 @@
         const occ = ATHR.giftOccasion(order.gift_occasion);
         const cardUrl = new URL(ATHR.giftCardPath(order), location.origin).href;
         const from = String(order.customer_name || "").trim().split(/\s+/)[0];
-        const text = t("🎁 {from} أرسل لك هدية من {store}! افتح بطاقتك: {link}", { from, store: ATHR.storeName(cfg), link: cardUrl });
+        const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, link: cardUrl, store: ATHR.storeName(cfg) });
         const wa = order.gift_phone ? ATHR.waLink(ATHR.customerWhatsapp(order.gift_phone, code), text) : "";
         return `<div class="panel gift-done">
             <div class="gd-card">
@@ -1856,13 +1866,29 @@
         if (d.giftOpen !== undefined) {
             const stage = $("#giftStage");
             const card = $("#giftCard");
-            if (stage && card) {
+            if (stage && card && !stage.classList.contains("opening")) {
                 stage.classList.add("opening");
+                try { navigator.vibrate && navigator.vibrate([30, 60, 40]); } catch { /* اختياري */ }
                 setTimeout(() => {
                     stage.hidden = true;
                     card.hidden = false;
+                    card.classList.remove("show");
+                    void card.offsetWidth;
                     card.classList.add("show");
-                }, 650);
+                    window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
+                }, 1350);
+            }
+            return;
+        }
+        if (d.giftReplay !== undefined) {
+            const stage = $("#giftStage");
+            const card = $("#giftCard");
+            if (stage && card) {
+                card.hidden = true;
+                card.classList.remove("show");
+                stage.classList.remove("opening");
+                stage.hidden = false;
+                window.scrollTo({ top: stage.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
             }
             return;
         }

@@ -599,28 +599,52 @@
         </section>`;
     };
 
+    // بطاقة الإهداء: صندوق هدية فاخر يتفتح، ثم بطاقة ورقية بإطار ذهبي
     V.giftPage = function (v, card) {
         const store = ATHR.storeName(v.cfg);
         if (!card || !card.to) {
             return `<div class="wrap empty page"><p>${esc(t("رابط بطاقة الإهداء غير صحيح."))}</p><a class="btn btn-primary" href="${ATHR.base()}">${esc(t("العودة للمتجر"))}</a></div>`;
         }
         const o = ATHR.giftOccasion(card.occasion);
+        const logo = V.asset(v.cfg.logo_url || ATHR.DEFAULTS.logo_url);
+        const stars = Array.from({ length: 16 }, (_, i) => `<i style="--x:${(i * 61) % 100}%;--y:${(i * 37) % 100}%;--d:${(i * 0.37) % 3}s;--s:${0.6 + ((i * 7) % 6) / 10}"></i>`).join("");
+        const burst = Array.from({ length: 28 }, (_, i) => `<i style="--a:${i * (360 / 28)}deg;--r:${120 + ((i * 47) % 90)}px;--h:${[44, 350, 330, 160, 200, 30][i % 6]};--d:${(i % 4) * 40}ms"></i>`).join("");
+        const confetti = Array.from({ length: 30 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--h:${[44, 350, 330, 160, 200, 30][i % 6]};--d:${(i * 131) % 900}ms;--t:${(2 + ((i * 7) % 10) / 8).toFixed(2)}s;--r:${(i % 2 ? 1 : -1) * (200 + ((i * 53) % 360))}deg"></i>`).join("");
+        const msg = String(card.msg || "").trim() || t("هدية مختارة لك بكل حب");
         return `<div class="gift-page" data-occ="${esc(o.id)}">
-            <div class="gp-stage" id="giftStage">
-                <div class="gbox" aria-hidden="true"><span class="gbox-body"></span><span class="gbox-lid"></span><span class="gbox-rib"></span><span class="gbox-bow"></span></div>
-                <p class="gp-hello">${esc(t("{name}، وصلتك هدية!", { name: card.to }))}</p>
-                <button class="btn btn-primary gp-open" type="button" data-gift-open>${esc(t("افتح هديتك"))}</button>
-            </div>
-            <article class="gcard" id="giftCard" hidden>
-                <div class="confetti" aria-hidden="true">${Array.from({ length: 26 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--h:${(i * 47) % 360};--d:${(i * 131) % 700}ms;--t:${(1.7 + ((i * 7) % 10) / 10).toFixed(1)}s;--r:${(i % 2 ? 1 : -1) * (180 + ((i * 53) % 360))}deg"></i>`).join("")}</div>
-                <div class="gcard-emoji" aria-hidden="true">${o.emoji}</div>
-                <p class="gcard-to">${esc(t("إلى"))} <b>${esc(card.to)}</b></p>
-                <h1 class="gcard-title">${esc(L(o, "title"))}</h1>
-                ${card.msg ? `<blockquote class="gcard-msg">${esc(card.msg)}</blockquote>` : ""}
-                ${card.from ? `<p class="gcard-from">${esc(t("مع خالص المحبة،"))} <b>${esc(card.from)}</b></p>` : ""}
-                <p class="gcard-note">${esc(t("هديتك في الطريق إليك من {store} 🎁", { store }))}</p>
-            </article>
-            <a class="link-btn center gp-shop" href="${ATHR.base()}">${esc(t("تسوّق من {store}", { store }))}</a>
+            <section class="gx" id="giftStage">
+                <div class="gx-stars" aria-hidden="true">${stars}</div>
+                <p class="gx-kicker">${esc(t("هدية خاصة لك"))}</p>
+                <h1 class="gx-title">${esc(t("{name}، وصلتك هدية!", { name: card.to }))}</h1>
+                <button class="gx-box" type="button" data-gift-open aria-label="${esc(t("افتح هديتك"))}">
+                    <span class="gx-glow" aria-hidden="true"></span>
+                    <span class="gx-burst" aria-hidden="true">${burst}</span>
+                    <span class="gx-body" aria-hidden="true"></span>
+                    <span class="gx-lid" aria-hidden="true"><span class="gx-bow"><i></i><i></i><b></b></span></span>
+                    <span class="gx-tag" aria-hidden="true">${esc(card.to)}</span>
+                </button>
+                <button class="gx-cta" type="button" data-gift-open>✨ ${esc(t("افتح هديتك"))}</button>
+                <p class="gx-hint">${esc(t("اضغط على الصندوق لتفتحها"))}</p>
+            </section>
+            <section class="gx gx-open" id="giftCard" hidden>
+                <div class="gx-stars" aria-hidden="true">${stars}</div>
+                <div class="confetti" aria-hidden="true">${confetti}</div>
+                <article class="gcard">
+                    <span class="gc-corner tl" aria-hidden="true"></span><span class="gc-corner tr" aria-hidden="true"></span><span class="gc-corner bl" aria-hidden="true"></span><span class="gc-corner br" aria-hidden="true"></span>
+                    <div class="gc-seal" aria-hidden="true">${o.emoji}</div>
+                    <p class="gc-to">${esc(t("إلى"))}</p>
+                    <h2 class="gc-name">${esc(card.to)}</h2>
+                    <p class="gc-occ">${esc(L(o, "title"))}</p>
+                    <div class="gc-line" aria-hidden="true"><span>✦</span></div>
+                    <blockquote class="gc-msg">${esc(msg)}</blockquote>
+                    ${card.from ? `<p class="gc-from"><span>${esc(t("مع خالص المحبة،"))}</span><b>${esc(card.from)}</b></p>` : ""}
+                    <div class="gc-foot"><span class="gc-logo"><img src="${esc(logo)}" alt="" width="30" height="30"></span><span>${esc(t("هديتك في الطريق إليك من {store} 🎁", { store }))}</span></div>
+                </article>
+                <div class="gx-actions">
+                    <button class="gx-again" type="button" data-gift-replay>↻ ${esc(t("افتحها مرة ثانية"))}</button>
+                    <a class="gx-shop" href="${ATHR.base()}">${esc(t("تسوّق من {store}", { store }))}</a>
+                </div>
+            </section>
         </div>`;
     };
 

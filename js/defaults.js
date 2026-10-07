@@ -560,13 +560,13 @@ ATHR.customerWhatsapp = function (phone, code) {
 // =====================================================
 
 ATHR.GIFT_OCCASIONS = [
-    { id: "birthday", emoji: "🎂", name: "عيد ميلاد", title: "عيد ميلاد سعيد", msgs: ["كل عام وأنت بخير، عسى أيامك كلها فرح 🎉", "عيد ميلاد سعيد يا أغلى الناس ❤️"], name_en: "Birthday", title_en: "Happy birthday", msgs_en: ["Happy birthday! Wishing you a year full of joy 🎉", "Happy birthday to someone very special ❤️"] },
-    { id: "graduation", emoji: "🎓", name: "تخرّج", title: "مبروك التخرج", msgs: ["مبروك التخرج! فخورين فيك 🎓", "ألف مبروك، والقادم أجمل بإذن الله ✨"], name_en: "Graduation", title_en: "Congratulations, graduate", msgs_en: ["Congratulations on your graduation! So proud of you 🎓", "Congrats, the best is yet to come ✨"] },
-    { id: "wedding", emoji: "💍", name: "زواج", title: "ألف مبروك", msgs: ["ألف مبروك، بالرفاه والبنين 💍", "مبروك الزواج، الله يتمم عليكم بخير ❤️"], name_en: "Wedding", title_en: "Congratulations", msgs_en: ["Congratulations on your wedding 💍", "Wishing you a lifetime of love and happiness ❤️"] },
-    { id: "newborn", emoji: "👶", name: "مولود جديد", title: "مبروك المولود", msgs: ["مبروك المولود، يتربى في عزّكم 👶", "الحمد لله على السلامة، ومبروك ما جاكم 🤍"], name_en: "New baby", title_en: "Congratulations on the new baby", msgs_en: ["Congratulations on your little one 👶", "Welcome to the world, little one 🤍"] },
-    { id: "eid", emoji: "🌙", name: "عيد", title: "عيدكم مبارك", msgs: ["عيدكم مبارك، وكل عام وأنتم بخير 🌙", "عساكم من عوّاده، وعيدكم سعيد ✨"], name_en: "Eid", title_en: "Eid Mubarak", msgs_en: ["Eid Mubarak! Wishing you joy and blessings 🌙", "Happy Eid to you and your family ✨"] },
-    { id: "thanks", emoji: "💐", name: "شكر وتقدير", title: "شكراً لك", msgs: ["شكراً لأنك موجود في حياتي 💐", "هدية بسيطة تعبيراً عن شكري وتقديري 🤍"], name_en: "Thank you", title_en: "Thank you", msgs_en: ["Thank you for being in my life 💐", "A small gift to say thank you 🤍"] },
-    { id: "other", emoji: "🎁", name: "بدون مناسبة", title: "وصلتك هدية", msgs: ["هدية بسيطة لشخص غالي ❤️", "حبيت أفرحك بهذي الهدية 🎁"], name_en: "Just because", title_en: "A gift for you", msgs_en: ["A little gift for someone special ❤️", "Just wanted to make you smile 🎁"] }
+    { id: "birthday", emoji: "🎂", name: "عيد ميلاد", title: "عيد ميلاد سعيد", msgs: ["كل عام وأنت بخير، عسى أيامك كلها فرح 🎉", "عيد ميلاد سعيد يا أغلى الناس ❤️"], name_en: "Birthday", title_en: "Happy birthday", msgs_en: ["Happy birthday! Wishing you a year full of joy 🎉", "Happy birthday to someone very special ❤️"], for: "🎂 بمناسبة عيد ميلادك", for_en: "🎂 For your birthday" },
+    { id: "graduation", emoji: "🎓", name: "تخرّج", title: "مبروك التخرج", msgs: ["مبروك التخرج! فخورين فيك 🎓", "ألف مبروك، والقادم أجمل بإذن الله ✨"], name_en: "Graduation", title_en: "Congratulations, graduate", msgs_en: ["Congratulations on your graduation! So proud of you 🎓", "Congrats, the best is yet to come ✨"], for: "🎓 بمناسبة تخرّجك", for_en: "🎓 For your graduation" },
+    { id: "wedding", emoji: "💍", name: "زواج", title: "ألف مبروك", msgs: ["ألف مبروك، بالرفاه والبنين 💍", "مبروك الزواج، الله يتمم عليكم بخير ❤️"], name_en: "Wedding", title_en: "Congratulations", msgs_en: ["Congratulations on your wedding 💍", "Wishing you a lifetime of love and happiness ❤️"], for: "💍 بمناسبة زواجك", for_en: "💍 For your wedding" },
+    { id: "newborn", emoji: "👶", name: "مولود جديد", title: "مبروك المولود", msgs: ["مبروك المولود، يتربى في عزّكم 👶", "الحمد لله على السلامة، ومبروك ما جاكم 🤍"], name_en: "New baby", title_en: "Congratulations on the new baby", msgs_en: ["Congratulations on your little one 👶", "Welcome to the world, little one 🤍"], for: "👶 بمناسبة المولود الجديد", for_en: "👶 For your new baby" },
+    { id: "eid", emoji: "🌙", name: "عيد", title: "عيدكم مبارك", msgs: ["عيدكم مبارك، وكل عام وأنتم بخير 🌙", "عساكم من عوّاده، وعيدكم سعيد ✨"], name_en: "Eid", title_en: "Eid Mubarak", msgs_en: ["Eid Mubarak! Wishing you joy and blessings 🌙", "Happy Eid to you and your family ✨"], for: "🌙 بمناسبة العيد", for_en: "🌙 For Eid" },
+    { id: "thanks", emoji: "💐", name: "شكر وتقدير", title: "شكراً لك", msgs: ["شكراً لأنك موجود في حياتي 💐", "هدية بسيطة تعبيراً عن شكري وتقديري 🤍"], name_en: "Thank you", title_en: "Thank you", msgs_en: ["Thank you for being in my life 💐", "A small gift to say thank you 🤍"], for: "💐 شكراً وتقديراً لك", for_en: "💐 With thanks and appreciation" },
+    { id: "other", emoji: "🎁", name: "بدون مناسبة", title: "وصلتك هدية", msgs: ["هدية بسيطة لشخص غالي ❤️", "حبيت أفرحك بهذي الهدية 🎁"], name_en: "Just because", title_en: "A gift for you", msgs_en: ["A little gift for someone special ❤️", "Just wanted to make you smile 🎁"], for: "", for_en: "" }
 ];
 
 ATHR.giftOccasion = (id) => ATHR.GIFT_OCCASIONS.find((o) => o.id === id) || ATHR.GIFT_OCCASIONS[ATHR.GIFT_OCCASIONS.length - 1];
@@ -599,6 +599,21 @@ ATHR.giftDecode = function (code) {
     } catch {
         return null;
     }
+};
+
+// رسالة واتساب للمُهدى إليه: جميلة وفيها رسالة صاحب الهدية ورابط البطاقة
+ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store }) {
+    const t = ATHR.t;
+    const o = ATHR.giftOccasion(occasion);
+    const text = String(msg || "").trim();
+    const blocks = [
+        [`🎁✨ *${t("{name}، وصلتك هدية!", { name: to })}* ✨🎁`],
+        [from ? t("هدية مختارة لك بكل حب من *{from}* 💝", { from }) : t("هدية مختارة لك بكل حب 💝"), ATHR.L(o, "for")],
+        text ? [`💌 *${t("رسالة لك:")}*`, `«${text}»`] : [],
+        [t("👇 افتح بطاقة هديتك:"), link],
+        [t("🚚 هديتك في الطريق إليك من {store}", { store })]
+    ];
+    return blocks.map((b) => b.filter(Boolean).join("\n")).filter(Boolean).join("\n\n");
 };
 
 ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({

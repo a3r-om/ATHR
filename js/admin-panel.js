@@ -2092,7 +2092,7 @@
             if (o && o.gift_phone) {
                 const link = siteLink(ATHR.giftCardPath(o));
                 const from = String(o.customer_name || "").trim().split(/\s+/)[0];
-                const text = `🎁 ${from} أرسل لك هدية من ${ATHR.storeName(cfg())}! افتح بطاقتك: ${link}`;
+                const text = ATHR.withLang("ar", () => ATHR.giftWhatsApp({ to: o.gift_name, from, msg: o.gift_message, occasion: o.gift_occasion, link, store: ATHR.storeName(cfg()) }));
                 window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), text), "_blank", "noopener");
             }
             return;
