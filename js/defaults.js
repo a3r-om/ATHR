@@ -14,22 +14,22 @@ const ATHR_GOVERNORATES = [
 
 // دول الخليج: العلم والعملة وسعر الصرف (1 ريال عماني = rate من عملة الدولة)
 const ATHR_COUNTRIES = [
-    { code: "OM", name: "سلطنة عُمان", flag: "🇴🇲", currency: "OMR", currency_name: "ريال عماني", currency_def: "الريال العماني", symbol: "ر.ع", decimals: 3, rate: 1, dial: "968", enabled: true },
-    { code: "AE", name: "الإمارات", flag: "🇦🇪", currency: "AED", currency_name: "درهم إماراتي", currency_def: "الدرهم الإماراتي", symbol: "د.إ", decimals: 2, rate: 9.5514, dial: "971", enabled: true },
-    { code: "SA", name: "السعودية", flag: "🇸🇦", currency: "SAR", currency_name: "ريال سعودي", currency_def: "الريال السعودي", symbol: "ر.س", decimals: 2, rate: 9.7529, dial: "966", enabled: true },
-    { code: "KW", name: "الكويت", flag: "🇰🇼", currency: "KWD", currency_name: "دينار كويتي", currency_def: "الدينار الكويتي", symbol: "د.ك", decimals: 3, rate: 0.8048, dial: "965", enabled: true },
-    { code: "QA", name: "قطر", flag: "🇶🇦", currency: "QAR", currency_name: "ريال قطري", currency_def: "الريال القطري", symbol: "ر.ق", decimals: 2, rate: 9.4669, dial: "974", enabled: true },
-    { code: "BH", name: "البحرين", flag: "🇧🇭", currency: "BHD", currency_name: "دينار بحريني", currency_def: "الدينار البحريني", symbol: "د.ب", decimals: 3, rate: 0.9779, dial: "973", enabled: true }
+    { code: "OM", name: "سلطنة عُمان", name_en: "Oman", currency_name_en: "Omani rial", currency_def_en: "Omani rials", flag: "🇴🇲", currency: "OMR", currency_name: "ريال عماني", currency_def: "الريال العماني", symbol: "ر.ع", decimals: 3, rate: 1, dial: "968", enabled: true },
+    { code: "AE", name: "الإمارات", name_en: "UAE", currency_name_en: "UAE dirham", currency_def_en: "UAE dirhams", flag: "🇦🇪", currency: "AED", currency_name: "درهم إماراتي", currency_def: "الدرهم الإماراتي", symbol: "د.إ", decimals: 2, rate: 9.5514, dial: "971", enabled: true },
+    { code: "SA", name: "السعودية", name_en: "Saudi Arabia", currency_name_en: "Saudi riyal", currency_def_en: "Saudi riyals", flag: "🇸🇦", currency: "SAR", currency_name: "ريال سعودي", currency_def: "الريال السعودي", symbol: "ر.س", decimals: 2, rate: 9.7529, dial: "966", enabled: true },
+    { code: "KW", name: "الكويت", name_en: "Kuwait", currency_name_en: "Kuwaiti dinar", currency_def_en: "Kuwaiti dinars", flag: "🇰🇼", currency: "KWD", currency_name: "دينار كويتي", currency_def: "الدينار الكويتي", symbol: "د.ك", decimals: 3, rate: 0.8048, dial: "965", enabled: true },
+    { code: "QA", name: "قطر", name_en: "Qatar", currency_name_en: "Qatari riyal", currency_def_en: "Qatari riyals", flag: "🇶🇦", currency: "QAR", currency_name: "ريال قطري", currency_def: "الريال القطري", symbol: "ر.ق", decimals: 2, rate: 9.4669, dial: "974", enabled: true },
+    { code: "BH", name: "البحرين", name_en: "Bahrain", currency_name_en: "Bahraini dinar", currency_def_en: "Bahraini dinars", flag: "🇧🇭", currency: "BHD", currency_name: "دينار بحريني", currency_def: "الدينار البحريني", symbol: "د.ب", decimals: 3, rate: 0.9779, dial: "973", enabled: true }
 ];
 
 // أرقام الجوال المحلية لكل دولة (بدون رمز الدولة)
 const ATHR_PHONE_RULES = {
-    OM: { re: /^[79]\d{7}$/, hint: "8 أرقام يبدأ بـ7 أو 9", example: "9XXXXXXX" },
-    AE: { re: /^5\d{8}$/, hint: "9 أرقام يبدأ بـ5 (مثل 50XXXXXXX)", example: "5XXXXXXXX" },
-    SA: { re: /^5\d{8}$/, hint: "9 أرقام يبدأ بـ5 (مثل 55XXXXXXX)", example: "5XXXXXXXX" },
-    KW: { re: /^[569]\d{7}$/, hint: "8 أرقام يبدأ بـ5 أو 6 أو 9", example: "XXXXXXXX" },
-    QA: { re: /^[3567]\d{7}$/, hint: "8 أرقام يبدأ بـ3 أو 5 أو 6 أو 7", example: "XXXXXXXX" },
-    BH: { re: /^[36]\d{7}$/, hint: "8 أرقام يبدأ بـ3 أو 6", example: "XXXXXXXX" }
+    OM: { re: /^[79]\d{7}$/, hint: "8 أرقام يبدأ بـ7 أو 9", hint_en: "8 digits starting with 7 or 9", example: "9XXXXXXX" },
+    AE: { re: /^5\d{8}$/, hint: "9 أرقام يبدأ بـ5 (مثل 50XXXXXXX)", hint_en: "9 digits starting with 5 (e.g. 50XXXXXXX)", example: "5XXXXXXXX" },
+    SA: { re: /^5\d{8}$/, hint: "9 أرقام يبدأ بـ5 (مثل 55XXXXXXX)", hint_en: "9 digits starting with 5 (e.g. 55XXXXXXX)", example: "5XXXXXXXX" },
+    KW: { re: /^[569]\d{7}$/, hint: "8 أرقام يبدأ بـ5 أو 6 أو 9", hint_en: "8 digits starting with 5, 6 or 9", example: "XXXXXXXX" },
+    QA: { re: /^[3567]\d{7}$/, hint: "8 أرقام يبدأ بـ3 أو 5 أو 6 أو 7", hint_en: "8 digits starting with 3, 5, 6 or 7", example: "XXXXXXXX" },
+    BH: { re: /^[36]\d{7}$/, hint: "8 أرقام يبدأ بـ3 أو 6", hint_en: "8 digits starting with 3 or 6", example: "XXXXXXXX" }
 };
 
 const ATHR_DEFAULTS = {
@@ -168,6 +168,52 @@ ATHR.COUNTRIES = ATHR_COUNTRIES;
 ATHR.PHONE_RULES = ATHR_PHONE_RULES;
 ATHR.DEFAULTS = ATHR_DEFAULTS;
 
+// =====================================================
+// اللغة: عربي (الأساس) أو English
+// نصوص الواجهة الإنجليزية في js/i18n-en.js (المفتاح هو النص العربي نفسه)
+// =====================================================
+
+ATHR.lang = "ar";
+ATHR.EN = ATHR.EN || {};
+ATHR.EN_TEXTS = ATHR.EN_TEXTS || {};
+ATHR.isEn = () => ATHR.lang === "en";
+
+ATHR.t = function (s, vars) {
+    let out = ATHR.lang === "en" && Object.prototype.hasOwnProperty.call(ATHR.EN, s) ? ATHR.EN[s] : s;
+    if (vars) out = String(out).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    return out;
+};
+
+// تنفيذ شيء بلغة معيّنة (رسائل واتساب للمالك تبقى بالعربي دائمًا)
+ATHR.withLang = function (lang, fn) {
+    const prev = ATHR.lang;
+    ATHR.lang = lang;
+    try { return fn(); } finally { ATHR.lang = prev; }
+};
+
+// حقل مترجم: name ← name_en عند الإنجليزي إن وُجد
+ATHR.L = function (obj, field) {
+    if (!obj) return "";
+    if (ATHR.lang === "en") {
+        const en = obj[`${field}_en`];
+        if (en !== undefined && en !== null && String(en).trim()) return en;
+    }
+    return obj[field] ?? "";
+};
+
+// نص من إعدادات المتجر: بالإنجليزي من config.en، وإلا النص الإنجليزي الافتراضي
+ATHR.ct = function (config, path) {
+    const get = (obj, keys) => keys.split(".").reduce((o, k) => (o === undefined || o === null ? undefined : o[k]), obj);
+    const value = get(config, path);
+    if (ATHR.lang !== "en") return value;
+    const own = get((config && config.en) || {}, path);
+    const empty = own === undefined || own === null || (typeof own === "string" && !own.trim()) || (Array.isArray(own) && !own.filter(Boolean).length);
+    if (!empty) return own;
+    return Object.prototype.hasOwnProperty.call(ATHR.EN_TEXTS, path) ? ATHR.EN_TEXTS[path] : value;
+};
+
+ATHR.storeName = (config) => ATHR.ct(config, "name") || (config && config.name) || "";
+
 ATHR.clone = (value) => JSON.parse(JSON.stringify(value ?? null));
 
 ATHR.isPlainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -240,7 +286,7 @@ ATHR.money = function (amount, config) {
     const decimals = Number.isInteger(Number(order.decimals)) ? Number(order.decimals) : 3;
     const value = Number(amount || 0);
     const text = value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    return `${text} ${order.currency || ""}`.trim();
+    return `${text} ${ATHR.lang === "en" ? "OMR" : order.currency || ""}`.trim();
 };
 
 // أقل سعر توصيل مفعّل
@@ -254,7 +300,7 @@ ATHR.fill = function (text, config, extra = {}) {
     const tokens = {
         free: ATHR.money(config.order.free_min, config),
         ship: ATHR.money(ATHR.lowestShipping(config), config),
-        name: config.name || "",
+        name: ATHR.storeName(config),
         phone: ATHR.localPhone(config.order.whatsapp),
         ...extra
     };
@@ -346,7 +392,7 @@ ATHR.computeCart = function (cartItems, products, config, country = "OM") {
     const bundleHints = discountType === "volume" ? [] : hints;
 
     return {
-        lines, subtotal, discount, discountType, discountLabel, afterDiscount,
+        lines, subtotal, discount, discountType, discountLabel, discountPct: discountType === "volume" ? volume.tier.pct : 0, afterDiscount,
         freeEligible, freeShipping, leftForFree,
         savings: discountType === "bundle" ? savings : [], hints: bundleHints,
         volume, count
@@ -372,9 +418,33 @@ ATHR.volumeFor = function (config, count, subtotal) {
 };
 
 // «قطعة واحدة» «قطعتين» «3 قطع»
-ATHR.piecesText = (n) => (n === 1 ? "قطعة واحدة" : n === 2 ? "قطعتين" : n <= 10 ? `${n} قطع` : `${n} قطعة`);
+ATHR.piecesText = (n) => {
+    if (ATHR.lang === "en") return n === 1 ? "1 item" : `${n} items`;
+    return n === 1 ? "قطعة واحدة" : n === 2 ? "قطعتين" : n <= 10 ? `${n} قطع` : `${n} قطعة`;
+};
+
+// اسم الخصم للعرض بلغة الزائر (discountLabel يبقى بالعربي للطلب ورسالة واتساب)
+ATHR.discountName = (totals) => (totals.discountType === "volume"
+    ? ATHR.t("خصم الكمية {pct}%", { pct: totals.discountPct })
+    : totals.discountType === "bundle" ? ATHR.t("خصم الباقة") : "");
+
+// مدة التوصيل بلغة الزائر: «2 إلى 4 أيام» ← "2–4 days"
+ATHR.duration = function (text) {
+    if (ATHR.lang !== "en" || !text) return text || "";
+    const d = ATHR.parseDays(text);
+    if (!d) return text;
+    return d.min === d.max ? `${d.min} day${d.min === 1 ? "" : "s"}` : `${d.min}–${d.max} days`;
+};
 
 // سطر منتج في الرسائل: الاسم (اللون)
+// اسم المنتج مع لونه بلغة الزائر (للعرض)
+ATHR.displayLabel = function (product, config) {
+    const color = (config.colors || []).find((c) => c.id === product.color_id);
+    const name = ATHR.L(product, "name");
+    return color ? `${name} (${ATHR.L(color, "name")})` : name;
+};
+
+// اسم المنتج مع لونه بالعربي دائمًا (للطلب ورسالة واتساب)
 ATHR.productLabel = function (product, config) {
     const color = (config.colors || []).find((c) => c.id === product.color_id);
     return color ? `${product.name} (${color.name})` : product.name;
@@ -421,7 +491,7 @@ ATHR.moneyIn = function (amount, config, code) {
     if (c.code === ATHR.BASE_COUNTRY) return ATHR.money(amount, config);
     const value = Number(amount || 0) * c.rate;
     const text = value.toLocaleString("en-US", { minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals });
-    return `${text} ${c.symbol}`;
+    return `${text} ${ATHR.lang === "en" ? c.currency : c.symbol}`;
 };
 
 // وزن الطلب بالغرام

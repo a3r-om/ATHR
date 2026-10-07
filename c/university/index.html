@@ -24,9 +24,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="/ATHR/css/store.css?v=0c1014a4a8">
+<link rel="stylesheet" href="/ATHR/css/store.css?v=82c344f010">
 <style id="themeVars">:root{--primary:#7D1420;--hero:#4A0D12;--bg:#EBDDC9;--text:#251A1B;--font-head:"IBM Plex Sans Arabic","IBM Plex Sans Arabic",system-ui,sans-serif;--font-body:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif}</style>
-<script>window.ATHR_BASE = "/ATHR/";</script>
+<script>window.ATHR_BASE = "/ATHR/";
+(function () { try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { var d = document.documentElement; d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {} })();</script>
 </head>
 <body>
 
@@ -43,6 +44,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
             <input id="searchInput" name="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="ابحث عن فريق أو شخصية…" aria-label="بحث في المنتجات">
         </form>
+        <button class="lang-btn" id="langBtn" type="button" lang="en" aria-label="Switch to English">EN</button>
         <button class="cur-btn" id="curBtn" type="button" aria-label="الدولة والعملة"><span id="curFlag" aria-hidden="true">🇴🇲</span><span id="curSym">ر.ع</span></button>
         <a class="icon-btn cart-btn" href="/ATHR/cart/" aria-label="السلة">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2L5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
@@ -200,10 +202,8 @@
                 <div>
                     <h2>تواصل معنا</h2>
                     <p>واتساب: <a href="https://wa.me/96877336242" target="_blank" rel="noopener" dir="ltr">77336242</a></p>
-                    <div class="footer-links">
-                        <a href="/ATHR/review/" rel="nofollow">شاركنا رأيك</a>
-                        <a href="https://www.instagram.com/a3r_om" target="_blank" rel="noopener">Instagram</a><a href="https://www.tiktok.com/@a3r_om" target="_blank" rel="noopener">TikTok</a>
-                    </div>
+                    <div class="footer-social"><a class="fsoc fsoc-icon" href="https://www.instagram.com/a3r_om" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram"><span class="soc-ico" style="--icon:url('https://cdn.jsdelivr.net/npm/simple-icons@13/icons/instagram.svg')" aria-hidden="true"></span></a><a class="fsoc fsoc-icon" href="https://www.tiktok.com/@a3r_om" target="_blank" rel="noopener" aria-label="TikTok" title="TikTok"><span class="soc-ico" style="--icon:url('https://cdn.jsdelivr.net/npm/simple-icons@13/icons/tiktok.svg')" aria-hidden="true"></span></a></div>
+                    <div class="footer-links"><a href="/ATHR/review/" rel="nofollow">شاركنا رأيك</a></div>
                 </div>
             </div>
             <div class="footer-bottom">© 2026 أثر</div>
@@ -218,9 +218,10 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="/ATHR/js/supabase-config.js?v=a95375e180" defer></script>
-<script src="/ATHR/js/defaults.js?v=c901fd6b58" defer></script>
-<script src="/ATHR/js/views.js?v=810cdc4abb" defer></script>
+<script src="/ATHR/js/defaults.js?v=072103f6e3" defer></script>
+<script src="/ATHR/js/views.js?v=9d69a502d3" defer></script>
+<script src="/ATHR/js/i18n-en.js?v={{V_I18N}}" defer></script>
 <script src="/ATHR/js/thumbs.js?v=38ff67ab3d" defer></script>
-<script src="/ATHR/js/store.js?v=338c496599" defer></script>
+<script src="/ATHR/js/store.js?v=f06aa9a835" defer></script>
 </body>
 </html>

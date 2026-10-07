@@ -70,10 +70,10 @@ async function fetchData() {
         if (!res.ok) throw new Error(`${p.split("?")[0]}: HTTP ${res.status} ${await res.text()}`);
         return res.json();
     };
-    const productCols = "id,name,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,color_id,sort_order,video_url,weight_g,created_at";
+    const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,created_at";
     const [settings, categories, products, reviews, media] = await Promise.all([
         rest("store_settings?select=config&id=eq.1"),
-        rest("categories?select=id,name,slug,sort_order,image_url,description&order=sort_order.asc"),
+        rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
         rest(`products?select=${productCols}&is_visible=eq.true&order=sort_order.asc`),
         rest("reviews?select=id,product_id,name,rating,text,created_at&status=eq.approved&order=created_at.desc&limit=500").catch(() => []),
         rest("product_media?select=product_id,media_type,media_url,sort_order&order=sort_order.asc").catch(() => [])
@@ -304,6 +304,7 @@ async function main() {
         V_CFG: hashOf(read("js/supabase-config.js")),
         V_DEF: hashOf(read("js/defaults.js")),
         V_VIEWS: hashOf(read("js/views.js")),
+        V_I18N: hashOf(read("js/i18n-en.js")),
         V_THUMBS: hashOf(JSON.stringify(thumbs)),
         V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"))
     };

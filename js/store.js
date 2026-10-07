@@ -9,6 +9,8 @@
 
     const V = ATHR.views;
     const esc = ATHR.escape;
+    const t = ATHR.t;
+    const L = ATHR.L;
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
     const BASE = ATHR.base();
@@ -19,7 +21,7 @@
     };
 
     const KEYS = {
-        cache: "athr_cache_v3",
+        cache: "athr_cache_v4",
         cart: "athr_cart_v2",
         customer: "athr_customer",
         lastOrder: "athr_last_order",
@@ -28,7 +30,8 @@
         country: "athr_country",
         channel: "athr_ch",
         channelLast: "athr_ch_last",
-        sort: "athr_sort"
+        sort: "athr_sort",
+        lang: "athr_lang"
     };
 
     // أسماء ولايات عُمان (اقتراحات فقط، ويمكن للعميل كتابة غيرها)
@@ -96,6 +99,14 @@
     const local = (value) => ATHR.moneyIn(value, C(), S.country);
     const approx = (value) => (isBase() ? "" : ` (≈ ${local(value)})`);
     const fill = (text, extra) => ATHR.fill(text, C(), extra);
+    const ct = (path) => ATHR.ct(C(), path);
+    // اسم الخصم المحفوظ بالعربي ← بلغة الزائر
+    const discountText = (label) => {
+        const m = String(label || "").match(/^خصم الكمية\s+([\d.]+)%/);
+        if (m) return t("خصم الكمية {pct}%", { pct: m[1] });
+        if (label === "خصم الباقة") return t("خصم الباقة");
+        return label ? label : t("الخصم");
+    };
     const v = () => {
         if (!S.ctx) {
             S.ctx = V.ctx({
@@ -120,7 +131,7 @@
         toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
     }
 
-    async function copyText(text, label = "تم النسخ") {
+    async function copyText(text, label = t("تم النسخ")) {
         try {
             await navigator.clipboard.writeText(text);
         } catch {
@@ -224,7 +235,7 @@
             else items.push({ id, qty: clamped });
         }
         saveCart(items);
-        if (!silent && qty > limit) toast(`أقصى كمية من المنتج الواحد ${limit}`);
+        if (!silent && qty > limit) toast(t("أقصى كمية من المنتج الواحد {n}", { n: limit }));
         return true;
     }
 
@@ -237,7 +248,7 @@
         }
         const current = cartQty(id);
         if (current >= maxQty()) {
-            toast(`أقصى كمية من المنتج الواحد ${maxQty()}`);
+            toast(t("أقصى كمية من المنتج الواحد {n}", { n: maxQty() }));
             return false;
         }
         setQty(id, current + qty, { silent: true });
@@ -296,7 +307,7 @@
         renderChrome();
         if (!silent) {
             render({ scroll: "keep" });
-            toast(c.code === "OM" ? "الأسعار بالريال العماني" : `الأسعار الآن ب${c.currency_def} تقريبًا`);
+            toast(c.code === "OM" ? t("الأسعار بالريال العماني") : t("الأسعار الآن ب{currency} تقريبًا", { currency: L(c, "currency_def") }));
         }
     }
 
@@ -343,10 +354,10 @@
     }
 
     async function fetchData() {
-        const productCols = "id,name,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,color_id,sort_order,video_url,weight_g,created_at";
+        const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,created_at";
         const [settings, categories, products, reviews] = await Promise.all([
             rest("store_settings?select=config&id=eq.1"),
-            rest("categories?select=id,name,slug,sort_order,image_url,description&order=sort_order.asc"),
+            rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
             rest(`products?select=${productCols}&is_visible=eq.true&order=sort_order.asc`),
             rest("reviews?select=id,product_id,name,rating,text,created_at&status=eq.approved&order=created_at.desc&limit=300").catch(() => [])
         ]);
@@ -368,7 +379,7 @@
         } catch (error) {
             console.error("Store load error:", error);
             if (!cached && !$("#view").dataset.prerendered) {
-                $("#view").innerHTML = `<div class="wrap empty"><p>تعذر تحميل المتجر. تأكد من اتصالك بالإنترنت ثم أعد المحاولة.</p><button class="btn btn-primary" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
+                $("#view").innerHTML = `<div class="wrap empty"><p>${esc(t("تعذر تحميل المتجر. تأكد من اتصالك بالإنترنت ثم أعد المحاولة."))}</p><button class="btn btn-primary" type="button" onclick="location.reload()">${esc(t("إعادة المحاولة"))}</button></div>`;
             }
         }
     }
@@ -426,12 +437,23 @@
             brand.innerHTML = brandHTML;
             brand.dataset.html = brandHTML;
         }
-        brand.setAttribute("aria-label", `${cfg.name || "المتجر"} — الرئيسية`);
+        brand.setAttribute("aria-label", `${ATHR.storeName(cfg) || t("المتجر")} — ${t("الرئيسية")}`);
 
         const showSearch = cfg.theme.show_search !== false;
         $("#searchBox").hidden = !showSearch;
         $(".top-row").classList.toggle("no-search", !showSearch);
-        $("#searchInput").placeholder = cfg.texts.search_placeholder || "";
+        $("#searchInput").placeholder = ct("texts.search_placeholder") || "";
+        $("#searchInput").setAttribute("aria-label", t("بحث في المنتجات"));
+        $("#menuBtn").setAttribute("aria-label", t("القائمة"));
+        $(".cart-btn").setAttribute("aria-label", t("السلة"));
+        $(".skip-link").textContent = t("انتقل إلى المحتوى");
+        $("#waFloat").setAttribute("aria-label", t("تواصل عبر واتساب"));
+        const langBtn = $("#langBtn");
+        if (langBtn) {
+            langBtn.textContent = ATHR.isEn() ? "عربي" : "EN";
+            langBtn.setAttribute("lang", ATHR.isEn() ? "ar" : "en");
+            langBtn.setAttribute("aria-label", ATHR.isEn() ? "التبديل إلى العربية" : "Switch to English");
+        }
         $("#menuBtn").hidden = !(cfg.contact.menu_show || S.isAdmin);
 
         const multi = ATHR.countries(cfg).filter((c) => c.enabled).length > 1;
@@ -439,11 +461,12 @@
         $("#curBtn").hidden = !multi;
         $("#curFlag").textContent = cur.flag;
         $("#curSym").textContent = cur.symbol;
-        $("#curBtn").setAttribute("aria-label", `الدولة والعملة: ${cur.name}، ${cur.currency_name}`);
+        $("#curSym").textContent = ATHR.isEn() ? cur.currency : cur.symbol;
+        $("#curBtn").setAttribute("aria-label", t("الدولة والعملة: {country}، {currency}", { country: L(cur, "name"), currency: L(cur, "currency_name") }));
 
         const float = $("#waFloat");
         float.hidden = !(cfg.contact.wa_float && ATHR.isValidWhatsapp(cfg.order.whatsapp));
-        float.href = ATHR.waLink(cfg.order.whatsapp, fill(cfg.contact.wa_float_msg));
+        float.href = ATHR.waLink(cfg.order.whatsapp, fill(ct("contact.wa_float_msg")));
 
         const footer = V.footer(v());
         const f = $("#footer");
@@ -459,10 +482,10 @@
         const cfg = C();
         const parts = [];
         if (S.preview) {
-            parts.push(`<div class="preview-flag">أنت تشاهد المسودة قبل النشر <button type="button" data-exit-preview>رجوع للوحة</button></div>`);
+            parts.push(`<div class="preview-flag">${esc(t("أنت تشاهد المسودة قبل النشر"))} <button type="button" data-exit-preview>${esc(t("رجوع للوحة"))}</button></div>`);
         }
-        if (cfg.texts.announce_show && cfg.texts.announce_text) {
-            parts.push(`<div class="bar bar-announce">${esc(fill(cfg.texts.announce_text))}</div>`);
+        if (cfg.texts.announce_show && ct("texts.announce_text")) {
+            parts.push(`<div class="bar bar-announce">${esc(fill(ct("texts.announce_text")))}</div>`);
         }
         const totals = computeCart();
         const freeMin = Number(cfg.order.free_min) || 0;
@@ -472,21 +495,21 @@
             let pct = 0;
             let done = false;
             if (totals.count === 0) {
-                text = fill(cfg.sales.free_before);
+                text = fill(ct("sales.free_before"));
             } else if (totals.freeShipping) {
-                text = fill(cfg.sales.free_done);
+                text = fill(ct("sales.free_done"));
                 pct = 100;
                 done = true;
             } else {
-                text = fill(cfg.sales.free_during, { left: money(totals.leftForFree) });
+                text = fill(ct("sales.free_during"), { left: money(totals.leftForFree) });
                 pct = Math.min(100, (totals.afterDiscount / freeMin) * 100);
             }
             parts.push(`<div class="bar bar-ship${done ? " done" : ""}"><div>${esc(text)}</div>${totals.count ? `<div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><span style="width:${pct}%"></span></div>` : ""}</div>`);
         }
         if (cfg.sales.abandoned_show && S.returningGap >= 10 * 60 * 1000 && totals.count > 0
             && !session.get(KEYS.cartBarClosed) && !["cart", "checkout", "done"].includes(routeName)) {
-            const n = totals.count === 1 ? "منتج واحد" : totals.count === 2 ? "منتجان" : `${totals.count} منتجات`;
-            parts.push(`<div class="bar bar-cart"><span>${esc(fill(cfg.sales.abandoned_text, { n }))}</span><a href="${BASE}cart/">أكمل الطلب</a><button type="button" data-close-cartbar aria-label="إخفاء">×</button></div>`);
+            const n = ATHR.isEn() ? (totals.count === 1 ? "1 item" : `${totals.count} items`) : totals.count === 1 ? "منتج واحد" : totals.count === 2 ? "منتجان" : `${totals.count} منتجات`;
+            parts.push(`<div class="bar bar-cart"><span>${esc(fill(ct("sales.abandoned_text"), { n }))}</span><a href="${BASE}cart/">${esc(t("أكمل الطلب"))}</a><button type="button" data-close-cartbar aria-label="${esc(t("إخفاء"))}">×</button></div>`);
         }
         const html = parts.join("");
         const bars = $("#bars");
@@ -592,6 +615,7 @@
             default: renderNotFound();
         }
 
+        document.documentElement.classList.remove("i18n-wait");
         document.title = V.titles(v(), { ...route, product: route.name === "product" ? findProduct(route.slug) : null, cat: route.name === "category" ? findCategory(route.slug) : null });
         renderBars();
         renderBuyBar();
@@ -668,9 +692,9 @@
 
     function renderNotFound() {
         const best = V.bestSellers(v());
-        $("#view").innerHTML = `<div class="wrap empty page"><h1>الصفحة غير موجودة</h1><p>ربما تغيّر رابط المنتج أو لم يعد متوفرًا. تصفّح أقسامنا:</p><a class="btn btn-primary" href="${BASE}">العودة للمتجر</a></div>
+        $("#view").innerHTML = `<div class="wrap empty page"><h1>${esc(t("الصفحة غير موجودة"))}</h1><p>${esc(t("ربما تغيّر رابط المنتج أو لم يعد متوفرًا. تصفّح أقسامنا:"))}</p><a class="btn btn-primary" href="${BASE}">${esc(t("العودة للمتجر"))}</a></div>
             ${V.tiles(v())}
-            ${best.length ? V.rail(v(), { id: "best", title: C().sales.best_title, items: best }) : ""}`;
+            ${best.length ? V.rail(v(), { id: "best", title: ct("sales.best_title"), items: best }) : ""}`;
     }
 
     function rerenderGrid() {
@@ -730,12 +754,12 @@
                 ${item.type === "video"
                     ? `<video src="${esc(item.url)}" controls playsinline autoplay muted loop></video>`
                     : `<img src="${esc(ATHR.thumb(item.url, "m"))}" alt="${esc(label)}${i ? ` (${i + 1})` : ""}" width="800" height="1000">`}
-                <button class="stage-nav prev" type="button" data-gal="-1" aria-label="السابق">${arrow("prev")}</button>
-                <button class="stage-nav next" type="button" data-gal="1" aria-label="التالي">${arrow("next")}</button>
-                <span class="stage-count">${i + 1} من ${items.length}</span>
+                <button class="stage-nav prev" type="button" data-gal="-1" aria-label="${esc(t("السابق"))}">${arrow("prev")}</button>
+                <button class="stage-nav next" type="button" data-gal="1" aria-label="${esc(t("التالي"))}">${arrow("next")}</button>
+                <span class="stage-count">${esc(t("{i} من {n}", { i: i + 1, n: items.length }))}</span>
             </div>
-            <div class="thumbs" role="tablist" aria-label="صور المنتج">
-                ${items.map((it, n) => `<button type="button" data-gal-to="${n}" aria-current="${n === i}" aria-label="${it.type === "video" ? "فيديو المنتج" : `صورة ${n + 1}`}">
+            <div class="thumbs" role="tablist" aria-label="${esc(t("صور المنتج"))}">
+                ${items.map((it, n) => `<button type="button" data-gal-to="${n}" aria-current="${n === i}" aria-label="${esc(it.type === "video" ? t("فيديو المنتج") : t("صورة {n}", { n: n + 1 }))}">
                     ${it.type === "video" ? `${p.image_url ? `<img src="${esc(V.img(p))}" alt="">` : ""}<span class="play">▶</span>` : `<img src="${esc(ATHR.thumb(it.url, "s"))}" alt="" loading="lazy">`}
                 </button>`).join("")}
             </div>`;
@@ -785,17 +809,17 @@
                 html = `<div class="buybar-inner">
                     <div class="bb-info"><b>${local(p.price)}</b><small>${esc(V.label(v(), p))}</small></div>
                     ${inCart
-                        ? `<a class="btn btn-primary" href="${BASE}checkout/">إتمام الطلب (${computeCart().count})</a>`
-                        : `<button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(C().texts.add_to_cart)}</button>`}
+                        ? `<a class="btn btn-primary" href="${BASE}checkout/">${esc(t("إتمام الطلب ({n})", { n: computeCart().count }))}</a>`
+                        : `<button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(ct("texts.add_to_cart"))}</button>`}
                 </div>`;
             }
         } else if (S.loaded && r === "cart") {
-            const t = computeCart();
-            if (t.count) html = `<div class="buybar-inner"><div class="bb-info"><b>${money(t.afterDiscount)}</b><small>${ATHR.piecesText(t.count)}</small></div><a class="btn btn-primary" href="${BASE}checkout/">متابعة الطلب</a></div>`;
+            const tt = computeCart();
+            if (tt.count) html = `<div class="buybar-inner"><div class="bb-info"><b>${money(tt.afterDiscount)}</b><small>${ATHR.piecesText(tt.count)}</small></div><a class="btn btn-primary" href="${BASE}checkout/">${esc(t("متابعة الطلب"))}</a></div>`;
         } else if (S.loaded && r === "checkout") {
             if (computeCart().count) {
-                const t = checkoutTotals();
-                html = `<div class="buybar-inner"><div class="bb-info"><b>${money(t.total)}</b><small>الإجمالي مع التوصيل</small></div><button class="btn btn-primary" type="submit" form="checkoutForm">تأكيد الطلب</button></div>`;
+                const tt = checkoutTotals();
+                html = `<div class="buybar-inner"><div class="bb-info"><b>${money(tt.total)}</b><small>${esc(t("الإجمالي مع التوصيل"))}</small></div><button class="btn btn-primary" type="submit" form="checkoutForm">${esc(t("تأكيد الطلب"))}</button></div>`;
             }
         }
         if (bar.innerHTML !== html) bar.innerHTML = html;
@@ -811,7 +835,7 @@
         return `<div class="mini">
             <a href="${ATHR.url.product(p)}">${V.img(p) ? `<img src="${esc(V.img(p))}" alt="" width="64" height="80" loading="lazy">` : ""}</a>
             <div class="mini-info"><a href="${ATHR.url.product(p)}">${esc(V.label(v(), p))}</a><b>${local(p.price)}</b></div>
-            ${action === "add" ? `<button class="btn btn-ghost btn-sm" type="button" data-add-mini="${esc(p.id)}" aria-label="أضف ${esc(p.name)}">+ أضف</button>` : ""}
+            ${action === "add" ? `<button class="btn btn-ghost btn-sm" type="button" data-add-mini="${esc(p.id)}" aria-label="${esc(t("أضف {name}", { name: V.pname(p) }))}">+ ${esc(t("أضف"))}</button>` : ""}
         </div>`;
     }
 
@@ -822,7 +846,7 @@
         if (totals.freeEligible && freeMin > 0) {
             const pct = Math.min(100, (totals.afterDiscount / freeMin) * 100);
             parts.push(`<div class="progress${totals.freeShipping ? " done" : ""}">
-                <span>${esc(totals.freeShipping ? fill(cfg.sales.free_done) : fill(cfg.sales.free_during, { left: money(totals.leftForFree) }))}</span>
+                <span>${esc(totals.freeShipping ? fill(ct("sales.free_done")) : fill(ct("sales.free_during"), { left: money(totals.leftForFree) }))}</span>
                 <div class="meter"><span style="width:${pct}%"></span></div>
             </div>`);
         }
@@ -830,9 +854,10 @@
         if (vol && vol.tiers.length) {
             if (vol.next) {
                 const need = vol.next.min - totals.count;
-                parts.push(`<p class="vol-hint">${V.icon.tag}<span>${vol.tier && totals.discountType === "volume" ? `خصمك الآن ${vol.tier.pct}%. ` : ""}أضف ${ATHR.piecesText(need)} ووفّر <b>${vol.next.pct}%</b> على طلبك كله</span></p>`);
+                const now = vol.tier && totals.discountType === "volume" ? `${esc(t("خصمك الآن {pct}%.", { pct: vol.tier.pct }))} ` : "";
+                parts.push(`<p class="vol-hint">${V.icon.tag}<span>${now}${t("أضف {pieces} ووفّر <b>{pct}%</b> على طلبك كله", { pieces: esc(ATHR.piecesText(need)), pct: vol.next.pct })}</span></p>`);
             } else if (vol.tier && totals.discountType === "volume") {
-                parts.push(`<p class="vol-hint ok">${V.icon.check}<span>حصلت على خصم الكمية ${vol.tier.pct}%</span></p>`);
+                parts.push(`<p class="vol-hint ok">${V.icon.check}<span>${esc(t("حصلت على خصم الكمية {pct}%", { pct: vol.tier.pct }))}</span></p>`);
             }
         }
         return parts.join("");
@@ -843,7 +868,7 @@
         const vv = v();
         S.lastAdded = ids;
         if (!cfg.sales.upsell_show) {
-            toast("أُضيف إلى السلة");
+            toast(t("أُضيف إلى السلة"));
             return;
         }
         const added = ids.map(productById).filter(Boolean);
@@ -855,26 +880,26 @@
             .filter((p) => !inCart.has(p.id) && !(offer && p.id === offer.b))
             .slice(0, 3);
         const offerHTML = offer ? (() => {
-            const t = productById(offer.b);
+            const other = productById(offer.b);
             return `<div class="added-offer">
-                <b>أكمل الطقم ووفّر ${Number(offer.pct)}%</b>
-                ${miniItem(t, { action: "none" })}
-                <button class="btn btn-primary btn-sm" type="button" data-add-mini="${esc(t.id)}">أضف بخصم ${Number(offer.pct)}%</button>
+                <b>${esc(t("أكمل الطقم ووفّر {pct}%", { pct: Number(offer.pct) }))}</b>
+                ${miniItem(other, { action: "none" })}
+                <button class="btn btn-primary btn-sm" type="button" data-add-mini="${esc(other.id)}">${esc(t("أضف بخصم {pct}%", { pct: Number(offer.pct) }))}</button>
             </div>`;
         })() : "";
         const html = `
             <div class="sheet-head">
-                <h2>${V.icon.check} ${ids.length > 1 ? "أُضيف الطقم إلى سلتك" : "أُضيف إلى سلتك"}</h2>
-                <button class="close" type="button" data-close-sheet aria-label="إغلاق">×</button>
+                <h2>${V.icon.check} ${esc(ids.length > 1 ? t("أُضيف الطقم إلى سلتك") : t("أُضيف إلى سلتك"))}</h2>
+                <button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button>
             </div>
             <div class="added-items">${added.map((p) => miniItem(p, { action: "none" })).join("")}</div>
             ${progressHTML(totals)}
             ${offerHTML}
-            ${suggestions.length ? `<h3 class="added-title">${esc(cfg.sales.related_title || "قد يعجبك أيضاً")}</h3><div class="added-list">${suggestions.map((p) => miniItem(p)).join("")}</div>` : ""}
+            ${suggestions.length ? `<h3 class="added-title">${esc(ct("sales.related_title") || t("قد يعجبك أيضاً"))}</h3><div class="added-list">${suggestions.map((p) => miniItem(p)).join("")}</div>` : ""}
             <div class="added-actions">
-                <a class="btn btn-primary btn-block" href="${BASE}checkout/">إتمام الطلب · ${money(totals.afterDiscount)}</a>
-                <a class="btn btn-ghost btn-block" href="${BASE}cart/">عرض السلة (${totals.count})</a>
-                <button class="link-btn" type="button" data-close-sheet>مواصلة التسوق</button>
+                <a class="btn btn-primary btn-block" href="${BASE}checkout/">${esc(t("إتمام الطلب"))} · ${money(totals.afterDiscount)}</a>
+                <a class="btn btn-ghost btn-block" href="${BASE}cart/">${esc(t("عرض السلة ({n})", { n: totals.count }))}</a>
+                <button class="link-btn" type="button" data-close-sheet>${esc(t("مواصلة التسوق"))}</button>
             </div>`;
         if (refresh) {
             const panel = $("#sheet .sheet-panel");
@@ -885,7 +910,7 @@
                 return;
             }
         }
-        openSheet(html, { modal: true, label: "أُضيف إلى السلة", kind: "added" });
+        openSheet(html, { modal: true, label: t("أُضيف إلى السلة"), kind: "added" });
     }
 
     // =====================================================
@@ -897,6 +922,10 @@
     }
 
     function quickOrderMessage(lines, totals) {
+        return ATHR.withLang("ar", () => quickOrderMessageAr(lines, totals));
+    }
+
+    function quickOrderMessageAr(lines, totals) {
         const cfg = C();
         const no = ATHR.newOrderNo();
         const when = ATHR.muscatParts();
@@ -917,6 +946,10 @@
     }
 
     function orderMessage(order) {
+        return ATHR.withLang("ar", () => orderMessageAr(order));
+    }
+
+    function orderMessageAr(order) {
         const cfg = C();
         const when = ATHR.muscatParts(order.ordered_at);
         const c = ATHR.country(cfg, order.country);
@@ -968,13 +1001,13 @@
                 const db = b.price >= left ? b.price - left : 100 + (left - b.price);
                 return da - db || (b.is_best_seller ? 1 : 0) - (a.is_best_seller ? 1 : 0);
             });
-            return { title: `أضف ${money(left)} واحصل على توصيل مجاني`, items: list.slice(0, 4) };
+            return { title: t("أضف {amount} واحصل على توصيل مجاني", { amount: money(left) }), items: list.slice(0, 4) };
         }
         const related = V.relatedFor(vv, Array.from(inCart), 4);
         if (totals.volume && totals.volume.next) {
-            return { title: `أضف ${ATHR.piecesText(totals.volume.next.min - totals.count)} ووفّر ${totals.volume.next.pct}%`, items: related };
+            return { title: t("أضف {pieces} ووفّر {pct}%", { pieces: ATHR.piecesText(totals.volume.next.min - totals.count), pct: totals.volume.next.pct }), items: related };
         }
-        return { title: C().sales.related_title, items: related };
+        return { title: ct("sales.related_title"), items: related };
     }
 
     function renderCart({ keep = false } = {}) {
@@ -985,9 +1018,9 @@
 
         if (!totals.lines.length) {
             const best = V.bestSellers(v());
-            view.innerHTML = `<div class="wrap"><h1 class="page-title">السلة</h1>
-                <div class="panel empty"><p>سلتك فارغة. اختر تصميمك وأضفه للسلة.</p><a class="btn btn-primary" href="${BASE}">تصفّح المنتجات</a></div></div>
-                ${best.length ? V.rail(v(), { id: "best", title: cfg.sales.best_title, items: best }) : ""}`;
+            view.innerHTML = `<div class="wrap"><h1 class="page-title">${esc(t("السلة"))}</h1>
+                <div class="panel empty"><p>${esc(t("سلتك فارغة. اختر تصميمك وأضفه للسلة."))}</p><a class="btn btn-primary" href="${BASE}">${esc(t("تصفّح المنتجات"))}</a></div></div>
+                ${best.length ? V.rail(v(), { id: "best", title: ct("sales.best_title"), items: best }) : ""}`;
             return;
         }
 
@@ -998,7 +1031,7 @@
 
         view.innerHTML = `
             <div class="wrap">
-                <h1 class="page-title">السلة <small class="muted">(${ATHR.piecesText(totals.count)})</small></h1>
+                <h1 class="page-title">${esc(t("السلة"))} <small class="muted">(${ATHR.piecesText(totals.count)})</small></h1>
                 <div class="layout-2">
                     <div>
                         <div class="panel">
@@ -1006,43 +1039,43 @@
                                 <div class="cart-line">
                                     <a href="${ATHR.url.product(l.product)}">${V.img(l.product) ? `<img src="${esc(V.img(l.product))}" alt="" width="74" height="92">` : ""}</a>
                                     <div>
-                                        <a class="name" href="${ATHR.url.product(l.product)}">${esc(l.product.name)}</a>
+                                        <a class="name" href="${ATHR.url.product(l.product)}">${esc(V.pname(l.product))}</a>
                                         <div>${V.colorTag(v(), l.product)}</div>
-                                        <div class="muted small">${money(l.product.price)} للقطعة</div>
+                                        <div class="muted small">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</div>
                                         <div class="cart-line-foot">
-                                            <div class="stepper" role="group" aria-label="الكمية">
-                                                <button type="button" data-inc="${esc(l.product.id)}" aria-label="زيادة"${l.qty >= maxQty() ? " disabled" : ""}>+</button>
+                                            <div class="stepper" role="group" aria-label="${esc(t("الكمية"))}">
+                                                <button type="button" data-inc="${esc(l.product.id)}" aria-label="${esc(t("زيادة"))}"${l.qty >= maxQty() ? " disabled" : ""}>+</button>
                                                 <output>${l.qty}</output>
-                                                <button type="button" data-dec="${esc(l.product.id)}" aria-label="إنقاص">−</button>
+                                                <button type="button" data-dec="${esc(l.product.id)}" aria-label="${esc(t("إنقاص"))}">−</button>
                                             </div>
                                             <b>${money(l.total)}</b>
                                         </div>
-                                        <button class="remove" type="button" data-remove="${esc(l.product.id)}">حذف</button>
+                                        <button class="remove" type="button" data-remove="${esc(l.product.id)}">${esc(t("حذف"))}</button>
                                     </div>
                                 </div>`).join("")}
                         </div>
                         ${progressHTML(totals) ? `<div class="panel">${progressHTML(totals)}</div>` : ""}
                         ${totals.savings.length || totals.hints.length ? `<div class="panel">
-                            ${totals.savings.map((s) => `<div class="save-line"><span>وفر الطقم: ${esc(s.b.name)} بخصم ${s.pct}%${s.pairs > 1 ? ` × ${s.pairs}` : ""}</span><span>-${money(s.amount)}</span></div>`).join("")}
-                            ${totals.hints.map((h) => `<div class="hint"><span>أكمل الطقم ووفّر: «${esc(ATHR.productLabel(h.b, cfg))}» بخصم ${h.pct}%</span><button class="btn btn-primary btn-sm" type="button" data-add-quiet="${esc(h.b.id)}">أضف</button></div>`).join("")}
+                            ${totals.savings.map((s) => `<div class="save-line"><span>${esc(t("وفر الطقم: {name} بخصم {pct}%", { name: V.pname(s.b), pct: s.pct }))}${s.pairs > 1 ? ` × ${s.pairs}` : ""}</span><span>-${money(s.amount)}</span></div>`).join("")}
+                            ${totals.hints.map((h) => `<div class="hint"><span>${esc(t("أكمل الطقم ووفّر: «{name}» بخصم {pct}%", { name: V.label(v(), h.b), pct: h.pct }))}</span><button class="btn btn-primary btn-sm" type="button" data-add-quiet="${esc(h.b.id)}">${esc(t("أضف"))}</button></div>`).join("")}
                         </div>` : ""}
                         ${sug.items.length ? `<div class="panel"><h2>${esc(sug.title)}</h2><div class="added-list">${sug.items.map((p) => miniItem(p).replace("data-add-mini", "data-add-quiet")).join("")}</div></div>` : ""}
                     </div>
                     <aside>
                         <div class="panel">
-                            <h2>ملخص الطلب</h2>
+                            <h2>${esc(t("ملخص الطلب"))}</h2>
                             <div class="rows">
-                                <div class="row"><span>المنتجات (${totals.count})</span><span>${money(totals.subtotal)}</span></div>
-                                ${totals.discount > 0 ? `<div class="row ok"><span>${esc(totals.discountLabel)}</span><span>-${money(totals.discount)}</span></div>` : ""}
-                                <div class="row"><span>التوصيل إلى ${esc(c.flag)} ${esc(c.name)}</span><span class="muted">${totals.freeShipping ? "مجاني" : delivery.length ? "يُحدَّد في الخطوة التالية" : "غير متاح حاليًا"}</span></div>
-                                ${totals.freeShipping || !delivery.length ? "" : `<ul class="ship-list">${delivery.map((d) => `<li><span class="muted">${esc(d.name)}</span><span>${esc(V.deliveryPriceLabel(v(), d))}</span></li>`).join("")}</ul>`}
-                                <div class="row total"><span>المجموع</span><span>${money(totals.afterDiscount)}</span></div>
-                                ${isBase() ? "" : `<div class="row muted"><span>بعملتك تقريبًا</span><span>≈ ${local(totals.afterDiscount)}</span></div>`}
+                                <div class="row"><span>${esc(t("المنتجات ({n})", { n: totals.count }))}</span><span>${money(totals.subtotal)}</span></div>
+                                ${totals.discount > 0 ? `<div class="row ok"><span>${esc(ATHR.discountName(totals))}</span><span>-${money(totals.discount)}</span></div>` : ""}
+                                <div class="row"><span>${esc(t("التوصيل إلى {flag} {country}", { flag: c.flag, country: L(c, "name") }))}</span><span class="muted">${esc(totals.freeShipping ? t("مجاني") : delivery.length ? t("يُحدَّد في الخطوة التالية") : t("غير متاح حاليًا"))}</span></div>
+                                ${totals.freeShipping || !delivery.length ? "" : `<ul class="ship-list">${delivery.map((d) => `<li><span class="muted">${esc(L(d, "name"))}</span><span>${esc(V.deliveryPriceLabel(v(), d))}</span></li>`).join("")}</ul>`}
+                                <div class="row total"><span>${esc(t("المجموع"))}</span><span>${money(totals.afterDiscount)}</span></div>
+                                ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(totals.afterDiscount)}</span></div>`}
                             </div>
                             <div class="cart-actions">
-                                <a class="btn btn-primary btn-block" href="${BASE}checkout/">متابعة الطلب</a>
-                                ${cfg.sales.wa_quick && wa ? `<button class="btn btn-wa btn-block" type="button" data-wa-cart>${V.waIcon()}اطلب عبر واتساب</button>` : ""}
-                                <a class="link-btn center" href="${BASE}">مواصلة التسوق</a>
+                                <a class="btn btn-primary btn-block" href="${BASE}checkout/">${esc(t("متابعة الطلب"))}</a>
+                                ${cfg.sales.wa_quick && wa ? `<button class="btn btn-wa btn-block" type="button" data-wa-cart>${V.waIcon()}${esc(t("اطلب عبر واتساب"))}</button>` : ""}
+                                <a class="link-btn center" href="${BASE}">${esc(t("مواصلة التسوق"))}</a>
                             </div>
                             ${V.trust(v())}
                         </div>
@@ -1089,54 +1122,54 @@
 
         $("#view").innerHTML = `
             <div class="wrap">
-                <h1 class="page-title">إتمام الطلب</h1>
+                <h1 class="page-title">${esc(t("إتمام الطلب"))}</h1>
                 <details class="sum-mobile">
-                    <summary><span>ملخص الطلب (${ATHR.piecesText(totals.count)})</span><b id="sumMobileTotal"></b></summary>
+                    <summary><span>${esc(t("ملخص الطلب ({pieces})", { pieces: ATHR.piecesText(totals.count) }))}</span><b id="sumMobileTotal"></b></summary>
                     <div id="checkoutSummaryM"></div>
                 </details>
                 <form class="layout-2" id="checkoutForm" novalidate>
                     <div class="form">
-                        ${saved.name && !keep ? `<div class="saved-note"><span>عبّأنا بياناتك من طلبك السابق.</span><button class="link-btn" type="button" data-forget-me>مسح بياناتي</button></div>` : ""}
+                        ${saved.name && !keep ? `<div class="saved-note"><span>${esc(t("عبّأنا بياناتك من طلبك السابق."))}</span><button class="link-btn" type="button" data-forget-me>${esc(t("مسح بياناتي"))}</button></div>` : ""}
                         <div class="panel form">
-                            <h2>بياناتك</h2>
-                            ${countries.length > 1 ? field("country", "الدولة", `<select class="input" name="country" id="countrySelect">${countries.map((x) => `<option value="${x.code}"${x.code === c.code ? " selected" : ""}>${x.flag} ${esc(x.name)}</option>`).join("")}</select>`) : ""}
-                            ${field("name", "الاسم الكامل", `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
-                            ${field("phone", "رقم الهاتف (واتساب)", `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${rule.example}" value="${esc(savedPhone)}" required></span>`, `رقم ${esc(c.name)}: ${rule.hint}`)}
-                            ${isOm ? (cfg.order.show_wilaya ? field("wilaya", `الولاية${cfg.order.wilaya_required ? "" : " (اختياري)"}`, `<input class="input" name="wilaya" list="wilayaList" autocomplete="off" placeholder="مثال: السيب" value="${esc(saved.wilaya || "")}"><datalist id="wilayaList">${wilayaOptions()}</datalist>`) : "") : field("gov", c.code === "AE" ? "الإمارة / المدينة" : "المدينة", `<input class="input" name="gov" autocomplete="address-level2" value="${esc(saved.country === c.code ? saved.gov || "" : "")}" required>`)}
+                            <h2>${esc(t("بياناتك"))}</h2>
+                            ${countries.length > 1 ? field("country", t("الدولة"), `<select class="input" name="country" id="countrySelect">${countries.map((x) => `<option value="${x.code}"${x.code === c.code ? " selected" : ""}>${x.flag} ${esc(L(x, "name"))}</option>`).join("")}</select>`) : ""}
+                            ${field("name", t("الاسم الكامل"), `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
+                            ${field("phone", t("رقم الهاتف (واتساب)"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${rule.example}" value="${esc(savedPhone)}" required></span>`, esc(t("رقم {country}: {hint}", { country: L(c, "name"), hint: L(rule, "hint") })))}
+                            ${isOm ? (cfg.order.show_wilaya ? field("wilaya", cfg.order.wilaya_required ? t("الولاية") : t("الولاية (اختياري)"), `<input class="input" name="wilaya" list="wilayaList" autocomplete="off" placeholder="${esc(t("مثال: السيب"))}" value="${esc(saved.wilaya || "")}"><datalist id="wilayaList">${wilayaOptions()}</datalist>`) : "") : field("gov", c.code === "AE" ? t("الإمارة / المدينة") : t("المدينة"), `<input class="input" name="gov" autocomplete="address-level2" value="${esc(saved.country === c.code ? saved.gov || "" : "")}" required>`)}
                         </div>
                         <div class="panel form">
-                            <h2>طريقة التوصيل</h2>
+                            <h2>${esc(t("طريقة التوصيل"))}</h2>
                             ${delivery.length ? `<div class="choice" role="radiogroup">
                                 ${delivery.map((d) => `<label class="option">
                                     <input type="radio" name="delivery" value="${esc(d.id)}"${pickDelivery && pickDelivery.id === d.id ? " checked" : ""}>
-                                    <span><b>${esc(d.name)}</b>${d.note ? `<small>${esc(d.note)}</small>` : ""}${d.duration ? `<small>المدة: ${esc(d.duration)}</small>` : ""}</span>
+                                    <span><b>${esc(L(d, "name"))}</b>${L(d, "note") ? `<small>${esc(L(d, "note"))}</small>` : ""}${d.duration ? `<small>${esc(t("المدة: {d}", { d: ATHR.duration(d.duration) }))}</small>` : ""}</span>
                                     <span class="opt-price" data-ship-price="${esc(d.id)}"></span>
                                 </label>`).join("")}
-                            </div>` : `<p class="err">التوصيل إلى ${esc(c.name)} غير متاح حاليًا. تواصل معنا عبر واتساب.</p>`}
+                            </div>` : `<p class="err">${esc(t("التوصيل إلى {country} غير متاح حاليًا. تواصل معنا عبر واتساب.", { country: L(c, "name") }))}</p>`}
                             <div id="addressField"></div>
-                            ${cfg.sales.gift_enabled ? `<label class="check-line"><input type="checkbox" name="gift" id="giftToggle"${keep && keep.gift ? " checked" : ""}> ${V.icon.gift}<span>هذا الطلب هدية</span></label>
-                            <div id="giftBox"${keep && keep.gift ? "" : " hidden"}>${field("gift_message", "رسالة الهدية (اختياري)", `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="مثال: كل عام وأنت بخير يا أحمد">${esc(keep ? keep.gift_message || "" : "")}</textarea>`, "نرفقها مع طلبك للمُهدى إليه.")}</div>` : ""}
-                            ${cfg.order.show_notes ? field("notes", "ملاحظات (اختياري)", `<textarea class="input" name="notes" rows="2" maxlength="500">${esc(keep ? keep.notes || "" : "")}</textarea>`) : ""}
+                            ${cfg.sales.gift_enabled ? `<label class="check-line"><input type="checkbox" name="gift" id="giftToggle"${keep && keep.gift ? " checked" : ""}> ${V.icon.gift}<span>${esc(t("هذا الطلب هدية"))}</span></label>
+                            <div id="giftBox"${keep && keep.gift ? "" : " hidden"}>${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("مثال: كل عام وأنت بخير يا أحمد"))}">${esc(keep ? keep.gift_message || "" : "")}</textarea>`, esc(t("نرفقها مع طلبك للمُهدى إليه.")))}</div>` : ""}
+                            ${cfg.order.show_notes ? field("notes", t("ملاحظات (اختياري)"), `<textarea class="input" name="notes" rows="2" maxlength="500">${esc(keep ? keep.notes || "" : "")}</textarea>`) : ""}
                         </div>
                         <div class="panel form">
-                            <h2>طريقة الدفع</h2>
+                            <h2>${esc(t("طريقة الدفع"))}</h2>
                             ${payments.length ? `<div class="choice" role="radiogroup">
                                 ${payments.map((p) => `<label class="option">
                                     <input type="radio" name="payment" value="${esc(p.id)}"${pickPayment && pickPayment.id === p.id ? " checked" : ""}>
-                                    <span><b>${esc(p.name)}</b>${p.note ? `<small>${esc(fill(p.note))}</small>` : ""}</span>
+                                    <span><b>${esc(L(p, "name"))}</b>${L(p, "note") ? `<small>${esc(fill(L(p, "note")))}</small>` : ""}</span>
                                     <span></span>
                                 </label>`).join("")}
-                            </div>` : `<p class="err">لا توجد طريقة دفع متاحة لـ${esc(c.name)} حاليًا.</p>`}
+                            </div>` : `<p class="err">${esc(t("لا توجد طريقة دفع متاحة لـ{country} حاليًا.", { country: L(c, "name") }))}</p>`}
                             <div id="payExtra"></div>
                         </div>
                     </div>
                     <aside>
                         <div class="panel">
-                            <h2>ملخص الطلب</h2>
+                            <h2>${esc(t("ملخص الطلب"))}</h2>
                             <div id="checkoutSummary"></div>
                             <div class="cart-actions">
-                                <button class="btn btn-primary btn-block" type="submit" id="placeOrder"${delivery.length && payments.length ? "" : " disabled"}>تأكيد الطلب</button>
-                                <a class="link-btn center" href="${BASE}cart/">رجوع للسلة</a>
+                                <button class="btn btn-primary btn-block" type="submit" id="placeOrder"${delivery.length && payments.length ? "" : " disabled"}>${esc(t("تأكيد الطلب"))}</button>
+                                <a class="link-btn center" href="${BASE}cart/">${esc(t("رجوع للسلة"))}</a>
                             </div>
                             <div class="err" id="formErr" role="alert"></div>
                             ${V.trust(v())}
@@ -1168,25 +1201,25 @@
         const current = box.querySelector("textarea, input")?.value;
         const value = current ?? (isOffice ? saved.office : saved.address) ?? "";
         box.innerHTML = isOffice
-            ? field("office", "اسم المكتب", `<input class="input" name="office" value="${esc(value)}" placeholder="مثال: مكتب جيناكم - السيب">`)
-            : field("address", "العنوان", `<textarea class="input" name="address" rows="2" autocomplete="street-address" placeholder="المنطقة، رقم البيت أو أقرب معلم">${esc(value)}</textarea>`);
+            ? field("office", t("اسم المكتب"), `<input class="input" name="office" value="${esc(value)}" placeholder="${esc(t("مثال: مكتب جيناكم - السيب"))}">`)
+            : field("address", t("العنوان"), `<textarea class="input" name="address" rows="2" autocomplete="street-address" placeholder="${esc(t("المنطقة، رقم البيت أو أقرب معلم"))}">${esc(value)}</textarea>`);
     }
 
     function bankRows(p) {
         const b = p.bank || {};
         const rows = [
-            ["الرقم المفعّل للتحويل", b.number],
-            ["اسم البنك", b.bank],
-            ["اسم صاحب الحساب", b.holder],
-            ["رقم الحساب", b.account],
-            ["رمز SWIFT", b.swift],
+            [t("الرقم المفعّل للتحويل"), b.number],
+            [t("اسم البنك"), ATHR.isEn() && /صحار الدولي/.test(b.bank || "") ? "Sohar International" : b.bank],
+            [t("اسم صاحب الحساب"), b.holder],
+            [t("رقم الحساب"), b.account],
+            [t("رمز SWIFT"), b.swift],
             ["IBAN", b.iban]
         ].filter(([, value]) => value && String(value).trim());
         const hasAccount = [b.number, b.account, b.iban].some((value) => value && String(value).trim());
-        if (!hasAccount) return `<p class="muted" style="margin:10px 0 0">نرسل لك بيانات الحساب للتحويل عبر واتساب بعد إرسال الطلب.</p>`;
+        if (!hasAccount) return `<p class="muted" style="margin:10px 0 0">${esc(t("نرسل لك بيانات الحساب للتحويل عبر واتساب بعد إرسال الطلب."))}</p>`;
         return `<div class="bank">${rows.map(([label, value]) => `
             <div class="bank-row"><div><small>${label}</small><strong>${esc(value)}</strong></div>
-            <button class="copy" type="button" data-copy="${esc(value)}">نسخ</button></div>`).join("")}</div>`;
+            <button class="copy" type="button" data-copy="${esc(value)}">${esc(t("نسخ"))}</button></div>`).join("")}</div>`;
     }
 
     function renderPayExtra() {
@@ -1194,7 +1227,7 @@
         if (!box) return;
         const p = selectedPayment();
         if (p && p.type === "bank") box.innerHTML = bankRows(p);
-        else if (p && p.type === "online") box.innerHTML = `<p class="muted" style="margin:10px 0 0">بعد تأكيد الطلب يظهر لك زر الانتقال لصفحة الدفع.</p>`;
+        else if (p && p.type === "online") box.innerHTML = `<p class="muted" style="margin:10px 0 0">${esc(t("بعد تأكيد الطلب يظهر لك زر الانتقال لصفحة الدفع."))}</p>`;
         else box.innerHTML = "";
     }
 
@@ -1209,29 +1242,29 @@
     function updateCheckoutSummary() {
         const box = $("#checkoutSummary");
         if (!box) return;
-        const t = checkoutTotals();
-        if (!t.lines.length) {
+        const tt = checkoutTotals();
+        if (!tt.lines.length) {
             navigate(`${BASE}cart/`, { replace: true });
             return;
         }
         $$("[data-ship-price]").forEach((el) => {
             const d = ATHR.deliveriesFor(C(), S.country).find((x) => x.id === el.dataset.shipPrice);
-            const s = ATHR.shippingFor(d, t.lines, C());
-            el.textContent = t.freeShipping || !(s.cost > 0) ? "مجاني" : money(s.cost);
+            const s = ATHR.shippingFor(d, tt.lines, C());
+            el.textContent = tt.freeShipping || !(s.cost > 0) ? t("مجاني") : money(s.cost);
         });
         const html = `<div class="rows">
-            ${t.lines.map((l) => `<div class="row"><span>${esc(ATHR.productLabel(l.product, C()))} × ${l.qty}</span><span>${money(l.total)}</span></div>`).join("")}
-            ${t.discount > 0 ? `<div class="row ok"><span>${esc(t.discountLabel)}</span><span>-${money(t.discount)}</span></div>` : ""}
-            <div class="row"><span>التوصيل${t.kg ? ` (${t.kg} كيلو تقريبًا)` : ""}</span><span>${t.ship > 0 ? money(t.ship) : "مجاني"}</span></div>
-            <div class="row total"><span>الإجمالي</span><span>${money(t.total)}</span></div>
-            ${isBase() ? "" : `<div class="row muted"><span>بعملتك تقريبًا</span><span>≈ ${local(t.total)}</span></div>`}
-            ${t.kg ? `<p class="muted small" style="margin:4px 0 0">سعر التوصيل حسب الوزن التقريبي، ونؤكد لك الوزن النهائي قبل الشحن.</p>` : ""}
+            ${tt.lines.map((l) => `<div class="row"><span>${esc(V.label(v(), l.product))} × ${l.qty}</span><span>${money(l.total)}</span></div>`).join("")}
+            ${tt.discount > 0 ? `<div class="row ok"><span>${esc(ATHR.discountName(tt))}</span><span>-${money(tt.discount)}</span></div>` : ""}
+            <div class="row"><span>${esc(tt.kg ? t("التوصيل ({kg} كيلو تقريبًا)", { kg: tt.kg }) : t("التوصيل"))}</span><span>${tt.ship > 0 ? money(tt.ship) : esc(t("مجاني"))}</span></div>
+            <div class="row total"><span>${esc(t("الإجمالي"))}</span><span>${money(tt.total)}</span></div>
+            ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(tt.total)}</span></div>`}
+            ${tt.kg ? `<p class="muted small" style="margin:4px 0 0">${esc(t("سعر التوصيل حسب الوزن التقريبي، ونؤكد لك الوزن النهائي قبل الشحن."))}</p>` : ""}
         </div>`;
         box.innerHTML = html;
         const m = $("#checkoutSummaryM");
         if (m) m.innerHTML = html;
         const mt = $("#sumMobileTotal");
-        if (mt) mt.textContent = money(t.total);
+        if (mt) mt.textContent = money(tt.total);
         renderBuyBar();
     }
 
@@ -1245,15 +1278,15 @@
         const d = selectedDelivery();
         const p = selectedPayment();
 
-        if (name.length < 3) errors.name = "اكتب اسمك الكامل (3 أحرف على الأقل).";
-        if (!phone.valid) errors.phone = `اكتب رقم ${CC().name} الصحيح: ${phone.rule.hint}.`;
-        if (!isOm && !String(values.gov || "").trim()) errors.gov = "اكتب المدينة.";
-        if (isOm && cfg.order.show_wilaya && cfg.order.wilaya_required && !String(values.wilaya || "").trim()) errors.wilaya = "اكتب الولاية.";
-        if (!d) errors.delivery = "اختر طريقة التوصيل.";
+        if (name.length < 3) errors.name = t("اكتب اسمك الكامل (3 أحرف على الأقل).");
+        if (!phone.valid) errors.phone = t("اكتب رقم {country} الصحيح: {hint}.", { country: L(CC(), "name"), hint: L(phone.rule, "hint") });
+        if (!isOm && !String(values.gov || "").trim()) errors.gov = t("اكتب المدينة.");
+        if (isOm && cfg.order.show_wilaya && cfg.order.wilaya_required && !String(values.wilaya || "").trim()) errors.wilaya = t("اكتب الولاية.");
+        if (!d) errors.delivery = t("اختر طريقة التوصيل.");
         else if (d.type === "office") {
-            if (String(values.office || "").trim().length < 3) errors.office = "اكتب اسم المكتب (3 أحرف على الأقل).";
-        } else if (String(values.address || "").trim().length < 6) errors.address = "اكتب عنوانك بوضوح (6 أحرف على الأقل).";
-        if (!p) errors.payment = "اختر طريقة الدفع.";
+            if (String(values.office || "").trim().length < 3) errors.office = t("اكتب اسم المكتب (3 أحرف على الأقل).");
+        } else if (String(values.address || "").trim().length < 6) errors.address = t("اكتب عنوانك بوضوح (6 أحرف على الأقل).");
+        if (!p) errors.payment = t("اختر طريقة الدفع.");
 
         $$("[data-err]", form).forEach((el) => { el.textContent = ""; });
         $$(".field.invalid", form).forEach((el) => el.classList.remove("invalid"));
@@ -1265,7 +1298,7 @@
             }
         });
         const keys = Object.keys(errors);
-        $("#formErr").textContent = keys.length ? (errors.delivery || errors.payment || "راجع الخانات المظللة بالأحمر.") : "";
+        $("#formErr").textContent = keys.length ? (errors.delivery || errors.payment || t("راجع الخانات المظللة بالأحمر.")) : "";
         if (keys.length) {
             const first = form.querySelector(".field.invalid .input");
             if (first) {
@@ -1286,10 +1319,10 @@
         const cfg = C();
         const { values, name, phone, d, p } = ok;
         const isOm = S.country === "OM";
-        const t = checkoutTotals();
+        const tt = checkoutTotals();
         const button = $("#placeOrder");
         button.disabled = true;
-        button.textContent = "جاري تأكيد الطلب...";
+        button.textContent = t("جاري تأكيد الطلب...");
         const gift = Boolean(cfg.sales.gift_enabled && values.gift);
         const channel = orderChannel();
 
@@ -1310,10 +1343,10 @@
             gift_message: gift ? String(values.gift_message || "").trim().slice(0, 300) || null : null,
             delivery_name: d.name,
             delivery_type: d.type === "office" ? "office" : "home",
-            delivery_price: t.ship,
+            delivery_price: tt.ship,
             payment_name: p.name,
             payment_type: ["cod", "bank", "online", "other"].includes(p.type) ? p.type : "other",
-            items: t.lines.map((l) => ({
+            items: tt.lines.map((l) => ({
                 id: l.product.id,
                 name: l.product.name,
                 color: colorById(l.product.color_id)?.name || null,
@@ -1322,10 +1355,10 @@
                 price: Number(l.product.price),
                 total: l.total
             })),
-            subtotal: t.subtotal,
-            discount: t.discount,
-            discount_label: t.discount > 0 ? t.discountLabel : null,
-            total: t.total
+            subtotal: tt.subtotal,
+            discount: tt.discount,
+            discount_label: tt.discount > 0 ? tt.discountLabel : null,
+            total: tt.total
         };
 
         let saved = false;
@@ -1351,7 +1384,7 @@
         }
 
         track("order");
-        const message = orderMessage({ ...order, ship_kg: t.kg });
+        const message = orderMessage({ ...order, ship_kg: tt.kg });
         storage.set(KEYS.lastOrder, { order, message, payment: p, saved });
         placing = false;
         history.pushState({}, "", `${BASE}done/?no=${encodeURIComponent(order.order_no)}`);
@@ -1364,11 +1397,16 @@
     // THANK YOU
     // =====================================================
 
+    function deliveryName(name) {
+        const d = (C().order.delivery || []).find((x) => x.name === name);
+        return d ? L(d, "name") : name;
+    }
+
     function renderDone(no) {
         const cfg = C();
         const last = storage.get(KEYS.lastOrder, null);
         if (!last || last.order.order_no !== no) {
-            $("#view").innerHTML = `<div class="wrap empty page"><p>لا توجد تفاصيل لهذا الطلب على هذا الجهاز.</p><a class="btn btn-primary" href="${BASE}">العودة للمتجر</a></div>`;
+            $("#view").innerHTML = `<div class="wrap empty page"><p>${esc(t("لا توجد تفاصيل لهذا الطلب على هذا الجهاز."))}</p><a class="btn btn-primary" href="${BASE}">${esc(t("العودة للمتجر"))}</a></div>`;
             return;
         }
         const { order, message, payment } = last;
@@ -1379,30 +1417,33 @@
             <div class="wrap thanks">
                 <div class="thanks-head">
                     <div class="check">${V.icon.check}</div>
-                    <h1>شكرًا لك، ${esc(order.customer_name.split(" ")[0])}</h1>
-                    <span class="muted">رقم طلبك</span>
+                    <h1>${esc(t("شكرًا لك، {name}", { name: order.customer_name.split(" ")[0] }))}</h1>
+                    <span class="muted">${esc(t("رقم طلبك"))}</span>
                     <span class="order-no">${esc(order.order_no)}</span>
                 </div>
                 <div class="step">
-                    <p>الخطوة الأخيرة: ${esc(fill(cfg.texts.thanks_text))}</p>
-                    ${wa ? `<a class="btn btn-wa btn-block" href="${esc(ATHR.waLink(cfg.order.whatsapp, message))}" target="_blank" rel="noopener">${V.waIcon()}أرسل الطلب عبر واتساب</a>` : ""}
-                    ${isOnline ? `<a class="btn btn-primary btn-block" href="${esc(payment.link)}" target="_blank" rel="noopener">ادفع الآن (${money(order.total)})</a>` : ""}
-                    ${payment && payment.type === "bank" ? `<div><p class="muted" style="font-weight:500">حوّل ${money(order.total)}${code === "OM" ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, code)})`}:</p>${bankRows(payment)}</div>` : ""}
+                    <p>${esc(t("الخطوة الأخيرة:"))} ${esc(fill(ct("texts.thanks_text")))}</p>
+                    ${wa ? `<a class="btn btn-wa btn-block" href="${esc(ATHR.waLink(cfg.order.whatsapp, message))}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("أرسل الطلب عبر واتساب"))}</a>` : ""}
+                    ${isOnline ? `<a class="btn btn-primary btn-block" href="${esc(payment.link)}" target="_blank" rel="noopener">${esc(t("ادفع الآن ({amount})", { amount: money(order.total) }))}</a>` : ""}
+                    ${payment && payment.type === "bank" ? `<div><p class="muted" style="font-weight:500">${esc(t("حوّل {amount}:", { amount: `${money(order.total)}${code === "OM" ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, code)})`}` }))}</p>${bankRows(payment)}</div>` : ""}
                 </div>
                 <div class="panel">
-                    <h2>ملخص الطلب</h2>
+                    <h2>${esc(t("ملخص الطلب"))}</h2>
                     <div class="rows">
-                        ${order.items.map((it) => `<div class="row"><span>${esc(it.label)} × ${it.qty}</span><span>${money(it.total)}</span></div>`).join("")}
-                        ${order.discount > 0 ? `<div class="row ok"><span>${esc(order.discount_label || "الخصم")}</span><span>-${money(order.discount)}</span></div>` : ""}
-                        <div class="row"><span>التوصيل (${esc(order.delivery_name)})</span><span>${order.delivery_price > 0 ? money(order.delivery_price) : "مجاني"}</span></div>
-                        <div class="row total"><span>الإجمالي</span><span>${money(order.total)}</span></div>
-                        ${code === "OM" ? "" : `<div class="row muted"><span>بعملتك تقريبًا</span><span>≈ ${ATHR.moneyIn(order.total, cfg, code)}</span></div>`}
-                        <div class="row"><span class="muted">الدفع</span><span>${esc(order.payment_name)}</span></div>
-                        <div class="row"><span class="muted">${order.delivery_type === "office" ? "المكتب" : "العنوان"}</span><span>${esc(order.office || order.address || "")}</span></div>
-                        ${order.gift ? `<div class="row"><span class="muted">هدية</span><span>${esc(order.gift_message || "نعم")}</span></div>` : ""}
+                        ${order.items.map((it) => {
+                            const p = productById(it.id);
+                            return `<div class="row"><span>${esc(p ? V.label(v(), p) : it.label)} × ${it.qty}</span><span>${money(it.total)}</span></div>`;
+                        }).join("")}
+                        ${order.discount > 0 ? `<div class="row ok"><span>${esc(discountText(order.discount_label))}</span><span>-${money(order.discount)}</span></div>` : ""}
+                        <div class="row"><span>${esc(t("التوصيل ({name})", { name: deliveryName(order.delivery_name) }))}</span><span>${order.delivery_price > 0 ? money(order.delivery_price) : esc(t("مجاني"))}</span></div>
+                        <div class="row total"><span>${esc(t("الإجمالي"))}</span><span>${money(order.total)}</span></div>
+                        ${code === "OM" ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${ATHR.moneyIn(order.total, cfg, code)}</span></div>`}
+                        <div class="row"><span class="muted">${esc(t("الدفع"))}</span><span>${esc(payment ? L(payment, "name") : order.payment_name)}</span></div>
+                        <div class="row"><span class="muted">${esc(order.delivery_type === "office" ? t("المكتب") : t("العنوان"))}</span><span>${esc(order.office || order.address || "")}</span></div>
+                        ${order.gift ? `<div class="row"><span class="muted">${esc(t("هدية"))}</span><span>${esc(order.gift_message || t("نعم"))}</span></div>` : ""}
                     </div>
                 </div>
-                <a class="btn btn-ghost" href="${BASE}">العودة للمتجر</a>
+                <a class="btn btn-ghost" href="${BASE}">${esc(t("العودة للمتجر"))}</a>
             </div>`;
     }
 
@@ -1414,29 +1455,29 @@
         const vv = v();
         if (sent) {
             $("#view").innerHTML = `<div class="wrap thanks">
-                <div class="thanks-head"><div class="check">${V.icon.check}</div><h1>شكرًا لتقييمك</h1>
-                <p class="muted">يظهر تقييمك في المتجر بعد مراجعته. رأيك يساعد غيرك يختار.</p></div>
-                <a class="btn btn-primary" href="${BASE}">العودة للمتجر</a></div>`;
+                <div class="thanks-head"><div class="check">${V.icon.check}</div><h1>${esc(t("شكرًا لتقييمك"))}</h1>
+                <p class="muted">${esc(t("يظهر تقييمك في المتجر بعد مراجعته. رأيك يساعد غيرك يختار."))}</p></div>
+                <a class="btn btn-primary" href="${BASE}">${esc(t("العودة للمتجر"))}</a></div>`;
             return;
         }
         const chosen = route.p ? findProduct(route.p) : null;
         const saved = storage.get(KEYS.customer, null) || {};
         const options = vv.products.map((p) => `<option value="${esc(p.id)}"${chosen && chosen.id === p.id ? " selected" : ""}>${esc(V.label(vv, p))}</option>`).join("");
         $("#view").innerHTML = `<div class="wrap page review-page">
-            <h1>قيّم تجربتك مع ${esc(C().name)}</h1>
-            <p class="muted">رأيك يساعد غيرك يختار، ويساعدنا نتحسن. يظهر تقييمك بعد مراجعته.</p>
+            <h1>${esc(t("قيّم تجربتك مع {name}", { name: ATHR.storeName(C()) }))}</h1>
+            <p class="muted">${esc(t("رأيك يساعد غيرك يختار، ويساعدنا نتحسن. يظهر تقييمك بعد مراجعته."))}</p>
             ${chosen ? `<div class="review-product">${miniItem(chosen, { action: "none" })}</div>` : ""}
             <form class="panel form" id="reviewForm" novalidate>
-                ${field("product", "المنتج (اختياري)", `<select class="input" name="product"><option value="">تقييم عام للمتجر</option>${options}</select>`)}
-                <fieldset class="rate-input" aria-label="التقييم">
-                    <legend>تقييمك</legend>
-                    ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" name="rating" id="rate${n}" value="${n}"${n === 5 ? " checked" : ""}><label for="rate${n}" title="${n} من 5">★</label>`).join("")}
+                ${field("product", t("المنتج (اختياري)"), `<select class="input" name="product"><option value="">${esc(t("تقييم عام للمتجر"))}</option>${options}</select>`)}
+                <fieldset class="rate-input" aria-label="${esc(t("التقييم"))}">
+                    <legend>${esc(t("تقييمك"))}</legend>
+                    ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" name="rating" id="rate${n}" value="${n}"${n === 5 ? " checked" : ""}><label for="rate${n}" title="${esc(t("{r} من 5", { r: n }))}">★</label>`).join("")}
                 </fieldset>
-                ${field("name", "اسمك", `<input class="input" name="name" maxlength="60" value="${esc(saved.name ? saved.name.split(" ")[0] : "")}" autocomplete="given-name">`, "يظهر الاسم الأول فقط.")}
-                ${field("text", "رأيك", `<textarea class="input" name="text" rows="4" maxlength="1000" placeholder="كيف كانت الجودة والتغليف والتوصيل؟"></textarea>`)}
+                ${field("name", t("اسمك"), `<input class="input" name="name" maxlength="60" value="${esc(saved.name ? saved.name.split(" ")[0] : "")}" autocomplete="given-name">`, esc(t("يظهر الاسم الأول فقط.")))}
+                ${field("text", t("رأيك"), `<textarea class="input" name="text" rows="4" maxlength="1000" placeholder="${esc(t("كيف كانت الجودة والتغليف والتوصيل؟"))}"></textarea>`)}
                 <input type="hidden" name="order_no" value="${esc(/^[A-Z]{1,4}-[0-9A-Z]{3,10}$/.test(route.o) ? route.o : "")}">
                 <p class="err" id="reviewErr" role="alert"></p>
-                <button class="btn btn-primary btn-block" type="submit" id="reviewSend">إرسال التقييم</button>
+                <button class="btn btn-primary btn-block" type="submit" id="reviewSend">${esc(t("إرسال التقييم"))}</button>
             </form>
         </div>`;
     }
@@ -1447,11 +1488,11 @@
         const name = String(values.name || "").trim();
         const text = String(values.text || "").trim();
         const rating = Math.max(1, Math.min(5, Number(values.rating) || 5));
-        if (name.length < 2) { err.textContent = "اكتب اسمك (حرفان على الأقل)."; return; }
-        if (text.length < 3) { err.textContent = "اكتب رأيك في سطر على الأقل."; return; }
+        if (name.length < 2) { err.textContent = t("اكتب اسمك (حرفان على الأقل)."); return; }
+        if (text.length < 3) { err.textContent = t("اكتب رأيك في سطر على الأقل."); return; }
         const btn = $("#reviewSend");
         btn.disabled = true;
-        btn.textContent = "جاري الإرسال...";
+        btn.textContent = t("جاري الإرسال...");
         try {
             await rest("reviews", {
                 method: "POST",
@@ -1462,9 +1503,9 @@
             window.scrollTo(0, 0);
         } catch (error) {
             console.warn(error);
-            err.textContent = "تعذر الإرسال. تأكد من الإنترنت وحاول مرة أخرى.";
+            err.textContent = t("تعذر الإرسال. تأكد من الإنترنت وحاول مرة أخرى.");
             btn.disabled = false;
-            btn.textContent = "إرسال التقييم";
+            btn.textContent = t("إرسال التقييم");
         }
     }
 
@@ -1495,56 +1536,61 @@
         if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
     }
 
-    // قائمة النقاط الثلاث: الأقسام + ثلاثة اختصارات فقط
+    // قائمة النقاط الثلاث: أقسام تنفتح بسهم + اختصارات قليلة + حساباتنا
+    let menuCatsOpen = false;
+
     function openMenu() {
         const cfg = C();
         const vv = v();
         const cats = vv.categories.filter((c) => vv.counts.get(c.id));
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp);
-        const socials = (cfg.texts.socials || []).filter((s) => s.name && ATHR.isUrl(s.url));
         const multi = ATHR.countries(cfg).filter((c) => c.enabled).length > 1;
         const cur = CC();
         const parts = [];
         if (cfg.contact.menu_show || S.isAdmin) {
             if (cats.length) {
-                parts.push(`<p class="menu-label">تسوّق حسب القسم</p>
-                    <div class="menu-cats">${cats.map((c) => {
+                parts.push(`<button class="menu-toggle" type="button" data-menu-cats aria-expanded="${menuCatsOpen}" aria-controls="menuCats">
+                        <span>${esc(t("تسوّق حسب القسم"))}</span><small>${cats.length}</small>${V.icon.chevron}
+                    </button>
+                    <div class="menu-cats" id="menuCats"${menuCatsOpen ? "" : " hidden"}>${cats.map((c) => {
                         const img = V.categoryImage(vv, c);
-                        return `<a class="menu-cat" href="${ATHR.url.category(c)}"><span class="mc-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" width="44" height="44">` : ""}</span><span class="mc-name">${esc(c.name)}</span></a>`;
+                        return `<a class="menu-cat" href="${ATHR.url.category(c)}"><span class="mc-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" width="44" height="44">` : ""}</span><span class="mc-name">${esc(V.cname(c))}</span></a>`;
                     }).join("")}</div>`);
             }
             const acts = [];
-            if (wa) acts.push(`<a class="menu-act" href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(cfg.contact.wa_float_msg)))}" target="_blank" rel="noopener"><span class="ma-ico wa">${V.waIcon()}</span><span>تواصل معنا عبر واتساب</span></a>`);
-            if (cfg.contact.policy_show) acts.push(`<a class="menu-act" href="${BASE}shipping/"><span class="ma-ico">${V.icon.truck}</span><span>التوصيل والدفع</span></a>`);
-            if (multi) acts.push(`<button class="menu-act" type="button" data-open-currency><span class="ma-ico flag">${esc(cur.flag)}</span><span>الدولة والعملة</span><small>${esc(cur.symbol)}</small></button>`);
-            if (acts.length) parts.push(`<div class="menu-acts">${acts.join("")}</div>`);
-            if (socials.length) parts.push(`<div class="menu-social">${socials.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`).join("")}</div>`);
+            if (wa) acts.push(`<a class="menu-act" href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(ct("contact.wa_float_msg"))))}" target="_blank" rel="noopener"><span class="ma-ico wa">${V.waIcon()}</span><span>${esc(t("تواصل معنا عبر واتساب"))}</span></a>`);
+            if (cfg.contact.policy_show) acts.push(`<a class="menu-act" href="${BASE}shipping/"><span class="ma-ico">${V.icon.truck}</span><span>${esc(t("التوصيل والدفع"))}</span></a>`);
+            if (multi) acts.push(`<button class="menu-act" type="button" data-open-currency><span class="ma-ico flag">${esc(cur.flag)}</span><span>${esc(t("الدولة والعملة"))}</span><small>${esc(ATHR.isEn() ? cur.currency : cur.symbol)}</small></button>`);
+            acts.push(`<button class="menu-act" type="button" data-set-lang="${ATHR.isEn() ? "ar" : "en"}"><span class="ma-ico lang" aria-hidden="true">${ATHR.isEn() ? "ع" : "EN"}</span><span lang="${ATHR.isEn() ? "ar" : "en"}">${ATHR.isEn() ? "العربية" : "English"}</span></button>`);
+            parts.push(`<div class="menu-acts">${acts.join("")}</div>`);
+            const socials = V.socials(vv, "msoc");
+            if (socials) parts.push(`<div class="menu-social" aria-label="${esc(t("حساباتنا"))}">${socials}</div>`);
         }
         if (S.isAdmin) {
-            parts.push(`<p class="menu-label">لك وحدك</p>
+            parts.push(`<p class="menu-label">${esc(t("لك وحدك"))}</p>
                 <div class="menu-acts owner">
                     <a class="menu-act" href="#admin" data-native><span>تعديل المتجر</span></a>
                     <a class="menu-act" href="#orders" data-native><span>دفتر الطلبيات والتقييمات والأداء</span></a>
                 </div>`);
         }
         openSheet(`
-            <div class="sheet-head"><h2>${esc(cfg.name)}</h2><button class="close" type="button" data-close-sheet aria-label="إغلاق">×</button></div>
-            <nav class="menu" aria-label="القائمة">${parts.join("")}</nav>`, { label: "القائمة", kind: "menu" });
+            <div class="sheet-head"><h2>${esc(ATHR.storeName(cfg))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
+            <nav class="menu" aria-label="${esc(t("القائمة"))}">${parts.join("")}</nav>`, { label: t("القائمة"), kind: "menu" });
     }
 
     function openCurrency() {
         const cfg = C();
         const countries = ATHR.countries(cfg).filter((c) => c.enabled);
         openSheet(`
-            <div class="sheet-head"><h2>الدولة والعملة</h2><button class="close" type="button" data-close-sheet aria-label="إغلاق">×</button></div>
-            <p class="muted" style="margin:0 0 10px">اختر دولتك لتظهر الأسعار بعملتها وطرق التوصيل والدفع المتاحة لك. الأسعار تقريبية، ويُحسب الطلب بالريال العماني.</p>
+            <div class="sheet-head"><h2>${esc(t("الدولة والعملة"))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
+            <p class="muted" style="margin:0 0 10px">${esc(t("اختر دولتك لتظهر الأسعار بعملتها وطرق التوصيل والدفع المتاحة لك. الأسعار تقريبية، ويُحسب الطلب بالريال العماني."))}</p>
             <ul class="cur-list">
                 ${countries.map((c) => `<li><button type="button" data-set-country="${c.code}" aria-pressed="${c.code === S.country}">
                     <span class="cur-flag" aria-hidden="true">${c.flag}</span>
                     <span class="cur-name"><b>${esc(c.name)}</b><small>${esc(c.currency_name)} (${esc(c.symbol)})</small></span>
-                    <span class="cur-rate">${c.code === "OM" ? "" : `<bdi>1 ر.ع</bdi> ≈ <bdi>${ATHR.moneyIn(1, cfg, c.code)}</bdi>`}</span>
+                    <span class="cur-rate">${c.code === "OM" ? "" : `<bdi>${esc(ATHR.money(1, cfg).replace(/^1\.0+\s*/, "1 "))}</bdi> ≈ <bdi>${ATHR.moneyIn(1, cfg, c.code)}</bdi>`}</span>
                 </button></li>`).join("")}
-            </ul>`, { modal: true, label: "الدولة والعملة" });
+            </ul>`, { modal: true, label: t("الدولة والعملة") });
     }
 
     async function shareUrl(url, title, text) {
@@ -1556,7 +1602,7 @@
                 if (error && error.name === "AbortError") return;
             }
         }
-        copyText(url, "نُسخ الرابط، الصقه في واتساب أو إنستغرام");
+        copyText(url, t("نُسخ الرابط، الصقه في واتساب أو إنستغرام"));
     }
 
     // =====================================================
@@ -1637,16 +1683,16 @@
     }
 
     document.addEventListener("click", (e) => {
-        const t = e.target.closest("button, a");
-        if (!t) {
+        const el = e.target.closest("button, a");
+        if (!el) {
             if (e.target.closest("[data-close-sheet]")) closeSheet();
             return;
         }
-        const d = t.dataset;
+        const d = el.dataset;
 
         // روابط داخل المتجر بدون إعادة تحميل
-        if (t.tagName === "A" && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-            const href = t.getAttribute("href") || "";
+        if (el.tagName === "A" && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+            const href = el.getAttribute("href") || "";
             if (href.startsWith("#") && href.length > 1 && !["#admin", "#orders"].includes(href)) {
                 const target = document.getElementById(decodeURIComponent(href.slice(1)));
                 if (target) {
@@ -1656,7 +1702,7 @@
                 }
                 return;
             }
-            const url = internalUrl(t);
+            const url = internalUrl(el);
             if (url) {
                 e.preventDefault();
                 if (!S.loaded) {
@@ -1678,8 +1724,17 @@
         }
 
         if (d.closeSheet !== undefined) { closeSheet(); return; }
-        if (t.id === "menuBtn") { afterReady(openMenu); return; }
-        if (d.openCurrency !== undefined || t.id === "curBtn") { afterReady(openCurrency); return; }
+        if (el.id === "menuBtn") { afterReady(openMenu); return; }
+        if (el.id === "langBtn") { afterReady(() => setLang(ATHR.isEn() ? "ar" : "en")); return; }
+        if (d.setLang) { const l = d.setLang; afterReady(() => setLang(l)); return; }
+        if (d.menuCats !== undefined) {
+            menuCatsOpen = !menuCatsOpen;
+            el.setAttribute("aria-expanded", String(menuCatsOpen));
+            const box = $("#menuCats");
+            if (box) box.hidden = !menuCatsOpen;
+            return;
+        }
+        if (d.openCurrency !== undefined || el.id === "curBtn") { afterReady(openCurrency); return; }
         if (d.setCountry) { closeSheet(); setCountry(d.setCountry); return; }
         if (d.add) {
             const id = d.add;
@@ -1688,14 +1743,14 @@
         }
         if (d.addQuiet) {
             const id = d.addQuiet;
-            afterReady(() => { if (addToCart(id)) toast("أُضيف إلى السلة"); });
+            afterReady(() => { if (addToCart(id)) toast(t("أُضيف إلى السلة")); });
             return;
         }
         if (d.addMini) {
             const id = d.addMini;
             afterReady(() => {
                 if (addToCart(id)) {
-                    toast("أُضيف إلى السلة");
+                    toast(t("أُضيف إلى السلة"));
                     openAdded(S.lastAdded, { refresh: true });
                 }
             });
@@ -1703,10 +1758,10 @@
         }
         if (d.inc) { const id = d.inc; afterReady(() => addToCart(id)); return; }
         if (d.dec) { const id = d.dec; afterReady(() => setQty(id, cartQty(id) - 1)); return; }
-        if (d.remove) { const id = d.remove; afterReady(() => { setQty(id, 0); toast("حُذف من السلة"); }); return; }
+        if (d.remove) { const id = d.remove; afterReady(() => { setQty(id, 0); toast(t("حُذف من السلة")); }); return; }
         if (d.swap) {
             afterReady(() => {
-                const card = t.closest("[data-card]");
+                const card = el.closest("[data-card]");
                 const p = productById(d.swap);
                 if (card && p) {
                     const html = V.card(v(), p, { eager: true });
@@ -1743,7 +1798,7 @@
             afterReady(() => {
                 const qty = Number($("#pdpQty")?.textContent) || 1;
                 const current = cartQty(id);
-                if (current + qty > maxQty()) toast(`أقصى كمية من المنتج الواحد ${maxQty()}`);
+                if (current + qty > maxQty()) toast(t("أقصى كمية من المنتج الواحد {n}", { n: maxQty() }));
                 if (current >= maxQty()) return;
                 if (setQty(id, current + qty, { silent: true })) {
                     track("add");
@@ -1775,17 +1830,17 @@
         if (d.copy) { copyText(d.copy); return; }
         if (d.forgetMe !== undefined) {
             storage.del(KEYS.customer);
-            toast("مُسحت بياناتك من هذا الجهاز");
+            toast(t("مُسحت بياناتك من هذا الجهاز"));
             renderCheckout();
             return;
         }
         if (d.share !== undefined) {
-            shareUrl(new URL(BASE, location.origin).href, C().name, fill(C().texts.hero_title));
+            shareUrl(new URL(BASE, location.origin).href, ATHR.storeName(C()), fill(ct("texts.hero_title")));
             return;
         }
         if (d.shareProduct) {
             const p = productById(d.shareProduct);
-            if (p) shareUrl(new URL(ATHR.url.product(p), location.origin).href, V.label(v(), p), `${V.label(v(), p)} من ${C().name}`);
+            if (p) shareUrl(new URL(ATHR.url.product(p), location.origin).href, V.label(v(), p), t("{name} من {store}", { name: V.label(v(), p), store: ATHR.storeName(C()) }));
             return;
         }
         if (d.closeCartbar !== undefined) { session.set(KEYS.cartBarClosed, "1"); renderBars(); return; }
@@ -1793,37 +1848,37 @@
     });
 
     document.addEventListener("change", (e) => {
-        const t = e.target;
-        if (t.id === "sortSelect") {
-            S.sort = t.value;
+        const el = e.target;
+        if (el.id === "sortSelect") {
+            S.sort = el.value;
             rerenderGrid();
             return;
         }
-        if (t.id === "countrySelect") {
+        if (el.id === "countrySelect") {
             const form = $("#checkoutForm");
             const keep = Object.fromEntries(new FormData(form).entries());
             keep.delivery = null;
             keep.payment = null;
             keep.gov = "";
             keep.phoneLocal = "";
-            keep.country = t.value;
-            setCountry(t.value, { silent: true });
+            keep.country = el.value;
+            setCountry(el.value, { silent: true });
             renderCheckout(keep);
             renderBars();
-            toast(`التوصيل والدفع الآن لـ${CC().name}`);
+            toast(t("التوصيل والدفع الآن لـ{country}", { country: L(CC(), "name") }));
             return;
         }
-        if (t.id === "giftToggle") {
+        if (el.id === "giftToggle") {
             const box = $("#giftBox");
-            if (box) box.hidden = !t.checked;
+            if (box) box.hidden = !el.checked;
             return;
         }
-        if (t.name === "delivery") {
+        if (el.name === "delivery") {
             renderAddressField();
             updateCheckoutSummary();
             return;
         }
-        if (t.name === "payment") renderPayExtra();
+        if (el.name === "payment") renderPayExtra();
     });
 
     document.addEventListener("input", (e) => {
@@ -1911,9 +1966,15 @@
         try {
             await ready;
             await loadAdminScripts();
+            // لوحة التحكم بالعربي دائمًا
+            if (ATHR.isEn()) {
+                S.langBeforeOwner = "en";
+                applyLang("ar");
+                render({ scroll: "keep" });
+            }
             window.ATHR_ADMIN.open(name);
         } catch {
-            toast("تعذر فتح لوحة التحكم. تأكد من الإنترنت.");
+            toast(t("تعذر فتح لوحة التحكم. تأكد من الإنترنت."));
         } finally {
             ownerOpening = false;
         }
@@ -1960,6 +2021,11 @@
         },
         closeOwner() {
             if (location.hash === "#admin" || location.hash === "#orders") history.replaceState(history.state, "", location.pathname + location.search);
+            if (S.langBeforeOwner) {
+                const back = S.langBeforeOwner;
+                S.langBeforeOwner = null;
+                setLang(back, { persist: false });
+            }
         },
         setAdmin(value) {
             S.isAdmin = Boolean(value);
@@ -1969,6 +2035,29 @@
         toast,
         copyText
     };
+
+    // =====================================================
+    // LANGUAGE (عربي / English)
+    // =====================================================
+
+    function applyLang(lang) {
+        const l = lang === "en" ? "en" : "ar";
+        ATHR.lang = l;
+        const root = document.documentElement;
+        root.lang = l;
+        root.dir = l === "en" ? "ltr" : "rtl";
+        S.ctx = null;
+    }
+
+    function setLang(lang, { persist = true } = {}) {
+        applyLang(lang);
+        if (persist) storage.set(KEYS.lang, ATHR.lang);
+        closeSheet();
+        if (S.loaded) {
+            renderChrome();
+            render({ scroll: "keep" });
+        }
+    }
 
     // =====================================================
     // START
@@ -1984,6 +2073,7 @@
         window.addEventListener("pagehide", mark);
     }
 
+    applyLang(storage.get(KEYS.lang, "ar"));
     convertLegacyHash();
     S.route = parseRoute();
     trackVisit();

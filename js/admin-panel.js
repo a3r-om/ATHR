@@ -83,6 +83,8 @@
             el.setAttribute("role", "dialog");
             el.setAttribute("aria-modal", "true");
             el.setAttribute("aria-label", "لوحة التحكم");
+            el.setAttribute("dir", "rtl");
+            el.setAttribute("lang", "ar");
             document.body.appendChild(el);
             el.addEventListener("click", onClick);
             el.addEventListener("input", onInput);
@@ -190,8 +192,8 @@
     async function loadServer() {
         const [s, c, p, m] = await Promise.all([
             sb.from("store_settings").select("config,updated_at").eq("id", 1).maybeSingle(),
-            sb.from("categories").select("id,name,slug,sort_order,description,image_url").order("sort_order", { ascending: true }),
-            sb.from("products").select("id,name,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
+            sb.from("categories").select("id,name,name_en,slug,sort_order,description,description_en,image_url").order("sort_order", { ascending: true }),
+            sb.from("products").select("id,name,name_en,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
             sb.from("product_media").select("product_id,media_type,media_url,sort_order").order("sort_order", { ascending: true })
         ]);
         const failed = [s, c, p, m].find((r) => r.error);
@@ -206,10 +208,11 @@
         A.serverUpdated = Date.parse(s.data?.updated_at || "") || 0;
         A.server = {
             config: ATHR.fullConfig(s.data?.config || {}),
-            categories: (c.data || []).map((x) => ({ id: x.id, name: x.name, slug: x.slug, description: x.description || "", image_url: x.image_url || "" })),
+            categories: (c.data || []).map((x) => ({ id: x.id, name: x.name, name_en: x.name_en || "", slug: x.slug, description: x.description || "", description_en: x.description_en || "", image_url: x.image_url || "" })),
             products: (p.data || []).map((x) => ({
                 id: x.id,
                 name: x.name || "",
+                name_en: x.name_en || "",
                 slug: x.slug || "",
                 price: Number(x.price),
                 old_price: x.old_price === null ? null : Number(x.old_price),
@@ -220,6 +223,7 @@
                 is_best_seller: x.is_best_seller === true,
                 is_new_arrival: x.is_new_arrival === true,
                 description: x.description || "",
+                description_en: x.description_en || "",
                 color_id: x.color_id || "",
                 video_url: x.video_url || "",
                 weight_g: x.weight_g === null || x.weight_g === undefined ? null : Number(x.weight_g),
@@ -488,6 +492,7 @@
                     <small class="adm-muted">يفضّل صورة عمودية بنسبة 4:5.</small>
                 </div>
                 ${text(`${base}.name`, "اسم المنتج", { max: 120 })}
+                ${text(`${base}.name_en`, "اسم المنتج بالإنجليزي (لزوار المتجر بالإنجليزي)", { max: 160, dir: "ltr", placeholder: "Real Madrid Cup" })}
                 <div class="two">
                     ${number(`${base}.price`, "السعر")}
                     ${number(`${base}.old_price`, "السعر قبل الخصم (اختياري)", { help: "يظهر مشطوباً بجانب السعر." })}
@@ -497,6 +502,7 @@
                     ${select(`${base}.color_id`, "لون الكاسة", colors)}
                 </div>
                 ${area(`${base}.description`, "الوصف", { rows: 3 })}
+                ${area(`${base}.description_en`, "الوصف بالإنجليزي (اختياري)", { rows: 2 })}
                 ${cfg().order.delivery.some((d) => d.enabled && d.pricing === "per_kg") ? number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب التوصيل بالكيلو." }) : ""}
                 ${toggle(`${base}.is_visible`, "ظاهر في المتجر")}
                 ${toggle(`${base}.is_best_seller`, "من «الأكثر طلباً»", { help: "يظهر في قسم الأكثر طلباً أعلى الصفحة الرئيسية مع شارة على صورته (يحتاج منتجين على الأقل)." })}
@@ -655,10 +661,12 @@
             <ul class="items">${cats.map((c, i) => `<li class="item-card">
                 <div class="lst-row">
                     <input class="ai" data-bind="categories.#${esc(c.id)}.name" value="${esc(c.name)}" placeholder="اسم القسم" aria-label="اسم القسم">
+                    <input class="ai" data-bind="categories.#${esc(c.id)}.name_en" value="${esc(c.name_en || "")}" placeholder="English name" aria-label="اسم القسم بالإنجليزي" dir="ltr">
                     <span class="adm-muted nowrap">${counts.get(c.id) || 0} منتج</span>
                 </div>
                 <div class="af"><span>صورة القسم</span>${uploadButton(c.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="categories.#${esc(c.id)}.image_url" data-kind="category"`, { current: c.image_url ? ATHR.thumb(c.image_url, "s") : "", remove: c.image_url ? `data-clear="categories.#${esc(c.id)}.image_url"` : "" })}<small>تظهر في أعلى المتجر وفي القائمة. الأفضل صورة عمودية بنسبة 3:4 بخلفية بيج مثل باقي الأقسام.</small></div>
                 <label class="af"><span>وصف القسم (يظهر في صفحته وفي جوجل)</span><textarea class="ai" rows="2" maxlength="300" data-bind="categories.#${esc(c.id)}.description" placeholder="مثال: أكواب سيراميك بملمس مطفي بشعارات الأندية، هدية مثالية لكل مشجع.">${esc(c.description || "")}</textarea></label>
+                <label class="af"><span>وصف القسم بالإنجليزي (اختياري)</span><textarea class="ai" rows="2" maxlength="600" dir="ltr" data-bind="categories.#${esc(c.id)}.description_en">${esc(c.description_en || "")}</textarea></label>
                 ${c.slug ? `<small class="adm-muted" dir="ltr">${esc(decodeURI(siteLink(ATHR.url.category(c))))}</small>` : ""}
                 ${listControls("categories", i, cats.length)}
             </li>`).join("")}</ul>
@@ -667,6 +675,7 @@
             <ul class="lst">${colors.map((c, i) => `<li class="lst-row">
                 <input type="color" data-bind="config.colors.${i}.hex" value="${esc(c.hex || "#ffffff")}" aria-label="درجة اللون">
                 <input class="ai" data-bind="config.colors.${i}.name" value="${esc(c.name)}" placeholder="اسم اللون" aria-label="اسم اللون">
+                <input class="ai sm" data-bind="config.colors.${i}.name_en" value="${esc(c.name_en || "")}" placeholder="English" aria-label="اسم اللون بالإنجليزي" dir="ltr">
                 <span class="adm-muted nowrap">${colorCounts.get(c.id) || 0}</span>
                 ${listControls("config.colors", i, colors.length)}
             </li>`).join("")}</ul>
@@ -749,7 +758,29 @@
             + card("رسالة الطلب", `
                 ${area("config.texts.thanks_text", "نص الخطوة الأخيرة بعد إتمام الطلب", { rows: 2, placeholder: d.thanks_text })}
                 ${text("config.texts.wa_first_line", "أول سطر في رسالة واتساب", { placeholder: d.wa_first_line })}
-                ${area("config.texts.wa_last_line", "آخر سطر في رسالة واتساب (اختياري)", { rows: 2, placeholder: "مثال: شكراً لتسوقكم من متجر أثر ✨" })}`);
+                ${area("config.texts.wa_last_line", "آخر سطر في رسالة واتساب (اختياري)", { rows: 2, placeholder: "مثال: شكراً لتسوقكم من متجر أثر ✨" })}`)
+            + tabTextsEn();
+    }
+
+    // نصوص المتجر للزائر الذي يحوّل اللغة إلى الإنجليزي (الفارغ يُكتب تلقائياً)
+    function tabTextsEn() {
+        const en = cfg().en || {};
+        const feats = (cfg().texts.hero_features || []).filter(Boolean).slice(0, 4);
+        const enFeats = (en.texts && en.texts.hero_features) || [];
+        const ex = (path) => ATHR.withLang("en", () => ATHR.ct({ ...cfg(), en: {} }, path)) || "";
+        const ltr = (path, label, opts = {}) => text(path, label, { dir: "ltr", ...opts });
+        return card("النصوص بالإنجليزي", `
+                ${ltr("config.en.name", "اسم المتجر بالإنجليزي", { placeholder: "ATHR", max: 40 })}
+                ${ltr("config.en.texts.hero_title", "العنوان الرئيسي", { placeholder: ex("texts.hero_title"), max: 60 })}
+                ${area("config.en.texts.hero_text", "النص التعريفي", { rows: 2, placeholder: ex("texts.hero_text") })}
+                <div class="af"><span>المزايا الصغيرة تحت النص</span>
+                    ${feats.map((f, i) => `<input class="ai" dir="ltr" data-bind="config.en.texts.hero_features.${i}" value="${esc(enFeats[i] || "")}" placeholder="${esc(f)}" aria-label="ميزة ${i + 1} بالإنجليزي">`).join("")}
+                </div>
+                ${area("config.en.texts.about", "نبذة عن المتجر", { rows: 2, placeholder: ex("texts.about") })}
+                ${ltr("config.en.texts.announce_text", "نص شريط الإعلان", { max: 140 })}
+                ${(cfg().sales.trust_custom || []).filter(Boolean).map((tc, i) => ltr(`config.en.sales.trust_custom.${i}`, `شارة الثقة ${i + 1}`, { placeholder: tc, max: 80 })).join("")}
+                ${ltr("config.en.seo.home_title", "عنوان المتجر في جوجل بالإنجليزي", { max: 70 })}`,
+            "يظهر للزائر عندما يضغط زر EN أعلى المتجر. أسماء المنتجات والأقسام بالإنجليزي تكتبها في تفاصيل كل منتج وفي «الأقسام والألوان». رسائل الطلب تصلك بالعربي دائماً.");
     }
 
     // =====================================================
@@ -768,6 +799,10 @@
             ${number(`config.order.delivery.${i}.price`, d.pricing === "per_kg" ? "السعر لكل كيلو" : "السعر", { help: d.pricing === "per_kg" ? "يُقرَّب الوزن لأعلى كيلو، والحد الأدنى كيلو واحد." : "" })}
             ${countryChecks(`config.order.delivery.${i}.countries`, "متاحة لـ")}
             ${text(`config.order.delivery.${i}.note`, "شرح قصير (اختياري)")}
+            <div class="two">
+                ${text(`config.order.delivery.${i}.name_en`, "الاسم بالإنجليزي", { dir: "ltr" })}
+                ${text(`config.order.delivery.${i}.note_en`, "الشرح بالإنجليزي", { dir: "ltr" })}
+            </div>
             ${text(`config.order.delivery.${i}.duration`, "مدة التوصيل (اختياري)", { placeholder: "مثال: 2 إلى 4 أيام" })}
             ${listControls("config.order.delivery", i, o.delivery.length)}
         </li>`).join("");
@@ -794,6 +829,10 @@
                     ${select(`${base}.type`, "نوع الطريقة", [["cod", "عند الاستلام"], ["bank", "تحويل بنكي"], ["online", "دفع إلكتروني"], ["other", "أخرى"]], { rerender: true })}
                 </div>
                 ${area(`${base}.note`, "الشرح الذي يظهر للعميل", { rows: 2 })}
+                <div class="two">
+                    ${text(`${base}.name_en`, "الاسم بالإنجليزي", { dir: "ltr" })}
+                    ${text(`${base}.note_en`, "الشرح بالإنجليزي", { dir: "ltr" })}
+                </div>
                 ${countryChecks(`${base}.countries`, "متاحة لـ")}
                 ${extra}
                 ${listControls("config.order.payments", i, o.payments.length)}
@@ -1712,6 +1751,8 @@
                 return {
                     id: c.id,
                     name: c.name.trim(),
+                    name_en: String(c.name_en || "").trim() || null,
+                    description_en: String(c.description_en || "").trim() || null,
                     slug,
                     image_url: c.image_url || null,
                     description: String(c.description || "").trim() || null,
@@ -1740,6 +1781,8 @@
             const prodRows = draft.products.map((p, i) => ({
                 id: p.id,
                 name: p.name.trim(),
+                name_en: String(p.name_en || "").trim() || null,
+                description_en: String(p.description_en || "").trim() || null,
                 slug: p.slug,
                 price: Number(p.price),
                 old_price: p.old_price === null || p.old_price === undefined ? null : Number(p.old_price),

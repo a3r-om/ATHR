@@ -14,7 +14,8 @@
 <noscript><link rel="stylesheet" href="{{FONT_HREF}}"></noscript>
 <link rel="stylesheet" href="{{BASE}}css/store.css?v={{V_CSS}}">
 <style id="themeVars">{{THEME_CSS}}</style>
-<script>window.ATHR_BASE = "{{BASE}}";</script>
+<script>window.ATHR_BASE = "{{BASE}}";
+(function () { try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { var d = document.documentElement; d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {} })();</script>
 </head>
 <body>
 
@@ -30,6 +31,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
             <input id="searchInput" name="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="{{SEARCH_PLACEHOLDER}}" aria-label="بحث في المنتجات">
         </form>
+        <button class="lang-btn" id="langBtn" type="button" lang="en" aria-label="Switch to English">EN</button>
         <button class="cur-btn" id="curBtn" type="button" aria-label="الدولة والعملة"{{CUR_HIDDEN}}><span id="curFlag" aria-hidden="true">{{CUR_FLAG}}</span><span id="curSym">{{CUR_SYM}}</span></button>
         <a class="icon-btn cart-btn" href="{{BASE}}cart/" aria-label="السلة">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2L5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
@@ -57,6 +59,7 @@
 <script src="{{BASE}}js/supabase-config.js?v={{V_CFG}}" defer></script>
 <script src="{{BASE}}js/defaults.js?v={{V_DEF}}" defer></script>
 <script src="{{BASE}}js/views.js?v={{V_VIEWS}}" defer></script>
+<script src="{{BASE}}js/i18n-en.js?v={{V_I18N}}" defer></script>
 <script src="{{BASE}}js/thumbs.js?v={{V_THUMBS}}" defer></script>
 <script src="{{BASE}}js/store.js?v={{V_STORE}}" defer></script>
 </body>

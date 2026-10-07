@@ -570,3 +570,14 @@ end;
 $$;
 revoke execute on function public.track(text) from public;
 grant execute on function public.track(text) to anon, authenticated;
+
+-- =====================================================
+-- الإصدار 6: المتجر بالعربي والإنجليزي (أسماء وأوصاف بالإنجليزي)
+-- =====================================================
+alter table public.products
+    add column if not exists name_en text check (name_en is null or char_length(name_en) <= 160),
+    add column if not exists description_en text check (description_en is null or char_length(description_en) <= 2000);
+
+alter table public.categories
+    add column if not exists name_en text check (name_en is null or char_length(name_en) <= 120),
+    add column if not exists description_en text check (description_en is null or char_length(description_en) <= 600);
