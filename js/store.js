@@ -432,13 +432,14 @@
         if (style && style.textContent !== vars) style.textContent = vars;
         root.dataset.mode = visitorMode() || ATHR.themeMode(cfg);
         syncDark();
-        root.classList.toggle("r-sharp", cfg.theme.radius === "sharp");
-        root.classList.toggle("r-round", cfg.theme.radius === "round");
+        const keep = Array.from(root.classList).filter((c) => !/^(r-sharp|r-round|head-light|tpl-[\w-]+)$/.test(c));
+        const next = [...keep, ...ATHR.themeClasses(cfg)].join(" ");
+        if (root.className !== next) root.className = next;
         const href = ATHR.fontHref(cfg);
         const link = $("#fontLink");
         if (link && href && link.getAttribute("href") !== href) link.setAttribute("href", href);
         const meta = $('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", ATHR.themeColors(cfg).primary);
+        if (meta) meta.setAttribute("content", ATHR.headColor(cfg));
     }
 
     // =====================================================

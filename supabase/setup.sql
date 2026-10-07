@@ -746,3 +746,10 @@ drop trigger if exists athr_track_customer on public.orders;
 create trigger athr_track_customer
     after insert on public.orders
     for each row execute function private.athr_track_customer();
+
+-- =====================================================
+-- الإصدار 10: إلغاء تصميم الصور بالذكاء الاصطناعي
+-- =====================================================
+-- الميزة أُلغيت: لا أحد يستطيع حفظ مفتاح أو قراءة حالته، ودالة ai-image صارت متوقفة (410)
+revoke execute on function public.set_ai_key(text, text) from public, anon, authenticated;
+revoke execute on function public.ai_key_status() from public, anon, authenticated;

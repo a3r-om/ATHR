@@ -31,8 +31,7 @@
         reviewsLoaded: false,
         statsDays: 30,
         stats: null,
-        ai: null,
-        aiStatus: null,
+        prevTheme: null,
         customers: [],
         customersLoaded: false,
         custFilter: { q: "", kind: "all" },
@@ -55,6 +54,7 @@
         ["products", "المنتجات", "box", "إضافة وتعديل المنتجات والصور والأسعار"],
         ["ad", "الإعلان", "megaphone", "صورة أو فيديو أعلى المتجر"],
         ["catalog", "الأقسام والألوان", "grid", "أقسام المتجر وصورها وألوان المنتجات"],
+        ["templates", "القوالب", "layout", "قوالب جاهزة بضغطة: شكل كامل للمتجر"],
         ["look", "المظهر", "palette", "الألوان والخطوط والشعار والوضع الداكن"],
         ["texts", "النصوص", "text", "العناوين والجمل ورسائل واتساب"],
         ["order", "الطلب والتوصيل", "truck", "التوصيل والدفع والدول والعملات"],
@@ -74,6 +74,7 @@
         chat: '<path d="M4 5.5h16v10H9l-5 4v-14Z"/><path d="M8 9.5h8M8 12.5h5"/>',
         receipt: '<path d="M6 3.5h12v17l-2.5-1.6-2 1.6-1.5-1.6-1.5 1.6-2-1.6L6 20.5v-17Z"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
         plus: '<path d="M12 5v14M5 12h14"/>',
+        layout: '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M10 9v11"/>',
         sparkle: '<path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8 1.8-5Z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/>',
         eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
         back: '<path d="M9.5 6l6 6-6 6"/>',
@@ -397,7 +398,7 @@
         $$(".adm-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === A.tab)));
         const errors = A.errors.length ? `<div class="adm-errors" role="alert"><strong>لم يتم النشر. صحّح التالي:</strong><ul>${A.errors.map((e) => `<li><button type="button" class="adm-link" data-tab="${e.tab}">${esc(tabLabel(e.tab))}</button>: ${esc(e.msg)}</li>`).join("")}</ul></div>` : "";
         const banner = isDirty() && !A.errors.length ? `<div class="adm-note">لديك تعديلات غير منشورة. لن يراها الزبائن حتى تضغط «نشر التغييرات».</div>` : "";
-        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, gift: tabGift, contact: tabContact };
+        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, templates: tabTemplates, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, gift: tabGift, contact: tabContact };
         body.innerHTML = errors + banner + views[A.tab]();
         if (keepScroll) body.scrollTop = scroll;
         else body.scrollTop = 0;
@@ -415,10 +416,10 @@
         const hidden = products.filter((p) => !p.is_visible).length;
         const out = products.filter((p) => !p.is_available).length;
         const quick = [
-            ["add-product", "plus", "إضافة منتج"],
-            ["ai-new-product", "sparkle", "منتج بصورة ذكاء اصطناعي"],
-            ["ai-ad", "sparkle", "صورة إعلانية بالذكاء"],
-            ["preview", "eye", "معاينة المتجر"]
+            ["data-a", "add-product", "plus", "إضافة منتج"],
+            ["data-tab", "templates", "layout", "قوالب المتجر"],
+            ["data-tab", "gift", "gift", "إعدادات الهدية"],
+            ["data-a", "preview", "eye", "معاينة المتجر"]
         ];
         return `
             <button class="adm-orders-tile" type="button" data-a="open-orders">
@@ -431,7 +432,7 @@
                 <span class="aot-txt"><b>العملاء والعروض</b><small>أسماء وأرقام زبائنك، وأرسل لهم الخصومات</small></span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
-            <div class="adm-quick">${quick.map(([a, ic, label]) => `<button class="aq" type="button" data-a="${a}">${icon(ic)}<span>${label}</span></button>`).join("")}</div>
+            <div class="adm-quick">${quick.map(([attr, a, ic, label]) => `<button class="aq" type="button" ${attr}="${a}">${icon(ic)}<span>${label}</span></button>`).join("")}</div>
             <h2 class="adm-sec">أقسام المتجر</h2>
             <div class="adm-grid">${TABS.map(([id, label, ic, hint]) => `<button class="ag" type="button" data-tab="${id}">
                 <span class="ag-ico">${icon(ic)}</span>
@@ -548,10 +549,7 @@
             <section class="adm-card">
                 <div class="adm-row-between">
                     <h2>المنتجات <small class="adm-muted">(${products.length})</small></h2>
-                    <div class="inline">
-                        <button class="ab ab-soft ab-sm" type="button" data-a="ai-new-product">✨ منتج بصورة ذكاء اصطناعي</button>
-                        <button class="ab ab-primary ab-sm" type="button" data-a="add-product">+ إضافة منتج</button>
-                    </div>
+                    <button class="ab ab-primary ab-sm" type="button" data-a="add-product">+ إضافة منتج</button>
                 </div>
                 <input class="ai" type="search" id="productFilter" placeholder="ابحث باسم المنتج أو القسم" value="${esc(A.productFilter)}">
                 <ul class="plist">
@@ -602,8 +600,7 @@
                 <div class="adm-card flat">
                     <h3>صورة المنتج</h3>
                     ${uploadButton(p.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="${base}.image_url" data-kind="product"`, { current: p.image_url })}
-                    <button class="ab ab-soft ab-sm ai-btn" type="button" data-a="ai-product" data-id="${esc(p.id)}">✨ صورة احترافية بالذكاء الاصطناعي</button>
-                    <small class="adm-muted">يفضّل صورة عمودية بنسبة 4:5. أو صوّر المنتج بجوالك واضغط زر الذكاء الاصطناعي ليحوّلها لصورة استوديو احترافية.</small>
+                    <small class="adm-muted">يفضّل صورة عمودية بنسبة 4:5 بخلفية نظيفة وإضاءة جيدة.</small>
                 </div>
                 ${text(`${base}.name`, "اسم المنتج", { max: 120 })}
                 ${text(`${base}.name_en`, "اسم المنتج بالإنجليزي (لزوار المتجر بالإنجليزي)", { max: 160, dir: "ltr", placeholder: "Real Madrid Cup" })}
@@ -685,18 +682,15 @@
 
     function refreshSheet() {
         const panel = $("#admSheet .adm-sheet-panel");
-        if (!panel || !(A.editing || A.ai)) return;
+        if (!panel || !A.editing) return;
         const scroll = panel.scrollTop;
-        const focus = document.activeElement && panel.contains(document.activeElement) && document.activeElement.dataset.aiField;
-        panel.innerHTML = A.ai ? aiStudio() : productEditor(A.editing);
+        panel.innerHTML = productEditor(A.editing);
         panel.scrollTop = scroll;
-        if (focus) panel.querySelector(`[data-ai-field="${focus}"]`)?.focus({ preventScroll: true });
     }
 
     function closeSheet() {
         const sheet = $("#admSheet");
         if (!sheet) return;
-        aiCleanup();
         sheet.hidden = true;
         sheet.innerHTML = "";
         if (A.editing) {
@@ -943,9 +937,7 @@
 
     function tabAd() {
         const ad = cfg().ad;
-        let body = `<button class="ab ab-soft ab-block ai-btn" type="button" data-a="ai-ad">✨ اعمل صورة إعلانية بالذكاء الاصطناعي</button>
-            <small class="adm-muted">اكتب فكرة الإعلان واختر منتجاتك، والذكاء الاصطناعي يصمم صورة إعلانية احترافية وواقعية تضعها هنا أو تنزّلها لإنستغرام وتيك توك.</small>`;
-        body += toggle("config.ad.show", "إظهار الإعلان في المتجر");
+        let body = toggle("config.ad.show", "إظهار الإعلان في المتجر");
         body += select("config.ad.type", "نوع الإعلان", [["image", "صورة جاهزة (تصميمي الخاص)"], ["video", "فيديو جاهز"], ["text", "تصميم نصي أعدّله هنا"]], { rerender: true });
         if (ad.type === "image") {
             body += `<div class="af"><span>صورة الإعلان</span>${uploadButton(ad.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="config.ad.image_url" data-kind="ad"`, { current: ad.image_url, remove: ad.image_url ? `data-clear="config.ad.image_url"` : "" })}</div>`;
@@ -1007,12 +999,114 @@
     }
 
     // =====================================================
+    // TEMPLATES: قوالب جاهزة للمتجر (معاينة مصغّرة + تطبيق + تراجع)
+    // =====================================================
+
+    const TPL_RADIUS = { sharp: "3px", medium: "8px", round: "15px" };
+
+    function loadTemplateFonts() {
+        const families = [...new Set(ATHR.TEMPLATES.flatMap((tp) => [tp.theme.font_head, tp.theme.font_body]))].filter((f) => ATHR.FONT_PARAMS[f]);
+        const href = `https://fonts.googleapis.com/css2?${families.map((f) => `family=${ATHR.FONT_PARAMS[f]}`).join("&")}&display=swap`;
+        let link = document.getElementById("admTplFonts");
+        if (!link) {
+            link = document.createElement("link");
+            link.id = "admTplFonts";
+            link.rel = "stylesheet";
+            document.head.appendChild(link);
+        }
+        if (link.getAttribute("href") !== href) link.setAttribute("href", href);
+    }
+
+    function templateMock(tp) {
+        const t = tp.theme;
+        const c = cfg();
+        const logo = c.logo_url || ATHR_DEFAULTS.logo_url;
+        const photo = !/logo\.png$/.test(logo);
+        const imgs = A.draft.products.filter((p) => p.is_visible && p.image_url).slice(0, 3).map((p) => ATHR.thumb(p.image_url, "s") || asset(p.image_url));
+        while (imgs.length < 3) imgs.push(asset("images/logo2.jpeg"));
+        const vars = `--p:${t.primary};--h:${t.hero};--b:${t.bg};--t:${t.text};--op:${ATHR.onColor(t.primary)};--fh:'${t.font_head}';--fb:'${t.font_body}';--rr:${TPL_RADIUS[t.radius] || "8px"}`;
+        const title = (c.texts && c.texts.hero_title) || ATHR_DEFAULTS.texts.hero_title;
+        return `<div class="tm tm-${tp.id}${t.header === "light" ? " tm-light" : ""}" style="${esc(vars)}" aria-hidden="true">
+            <div class="tm-top"><i class="tm-ic"></i><span class="tm-logo${photo ? " photo" : ""}"><img src="${esc(asset(logo))}" alt=""></span><i class="tm-ic"></i></div>
+            <div class="tm-hero${t.hero_pattern ? " pat" : ""}"><b>${esc(title)}</b><span class="tm-chips"><i></i><i></i></span></div>
+            <div class="tm-grid">${imgs.map((src) => `<div class="tm-card"><img src="${esc(src)}" alt="" loading="lazy"><span class="tm-name"></span><span class="tm-price">${esc(money(3.5))}</span><span class="tm-add">أضف</span></div>`).join("")}</div>
+        </div>`;
+    }
+
+    function tabTemplates() {
+        loadTemplateFonts();
+        const c = cfg();
+        const cur = ATHR.template(c);
+        const edited = ATHR.templateEdited(c);
+        return `
+            ${A.prevTheme
+                ? `<div class="adm-note tpl-undo"><span>✓ طبّقت قالب «${esc(cur.name)}»</span><button class="ab-mini" type="button" data-a="tpl-undo">تراجع</button></div>`
+                : `<p class="adm-sentence">اختر شكلاً جاهزاً لمتجرك. القالب يغيّر الألوان والخطوط وشكل البطاقات والشريط العلوي، ومنتجاتك وصورك ونصوصك تبقى كما هي.</p>`}
+            <div class="tpl-grid">${ATHR.TEMPLATES.map((tp) => {
+                const on = tp.id === cur.id;
+                const t = tp.theme;
+                return `<article class="tpl-card${on ? " on" : ""}">
+                    ${templateMock(tp)}
+                    <div class="tpl-info">
+                        <h3>${esc(tp.name)}${on ? ` <span class="tag ok">${edited ? "الحالي (معدّل)" : "الحالي"}</span>` : ""}</h3>
+                        <p>${esc(tp.desc)}</p>
+                        <div class="tpl-meta">${[t.primary, t.hero, t.bg].map((x) => `<span class="tpl-dot" style="background:${esc(x)}"></span>`).join("")}<small>${esc(t.font_head)}</small></div>
+                        <div class="inline">
+                            ${on && !edited
+                                ? `<button class="ab ab-soft ab-sm" type="button" disabled>✓ مطبّق</button>`
+                                : `<button class="ab ab-primary ab-sm" type="button" data-a="tpl-apply" data-id="${tp.id}">${on ? "إرجاع ألوانه الأصلية" : "تطبيق القالب"}</button>`}
+                            <button class="ab ab-ghost ab-sm" type="button" data-a="tpl-preview" data-id="${tp.id}">${icon("eye")} معاينة</button>
+                        </div>
+                    </div>
+                </article>`;
+            }).join("")}</div>
+            <p class="adm-muted">بعد التطبيق تقدر تغيّر أي لون أو خط من «المظهر». لن يرى الزبائن أي تغيير حتى تضغط «نشر التغييرات».</p>`;
+    }
+
+    function templateTheme(id, base) {
+        const tp = ATHR.TEMPLATES.find((x) => x.id === id);
+        if (!tp) return null;
+        return { ...ATHR.clone(base), ...ATHR.clone(tp.theme), template: tp.id };
+    }
+
+    function applyTemplate(id) {
+        const next = templateTheme(id, cfg().theme);
+        if (!next) return;
+        if (!A.prevTheme) A.prevTheme = ATHR.clone(cfg().theme);
+        cfg().theme = next;
+        saveDraft();
+        renderTab();
+        toast(`طُبّق قالب «${ATHR.template(cfg()).name}» ✓ — اضغط «نشر التغييرات» ليظهر للزبائن`);
+    }
+
+    function undoTemplate() {
+        if (!A.prevTheme) return;
+        cfg().theme = A.prevTheme;
+        A.prevTheme = null;
+        saveDraft();
+        renderTab({ keepScroll: true });
+        toast("رجع الشكل السابق");
+    }
+
+    function previewTemplate(id) {
+        const theme = templateTheme(id, cfg().theme);
+        if (!theme) return;
+        preview(undefined, { ...cfg(), theme });
+    }
+
+    // =====================================================
     // TAB 4: LOOK
     // =====================================================
 
     function tabLook() {
         const c = cfg();
-        return card("الألوان", `
+        const tp = ATHR.template(c);
+        return `<button class="adm-orders-tile alt look-tpl" type="button" data-tab="templates">
+                <span class="aot-ico">${icon("layout")}</span>
+                <span class="aot-txt"><b>القالب: ${esc(tp.name)}${ATHR.templateEdited(c) ? " (معدّل)" : ""}</b><small>غيّر شكل المتجر كاملاً بضغطة من «القوالب»</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>`
+            + card("الألوان", `
                 <div class="two">
                     ${colorField("config.theme.primary", "اللون الأساسي")}
                     ${colorField("config.theme.hero", "لون الواجهة الرئيسية (الهيرو)")}
@@ -1027,6 +1121,7 @@
                 ${toggle("config.show_name", "إظهار اسم المتجر بجانب الشعار", { help: "أوقفه إذا كان الشعار نفسه فيه اسم المتجر. يبقى الاسم في جوجل ورسائل الطلب." })}
                 ${select("config.logo_shape", "شكل الشعار", [["rounded", "زوايا مدوّرة"], ["circle", "دائري"], ["square", "مربع"]])}`)
             + card("الشكل العام", `
+                ${select("config.theme.header", "الشريط العلوي", [["color", "بلون المتجر الأساسي"], ["light", "أبيض فاتح (الشعار يصير غامقاً)"]])}
                 ${select("config.theme.radius", "استدارة الزوايا", [["sharp", "حادة"], ["medium", "متوسطة"], ["round", "مدوّرة كثيراً"]])}
                 ${select("config.theme.grid_mobile", "عدد المنتجات في الصف على الجوال", [["2", "منتجان"], ["1", "منتج واحد"]], { type: "number" })}
                 ${toggle("config.theme.show_search", "إظهار البحث")}
@@ -1509,453 +1604,6 @@
     }
 
     // =====================================================
-    // AI STUDIO: صورة منتج احترافية / صورة إعلانية بالذكاء الاصطناعي
-    // المفتاح يُحفظ في قاعدة البيانات عبر دالة آمنة، ولا يُقرأ من المتصفح أبداً.
-    // =====================================================
-
-    const AI_STYLES = [
-        ["beige", "استوديو بيج فاخر", "مثل صور الأقسام"],
-        ["white", "خلفية بيضاء نظيفة", "مثل المتاجر العالمية"],
-        ["life", "على طاولة بجو دافئ", "إضاءة صباحية وديكور بسيط"],
-        ["hand", "في يد شخص", "يوضح الحجم الحقيقي"],
-        ["dark", "عنابي فاخر", "بلون المتجر"],
-        ["custom", "حسب وصفي فقط", "اكتب الشكل الذي تريده"]
-    ];
-
-    const AI_SCENES = {
-        beige: "a warm beige seamless studio backdrop (#EBDDC9) with the product standing on a small light travertine stone block, minimal, calm and elegant, like a premium gift boutique catalogue",
-        white: "a pure white seamless background (#FFFFFF), clean e-commerce catalogue look with a soft natural contact shadow under the product",
-        life: "a cozy warm lifestyle scene: the product on a light oak wooden table near a window with soft morning sunlight, a few tasteful props (a small green plant, coffee beans or an open book) softly blurred in the background and never covering the product",
-        hand: "held naturally in one hand with neat short nails, the printed design facing the camera, warm neutral background softly blurred, natural skin tones",
-        dark: "a luxurious deep maroon backdrop (#7D1420) with soft rim light and a subtle glossy surface reflection, premium gift-shop mood",
-        custom: ""
-    };
-
-    const AI_ASPECTS = [
-        ["16:9", "بنر المتجر", "عريض"],
-        ["1:1", "منشور مربع", "إنستغرام"],
-        ["4:5", "منشور طولي", "إنستغرام"],
-        ["9:16", "ستوري", "تيك توك وسناب"]
-    ];
-
-    const AI_ERRORS = {
-        not_admin: "انتهت جلستك. أغلق لوحة التحكم وافتحها وسجّل الدخول من جديد.",
-        no_key: "لا يوجد مفتاح ذكاء اصطناعي محفوظ. أضفه من «إعداد الذكاء الاصطناعي» أعلاه.",
-        bad_key: "المفتاح غير صحيح أو غير مفعّل. انسخه من جديد واحفظه.",
-        billing: "حساب الذكاء الاصطناعي يحتاج تفعيل الدفع (Billing) لتوليد الصور. فعّله من حسابك ثم جرّب مرة أخرى.",
-        quota: "وصلت للحد المسموح حالياً. انتظر دقيقة وجرّب مرة أخرى.",
-        blocked: "رفض الذكاء الاصطناعي هذا الطلب. غيّر الصورة أو الوصف وجرّب مرة أخرى.",
-        no_image: "لم يرجع الذكاء الاصطناعي صورة هذه المرة. جرّب مرة أخرى أو وضّح الوصف أكثر.",
-        no_model: "لا يوجد نموذج صور متاح لهذا المفتاح. تأكد أنه من Google AI Studio وأن الدفع (Billing) مفعّل.",
-        bad_image: "تعذر قراءة الصورة. جرّب صورة JPG أو PNG.",
-        bad_request: "اكتب وصفاً أوضح وجرّب مرة أخرى.",
-        timeout: "تأخر الرد. تأكد من الإنترنت وجرّب مرة أخرى.",
-        offline: "خدمة التصميم غير متاحة الآن. تأكد من الإنترنت وجرّب بعد قليل."
-    };
-
-    function aiCfg() {
-        const c = cfg().ai || {};
-        return { provider: c.provider === "openai" ? "openai" : "gemini", quality: c.quality === "fast" ? "fast" : "best", model: String(c.model || "").trim() };
-    }
-
-    function aiProductPrompt(st) {
-        const scene = AI_SCENES[st.style] || "";
-        const extra = String(st.prompt || "").trim();
-        return [
-            "You are a world-class commercial product photographer and retoucher for a premium online gift store.",
-            "Use the attached photo as the exact reference of the real product and turn it into a professional, photorealistic, high-resolution e-commerce product photo.",
-            "Keep the product 100% identical to the reference: same shape, proportions, size, colors, matte finish, handle and the exact printed design, logos, text and artwork. Do not redraw, simplify, translate, mirror, crop or invent anything on the print.",
-            "Remove the original background, hands, clutter, glare, dust and noise from the photo (unless the scene below asks for a hand).",
-            scene ? `Scene: ${scene}.` : "",
-            "Lighting: soft diffused studio lighting with a gentle key light, natural soft shadows, true-to-life colors, crisp focus on the printed design, realistic materials (no CGI or plastic look).",
-            "Composition: vertical 4:5 portrait framing, the product centered and filling about 65-75% of the frame, clean margins suitable for a product page.",
-            "Do not add any text, letters, watermark, logo, frame or border that is not on the real product.",
-            extra ? `Extra instructions from the store owner (follow them, as long as the product itself stays identical): ${extra}` : ""
-        ].filter(Boolean).join("\n");
-    }
-
-    function aiAdPrompt(st, refCount) {
-        const ratio = AI_ASPECTS.find((a) => a[0] === st.aspect) || AI_ASPECTS[0];
-        const name = cfg().en && cfg().en.name ? `${cfg().en.name} | ${cfg().name}` : cfg().name;
-        return [
-            `Create a premium, eye-catching, photorealistic advertising image for "${name}", an Omani online store that sells printed matte ceramic cups, mugs and wallets (gift items with football club, university and character designs).`,
-            `The store owner's idea for this ad: ${String(st.prompt || "").trim()}`,
-            refCount
-                ? `Use the ${refCount} attached product photo(s) as exact references: show these real products faithfully as the heroes of the ad, with exactly the same shapes, colors and printed designs. Do not change, redraw or invent any print, and do not add extra products with invented designs.`
-                : "Show elegant matte ceramic cups as the hero products, with plain or simple tasteful designs (no real brand logos).",
-            "Style: high-end commercial product photography, realistic lighting and shadows, tasteful props, rich but elegant colors that harmonise with the brand palette (deep maroon #7D1420 and warm beige #EBDDC9), one clear focal point and a clean, uncluttered composition with some negative space.",
-            `Format: ${ratio[1]} image with a ${st.aspect} aspect ratio.`,
-            st.noText
-                ? "Do not write any text, letters, numbers, logos or watermarks anywhere in the image."
-                : `Write only this text in the image, spelled exactly and clearly, in a clean modern font: "${String(st.adText || "").trim()}". No other text.`,
-            "Ultra-detailed, sharp, high resolution, realistic, no distorted objects."
-        ].join("\n");
-    }
-
-    function aiSetup() {
-        const c = aiCfg();
-        const status = A.aiStatus;
-        const saved = status && status[c.provider];
-        const providerName = c.provider === "openai" ? "OpenAI" : "Google Gemini";
-        return `<details class="adm-card flat ai-setup"${status && !saved ? " open" : ""}>
-            <summary>⚙️ إعداد الذكاء الاصطناعي ${status === undefined ? "" : saved ? `<span class="tag ok">✅ جاهز</span>` : `<span class="tag warn">مطلوب مرة واحدة</span>`}</summary>
-            <div class="af-stack">
-                ${select("config.ai.provider", "الخدمة", [["gemini", "Google Gemini (موصى به)"], ["openai", "OpenAI"]], { rerender: true })}
-                ${select("config.ai.quality", "الجودة", [["best", "أعلى جودة — حوالي 0.13$ للصورة"], ["fast", "أسرع وأرخص — حوالي 0.05$ للصورة"]])}
-                <p class="adm-sentence">${saved ? `✅ مفتاح ${providerName} محفوظ (ينتهي بـ <b dir="ltr">${esc(saved.last4 || "")}</b>).` : `لا يوجد مفتاح ${providerName} بعد.`}</p>
-                <label class="af"><span>${saved ? "تغيير المفتاح" : "الصق المفتاح هنا"}</span><input class="ai" type="password" id="aiKey" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr" placeholder="${c.provider === "openai" ? "sk-..." : "AIza..."}"></label>
-                <div class="inline">
-                    <button class="ab ab-primary ab-sm" type="button" data-a="ai-save-key">حفظ المفتاح</button>
-                    ${saved ? `<button class="ab-mini danger" type="button" data-a="ai-del-key">حذف المفتاح</button>` : ""}
-                </div>
-                <small class="adm-muted">${c.provider === "openai"
-                    ? "من platform.openai.com ← API keys ← Create new secret key. يحتاج رصيداً في الحساب."
-                    : "افتح aistudio.google.com بحسابك في جوجل ← Get API key ← Create API key، ثم انسخه هنا. توليد الصور يحتاج تفعيل الدفع (Billing) في حسابك، والتكلفة بسيطة لكل صورة."}
-                    يُحفظ المفتاح بشكل سري في قاعدة البيانات ولا يظهر مرة أخرى حتى لك، ولا يصل للزبائن.</small>
-            </div>
-        </details>`;
-    }
-
-    function aiStudio() {
-        const st = A.ai;
-        if (!st) return "";
-        const isAd = st.mode === "ad";
-        const p = st.productId ? A.draft.products.find((x) => x.id === st.productId) : null;
-        const res = st.result;
-        const title = isAd ? "✨ صورة إعلانية بالذكاء الاصطناعي" : p ? "✨ صورة احترافية للمنتج" : "✨ منتج جديد بصورة احترافية";
-
-        let body = "";
-        if (isAd) {
-            const withImg = A.draft.products.filter((x) => x.image_url);
-            const picked = withImg.filter((x) => st.refs.includes(x.id));
-            const others = withImg.filter((x) => !st.refs.includes(x.id));
-            const room = 3 - st.refs.length - st.uploads.length;
-            body = `
-                <label class="af"><span>فكرة الإعلان (البرومبت)</span><textarea class="ai" rows="3" data-ai-field="prompt" placeholder="مثال: عرض اليوم الوطني — كاسات الأندية بخصم 10% بأجواء احتفالية بألوان علم عُمان">${esc(st.prompt)}</textarea><small>اكتب فكرتك بالعربي أو الإنجليزي، والذكاء الاصطناعي يصمم إعلاناً واقعياً واحترافياً.</small></label>
-                <div class="adm-card flat">
-                    <h3>منتجات تظهر في الإعلان <small class="adm-muted">(اختياري، حتى 3)</small></h3>
-                    <div class="ai-picks">
-                        ${[...picked, ...others].map((x) => `<button type="button" class="ai-pick${st.refs.includes(x.id) ? " on" : ""}" data-a="ai-ref" data-id="${esc(x.id)}" aria-pressed="${st.refs.includes(x.id)}"${!st.refs.includes(x.id) && room <= 0 ? " disabled" : ""}><img src="${esc(ATHR.thumb(x.image_url, "s") || asset(x.image_url))}" alt="" loading="lazy"><span>${esc(x.name || "")}</span></button>`).join("")}
-                    </div>
-                    ${st.uploads.length ? `<div class="ai-ups">${st.uploads.map((u, i) => `<span class="ai-up"><img src="${esc(u.url)}" alt=""><button type="button" class="ab-mini danger" data-a="ai-up-del" data-i="${i}" aria-label="إزالة">×</button></span>`).join("")}</div>` : ""}
-                    ${room > 0 ? `<label class="ab ab-soft ab-sm">رفع صور من جوالك<input type="file" accept="image/*" multiple data-ai-refs hidden></label>` : ""}
-                </div>
-                <div class="af"><span>المقاس</span><div class="ai-aspects">${AI_ASPECTS.map(([v, l, s]) => `<button type="button" class="ai-chip${st.aspect === v ? " on" : ""}" data-a="ai-aspect" data-v="${v}" aria-pressed="${st.aspect === v}"><b>${l}</b><small dir="ltr">${v}</small><small>${s}</small></button>`).join("")}</div></div>
-                <label class="at"><input type="checkbox" data-ai-field="noText"${st.noText ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>بدون كتابة داخل الصورة</b><small>أنظف وأدق. اكتب العرض في المتجر أو في منشورك بدلاً من داخل الصورة.</small></span></label>
-                ${st.noText ? "" : `<label class="af"><span>النص المكتوب داخل الإعلان</span><input class="ai" data-ai-field="adText" maxlength="60" value="${esc(st.adText)}" placeholder="مثال: خصم 10%"><small>اجعله قصيراً جداً. الكتابة العربية داخل الصور قد تخرج بأخطاء أحياناً.</small></label>`}`;
-        } else {
-            body = `
-                <div class="adm-card flat">
-                    <h3>1. صورة المنتج من جوالك</h3>
-                    <div class="ai-src">
-                        ${st.src ? `<img src="${esc(st.src.url)}" alt="">` : `<div class="ai-ph">صوّر المنتج من الأمام بإضاءة جيدة — الخلفية لا تهم</div>`}
-                    </div>
-                    <div class="inline">
-                        <label class="ab ab-soft ab-sm">${st.src ? "تغيير الصورة" : "اختيار صورة أو تصوير"}<input type="file" accept="image/*" data-ai-src hidden></label>
-                        ${p && p.image_url && !(st.src && st.src.current) ? `<button class="ab-mini" type="button" data-a="ai-use-current">استخدم صورة المنتج الحالية</button>` : ""}
-                    </div>
-                </div>
-                <div class="adm-card flat">
-                    <h3>2. شكل الصورة</h3>
-                    <div class="ai-styles">${AI_STYLES.map(([v, l, s]) => `<button type="button" class="ai-chip${st.style === v ? " on" : ""}" data-a="ai-style" data-v="${v}" aria-pressed="${st.style === v}"><b>${l}</b><small>${s}</small></button>`).join("")}</div>
-                </div>
-                <label class="af"><span>3. وصفك (البرومبت)${st.style === "custom" ? "" : " — اختياري"}</span><textarea class="ai" rows="3" data-ai-field="prompt" placeholder="${st.style === "custom" ? "مثال: الكوب على رخام أبيض مع حبوب قهوة وإضاءة ذهبية" : "مثال: أضف بخار قهوة خفيف فوق الكوب"}">${esc(st.prompt)}</textarea><small>المنتج وطباعته يبقيان كما هما تماماً، والذكاء الاصطناعي يغيّر الخلفية والإضاءة والجو فقط.</small></label>`;
-        }
-
-        const canUse = res && !st.busy;
-        return `
-            <div class="adm-sheet-head">
-                <h2>${title}</h2>
-                <button class="adm-icon" type="button" data-a="ai-back" aria-label="رجوع">×</button>
-            </div>
-            <div class="af-stack ai-studio">
-                ${aiSetup()}
-                ${body}
-                <button class="ab ab-primary ab-block" type="button" data-a="ai-generate"${st.busy ? " disabled" : ""}>${st.busy ? "جاري التصميم..." : res ? "✨ صمّم نسخة أخرى" : "✨ صمّم الصورة"}</button>
-                ${st.busy ? `<p class="adm-muted center">يأخذ عادة من 10 ثوانٍ إلى دقيقة. لا تغلق الصفحة.</p>` : ""}
-                ${st.error ? `<div class="adm-errors">${esc(st.error)}${st.detail ? `<small class="ai-detail" dir="ltr">${esc(st.detail)}</small>` : ""}</div>` : ""}
-                ${res ? `<div class="adm-card flat ai-out">
-                    <h3>النتيجة</h3>
-                    <img src="${esc(res.url)}" alt="">
-                    <div class="inline">
-                        ${isAd
-                            ? `<button class="ab ab-primary ab-sm" type="button" data-a="ai-use-ad"${canUse ? "" : " disabled"}>استخدمها في إعلان المتجر</button>`
-                            : `<button class="ab ab-primary ab-sm" type="button" data-a="ai-use-main"${canUse ? "" : " disabled"}>${p ? "اجعلها الصورة الرئيسية" : "أنشئ المنتج بهذه الصورة"}</button>
-                               ${p && p.media.filter((m) => m.type === "image").length < 5 ? `<button class="ab ab-soft ab-sm" type="button" data-a="ai-use-extra"${canUse ? "" : " disabled"}>أضفها للصور الإضافية</button>` : ""}`}
-                        <a class="ab-mini" href="${esc(res.url)}" download="athr-ai-${Date.now()}.${res.mime === "image/jpeg" ? "jpg" : "png"}">تنزيل</a>
-                    </div>
-                </div>` : ""}
-            </div>`;
-    }
-
-    function aiCleanup() {
-        const st = A.ai;
-        if (!st) return;
-        [st.src, st.result, ...st.uploads].forEach((x) => { if (x && x.url && x.url.startsWith("blob:")) URL.revokeObjectURL(x.url); });
-        A.ai = null;
-    }
-
-    async function aiLoadStatus() {
-        try {
-            const { data, error } = await sb.rpc("ai_key_status");
-            A.aiStatus = error ? {} : (data || {});
-        } catch {
-            A.aiStatus = {};
-        }
-        if (A.ai) refreshSheet();
-    }
-
-    function openAi(mode, productId = null, from = "") {
-        aiCleanup();
-        A.ai = { mode, productId, from, src: null, style: "beige", prompt: "", aspect: "16:9", noText: true, adText: "", refs: [], uploads: [], result: null, busy: false, error: "", detail: "" };
-        A.editing = null;
-        openSheet(aiStudio());
-        if (A.aiStatus === undefined || A.aiStatus === null) {
-            A.aiStatus = undefined;
-            aiLoadStatus();
-        }
-    }
-
-    function aiBack() {
-        const st = A.ai;
-        const back = st && st.from === "editor" && st.productId && A.draft.products.some((x) => x.id === st.productId) ? st.productId : null;
-        aiCleanup();
-        if (back) editProduct(back);
-        else closeSheet();
-    }
-
-    function blobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]+,/, ""));
-            reader.onerror = () => reject(new Error("تعذر قراءة الصورة."));
-            reader.readAsDataURL(blob);
-        });
-    }
-
-    // نصغّر الصورة قبل الإرسال (أسرع وأرخص) مع الحفاظ على تفاصيل الطباعة
-    async function aiInputImage(blob, max = 1536) {
-        const { img, url } = await loadImage(blob);
-        const ratio = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(img.naturalWidth * ratio));
-        canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        const out = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
-        if (!out) throw new Error("تعذر تجهيز الصورة.");
-        return { mime: "image/jpeg", data: await blobToBase64(out) };
-    }
-
-    async function fetchBlob(src) {
-        const res = await fetch(asset(src), { cache: "force-cache" });
-        if (!res.ok) throw new Error("تعذر تحميل صورة المنتج.");
-        return res.blob();
-    }
-
-    function base64ToBlob(b64, mime) {
-        const bin = atob(b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        return new Blob([bytes], { type: mime || "image/png" });
-    }
-
-    async function aiGenerate() {
-        const st = A.ai;
-        if (!st || st.busy) return;
-        const c = aiCfg();
-        const isAd = st.mode === "ad";
-        st.error = "";
-        st.detail = "";
-        if (A.aiStatus && !A.aiStatus[c.provider]) st.error = AI_ERRORS.no_key;
-        else if (!isAd && !st.src) st.error = "اختر صورة المنتج أولاً (من جوالك أو صورته الحالية).";
-        else if (!isAd && st.style === "custom" && String(st.prompt).trim().length < 5) st.error = "اكتب وصف الشكل الذي تريده.";
-        else if (isAd && String(st.prompt).trim().length < 5) st.error = "اكتب فكرة الإعلان أولاً.";
-        else if (isAd && !st.noText && !String(st.adText).trim()) st.error = "اكتب النص الذي تريده داخل الإعلان، أو فعّل «بدون كتابة».";
-        if (st.error) {
-            refreshSheet();
-            return;
-        }
-        st.busy = true;
-        refreshSheet();
-        busyMessage("✨ جاري تصميم الصورة...");
-        try {
-            let images = [];
-            if (isAd) {
-                const blobs = [];
-                for (const id of st.refs) {
-                    const p = A.draft.products.find((x) => x.id === id);
-                    if (p && p.image_url) blobs.push(await fetchBlob(p.image_url));
-                }
-                st.uploads.forEach((u) => blobs.push(u.blob));
-                for (const b of blobs.slice(0, 3)) images.push(await aiInputImage(b, 1280));
-            } else {
-                images = [await aiInputImage(st.src.blob)];
-            }
-            const prompt = isAd ? aiAdPrompt(st, images.length) : aiProductPrompt(st);
-            const { data: sess } = await sb.auth.getSession();
-            const token = sess && sess.session && sess.session.access_token;
-            if (!token) throw Object.assign(new Error("not_admin"), { code: "not_admin" });
-            let res;
-            try {
-                res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/ai-image`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ provider: c.provider, quality: c.quality, model: c.model, aspect: isAd ? st.aspect : "4:5", prompt, images }),
-                    signal: AbortSignal.timeout ? AbortSignal.timeout(170000) : undefined
-                });
-            } catch (error) {
-                throw Object.assign(new Error(String(error && error.message)), { code: error && error.name === "TimeoutError" ? "timeout" : "offline" });
-            }
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok || !json.image) throw Object.assign(new Error(json.detail || `HTTP ${res.status}`), { code: json.error || (res.status === 404 ? "offline" : "failed") });
-            if (A.ai !== st) return;
-            if (st.result && st.result.url) URL.revokeObjectURL(st.result.url);
-            const blob = base64ToBlob(json.image, json.mime);
-            st.result = { blob, url: URL.createObjectURL(blob), mime: json.mime || "image/png", model: json.model || "" };
-        } catch (error) {
-            console.warn("AI image failed:", error);
-            if (A.ai !== st) return;
-            st.error = AI_ERRORS[error.code] || (error && /[؀-ۿ]/.test(error.message || "") ? error.message : "تعذر تصميم الصورة. جرّب مرة أخرى.");
-            st.detail = error.code && error.code !== "not_admin" && !/[؀-ۿ]/.test(error.message || "") ? String(error.message || "").slice(0, 200) : "";
-            if (error.code === "no_key" || error.code === "bad_key") aiLoadStatus();
-        } finally {
-            busyMessage("");
-            if (A.ai === st) {
-                st.busy = false;
-                refreshSheet();
-                if (st.result && !st.error) setTimeout(() => $("#admSheet .ai-out")?.scrollIntoView({ block: "start", behavior: "smooth" }), 30);
-            }
-        }
-    }
-
-    async function aiUse(kind) {
-        const st = A.ai;
-        if (!st || !st.result || st.busy) return;
-        await withBusy("جاري حفظ الصورة...", async () => {
-            const { blob, ext, type } = await prepareImage(st.result.blob, kind === "ad" ? "ad" : "product");
-            const url = await uploadBlob(blob, ext, type);
-            if (kind === "ad") {
-                const ad = cfg().ad;
-                ad.type = "image";
-                ad.image_url = url;
-                ad.show = true;
-                if (!ad.image_alt) ad.image_alt = String(st.prompt || "").trim().slice(0, 120);
-                aiCleanup();
-                closeSheet();
-                saveDraft();
-                renderTab({ keepScroll: true });
-                toast("صارت صورة الإعلان. اضغط «نشر» ليراها الزبائن.");
-                return;
-            }
-            let p = st.productId ? A.draft.products.find((x) => x.id === st.productId) : null;
-            if (!p) {
-                p = newProduct();
-                A.draft.products.unshift(p);
-                A.productFilter = "";
-            }
-            if (kind === "extra") {
-                const video = p.media.filter((m) => m.type === "video");
-                p.media = [...p.media.filter((m) => m.type === "image"), { type: "image", url }, ...video];
-            } else {
-                p.image_url = url;
-            }
-            const id = p.id;
-            aiCleanup();
-            saveDraft();
-            renderTab({ keepScroll: true });
-            editProduct(id);
-            toast(kind === "extra" ? "أُضيفت الصورة للمنتج" : "صارت الصورة الرئيسية للمنتج ✨");
-        });
-    }
-
-    async function aiSaveKey(remove = false) {
-        const c = aiCfg();
-        const input = $("#aiKey");
-        const key = remove ? "" : String(input ? input.value : "").trim();
-        if (!remove) {
-            if (key.length < 20 || /\s/.test(key)) { toast("الصق المفتاح كاملاً بدون مسافات."); return; }
-            if (c.provider === "gemini" && /^sk-/.test(key)) { toast("هذا مفتاح OpenAI. غيّر الخدمة إلى OpenAI أو الصق مفتاح Gemini (يبدأ بـ AIza)."); return; }
-            if (c.provider === "openai" && /^AIza/.test(key)) { toast("هذا مفتاح Gemini. غيّر الخدمة إلى Google Gemini."); return; }
-        } else if (!confirm("حذف مفتاح الذكاء الاصطناعي؟ لن تعمل أزرار التصميم حتى تضيف مفتاحاً جديداً.")) return;
-        const { error } = await sb.rpc("set_ai_key", { provider: c.provider, key });
-        if (input) input.value = "";
-        if (error) {
-            toast(/invalid/i.test(error.message || "") ? "المفتاح غير صالح. انسخه من جديد." : "تعذر حفظ المفتاح. تأكد من الإنترنت.");
-            return;
-        }
-        toast(remove ? "حُذف المفتاح" : "حُفظ المفتاح بأمان ✅");
-        if (A.ai) A.ai.error = "";
-        await aiLoadStatus();
-    }
-
-    async function aiAddFiles(input, files) {
-        const st = A.ai;
-        if (!st) return;
-        const d = input.dataset;
-        if (d.aiSrc !== undefined) {
-            if (st.src && st.src.url.startsWith("blob:")) URL.revokeObjectURL(st.src.url);
-            st.src = { blob: files[0], url: URL.createObjectURL(files[0]), current: false };
-            st.error = "";
-        } else if (d.aiRefs !== undefined) {
-            const room = 3 - st.refs.length - st.uploads.length;
-            files.slice(0, Math.max(0, room)).forEach((f) => st.uploads.push({ blob: f, url: URL.createObjectURL(f) }));
-            if (files.length > room) toast("الحد 3 صور في الإعلان.");
-        }
-        refreshSheet();
-    }
-
-    async function aiClick(d) {
-        const st = A.ai;
-        switch (d.a) {
-            case "ai-product": openAi("product", d.id || A.editing || null, A.editing ? "editor" : ""); return true;
-            case "ai-new-product": openAi("product", null); return true;
-            case "ai-ad": openAi("ad"); return true;
-            case "ai-back": aiBack(); return true;
-            case "ai-save-key": await aiSaveKey(false); return true;
-            case "ai-del-key": await aiSaveKey(true); return true;
-            default: break;
-        }
-        if (!st) return false;
-        switch (d.a) {
-            case "ai-generate": aiGenerate(); return true;
-            case "ai-style": st.style = d.v; refreshSheet(); return true;
-            case "ai-aspect": st.aspect = d.v; refreshSheet(); return true;
-            case "ai-ref":
-                if (st.refs.includes(d.id)) st.refs = st.refs.filter((x) => x !== d.id);
-                else if (st.refs.length + st.uploads.length < 3) st.refs.push(d.id);
-                refreshSheet();
-                return true;
-            case "ai-up-del": {
-                const u = st.uploads.splice(Number(d.i), 1)[0];
-                if (u) URL.revokeObjectURL(u.url);
-                refreshSheet();
-                return true;
-            }
-            case "ai-use-current": {
-                const p = A.draft.products.find((x) => x.id === st.productId);
-                if (!p || !p.image_url) return true;
-                await withBusy("جاري تحميل الصورة...", async () => {
-                    const blob = await fetchBlob(p.image_url);
-                    if (A.ai !== st) return;
-                    if (st.src && st.src.url.startsWith("blob:")) URL.revokeObjectURL(st.src.url);
-                    st.src = { blob, url: URL.createObjectURL(blob), current: true };
-                    st.error = "";
-                    refreshSheet();
-                });
-                return true;
-            }
-            case "ai-use-main": aiUse("main"); return true;
-            case "ai-use-extra": aiUse("extra"); return true;
-            case "ai-use-ad": aiUse("ad"); return true;
-            default: return false;
-        }
-    }
-
-    // =====================================================
     // EVENTS (panel + orders)
     // =====================================================
 
@@ -1988,10 +1636,6 @@
         }
         if (t.dataset.priceBase || t.dataset.pricePct) {
             priceFromSheet(t.dataset.priceBase || t.dataset.pricePct);
-            return;
-        }
-        if (t.dataset.aiField && A.ai && t.type !== "checkbox") {
-            A.ai[t.dataset.aiField] = t.value;
             return;
         }
         if (t.dataset.bind && t.type !== "checkbox" && t.tagName !== "SELECT") {
@@ -2029,15 +1673,10 @@
             renderTab({ keepScroll: true });
             return;
         }
-        if (t.dataset.aiField && A.ai) {
-            A.ai[t.dataset.aiField] = t.type === "checkbox" ? t.checked : t.value;
-            if (t.type === "checkbox") refreshSheet();
-            return;
-        }
         if (t.dataset.bind) {
             bindValue(t);
             if (t.dataset.rerender !== undefined) {
-                if (A.editing || A.ai) refreshSheet();
+                if (A.editing) refreshSheet();
                 renderTab({ keepScroll: true });
             }
             return;
@@ -2075,11 +1714,6 @@
 
     async function handleFiles(input, files) {
         const d = input.dataset;
-
-        if (d.aiSrc !== undefined || d.aiRefs !== undefined) {
-            await aiAddFiles(input, files);
-            return;
-        }
 
         if (d.upload) {
             const kind = d.kind || "product";
@@ -2175,10 +1809,6 @@
             return;
         }
 
-        if (d.a && d.a.startsWith("ai-")) {
-            await aiClick(d);
-            return;
-        }
         if (d.a && /^(offer|cust)-/.test(d.a) && await customersClick(d)) return;
         if (d.custKind) {
             A.custFilter.kind = d.custKind;
@@ -2209,6 +1839,9 @@
             case "retry": open(A.view); return;
             case "close-sheet": closeSheet(); return;
             case "preview": preview(); return;
+            case "tpl-apply": applyTemplate(d.id); return;
+            case "tpl-undo": undoTemplate(); return;
+            case "tpl-preview": previewTemplate(d.id); return;
             case "gift-preview": preview(`${ATHR.base()}gift/?c=${ATHR.giftCode(GIFT_SAMPLE)}`); return;
             case "account": openAccount(); return;
             case "discard": discard(); return;
@@ -2404,15 +2037,16 @@
         if (!confirm("تجاهل كل التعديلات غير المنشورة والرجوع لآخر نسخة منشورة؟")) return;
         A.draft = ATHR.clone(A.server);
         A.errors = [];
+        A.prevTheme = null;
         storage.del(DRAFT_KEY);
         renderTab();
         renderStatus();
         toast("رجعت لآخر نسخة منشورة");
     }
 
-    function preview(path) {
+    function preview(path, config) {
         const data = {
-            config: A.draft.config,
+            config: config || A.draft.config,
             categories: A.draft.categories.map((c, i) => ({ ...c, sort_order: i + 1 })),
             products: A.draft.products.map((p, i) => ({ ...p, sort_order: i + 1 }))
         };

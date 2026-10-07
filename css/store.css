@@ -127,8 +127,8 @@ main { flex: 1; outline: none; }
     position: sticky;
     top: 0;
     z-index: 40;
-    background: var(--primary);
-    color: var(--on-primary);
+    background: var(--head-bg, var(--primary));
+    color: var(--head-ink, var(--on-primary));
     padding-top: env(safe-area-inset-top);
 }
 
@@ -155,7 +155,7 @@ main { flex: 1; outline: none; }
     padding: 0 11px;
     border: 0;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, .12);
+    background: color-mix(in srgb, currentColor 12%, transparent);
     color: inherit;
     display: inline-flex;
     align-items: center;
@@ -163,7 +163,7 @@ main { flex: 1; outline: none; }
     font-weight: 700;
     font-size: 13.5px;
 }
-.cur-btn:hover { background: rgba(255, 255, 255, .2); }
+.cur-btn:hover { background: color-mix(in srgb, currentColor 20%, transparent); }
 #curFlag { font-size: 18px; line-height: 1; }
 
 .icon-btn {
@@ -171,7 +171,7 @@ main { flex: 1; outline: none; }
     height: 40px;
     border: 0;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, .12);
+    background: color-mix(in srgb, currentColor 12%, transparent);
     color: inherit;
     display: grid;
     place-items: center;
@@ -180,11 +180,12 @@ main { flex: 1; outline: none; }
 }
 .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 #menuBtn svg { fill: currentColor; stroke: none; }
-.icon-btn:hover { background: rgba(255, 255, 255, .2); }
+.icon-btn:hover { background: color-mix(in srgb, currentColor 20%, transparent); }
 
 .brand { display: flex; align-items: center; gap: 9px; text-decoration: none; min-width: 0; justify-self: start; }
 .brand-logo { width: 40px; height: 40px; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; border-radius: 11px; }
 .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+.brand-logo:not(.has-photo) img { filter: var(--logo-filter, none); }
 .brand-logo.shape-circle { border-radius: 50%; }
 .brand-logo.shape-square { border-radius: 0; }
 .brand-logo.has-photo { background: #fff; }
@@ -206,7 +207,7 @@ main { flex: 1; outline: none; }
 .search input { border: 0; outline: 0; background: transparent; width: 100%; height: 100%; font-size: 16px; min-width: 0; }
 .search input::placeholder { color: var(--muted); }
 .search input::-webkit-search-cancel-button { filter: grayscale(1); }
-.search:focus-within { box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
+.search:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--head-ink, var(--on-primary)) 35%, transparent); }
 
 .cart-count {
     position: absolute;
@@ -216,8 +217,8 @@ main { flex: 1; outline: none; }
     height: 20px;
     padding: 0 5px;
     border-radius: 999px;
-    background: #fff;
-    color: var(--primary);
+    background: var(--head-ink, var(--on-primary));
+    color: var(--head-bg, var(--primary));
     font-size: 12px;
     font-weight: 700;
     line-height: 20px;
@@ -288,7 +289,7 @@ main { flex: 1; outline: none; }
 .btn:active { transform: scale(.98); }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
 .btn svg { width: 20px; height: 20px; flex-shrink: 0; }
-.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary { background: var(--btn-bg, var(--primary)); color: var(--btn-ink, var(--on-primary)); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { background: var(--surface); border-color: var(--line); color: var(--text); }
 .btn-ghost:hover { border-color: var(--accent); }
@@ -1160,13 +1161,13 @@ select.input { appearance: auto; }
     padding: 0 10px;
     border: 0;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, .12);
+    background: color-mix(in srgb, currentColor 12%, transparent);
     color: inherit;
     font-weight: 700;
     font-size: 13.5px;
     font-family: var(--font-body);
 }
-.lang-btn:hover { background: rgba(255, 255, 255, .2); }
+.lang-btn:hover { background: color-mix(in srgb, currentColor 20%, transparent); }
 .top-row { grid-template-columns: auto 1fr auto auto auto; grid-template-areas: "menu brand lang cur cart" "search search search search search"; }
 .top-row.no-search { grid-template-areas: "menu brand lang cur cart"; }
 @media (min-width: 760px) {
@@ -1548,3 +1549,103 @@ select.input { appearance: auto; }
 .foot-head .footer-brand img { width: auto; height: 48px; }
 .mk-line { font-weight: 500; font-size: 13.5px; color: var(--muted); }
 .mk-line input { width: 18px; height: 18px; }
+
+/* =====================================================
+   v10 — قوالب المتجر (تُختار من لوحة التحكم ← القوالب)
+   كل قالب = ألوان وخطوط من لوحة التحكم + لمسات شكل هنا.
+   كلها مبنية على المتغيرات حتى تعمل في الوضع الفاتح والداكن.
+===================================================== */
+
+/* الشريط العلوي الفاتح */
+html.head-light { --head-bg: var(--surface); --head-ink: var(--text); --logo-filter: brightness(0); }
+html.head-light .top { border-bottom: 1px solid var(--line); }
+html.head-light .search { background: color-mix(in srgb, var(--text) 5%, var(--surface)); box-shadow: inset 0 0 0 1px var(--line); }
+html.head-light .search:focus-within { box-shadow: inset 0 0 0 1px var(--line), 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+html.head-light .cart-count { background: var(--primary); color: var(--on-primary); }
+html.head-light[data-mode="dark"] { --logo-filter: none; }
+@media (prefers-color-scheme: dark) { html.head-light[data-mode="auto"] { --logo-filter: none; } }
+
+/* 1) أبيض بسيط */
+html.tpl-minimal { --line: color-mix(in srgb, var(--text) 9%, var(--bg)); --img-bg: color-mix(in srgb, var(--text) 5%, var(--surface)); --accent: var(--text); }
+html.tpl-minimal .card { border: 0; background: transparent; overflow: visible; }
+html.tpl-minimal .card-img { border-radius: var(--r); overflow: hidden; }
+html.tpl-minimal .card-body { padding: 9px 2px 6px; }
+html.tpl-minimal .card-action { padding: 0 0 4px; }
+html.tpl-minimal .card-name { font-weight: 500; }
+html.tpl-minimal .price b { color: var(--text); }
+html.tpl-minimal .card-action .btn-primary { background: transparent; color: var(--text); border-color: var(--text); }
+html.tpl-minimal .tile-img { box-shadow: none; }
+html.tpl-minimal .tile.on .tile-img, html.tpl-minimal .tile:hover .tile-img { box-shadow: 0 0 0 1.5px var(--text); }
+html.tpl-minimal .section-head h1, html.tpl-minimal .section-head h2 { font-weight: 600; }
+html.tpl-minimal .hero h1 { font-weight: 600; }
+html.tpl-minimal .hero-features li { background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
+html.tpl-minimal .badge { box-shadow: none; border-radius: 3px; }
+html.tpl-minimal .badge.hot { background: var(--surface); color: var(--text); }
+
+/* 2) بوتيك ناعم */
+html.tpl-boutique .card { border: 0; box-shadow: 0 1px 2px rgba(46, 36, 32, .05), 0 8px 22px rgba(46, 36, 32, .08); }
+html.tpl-boutique .btn, html.tpl-boutique .stepper { border-radius: 999px; }
+html.tpl-boutique .tiles { gap: 14px; }
+html.tpl-boutique .tile { flex-basis: 76px; }
+html.tpl-boutique .tile-img { width: 70px; height: 70px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px color-mix(in srgb, var(--primary) 40%, transparent); }
+html.tpl-boutique .tile.on .tile-img, html.tpl-boutique .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary); }
+html.tpl-boutique .section-head h1, html.tpl-boutique .section-head h2 { font-size: 22px; }
+html.tpl-boutique .hero-features li { background: rgba(255, 255, 255, .14); }
+@media (min-width: 760px) {
+    html.tpl-boutique .tile { flex-basis: 100px; }
+    html.tpl-boutique .tile-img { width: 92px; height: 92px; }
+}
+
+/* 3) أسود فاخر — ذهبي مع أسود */
+html.tpl-luxe { --gold: #B8924A; --accent: #94713A; --btn-ink: #EBD5A6; }
+html.tpl-luxe[data-mode="dark"] { --accent: #D2B47A; --btn-bg: #CFAE72; --btn-ink: #141414; }
+@media (prefers-color-scheme: dark) { html.tpl-luxe[data-mode="auto"] { --accent: #D2B47A; --btn-bg: #CFAE72; --btn-ink: #141414; } }
+html.tpl-luxe .top { box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--gold) 75%, transparent); }
+html.tpl-luxe .hero h1 { color: #E9D3A3; letter-spacing: .01em; }
+html.tpl-luxe .hero-features li { background: transparent; box-shadow: inset 0 0 0 1px rgba(233, 211, 163, .35); color: #F1E4C6; }
+html.tpl-luxe .bar-announce { box-shadow: inset 0 -1px 0 rgba(233, 211, 163, .35); color: #F1E4C6; }
+html.tpl-luxe .card { border-color: color-mix(in srgb, var(--gold) 28%, var(--line)); }
+html.tpl-luxe .card-name { font-weight: 600; }
+html.tpl-luxe .badge { box-shadow: none; }
+html.tpl-luxe .badge.sale, html.tpl-luxe .badge.hot { background: var(--gold); color: #141414; }
+html.tpl-luxe .cart-count { background: var(--gold); color: #141414; }
+html.tpl-luxe .section-head h1, html.tpl-luxe .section-head h2 { font-size: 23px; }
+html.tpl-luxe .tile.on .tile-img, html.tpl-luxe .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--gold); }
+
+/* 4) عصري جريء */
+html.tpl-bold .hero h1 { font-size: clamp(28px, 8.6vw, 58px); letter-spacing: -.01em; }
+html.tpl-bold .section-head h1, html.tpl-bold .section-head h2 { font-size: 23px; }
+html.tpl-bold .card { border: 0; box-shadow: 0 1px 2px rgba(13, 16, 32, .06); }
+html.tpl-bold .card-name { font-weight: 700; }
+html.tpl-bold .price b { color: var(--text); font-size: 16px; }
+html.tpl-bold .btn { font-weight: 800; }
+html.tpl-bold .badge { border-radius: 4px; box-shadow: none; }
+html.tpl-bold .badge.hot { background: #D4FF3A; color: #0D1020; }
+html.tpl-bold .tile-img { box-shadow: none; }
+html.tpl-bold .tile-name { font-weight: 700; }
+html.tpl-bold .hero-features li { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+
+/* 5) طبيعي هادئ */
+html.tpl-calm .card { border-color: color-mix(in srgb, var(--primary) 14%, var(--line)); }
+html.tpl-calm .btn, html.tpl-calm .stepper { border-radius: 999px; }
+html.tpl-calm .tile-img { border-radius: 999px 999px var(--r-sm) var(--r-sm); box-shadow: none; }
+html.tpl-calm .tile.on .tile-img, html.tpl-calm .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--primary); }
+html.tpl-calm .badge { box-shadow: none; }
+html.tpl-calm .badge.hot { background: #E9E3C8; color: #2E3F31; }
+html.tpl-calm .hero-features li { background: rgba(255, 255, 255, .1); }
+
+/* 6) مرح ملوّن — حدود واضحة وظل مزاح */
+html.tpl-fun { --ink: var(--text); --pop: #FFD23F; }
+html.tpl-fun .top { box-shadow: inset 0 -2px 0 var(--ink); }
+html.tpl-fun .grid { gap: 16px 12px; }
+html.tpl-fun .card { border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+html.tpl-fun .card-img { border-bottom: 2px solid var(--ink); }
+html.tpl-fun .btn-primary, html.tpl-fun .btn-ghost { border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+html.tpl-fun .card-action .btn { box-shadow: none; }
+html.tpl-fun .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+html.tpl-fun .badge { box-shadow: none; border: 1.5px solid var(--ink); }
+html.tpl-fun .badge.hot { background: var(--pop); color: #22163A; }
+html.tpl-fun .tile-img { box-shadow: 3px 3px 0 var(--ink); border: 2px solid var(--ink); }
+html.tpl-fun .tile.on .tile-img, html.tpl-fun .tile:hover .tile-img { box-shadow: 3px 3px 0 var(--primary); border-color: var(--primary); }
+html.tpl-fun .hero h1 { color: var(--pop); }
+html.tpl-fun .hero-features li { background: rgba(255, 255, 255, .14); }

@@ -75,6 +75,3 @@ jobs:
             title=$(grep -o "<title>[^<]*" /tmp/page | head -1)
             echo "::notice title=فحص المتجر::${code} ${site}${path} ${title}"
           done
-          # دالة تصميم الصور بالذكاء الاصطناعي: بدون تسجيل دخول يجب أن ترفض (401 not_admin)
-          fn=$(curl -s -o /tmp/fn -w "%{http_code}" -X POST "https://wfzcfedtebaacjdzogpj.supabase.co/functions/v1/ai-image" -H "Content-Type: application/json" -d '{}')
-          echo "::notice title=فحص الذكاء الاصطناعي::${fn} $(head -c 120 /tmp/fn)"

@@ -53,7 +53,9 @@ const ATHR_DEFAULTS = {
         hero_show: true,
         hero_pattern: true,
         hero_image: "",
-        visitor_mode: true
+        visitor_mode: true,
+        template: "classic",
+        header: "color"
     },
 
     texts: {
@@ -200,13 +202,6 @@ const ATHR_DEFAULTS = {
             thanks: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
             other: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" }
         }
-    },
-
-    // تصميم الصور بالذكاء الاصطناعي (المفتاح نفسه محفوظ بسرية في قاعدة البيانات وليس هنا)
-    ai: {
-        provider: "gemini",
-        quality: "best",
-        model: ""
     }
 };
 
@@ -942,13 +937,111 @@ ATHR.themeColors = function (config) {
     return { primary: pick(t.primary, D.primary), hero: pick(t.hero, D.hero), bg: pick(t.bg, D.bg), text: pick(t.text, D.text) };
 };
 
+// درجة سطوع اللون (0 أسود ← 1 أبيض) لاختيار لون الكتابة المناسب فوقه تلقائياً
+ATHR.luma = function (hex) {
+    const n = parseInt(String(hex || "#000000").slice(1), 16) || 0;
+    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+        const x = v / 255;
+        return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+};
+
+// أبيض فوق الألوان الغامقة، وغامق فوق الألوان الفاتحة (مثل الذهبي)
+ATHR.onColor = function (hex) {
+    const L = ATHR.luma(hex);
+    return 1.05 / (L + 0.05) >= (L + 0.05) / 0.057 ? "#FFFFFF" : "#141414";
+};
+
 ATHR.themeVars = function (config) {
     const t = config.theme || {};
     const c = ATHR.themeColors(config);
     const head = ATHR.FONT_PARAMS[t.font_head] ? `"${t.font_head}"` : "system-ui";
     const body = ATHR.FONT_PARAMS[t.font_body] ? `"${t.font_body}"` : "system-ui";
-    return `:root{--primary:${c.primary};--hero:${c.hero};--bg:${c.bg};--text:${c.text};--font-head:${head},${body},system-ui,sans-serif;--font-body:${body},system-ui,-apple-system,"Segoe UI",sans-serif}`;
+    const onPrimary = ATHR.onColor(c.primary);
+    let css = `:root{--primary:${c.primary};--hero:${c.hero};--bg:${c.bg};--text:${c.text};--on-primary:${onPrimary};--logo-filter:${onPrimary === "#FFFFFF" ? "none" : "brightness(0)"};--font-head:${head},${body},system-ui,sans-serif;--font-body:${body},system-ui,-apple-system,"Segoe UI",sans-serif}`;
+    // اللون الأساسي أسود تقريباً: في الوضع الداكن نجعل الأزرار فاتحة حتى تبقى واضحة
+    if (ATHR.luma(c.primary) < 0.025) {
+        const dark = "--btn-bg:#F1EEE8;--btn-ink:#141414";
+        css += `html[data-mode="dark"]{${dark}}@media (prefers-color-scheme:dark){html[data-mode="auto"]{${dark}}}`;
+    }
+    return css;
 };
+
+// =====================================================
+// قوالب المتجر: كل قالب يغيّر الألوان والخطوط والزوايا والشريط العلوي
+// وشكل البطاقات (عبر الصنف tpl-<id> في css/store.css). المنتجات والنصوص لا تتغير.
+// =====================================================
+
+ATHR.TEMPLATES = [
+    {
+        id: "classic",
+        name: "أثر الكلاسيكي",
+        desc: "عنابي وبيج دافئ مع زخرفة عربية — الشكل الأصلي للمتجر.",
+        theme: { primary: "#7D1420", hero: "#4A0D12", bg: "#EBDDC9", text: "#251A1B", font_head: "Reem Kufi", font_body: "IBM Plex Sans Arabic", radius: "medium", header: "color", hero_pattern: true }
+    },
+    {
+        id: "minimal",
+        name: "أبيض بسيط",
+        desc: "أبيض وأسود نظيف مثل الماركات العالمية. المنتج هو البطل.",
+        theme: { primary: "#111111", hero: "#111111", bg: "#FFFFFF", text: "#111111", font_head: "IBM Plex Sans Arabic", font_body: "IBM Plex Sans Arabic", radius: "sharp", header: "light", hero_pattern: false }
+    },
+    {
+        id: "boutique",
+        name: "بوتيك ناعم",
+        desc: "كريمي وتراكوتا بزوايا ناعمة وأقسام دائرية — مثالي للهدايا.",
+        theme: { primary: "#9C5B45", hero: "#4E342B", bg: "#F7F1EA", text: "#2E2420", font_head: "El Messiri", font_body: "Tajawal", radius: "round", header: "light", hero_pattern: false }
+    },
+    {
+        id: "luxe",
+        name: "أسود فاخر",
+        desc: "أسود مع لمسات ذهبية وخط كلاسيكي — فخامة الماركات الراقية.",
+        theme: { primary: "#121212", hero: "#0B0B0C", bg: "#F5F2EC", text: "#1A1814", font_head: "Amiri", font_body: "IBM Plex Sans Arabic", radius: "sharp", header: "color", hero_pattern: true }
+    },
+    {
+        id: "bold",
+        name: "عصري جريء",
+        desc: "أزرق قوي وعناوين عريضة — حيوي مثل متاجر الرياضة.",
+        theme: { primary: "#1F4BFF", hero: "#0A0F2C", bg: "#F2F4F8", text: "#0D1020", font_head: "Alexandria", font_body: "Readex Pro", radius: "medium", header: "color", hero_pattern: false }
+    },
+    {
+        id: "calm",
+        name: "طبيعي هادئ",
+        desc: "أخضر زيتي وكتّاني وأشكال مقوّسة — مريح وهادئ للعين.",
+        theme: { primary: "#4F6B52", hero: "#2E3F31", bg: "#F1F0E8", text: "#22291F", font_head: "Almarai", font_body: "Almarai", radius: "round", header: "light", hero_pattern: false }
+    },
+    {
+        id: "fun",
+        name: "مرح ملوّن",
+        desc: "بنفسجي وأصفر بحدود واضحة — شبابي وملفت.",
+        theme: { primary: "#6C3BE0", hero: "#2B1660", bg: "#FFF6E5", text: "#22163A", font_head: "Baloo Bhaijaan 2", font_body: "Baloo Bhaijaan 2", radius: "round", header: "color", hero_pattern: false }
+    }
+];
+
+ATHR.template = function (config) {
+    const id = config && config.theme && config.theme.template;
+    return ATHR.TEMPLATES.find((x) => x.id === id) || ATHR.TEMPLATES[0];
+};
+
+// هل غيّر صاحب المتجر شيئاً من ألوان/خطوط القالب بعد تطبيقه؟
+ATHR.templateEdited = function (config) {
+    const tp = ATHR.template(config);
+    const t = (config && config.theme) || {};
+    return Object.keys(tp.theme).some((k) => String(t[k] ?? "").toLowerCase() !== String(tp.theme[k]).toLowerCase());
+};
+
+// أصناف <html>: الزوايا + القالب + الشريط العلوي الفاتح
+ATHR.themeClasses = function (config) {
+    const t = (config && config.theme) || {};
+    return [
+        { sharp: "r-sharp", round: "r-round" }[t.radius] || "",
+        `tpl-${ATHR.template(config).id}`,
+        t.header === "light" ? "head-light" : ""
+    ].filter(Boolean);
+};
+
+// لون شريط المتصفح في الجوال
+ATHR.headColor = (config) => (config.theme && config.theme.header === "light" ? "#FFFFFF" : ATHR.themeColors(config).primary);
 
 ATHR.fontHref = function (config) {
     const t = config.theme || {};
@@ -958,7 +1051,7 @@ ATHR.fontHref = function (config) {
 
 ATHR.themeMode = (config) => (["light", "dark", "auto"].includes(config.theme && config.theme.mode) ? config.theme.mode : "auto");
 
-ATHR.radiusClass = (config) => ({ sharp: "r-sharp", round: "r-round" }[config.theme && config.theme.radius] || "");
+ATHR.radiusClass = (config) => ATHR.themeClasses(config).join(" ");
 
 // مدة التوصيل «2 إلى 4 أيام» ← {min:2, max:4}
 ATHR.parseDays = function (text) {

@@ -367,7 +367,6 @@ async function main() {
         V_RATES: hashOf(ratesSrc),
         V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"))
     };
-    const colors = ATHR.themeColors(cfg);
     const baseCountry = ATHR.country(cfg, ATHR.BASE_COUNTRY);
     const multi = enabled.length > 1;
     const waOk = cfg.contact.wa_float && ATHR.isValidWhatsapp(cfg.order.whatsapp);
@@ -388,9 +387,9 @@ async function main() {
     function page({ route, headHTML, view, prerendered = true }) {
         const values = {
             MODE: ATHR.themeMode(cfg),
-            HTML_CLASS: ATHR.radiusClass(cfg),
+            HTML_CLASS: ATHR.themeClasses(cfg).join(" "),
             HEAD: headHTML,
-            THEME_COLOR: colors.primary,
+            THEME_COLOR: ATHR.headColor(cfg),
             BASE,
             API_ORIGIN: new URL(supabaseConfig().url).origin,
             FONT_HREF: ATHR.fontHref(cfg) || "data:text/css,",
