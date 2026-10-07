@@ -31,7 +31,8 @@
         channel: "athr_ch",
         channelLast: "athr_ch_last",
         sort: "athr_sort",
-        lang: "athr_lang"
+        lang: "athr_lang",
+        mode: "athr_mode"
     };
 
     // أسماء ولايات عُمان (اقتراحات فقط، ويمكن للعميل كتابة غيرها)
@@ -408,13 +409,26 @@
     }
     if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener("change", syncDark);
 
+    // اختيار الزائر للمظهر (فاتح / داكن / تلقائي) إن سمحت به من لوحة التحكم
+    function visitorMode() {
+        if (C().theme.visitor_mode === false) return "";
+        const m = storage.get(KEYS.mode, "");
+        return ["light", "dark", "auto"].includes(m) ? m : "";
+    }
+
+    function setMode(mode) {
+        storage.set(KEYS.mode, mode);
+        applyTheme();
+        $$("[data-set-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.setMode === mode)));
+    }
+
     function applyTheme() {
         const cfg = C();
         const root = document.documentElement;
         const vars = ATHR.themeVars(cfg);
         const style = $("#themeVars");
         if (style && style.textContent !== vars) style.textContent = vars;
-        root.dataset.mode = ATHR.themeMode(cfg);
+        root.dataset.mode = visitorMode() || ATHR.themeMode(cfg);
         syncDark();
         root.classList.toggle("r-sharp", cfg.theme.radius === "sharp");
         root.classList.toggle("r-round", cfg.theme.radius === "round");
@@ -960,17 +974,28 @@
             `اليوم: ${when.day}`,
             `التاريخ: ${when.date}`,
             `الوقت: ${when.time}`,
-            "",
-            `الاسم: ${order.customer_name}`,
-            `الهاتف: ${isOm ? order.phone : `+${order.phone}`}`,
-            `الدولة: ${c.flag} ${c.name}`,
+            ""
         ];
+        const giftTo = order.gift && (order.gift_name || order.gift_phone);
+        if (giftTo) {
+            out.push("🎁 الطلب هدية",
+                `صاحب الهدية: ${order.customer_name}`,
+                `رقم صاحب الهدية: ${ATHR.phoneText(order.phone, c.code)}`,
+                `المُهدى إليه: ${order.gift_name || ""}`,
+                `رقم المُهدى إليه: ${ATHR.phoneText(order.gift_phone, c.code)}`);
+        } else {
+            out.push(`الاسم: ${order.customer_name}`, `الهاتف: ${ATHR.phoneText(order.phone, c.code)}`);
+        }
+        out.push(`الدولة: ${c.flag} ${c.name}`);
         if (order.governorate) out.push(`${isOm ? "المحافظة" : "المدينة"}: ${order.governorate}`);
         if (order.wilaya) out.push(`الولاية: ${order.wilaya}`);
         out.push(order.delivery_type === "office" ? `المكتب: ${order.office}` : `العنوان: ${order.address}`);
         if (order.notes) out.push(`الملاحظات: ${order.notes}`);
         out.push(`طريقة التوصيل: ${order.delivery_name}`);
-        if (order.gift) {
+        if (giftTo) {
+            if (order.gift_message) out.push(`رسالة الهدية: ${order.gift_message}`);
+            if (order.gift_hide_price) out.push("🤫 لا تذكر السعر للمُهدى إليه");
+        } else if (order.gift) {
             out.push("🎁 الطلب هدية");
             if (order.gift_message) out.push(`رسالة الهدية: ${order.gift_message}`);
         }
@@ -1074,6 +1099,7 @@
                             </div>
                             <div class="cart-actions">
                                 <a class="btn btn-primary btn-block" href="${BASE}checkout/">${esc(t("متابعة الطلب"))}</a>
+                                ${cfg.sales.gift_enabled && cfg.sales.gift_button ? `<a class="btn btn-gift btn-block" href="${BASE}checkout/?gift=1">${V.icon.gift}${esc(t("أرسل الطلب هدية"))}</a>` : ""}
                                 ${cfg.sales.wa_quick && wa ? `<button class="btn btn-wa btn-block" type="button" data-wa-cart>${V.waIcon()}${esc(t("اطلب عبر واتساب"))}</button>` : ""}
                                 <a class="link-btn center" href="${BASE}">${esc(t("مواصلة التسوق"))}</a>
                             </div>
@@ -1102,6 +1128,38 @@
         return Object.values(WILAYAS).flat().map((w) => `<option value="${esc(w)}">`).join("");
     }
 
+    // هدية: الطلب يُرسل لشخص آخر (رقم صاحب الهدية ورقم المُهدى إليه وعنوانه)
+    function giftOn() {
+        return Boolean(C().sales.gift_enabled);
+    }
+
+    function giftMode(keep) {
+        if (!giftOn()) return false;
+        if (keep && keep.gift !== undefined) return keep.gift === "1";
+        return new URLSearchParams(location.search).get("gift") === "1";
+    }
+
+    function giftPayments(list, gift) {
+        if (!gift || !C().sales.gift_prepaid) return list;
+        const prepaid = list.filter((p) => p.type !== "cod");
+        return prepaid.length ? prepaid : list;
+    }
+
+    const LOC_KEYS = ["wilaya", "gov", "address", "office"];
+    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country"];
+    const locStash = { self: null, gift: null };
+
+    function locationField(c, saved, gift) {
+        const cfg = C();
+        if (c.code === "OM") {
+            if (!gift && !cfg.order.show_wilaya) return "";
+            const required = gift || cfg.order.wilaya_required;
+            return field("wilaya", required ? (gift ? t("ولاية المُهدى إليه") : t("الولاية")) : t("الولاية (اختياري)"), `<input class="input" name="wilaya" list="wilayaList" autocomplete="off" placeholder="${esc(t("مثال: السيب"))}" value="${esc(saved.wilaya || "")}"><datalist id="wilayaList">${wilayaOptions()}</datalist>`);
+        }
+        const label = c.code === "AE" ? t("الإمارة / المدينة") : t("المدينة");
+        return field("gov", gift ? t("{label} (للمُهدى إليه)", { label }) : label, `<input class="input" name="gov" autocomplete="${gift ? "off" : "address-level2"}" value="${esc(saved.country === c.code ? saved.gov || "" : "")}" required>`);
+    }
+
     function renderCheckout(keep = null) {
         const cfg = C();
         const totals = computeCart();
@@ -1109,20 +1167,31 @@
             navigate(`${BASE}cart/`, { replace: true });
             return;
         }
-        const saved = keep || savedCustomer() || {};
+        const base = savedCustomer() || {};
+        const gift = giftMode(keep);
+        const saved = keep || (gift ? { ...base, wilaya: "", gov: "", address: "", office: "" } : base);
         const c = CC();
-        const isOm = c.code === "OM";
         const rule = ATHR.PHONE_RULES[c.code] || ATHR.PHONE_RULES.OM;
         const delivery = ATHR.deliveriesFor(cfg, c.code);
-        const payments = ATHR.paymentsFor(cfg, c.code);
+        const payments = giftPayments(ATHR.paymentsFor(cfg, c.code), gift);
         const pickDelivery = delivery.find((d) => d.id === saved.delivery) || delivery[0];
         const pickPayment = payments.find((p) => p.id === saved.payment) || payments[0];
         const countries = ATHR.countries(cfg).filter((x) => x.enabled);
-        const savedPhone = saved.country && saved.country !== c.code ? "" : (saved.phoneLocal || (isOm ? saved.phone : "") || "");
+        const senderCode = gift ? ((keep && keep.sender_country) || base.country || c.code) : c.code;
+        const sender = ATHR.country(cfg, senderCode);
+        const senderRule = ATHR.PHONE_RULES[sender.code] || rule;
+        const myPhone = keep ? (keep.phone || "") : (base.country && base.country !== senderCode ? "" : (base.phoneLocal || (senderCode === "OM" ? base.phone : "") || ""));
+        const hidePrice = keep && keep.gift_seen ? Boolean(keep.gift_hide_price) : true;
+        const countryField = countries.length > 1
+            ? field("country", gift ? t("دولة المُهدى إليه") : t("الدولة"), `<select class="input" name="country" id="countrySelect">${countries.map((x) => `<option value="${x.code}"${x.code === c.code ? " selected" : ""}>${x.flag} ${esc(L(x, "name"))}</option>`).join("")}</select>`)
+            : "";
+        const senderDial = gift && countries.length > 1
+            ? `<select class="dial dial-pick" name="sender_country" id="senderCountry" dir="ltr" aria-label="${esc(t("مفتاح الدولة"))}">${countries.map((x) => `<option value="${x.code}"${x.code === sender.code ? " selected" : ""}>${x.flag} +${x.dial}</option>`).join("")}</select>`
+            : `<span class="dial" dir="ltr">+${sender.dial}</span>`;
 
         $("#view").innerHTML = `
             <div class="wrap">
-                <h1 class="page-title">${esc(t("إتمام الطلب"))}</h1>
+                <h1 class="page-title">${esc(gift ? t("إرسال هدية") : t("إتمام الطلب"))}</h1>
                 <details class="sum-mobile">
                     <summary><span>${esc(t("ملخص الطلب ({pieces})", { pieces: ATHR.piecesText(totals.count) }))}</span><b id="sumMobileTotal"></b></summary>
                     <div id="checkoutSummaryM"></div>
@@ -1130,13 +1199,31 @@
                 <form class="layout-2" id="checkoutForm" novalidate>
                     <div class="form">
                         ${saved.name && !keep ? `<div class="saved-note"><span>${esc(t("عبّأنا بياناتك من طلبك السابق."))}</span><button class="link-btn" type="button" data-forget-me>${esc(t("مسح بياناتي"))}</button></div>` : ""}
+                        ${giftOn() ? `<div class="panel who-pick">
+                            <h2>${esc(t("لمن الطلب؟"))}</h2>
+                            <div class="seg2" role="radiogroup" aria-label="${esc(t("لمن الطلب؟"))}">
+                                <label><input type="radio" name="gift" value="0"${gift ? "" : " checked"}><span>${V.icon.user}${esc(t("لي"))}</span></label>
+                                <label><input type="radio" name="gift" value="1"${gift ? " checked" : ""}><span>${V.icon.gift}${esc(t("هدية لشخص"))}</span></label>
+                            </div>
+                            ${gift ? `<p class="muted small" style="margin:8px 0 0">${esc(t("نوصل الهدية للمُهدى إليه، ونتواصل معك لتأكيد الطلب."))}</p>` : ""}
+                        </div>` : ""}
                         <div class="panel form">
-                            <h2>${esc(t("بياناتك"))}</h2>
-                            ${countries.length > 1 ? field("country", t("الدولة"), `<select class="input" name="country" id="countrySelect">${countries.map((x) => `<option value="${x.code}"${x.code === c.code ? " selected" : ""}>${x.flag} ${esc(L(x, "name"))}</option>`).join("")}</select>`) : ""}
-                            ${field("name", t("الاسم الكامل"), `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
-                            ${field("phone", t("رقم الهاتف (واتساب)"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${rule.example}" value="${esc(savedPhone)}" required></span>`, esc(t("رقم {country}: {hint}", { country: L(c, "name"), hint: L(rule, "hint") })))}
-                            ${isOm ? (cfg.order.show_wilaya ? field("wilaya", cfg.order.wilaya_required ? t("الولاية") : t("الولاية (اختياري)"), `<input class="input" name="wilaya" list="wilayaList" autocomplete="off" placeholder="${esc(t("مثال: السيب"))}" value="${esc(saved.wilaya || "")}"><datalist id="wilayaList">${wilayaOptions()}</datalist>`) : "") : field("gov", c.code === "AE" ? t("الإمارة / المدينة") : t("المدينة"), `<input class="input" name="gov" autocomplete="address-level2" value="${esc(saved.country === c.code ? saved.gov || "" : "")}" required>`)}
+                            <h2>${esc(gift ? t("بياناتك (صاحب الهدية)") : t("بياناتك"))}</h2>
+                            ${gift ? "" : countryField}
+                            ${field("name", gift ? t("اسمك") : t("الاسم الكامل"), `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
+                            ${field("phone", gift ? t("رقمك (واتساب)") : t("رقم الهاتف (واتساب)"), `<span class="phone-wrap">${senderDial}<input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${senderRule.example}" value="${esc(myPhone)}" required></span>`, esc(t("رقم {country}: {hint}", { country: L(sender, "name"), hint: L(senderRule, "hint") })))}
+                            ${gift ? "" : locationField(c, saved, false)}
                         </div>
+                        ${gift ? `<div class="panel form gift-panel">
+                            <h2>${V.icon.gift}${esc(t("بيانات المُهدى إليه"))}</h2>
+                            <input type="hidden" name="gift_seen" value="1">
+                            ${countryField}
+                            ${field("gift_name", t("اسم المُهدى إليه"), `<input class="input" name="gift_name" maxlength="120" autocomplete="off" value="${esc(saved.gift_name || "")}" required>`)}
+                            ${field("gift_phone", t("رقم المُهدى إليه"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="gift_phone" type="tel" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="${rule.example}" value="${esc(saved.gift_phone || "")}" required></span>`, esc(t("نتواصل معه لتنسيق التوصيل فقط.")))}
+                            ${locationField(c, saved, true)}
+                            ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("مثال: كل عام وأنت بخير يا أحمد"))}">${esc(saved.gift_message || "")}</textarea>`, esc(t("نرفقها مع طلبك للمُهدى إليه.")))}
+                            <label class="check-line"><input type="checkbox" name="gift_hide_price" value="1"${hidePrice ? " checked" : ""}><span>${esc(t("لا تذكر السعر للمُهدى إليه"))}</span></label>
+                        </div>` : ""}
                         <div class="panel form">
                             <h2>${esc(t("طريقة التوصيل"))}</h2>
                             ${delivery.length ? `<div class="choice" role="radiogroup">
@@ -1147,8 +1234,6 @@
                                 </label>`).join("")}
                             </div>` : `<p class="err">${esc(t("التوصيل إلى {country} غير متاح حاليًا. تواصل معنا عبر واتساب.", { country: L(c, "name") }))}</p>`}
                             <div id="addressField"></div>
-                            ${cfg.sales.gift_enabled ? `<label class="check-line"><input type="checkbox" name="gift" id="giftToggle"${keep && keep.gift ? " checked" : ""}> ${V.icon.gift}<span>${esc(t("هذا الطلب هدية"))}</span></label>
-                            <div id="giftBox"${keep && keep.gift ? "" : " hidden"}>${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("مثال: كل عام وأنت بخير يا أحمد"))}">${esc(keep ? keep.gift_message || "" : "")}</textarea>`, esc(t("نرفقها مع طلبك للمُهدى إليه.")))}</div>` : ""}
                             ${cfg.order.show_notes ? field("notes", t("ملاحظات (اختياري)"), `<textarea class="input" name="notes" rows="2" maxlength="500">${esc(keep ? keep.notes || "" : "")}</textarea>`) : ""}
                         </div>
                         <div class="panel form">
@@ -1168,7 +1253,7 @@
                             <h2>${esc(t("ملخص الطلب"))}</h2>
                             <div id="checkoutSummary"></div>
                             <div class="cart-actions">
-                                <button class="btn btn-primary btn-block" type="submit" id="placeOrder"${delivery.length && payments.length ? "" : " disabled"}>${esc(t("تأكيد الطلب"))}</button>
+                                <button class="btn btn-primary btn-block" type="submit" id="placeOrder"${delivery.length && payments.length ? "" : " disabled"}>${esc(gift ? t("تأكيد طلب الهدية") : t("تأكيد الطلب"))}</button>
                                 <a class="link-btn center" href="${BASE}cart/">${esc(t("رجوع للسلة"))}</a>
                             </div>
                             <div class="err" id="formErr" role="alert"></div>
@@ -1181,6 +1266,10 @@
         renderAddressField(saved);
         renderPayExtra();
         updateCheckoutSummary();
+    }
+
+    function isGiftForm() {
+        return $('#checkoutForm input[name="gift"]:checked')?.value === "1";
     }
 
     function selectedDelivery() {
@@ -1200,9 +1289,10 @@
         const isOffice = d && d.type === "office";
         const current = box.querySelector("textarea, input")?.value;
         const value = current ?? (isOffice ? saved.office : saved.address) ?? "";
+        const gift = isGiftForm();
         box.innerHTML = isOffice
-            ? field("office", t("اسم المكتب"), `<input class="input" name="office" value="${esc(value)}" placeholder="${esc(t("مثال: مكتب جيناكم - السيب"))}">`)
-            : field("address", t("العنوان"), `<textarea class="input" name="address" rows="2" autocomplete="street-address" placeholder="${esc(t("المنطقة، رقم البيت أو أقرب معلم"))}">${esc(value)}</textarea>`);
+            ? field("office", gift ? t("المكتب الذي يستلم منه المُهدى إليه") : t("اسم المكتب"), `<input class="input" name="office" value="${esc(value)}" placeholder="${esc(t("مثال: مكتب جيناكم - السيب"))}">`)
+            : field("address", gift ? t("عنوان المُهدى إليه") : t("العنوان"), `<textarea class="input" name="address" rows="2" autocomplete="${gift ? "off" : "street-address"}" placeholder="${esc(t("المنطقة، رقم البيت أو أقرب معلم"))}">${esc(value)}</textarea>`);
     }
 
     function bankRows(p) {
@@ -1228,6 +1318,7 @@
         const p = selectedPayment();
         if (p && p.type === "bank") box.innerHTML = bankRows(p);
         else if (p && p.type === "online") box.innerHTML = `<p class="muted" style="margin:10px 0 0">${esc(t("بعد تأكيد الطلب يظهر لك زر الانتقال لصفحة الدفع."))}</p>`;
+        else if (p && p.type === "cod" && isGiftForm()) box.innerHTML = `<p class="muted gift-cod" style="margin:10px 0 0">${esc(t("بالدفع عند الاستلام يُدفع المبلغ عند تسليم الهدية. لتكون مفاجأة كاملة اختر الدفع المسبق."))}</p>`;
         else box.innerHTML = "";
     }
 
@@ -1273,19 +1364,27 @@
         const values = Object.fromEntries(new FormData(form).entries());
         const errors = {};
         const isOm = S.country === "OM";
+        const gift = giftOn() && values.gift === "1";
+        const senderCode = gift && values.sender_country ? values.sender_country : S.country;
         const name = String(values.name || "").trim();
-        const phone = ATHR.parsePhone(values.phone, S.country);
+        const phone = ATHR.parsePhone(values.phone, senderCode);
+        const giftPhone = gift ? ATHR.parsePhone(values.gift_phone, S.country) : null;
         const d = selectedDelivery();
         const p = selectedPayment();
 
         if (name.length < 3) errors.name = t("اكتب اسمك الكامل (3 أحرف على الأقل).");
-        if (!phone.valid) errors.phone = t("اكتب رقم {country} الصحيح: {hint}.", { country: L(CC(), "name"), hint: L(phone.rule, "hint") });
+        if (!phone.valid) errors.phone = t("اكتب رقم {country} الصحيح: {hint}.", { country: L(ATHR.country(cfg, senderCode), "name"), hint: L(phone.rule, "hint") });
+        if (gift) {
+            if (String(values.gift_name || "").trim().length < 2) errors.gift_name = t("اكتب اسم المُهدى إليه.");
+            if (!giftPhone.valid) errors.gift_phone = t("اكتب رقم المُهدى إليه الصحيح: {hint}.", { hint: L(giftPhone.rule, "hint") });
+            else if (phone.valid && ATHR.storePhone(giftPhone.local, S.country, "XX") === ATHR.storePhone(phone.local, senderCode, "XX")) errors.gift_phone = t("رقم المُهدى إليه نفس رقمك. اكتب رقم الشخص الذي ستصله الهدية.");
+        }
         if (!isOm && !String(values.gov || "").trim()) errors.gov = t("اكتب المدينة.");
-        if (isOm && cfg.order.show_wilaya && cfg.order.wilaya_required && !String(values.wilaya || "").trim()) errors.wilaya = t("اكتب الولاية.");
+        if (isOm && (gift || (cfg.order.show_wilaya && cfg.order.wilaya_required)) && !String(values.wilaya || "").trim()) errors.wilaya = gift ? t("اكتب ولاية المُهدى إليه.") : t("اكتب الولاية.");
         if (!d) errors.delivery = t("اختر طريقة التوصيل.");
         else if (d.type === "office") {
             if (String(values.office || "").trim().length < 3) errors.office = t("اكتب اسم المكتب (3 أحرف على الأقل).");
-        } else if (String(values.address || "").trim().length < 6) errors.address = t("اكتب عنوانك بوضوح (6 أحرف على الأقل).");
+        } else if (String(values.address || "").trim().length < 6) errors.address = gift ? t("اكتب عنوان المُهدى إليه بوضوح (6 أحرف على الأقل).") : t("اكتب عنوانك بوضوح (6 أحرف على الأقل).");
         if (!p) errors.payment = t("اختر طريقة الدفع.");
 
         $$("[data-err]", form).forEach((el) => { el.textContent = ""; });
@@ -1306,7 +1405,7 @@
                 first.scrollIntoView({ block: "center" });
             }
         }
-        return keys.length ? null : { values, name, phone, d, p };
+        return keys.length ? null : { values, name, phone, d, p, gift, senderCode, giftPhone };
     }
 
     let placing = false;
@@ -1317,13 +1416,12 @@
         if (!ok) return;
         placing = true;
         const cfg = C();
-        const { values, name, phone, d, p } = ok;
+        const { values, name, phone, d, p, gift, senderCode, giftPhone } = ok;
         const isOm = S.country === "OM";
         const tt = checkoutTotals();
         const button = $("#placeOrder");
         button.disabled = true;
         button.textContent = t("جاري تأكيد الطلب...");
-        const gift = Boolean(cfg.sales.gift_enabled && values.gift);
         const channel = orderChannel();
 
         const order = {
@@ -1333,14 +1431,17 @@
             country: S.country,
             channel,
             customer_name: name,
-            phone: phone.stored,
+            phone: ATHR.storePhone(phone.local, senderCode, S.country),
             governorate: isOm ? null : String(values.gov || "").trim(),
-            wilaya: isOm && cfg.order.show_wilaya ? String(values.wilaya || "").trim() || null : null,
+            wilaya: isOm && (gift || cfg.order.show_wilaya) ? String(values.wilaya || "").trim() || null : null,
             address: d.type === "office" ? null : String(values.address || "").trim(),
             office: d.type === "office" ? String(values.office || "").trim() : null,
             notes: cfg.order.show_notes ? String(values.notes || "").trim() || null : null,
             gift,
             gift_message: gift ? String(values.gift_message || "").trim().slice(0, 300) || null : null,
+            gift_name: gift ? String(values.gift_name || "").trim().slice(0, 120) : null,
+            gift_phone: gift ? giftPhone.stored : null,
+            gift_hide_price: gift && Boolean(values.gift_hide_price),
             delivery_name: d.name,
             delivery_type: d.type === "office" ? "office" : "home",
             delivery_price: tt.ship,
@@ -1376,12 +1477,18 @@
         }
 
         if (cfg.sales.remember_customer) {
-            storage.set(KEYS.customer, {
-                name, country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
-                gov: isOm ? "" : values.gov, wilaya: values.wilaya || "", address: values.address || "", office: values.office || "",
-                delivery: d.id, payment: p.id
-            });
+            // في الهدية نحفظ اسمك ورقمك فقط، ويبقى عنوانك السابق كما هو
+            const prev = storage.get(KEYS.customer, null) || {};
+            storage.set(KEYS.customer, gift
+                ? { ...prev, name, country: senderCode, phone: senderCode === "OM" ? phone.local : "", phoneLocal: phone.local, ...(prev.country && prev.country !== senderCode ? { gov: "", wilaya: "", address: "", office: "" } : {}) }
+                : {
+                    name, country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
+                    gov: isOm ? "" : values.gov, wilaya: values.wilaya || "", address: values.address || "", office: values.office || "",
+                    delivery: d.id, payment: p.id
+                });
         }
+        locStash.self = null;
+        locStash.gift = null;
 
         track("order");
         const message = orderMessage({ ...order, ship_kg: tt.kg });
@@ -1440,6 +1547,7 @@
                         ${code === "OM" ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${ATHR.moneyIn(order.total, cfg, code)}</span></div>`}
                         <div class="row"><span class="muted">${esc(t("الدفع"))}</span><span>${esc(payment ? L(payment, "name") : order.payment_name)}</span></div>
                         <div class="row"><span class="muted">${esc(order.delivery_type === "office" ? t("المكتب") : t("العنوان"))}</span><span>${esc(order.office || order.address || "")}</span></div>
+                        ${order.gift && order.gift_name ? `<div class="row"><span class="muted">${esc(t("المُهدى إليه"))}</span><span>${esc(order.gift_name)} · <span dir="ltr">${esc(ATHR.phoneText(order.gift_phone, code))}</span></span></div>` : ""}
                         ${order.gift ? `<div class="row"><span class="muted">${esc(t("هدية"))}</span><span>${esc(order.gift_message || t("نعم"))}</span></div>` : ""}
                     </div>
                 </div>
@@ -1558,11 +1666,20 @@
                     }).join("")}</div>`);
             }
             const acts = [];
+            if (cfg.contact.menu_home !== false) acts.push(`<a class="menu-act" href="${BASE}"><span class="ma-ico">${V.icon.home}</span><span>${esc(t("الصفحة الرئيسية"))}</span></a>`);
             if (wa) acts.push(`<a class="menu-act" href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(ct("contact.wa_float_msg"))))}" target="_blank" rel="noopener"><span class="ma-ico wa">${V.waIcon()}</span><span>${esc(t("تواصل معنا عبر واتساب"))}</span></a>`);
             if (cfg.contact.policy_show) acts.push(`<a class="menu-act" href="${BASE}shipping/"><span class="ma-ico">${V.icon.truck}</span><span>${esc(t("التوصيل والدفع"))}</span></a>`);
             if (multi) acts.push(`<button class="menu-act" type="button" data-open-currency><span class="ma-ico flag">${esc(cur.flag)}</span><span>${esc(t("الدولة والعملة"))}</span><small>${esc(ATHR.isEn() ? cur.currency : cur.symbol)}</small></button>`);
             acts.push(`<button class="menu-act" type="button" data-set-lang="${ATHR.isEn() ? "ar" : "en"}"><span class="ma-ico lang" aria-hidden="true">${ATHR.isEn() ? "ع" : "EN"}</span><span lang="${ATHR.isEn() ? "ar" : "en"}">${ATHR.isEn() ? "العربية" : "English"}</span></button>`);
             parts.push(`<div class="menu-acts">${acts.join("")}</div>`);
+            if (cfg.theme.visitor_mode !== false) {
+                const mode = document.documentElement.dataset.mode || "auto";
+                const opt = (m, icon, label) => `<button type="button" data-set-mode="${m}" aria-pressed="${mode === m}">${icon}<span>${esc(t(label))}</span></button>`;
+                parts.push(`<p class="menu-label">${esc(t("المظهر"))}</p>
+                    <div class="mode-seg" role="group" aria-label="${esc(t("المظهر"))}">
+                        ${opt("light", V.icon.sun, "فاتح")}${opt("dark", V.icon.moon, "داكن")}${opt("auto", V.icon.auto, "تلقائي")}
+                    </div>`);
+            }
             const socials = V.socials(vv, "msoc");
             if (socials) parts.push(`<div class="menu-social" aria-label="${esc(t("حساباتنا"))}">${socials}</div>`);
         }
@@ -1727,6 +1844,7 @@
         if (el.id === "menuBtn") { afterReady(openMenu); return; }
         if (el.id === "langBtn") { afterReady(() => setLang(ATHR.isEn() ? "ar" : "en")); return; }
         if (d.setLang) { const l = d.setLang; afterReady(() => setLang(l)); return; }
+        if (d.setMode) { setMode(d.setMode); return; }
         if (d.menuCats !== undefined) {
             menuCatsOpen = !menuCatsOpen;
             el.setAttribute("aria-expanded", String(menuCatsOpen));
@@ -1817,6 +1935,18 @@
             });
             return;
         }
+        if (d.giftNow) {
+            const id = d.giftNow;
+            afterReady(() => {
+                const qty = Number($("#pdpQty")?.textContent) || 1;
+                if (cartQty(id) < qty) setQty(id, qty, { silent: true });
+                track("add");
+                locStash.self = null;
+                locStash.gift = null;
+                navigate(`${BASE}checkout/?gift=1`);
+            });
+            return;
+        }
         if (d.waProduct) {
             const id = d.waProduct;
             afterReady(() => {
@@ -1860,17 +1990,43 @@
             keep.delivery = null;
             keep.payment = null;
             keep.gov = "";
-            keep.phoneLocal = "";
+            keep.wilaya = "";
+            keep.gift_phone = "";
+            if (keep.gift !== "1") keep.phone = "";
             keep.country = el.value;
+            locStash.self = null;
+            locStash.gift = null;
             setCountry(el.value, { silent: true });
             renderCheckout(keep);
             renderBars();
             toast(t("التوصيل والدفع الآن لـ{country}", { country: L(CC(), "name") }));
             return;
         }
-        if (el.id === "giftToggle") {
-            const box = $("#giftBox");
-            if (box) box.hidden = !el.checked;
+        if (el.name === "gift" && el.closest("#checkoutForm")) {
+            const form = $("#checkoutForm");
+            const keep = Object.fromEntries(new FormData(form).entries());
+            const next = keep.gift === "1" ? "gift" : "self";
+            const was = next === "gift" ? "self" : "gift";
+            const keys = (mode) => (mode === "gift" ? [...LOC_KEYS, ...GIFT_KEYS] : LOC_KEYS);
+            locStash[was] = Object.fromEntries(keys(was).map((k) => [k, keep[k] || ""]));
+            const base = savedCustomer() || {};
+            const restore = locStash[next] || (next === "self" && (!base.country || base.country === S.country) ? base : {});
+            keys(next).forEach((k) => { keep[k] = restore[k] || ""; });
+            keep.country = S.country;
+            if (next === "self" && keep.sender_country && keep.sender_country !== S.country) keep.phone = "";
+            const url = new URL(location.href);
+            if (next === "gift") url.searchParams.set("gift", "1");
+            else url.searchParams.delete("gift");
+            history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+            renderCheckout(keep);
+            renderBars();
+            return;
+        }
+        if (el.id === "senderCountry") {
+            const form = $("#checkoutForm");
+            const keep = Object.fromEntries(new FormData(form).entries());
+            keep.country = S.country;
+            renderCheckout(keep);
             return;
         }
         if (el.name === "delivery") {
@@ -2054,8 +2210,12 @@
         if (persist) storage.set(KEYS.lang, ATHR.lang);
         closeSheet();
         if (S.loaded) {
+            // في صفحة إتمام الطلب نحتفظ بما كتبه الزبون عند تغيير اللغة
+            const form = S.route && S.route.name === "checkout" ? $("#checkoutForm") : null;
+            const keep = form ? { ...Object.fromEntries(new FormData(form).entries()), country: S.country } : null;
             renderChrome();
             render({ scroll: "keep" });
+            if (keep && $("#checkoutForm")) renderCheckout(keep);
         }
     }
 

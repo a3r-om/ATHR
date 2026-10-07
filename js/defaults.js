@@ -52,7 +52,8 @@ const ATHR_DEFAULTS = {
         font_body: "IBM Plex Sans Arabic",
         hero_show: true,
         hero_pattern: true,
-        hero_image: ""
+        hero_image: "",
+        visitor_mode: true
     },
 
     texts: {
@@ -62,7 +63,7 @@ const ATHR_DEFAULTS = {
         hero_text: "أكواب ومجات ومحافظ بتصاميم الأندية والجامعات والشخصيات. اختر تصميمك ويوصلك أينما كنت في الخليج.",
         hero_button: "تصفّح المنتجات",
         hero_features: ["توصيل لكل دول الخليج", "مجاني داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
-        search_placeholder: "ابحث عن فريق أو شخصية…",
+        search_placeholder: "ابحث",
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
         sold_out: "نفد المخزون",
@@ -134,6 +135,8 @@ const ATHR_DEFAULTS = {
         trust_custom: [],
         volume: { enabled: false, tiers: [{ min: 2, pct: 5 }, { min: 3, pct: 10 }] },
         gift_enabled: true,
+        gift_button: true,
+        gift_prepaid: false,
         best_title: "الأكثر طلباً",
         new_title: "وصل حديثاً",
         sets_title: "أطقم وهدايا بسعر أقل",
@@ -149,6 +152,7 @@ const ATHR_DEFAULTS = {
 
     contact: {
         menu_show: true,
+        menu_home: true,
         share_url: "",
         wa_float: true,
         wa_float_msg: "السلام عليكم، لدي استفسار عن منتجات {name}",
@@ -160,6 +164,13 @@ const ATHR_DEFAULTS = {
         reviews_share_text: "شاركنا رأيك",
         reviews_share_msg: "السلام عليكم، هذا رأيي في منتجات {name}:",
         reviews: []
+    },
+
+    // تصميم الصور بالذكاء الاصطناعي (المفتاح نفسه محفوظ بسرية في قاعدة البيانات وليس هنا)
+    ai: {
+        provider: "gemini",
+        quality: "best",
+        model: ""
     }
 };
 
@@ -531,6 +542,20 @@ ATHR.customerWhatsapp = function (phone, code) {
     return digits;
 };
 
+// الرقم كما يُكتب في الرسائل: رقم عماني محلي كما هو، وغيره بالمفتاح الدولي
+ATHR.phoneText = function (phone, code) {
+    const digits = ATHR.digits(phone || "").replace(/[^\d]/g, "");
+    if (!digits) return "";
+    if ((code || "OM") === "OM" && digits.length === 8) return digits;
+    return "+" + digits;
+};
+
+// رقم يُحفظ في الطلب: محلي لو الرقم والطلب كلاهما في عُمان، وإلا بالمفتاح الدولي
+ATHR.storePhone = function (local, phoneCode, orderCode) {
+    const c = ATHR_COUNTRIES.find((x) => x.code === phoneCode) || ATHR_COUNTRIES[0];
+    return phoneCode === "OM" && (orderCode || "OM") === "OM" ? local : c.dial + local;
+};
+
 
 // =====================================================
 // روابط الصفحات (صفحة حقيقية لكل منتج وقسم)
@@ -679,7 +704,13 @@ ATHR.FONT_PARAMS = {
     "Tajawal": "Tajawal:wght@400;700",
     "Almarai": "Almarai:wght@400;700",
     "Noto Sans Arabic": "Noto+Sans+Arabic:wght@400;600;700",
-    "Mada": "Mada:wght@400;600;700"
+    "Mada": "Mada:wght@400;600;700",
+    "Rubik": "Rubik:wght@400;500;700",
+    "Alexandria": "Alexandria:wght@400;600;700",
+    "Vazirmatn": "Vazirmatn:wght@400;600;700",
+    "Noto Naskh Arabic": "Noto+Naskh+Arabic:wght@400;600;700",
+    "Zain": "Zain:wght@400;700",
+    "Baloo Bhaijaan 2": "Baloo+Bhaijaan+2:wght@400;600;700"
 };
 
 ATHR.isHex = (x) => /^#[0-9a-f]{6}$/i.test(String(x || ""));

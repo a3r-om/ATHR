@@ -29,7 +29,9 @@
         reviews: [],
         reviewsLoaded: false,
         statsDays: 30,
-        stats: null
+        stats: null,
+        ai: null,
+        aiStatus: null
     };
 
     const CHANNELS = {
@@ -55,8 +57,10 @@
         ["contact", "التواصل والآراء"]
     ];
 
-    const HEAD_FONTS = ["Reem Kufi", "Cairo", "El Messiri", "Lalezar", "Noto Kufi Arabic", "Amiri", "Changa", "Readex Pro", "IBM Plex Sans Arabic", "Tajawal"];
-    const BODY_FONTS = ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Almarai", "Noto Sans Arabic", "Readex Pro", "Mada", "system"];
+    // خطوط بسيطة وواضحة ومشهورة تدعم العربي والإنجليزي
+    const SIMPLE_FONTS = ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Almarai", "Rubik", "Alexandria", "Vazirmatn", "Noto Sans Arabic", "Noto Kufi Arabic", "Noto Naskh Arabic", "Readex Pro", "Mada", "Changa", "Zain", "Baloo Bhaijaan 2"];
+    const HEAD_FONTS = [...SIMPLE_FONTS, "Reem Kufi", "El Messiri", "Amiri", "Lalezar"];
+    const BODY_FONTS = [...SIMPLE_FONTS, "system"];
 
     const storage = {
         get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } },
@@ -408,6 +412,27 @@
         return `<div class="af"><span>${label}</span><div class="cchecks">${ATHR_COUNTRIES.map((c) => `<label class="cchip"><input type="checkbox" data-country-path="${path}" value="${c.code}"${list.includes(c.code) ? " checked" : ""}><span>${c.flag} ${esc(c.name)}</span></label>`).join("")}</div>${help ? `<small>${help}</small>` : ""}</div>`;
     }
 
+    // معاينة الخطين المختارين بدون نشر
+    function fontSample() {
+        const t = cfg().theme;
+        const href = ATHR.fontHref(cfg());
+        let link = document.getElementById("admFontPreview");
+        if (href) {
+            if (!link) {
+                link = document.createElement("link");
+                link.id = "admFontPreview";
+                link.rel = "stylesheet";
+                document.head.appendChild(link);
+            }
+            if (link.getAttribute("href") !== href) link.setAttribute("href", href);
+        }
+        const fam = (f) => (ATHR.FONT_PARAMS[f] ? `"${f}", system-ui` : "system-ui");
+        return `<div class="font-sample">
+            <b style="font-family:${esc(fam(t.font_head))}">كاسات تترك أثراً · Cups that leave a mark</b>
+            <span style="font-family:${esc(fam(t.font_body))}">كوب ريال مدريد بملمس مطفي، السعر 3.500 ر.ع · Real Madrid Cup 3.500 OMR</span>
+        </div>`;
+    }
+
     function card(title, body, help = "") {
         return `<section class="adm-card"><h2>${title}</h2>${help ? `<p class="adm-muted">${help}</p>` : ""}<div class="af-stack">${body}</div></section>`;
     }
@@ -442,7 +467,10 @@
             <section class="adm-card">
                 <div class="adm-row-between">
                     <h2>المنتجات <small class="adm-muted">(${products.length})</small></h2>
-                    <button class="ab ab-primary ab-sm" type="button" data-a="add-product">+ إضافة منتج</button>
+                    <div class="inline">
+                        <button class="ab ab-soft ab-sm" type="button" data-a="ai-new-product">✨ منتج بصورة ذكاء اصطناعي</button>
+                        <button class="ab ab-primary ab-sm" type="button" data-a="add-product">+ إضافة منتج</button>
+                    </div>
                 </div>
                 <input class="ai" type="search" id="productFilter" placeholder="ابحث باسم المنتج أو القسم" value="${esc(A.productFilter)}">
                 <ul class="plist">
@@ -489,7 +517,8 @@
                 <div class="adm-card flat">
                     <h3>صورة المنتج</h3>
                     ${uploadButton(p.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="${base}.image_url" data-kind="product"`, { current: p.image_url })}
-                    <small class="adm-muted">يفضّل صورة عمودية بنسبة 4:5.</small>
+                    <button class="ab ab-soft ab-sm ai-btn" type="button" data-a="ai-product" data-id="${esc(p.id)}">✨ صورة احترافية بالذكاء الاصطناعي</button>
+                    <small class="adm-muted">يفضّل صورة عمودية بنسبة 4:5. أو صوّر المنتج بجوالك واضغط زر الذكاء الاصطناعي ليحوّلها لصورة استوديو احترافية.</small>
                 </div>
                 ${text(`${base}.name`, "اسم المنتج", { max: 120 })}
                 ${text(`${base}.name_en`, "اسم المنتج بالإنجليزي (لزوار المتجر بالإنجليزي)", { max: 160, dir: "ltr", placeholder: "Real Madrid Cup" })}
@@ -567,15 +596,18 @@
 
     function refreshSheet() {
         const panel = $("#admSheet .adm-sheet-panel");
-        if (!panel || !A.editing) return;
+        if (!panel || !(A.editing || A.ai)) return;
         const scroll = panel.scrollTop;
-        panel.innerHTML = productEditor(A.editing);
+        const focus = document.activeElement && panel.contains(document.activeElement) && document.activeElement.dataset.aiField;
+        panel.innerHTML = A.ai ? aiStudio() : productEditor(A.editing);
         panel.scrollTop = scroll;
+        if (focus) panel.querySelector(`[data-ai-field="${focus}"]`)?.focus({ preventScroll: true });
     }
 
     function closeSheet() {
         const sheet = $("#admSheet");
         if (!sheet) return;
+        aiCleanup();
         sheet.hidden = true;
         sheet.innerHTML = "";
         if (A.editing) {
@@ -590,7 +622,16 @@
     }
 
     function addProduct() {
-        const p = {
+        const p = newProduct();
+        A.draft.products.unshift(p);
+        A.productFilter = "";
+        saveDraft();
+        renderTab();
+        editProduct(p.id);
+    }
+
+    function newProduct() {
+        return {
             id: crypto.randomUUID(),
             name: "",
             price: null,
@@ -608,11 +649,6 @@
             weight_g: Number(cfg().order.default_weight_g) || 400,
             media: []
         };
-        A.draft.products.unshift(p);
-        A.productFilter = "";
-        saveDraft();
-        renderTab();
-        editProduct(p.id);
     }
 
     // =====================================================
@@ -621,7 +657,9 @@
 
     function tabAd() {
         const ad = cfg().ad;
-        let body = toggle("config.ad.show", "إظهار الإعلان في المتجر");
+        let body = `<button class="ab ab-soft ab-block ai-btn" type="button" data-a="ai-ad">✨ اعمل صورة إعلانية بالذكاء الاصطناعي</button>
+            <small class="adm-muted">اكتب فكرة الإعلان واختر منتجاتك، والذكاء الاصطناعي يصمم صورة إعلانية احترافية وواقعية تضعها هنا أو تنزّلها لإنستغرام وتيك توك.</small>`;
+        body += toggle("config.ad.show", "إظهار الإعلان في المتجر");
         body += select("config.ad.type", "نوع الإعلان", [["image", "صورة جاهزة (تصميمي الخاص)"], ["video", "فيديو جاهز"], ["text", "تصميم نصي أعدّله هنا"]], { rerender: true });
         if (ad.type === "image") {
             body += `<div class="af"><span>صورة الإعلان</span>${uploadButton(ad.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="config.ad.image_url" data-kind="ad"`, { current: ad.image_url, remove: ad.image_url ? `data-clear="config.ad.image_url"` : "" })}</div>`;
@@ -706,10 +744,13 @@
                 ${select("config.theme.radius", "استدارة الزوايا", [["sharp", "حادة"], ["medium", "متوسطة"], ["round", "مدوّرة كثيراً"]])}
                 ${select("config.theme.grid_mobile", "عدد المنتجات في الصف على الجوال", [["2", "منتجان"], ["1", "منتج واحد"]], { type: "number" })}
                 ${toggle("config.theme.show_search", "إظهار البحث")}
+                ${text("config.texts.search_placeholder", "الكلمة داخل خانة البحث", { placeholder: "ابحث", max: 40 })}
+                ${toggle("config.theme.visitor_mode", "زر المظهر للزائر (فاتح / داكن / تلقائي) في قائمة النقاط الثلاث", { help: "الزائر يختار ما يريحه، ويُحفظ اختياره على جهازه. «وضع العرض» أعلاه هو الافتراضي لمن لم يختر." })}
                 ${toggle("config.theme.show_sort", "إظهار الترتيب حسب السعر")}`)
             + card("الخطوط", `
-                ${select("config.theme.font_head", "خط العناوين", HEAD_FONTS.map((f) => [f, f]))}
-                ${select("config.theme.font_body", "خط النصوص", BODY_FONTS.map((f) => [f, f === "system" ? "خط الجهاز" : f]))}`)
+                ${select("config.theme.font_head", "خط العناوين", HEAD_FONTS.map((f) => [f, f]), { rerender: true })}
+                ${select("config.theme.font_body", "خط النصوص", BODY_FONTS.map((f) => [f, f === "system" ? "خط الجهاز" : f]), { rerender: true })}
+                ${fontSample()}`, "كلها خطوط مجانية من Google تدعم العربي والإنجليزي. الأولى في القائمة هي الأبسط والأوضح للقراءة.")
             + card("الواجهة الرئيسية", `
                 ${toggle("config.theme.hero_show", "إظهار الواجهة الرئيسية")}
                 ${toggle("config.theme.hero_pattern", "زخرفة المعيّنات في الخلفية")}
@@ -739,7 +780,6 @@
                     ${t.hero_features.length < 4 ? `<button class="ab ab-ghost ab-sm" type="button" data-add-item="config.texts.hero_features">+ إضافة ميزة</button>` : ""}
                 </div>`)
             + card("المنتجات والبحث", `
-                ${text("config.texts.search_placeholder", "النص داخل خانة البحث", { placeholder: d.search_placeholder })}
                 ${text("config.texts.add_to_cart", "نص زر الإضافة للسلة", { placeholder: d.add_to_cart })}
                 ${text("config.texts.sold_out", "نص «نفد المخزون»", { placeholder: d.sold_out })}`)
             + card("أسفل الصفحة", `
@@ -907,8 +947,12 @@
                 ${vol.enabled && volText ? `<p class="adm-sentence">${esc(volText)} — يُطبَّق تلقائياً في السلة على كل المنتجات.</p>` : ""}`,
                 "الخصم على مجموع الطلب حسب عدد القطع. لا يجتمع مع خصم الباقات، ويُطبَّق تلقائياً الأفضل للزبون. يظهر للزبون في صفحة المنتج وفي السلة («أضف قطعة ووفّر 10%»).")
             + card("بعد الإضافة للسلة", `
-                ${toggle("config.sales.upsell_show", "نافذة «أُضيف إلى سلتك» مع اقتراحات وإكمال الطقم", { help: "تقترح على الزبون إكمال الطقم ومنتجات مناسبة، وتوضح كم بقي للتوصيل المجاني أو للخصم التالي." })}
-                ${toggle("config.sales.gift_enabled", "خيار «هذا الطلب هدية» مع رسالة للمُهدى إليه")}`)
+                ${toggle("config.sales.upsell_show", "نافذة «أُضيف إلى سلتك» مع اقتراحات وإكمال الطقم", { help: "تقترح على الزبون إكمال الطقم ومنتجات مناسبة، وتوضح كم بقي للتوصيل المجاني أو للخصم التالي." })}`)
+            + card("🎁 إرسال هدية لشخص", `
+                ${toggle("config.sales.gift_enabled", "تفعيل «هدية لشخص» في إتمام الطلب", { rerender: true, help: "يختار الزبون «لي» أو «هدية لشخص»، ثم يكتب رقمه ورقم المُهدى إليه واسمه وولايته وعنوانه ورسالة الهدية." })}
+                ${cfg().sales.gift_enabled ? `${toggle("config.sales.gift_button", "زر «أرسله هدية» في صفحة المنتج والسلة", { help: "زر واضح يأخذ الزبون مباشرة لطلب الهدية." })}
+                ${toggle("config.sales.gift_prepaid", "الهدايا بالدفع المسبق فقط", { help: "يُخفي «الدفع عند الاستلام» في طلبات الهدايا حتى لا يُطلب المبلغ من المُهدى إليه." })}` : ""}`,
+                "يصلك طلب الهدية في واتساب ولوحة الطلبات مع رقم صاحب الهدية ورقم المُهدى إليه، وتنبيه «لا تذكر السعر» لو طلبه الزبون.")
             + card("عناوين أقسام الصفحة الرئيسية", `
                 ${text("config.sales.best_title", "عنوان الأكثر طلباً", { placeholder: d.best_title })}
                 ${text("config.sales.sets_title", "عنوان الأطقم", { placeholder: d.sets_title })}
@@ -978,6 +1022,7 @@
 
         return card("قائمة النقاط الثلاث (⋮) أعلى المتجر", `
                 ${toggle("config.contact.menu_show", "إظهار قائمة النقاط الثلاث")}
+                ${toggle("config.contact.menu_home", "زر «الصفحة الرئيسية» في القائمة")}
                 ${text("config.contact.share_url", "رابط متجرك", { dir: "ltr", placeholder: "https://", help: "يُستعمل في روابط التقييم والمشاركة. غيّره فقط إذا ربطت دومينك الخاص." })}`)
             + card("الظهور في جوجل", `
                 ${text("config.seo.home_title", "عنوان المتجر في نتائج جوجل", { max: 70, placeholder: `${cfg().name} | ${cfg().texts.hero_title}`, help: "أفضل طول 50 إلى 60 حرفاً، وفيه الكلمات التي يبحث بها الناس مثل «أكواب» و«عُمان»." })}
@@ -1169,6 +1214,453 @@
     }
 
     // =====================================================
+    // AI STUDIO: صورة منتج احترافية / صورة إعلانية بالذكاء الاصطناعي
+    // المفتاح يُحفظ في قاعدة البيانات عبر دالة آمنة، ولا يُقرأ من المتصفح أبداً.
+    // =====================================================
+
+    const AI_STYLES = [
+        ["beige", "استوديو بيج فاخر", "مثل صور الأقسام"],
+        ["white", "خلفية بيضاء نظيفة", "مثل المتاجر العالمية"],
+        ["life", "على طاولة بجو دافئ", "إضاءة صباحية وديكور بسيط"],
+        ["hand", "في يد شخص", "يوضح الحجم الحقيقي"],
+        ["dark", "عنابي فاخر", "بلون المتجر"],
+        ["custom", "حسب وصفي فقط", "اكتب الشكل الذي تريده"]
+    ];
+
+    const AI_SCENES = {
+        beige: "a warm beige seamless studio backdrop (#EBDDC9) with the product standing on a small light travertine stone block, minimal, calm and elegant, like a premium gift boutique catalogue",
+        white: "a pure white seamless background (#FFFFFF), clean e-commerce catalogue look with a soft natural contact shadow under the product",
+        life: "a cozy warm lifestyle scene: the product on a light oak wooden table near a window with soft morning sunlight, a few tasteful props (a small green plant, coffee beans or an open book) softly blurred in the background and never covering the product",
+        hand: "held naturally in one hand with neat short nails, the printed design facing the camera, warm neutral background softly blurred, natural skin tones",
+        dark: "a luxurious deep maroon backdrop (#7D1420) with soft rim light and a subtle glossy surface reflection, premium gift-shop mood",
+        custom: ""
+    };
+
+    const AI_ASPECTS = [
+        ["16:9", "بنر المتجر", "عريض"],
+        ["1:1", "منشور مربع", "إنستغرام"],
+        ["4:5", "منشور طولي", "إنستغرام"],
+        ["9:16", "ستوري", "تيك توك وسناب"]
+    ];
+
+    const AI_ERRORS = {
+        not_admin: "انتهت جلستك. أغلق لوحة التحكم وافتحها وسجّل الدخول من جديد.",
+        no_key: "لا يوجد مفتاح ذكاء اصطناعي محفوظ. أضفه من «إعداد الذكاء الاصطناعي» أعلاه.",
+        bad_key: "المفتاح غير صحيح أو غير مفعّل. انسخه من جديد واحفظه.",
+        billing: "حساب الذكاء الاصطناعي يحتاج تفعيل الدفع (Billing) لتوليد الصور. فعّله من حسابك ثم جرّب مرة أخرى.",
+        quota: "وصلت للحد المسموح حالياً. انتظر دقيقة وجرّب مرة أخرى.",
+        blocked: "رفض الذكاء الاصطناعي هذا الطلب. غيّر الصورة أو الوصف وجرّب مرة أخرى.",
+        no_image: "لم يرجع الذكاء الاصطناعي صورة هذه المرة. جرّب مرة أخرى أو وضّح الوصف أكثر.",
+        no_model: "لا يوجد نموذج صور متاح لهذا المفتاح. تأكد أنه من Google AI Studio وأن الدفع (Billing) مفعّل.",
+        bad_image: "تعذر قراءة الصورة. جرّب صورة JPG أو PNG.",
+        bad_request: "اكتب وصفاً أوضح وجرّب مرة أخرى.",
+        timeout: "تأخر الرد. تأكد من الإنترنت وجرّب مرة أخرى.",
+        offline: "خدمة التصميم غير متاحة الآن. تأكد من الإنترنت وجرّب بعد قليل."
+    };
+
+    function aiCfg() {
+        const c = cfg().ai || {};
+        return { provider: c.provider === "openai" ? "openai" : "gemini", quality: c.quality === "fast" ? "fast" : "best", model: String(c.model || "").trim() };
+    }
+
+    function aiProductPrompt(st) {
+        const scene = AI_SCENES[st.style] || "";
+        const extra = String(st.prompt || "").trim();
+        return [
+            "You are a world-class commercial product photographer and retoucher for a premium online gift store.",
+            "Use the attached photo as the exact reference of the real product and turn it into a professional, photorealistic, high-resolution e-commerce product photo.",
+            "Keep the product 100% identical to the reference: same shape, proportions, size, colors, matte finish, handle and the exact printed design, logos, text and artwork. Do not redraw, simplify, translate, mirror, crop or invent anything on the print.",
+            "Remove the original background, hands, clutter, glare, dust and noise from the photo (unless the scene below asks for a hand).",
+            scene ? `Scene: ${scene}.` : "",
+            "Lighting: soft diffused studio lighting with a gentle key light, natural soft shadows, true-to-life colors, crisp focus on the printed design, realistic materials (no CGI or plastic look).",
+            "Composition: vertical 4:5 portrait framing, the product centered and filling about 65-75% of the frame, clean margins suitable for a product page.",
+            "Do not add any text, letters, watermark, logo, frame or border that is not on the real product.",
+            extra ? `Extra instructions from the store owner (follow them, as long as the product itself stays identical): ${extra}` : ""
+        ].filter(Boolean).join("\n");
+    }
+
+    function aiAdPrompt(st, refCount) {
+        const ratio = AI_ASPECTS.find((a) => a[0] === st.aspect) || AI_ASPECTS[0];
+        const name = cfg().en && cfg().en.name ? `${cfg().en.name} | ${cfg().name}` : cfg().name;
+        return [
+            `Create a premium, eye-catching, photorealistic advertising image for "${name}", an Omani online store that sells printed matte ceramic cups, mugs and wallets (gift items with football club, university and character designs).`,
+            `The store owner's idea for this ad: ${String(st.prompt || "").trim()}`,
+            refCount
+                ? `Use the ${refCount} attached product photo(s) as exact references: show these real products faithfully as the heroes of the ad, with exactly the same shapes, colors and printed designs. Do not change, redraw or invent any print, and do not add extra products with invented designs.`
+                : "Show elegant matte ceramic cups as the hero products, with plain or simple tasteful designs (no real brand logos).",
+            "Style: high-end commercial product photography, realistic lighting and shadows, tasteful props, rich but elegant colors that harmonise with the brand palette (deep maroon #7D1420 and warm beige #EBDDC9), one clear focal point and a clean, uncluttered composition with some negative space.",
+            `Format: ${ratio[1]} image with a ${st.aspect} aspect ratio.`,
+            st.noText
+                ? "Do not write any text, letters, numbers, logos or watermarks anywhere in the image."
+                : `Write only this text in the image, spelled exactly and clearly, in a clean modern font: "${String(st.adText || "").trim()}". No other text.`,
+            "Ultra-detailed, sharp, high resolution, realistic, no distorted objects."
+        ].join("\n");
+    }
+
+    function aiSetup() {
+        const c = aiCfg();
+        const status = A.aiStatus;
+        const saved = status && status[c.provider];
+        const providerName = c.provider === "openai" ? "OpenAI" : "Google Gemini";
+        return `<details class="adm-card flat ai-setup"${status && !saved ? " open" : ""}>
+            <summary>⚙️ إعداد الذكاء الاصطناعي ${status === undefined ? "" : saved ? `<span class="tag ok">✅ جاهز</span>` : `<span class="tag warn">مطلوب مرة واحدة</span>`}</summary>
+            <div class="af-stack">
+                ${select("config.ai.provider", "الخدمة", [["gemini", "Google Gemini (موصى به)"], ["openai", "OpenAI"]], { rerender: true })}
+                ${select("config.ai.quality", "الجودة", [["best", "أعلى جودة (أبطأ قليلاً)"], ["fast", "أسرع وأرخص"]])}
+                <p class="adm-sentence">${saved ? `✅ مفتاح ${providerName} محفوظ (ينتهي بـ <b dir="ltr">${esc(saved.last4 || "")}</b>).` : `لا يوجد مفتاح ${providerName} بعد.`}</p>
+                <label class="af"><span>${saved ? "تغيير المفتاح" : "الصق المفتاح هنا"}</span><input class="ai" type="password" id="aiKey" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr" placeholder="${c.provider === "openai" ? "sk-..." : "AIza..."}"></label>
+                <div class="inline">
+                    <button class="ab ab-primary ab-sm" type="button" data-a="ai-save-key">حفظ المفتاح</button>
+                    ${saved ? `<button class="ab-mini danger" type="button" data-a="ai-del-key">حذف المفتاح</button>` : ""}
+                </div>
+                <small class="adm-muted">${c.provider === "openai"
+                    ? "من platform.openai.com ← API keys ← Create new secret key. يحتاج رصيداً في الحساب."
+                    : "افتح aistudio.google.com بحسابك في جوجل ← Get API key ← Create API key، ثم انسخه هنا. توليد الصور يحتاج تفعيل الدفع (Billing) في حسابك، والتكلفة بسيطة لكل صورة."}
+                    يُحفظ المفتاح بشكل سري في قاعدة البيانات ولا يظهر مرة أخرى حتى لك، ولا يصل للزبائن.</small>
+            </div>
+        </details>`;
+    }
+
+    function aiStudio() {
+        const st = A.ai;
+        if (!st) return "";
+        const isAd = st.mode === "ad";
+        const p = st.productId ? A.draft.products.find((x) => x.id === st.productId) : null;
+        const res = st.result;
+        const title = isAd ? "✨ صورة إعلانية بالذكاء الاصطناعي" : p ? "✨ صورة احترافية للمنتج" : "✨ منتج جديد بصورة احترافية";
+
+        let body = "";
+        if (isAd) {
+            const withImg = A.draft.products.filter((x) => x.image_url);
+            const picked = withImg.filter((x) => st.refs.includes(x.id));
+            const others = withImg.filter((x) => !st.refs.includes(x.id));
+            const room = 3 - st.refs.length - st.uploads.length;
+            body = `
+                <label class="af"><span>فكرة الإعلان (البرومبت)</span><textarea class="ai" rows="3" data-ai-field="prompt" placeholder="مثال: عرض اليوم الوطني — كاسات الأندية بخصم 10% بأجواء احتفالية بألوان علم عُمان">${esc(st.prompt)}</textarea><small>اكتب فكرتك بالعربي أو الإنجليزي، والذكاء الاصطناعي يصمم إعلاناً واقعياً واحترافياً.</small></label>
+                <div class="adm-card flat">
+                    <h3>منتجات تظهر في الإعلان <small class="adm-muted">(اختياري، حتى 3)</small></h3>
+                    <div class="ai-picks">
+                        ${[...picked, ...others].map((x) => `<button type="button" class="ai-pick${st.refs.includes(x.id) ? " on" : ""}" data-a="ai-ref" data-id="${esc(x.id)}" aria-pressed="${st.refs.includes(x.id)}"${!st.refs.includes(x.id) && room <= 0 ? " disabled" : ""}><img src="${esc(ATHR.thumb(x.image_url, "s") || asset(x.image_url))}" alt="" loading="lazy"><span>${esc(x.name || "")}</span></button>`).join("")}
+                    </div>
+                    ${st.uploads.length ? `<div class="ai-ups">${st.uploads.map((u, i) => `<span class="ai-up"><img src="${esc(u.url)}" alt=""><button type="button" class="ab-mini danger" data-a="ai-up-del" data-i="${i}" aria-label="إزالة">×</button></span>`).join("")}</div>` : ""}
+                    ${room > 0 ? `<label class="ab ab-soft ab-sm">رفع صور من جوالك<input type="file" accept="image/*" multiple data-ai-refs hidden></label>` : ""}
+                </div>
+                <div class="af"><span>المقاس</span><div class="ai-aspects">${AI_ASPECTS.map(([v, l, s]) => `<button type="button" class="ai-chip${st.aspect === v ? " on" : ""}" data-a="ai-aspect" data-v="${v}" aria-pressed="${st.aspect === v}"><b>${l}</b><small dir="ltr">${v}</small><small>${s}</small></button>`).join("")}</div></div>
+                <label class="at"><input type="checkbox" data-ai-field="noText"${st.noText ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>بدون كتابة داخل الصورة</b><small>أنظف وأدق. اكتب العرض في المتجر أو في منشورك بدلاً من داخل الصورة.</small></span></label>
+                ${st.noText ? "" : `<label class="af"><span>النص المكتوب داخل الإعلان</span><input class="ai" data-ai-field="adText" maxlength="60" value="${esc(st.adText)}" placeholder="مثال: خصم 10%"><small>اجعله قصيراً جداً. الكتابة العربية داخل الصور قد تخرج بأخطاء أحياناً.</small></label>`}`;
+        } else {
+            body = `
+                <div class="adm-card flat">
+                    <h3>1. صورة المنتج من جوالك</h3>
+                    <div class="ai-src">
+                        ${st.src ? `<img src="${esc(st.src.url)}" alt="">` : `<div class="ai-ph">صوّر المنتج من الأمام بإضاءة جيدة — الخلفية لا تهم</div>`}
+                    </div>
+                    <div class="inline">
+                        <label class="ab ab-soft ab-sm">${st.src ? "تغيير الصورة" : "اختيار صورة أو تصوير"}<input type="file" accept="image/*" data-ai-src hidden></label>
+                        ${p && p.image_url && !(st.src && st.src.current) ? `<button class="ab-mini" type="button" data-a="ai-use-current">استخدم صورة المنتج الحالية</button>` : ""}
+                    </div>
+                </div>
+                <div class="adm-card flat">
+                    <h3>2. شكل الصورة</h3>
+                    <div class="ai-styles">${AI_STYLES.map(([v, l, s]) => `<button type="button" class="ai-chip${st.style === v ? " on" : ""}" data-a="ai-style" data-v="${v}" aria-pressed="${st.style === v}"><b>${l}</b><small>${s}</small></button>`).join("")}</div>
+                </div>
+                <label class="af"><span>3. وصفك (البرومبت)${st.style === "custom" ? "" : " — اختياري"}</span><textarea class="ai" rows="3" data-ai-field="prompt" placeholder="${st.style === "custom" ? "مثال: الكوب على رخام أبيض مع حبوب قهوة وإضاءة ذهبية" : "مثال: أضف بخار قهوة خفيف فوق الكوب"}">${esc(st.prompt)}</textarea><small>المنتج وطباعته يبقيان كما هما تماماً، والذكاء الاصطناعي يغيّر الخلفية والإضاءة والجو فقط.</small></label>`;
+        }
+
+        const canUse = res && !st.busy;
+        return `
+            <div class="adm-sheet-head">
+                <h2>${title}</h2>
+                <button class="adm-icon" type="button" data-a="ai-back" aria-label="رجوع">×</button>
+            </div>
+            <div class="af-stack ai-studio">
+                ${aiSetup()}
+                ${body}
+                <button class="ab ab-primary ab-block" type="button" data-a="ai-generate"${st.busy ? " disabled" : ""}>${st.busy ? "جاري التصميم..." : res ? "✨ صمّم نسخة أخرى" : "✨ صمّم الصورة"}</button>
+                ${st.busy ? `<p class="adm-muted center">يأخذ عادة من 10 ثوانٍ إلى دقيقة. لا تغلق الصفحة.</p>` : ""}
+                ${st.error ? `<div class="adm-errors">${esc(st.error)}${st.detail ? `<small class="ai-detail" dir="ltr">${esc(st.detail)}</small>` : ""}</div>` : ""}
+                ${res ? `<div class="adm-card flat ai-out">
+                    <h3>النتيجة</h3>
+                    <img src="${esc(res.url)}" alt="">
+                    <div class="inline">
+                        ${isAd
+                            ? `<button class="ab ab-primary ab-sm" type="button" data-a="ai-use-ad"${canUse ? "" : " disabled"}>استخدمها في إعلان المتجر</button>`
+                            : `<button class="ab ab-primary ab-sm" type="button" data-a="ai-use-main"${canUse ? "" : " disabled"}>${p ? "اجعلها الصورة الرئيسية" : "أنشئ المنتج بهذه الصورة"}</button>
+                               ${p && p.media.filter((m) => m.type === "image").length < 5 ? `<button class="ab ab-soft ab-sm" type="button" data-a="ai-use-extra"${canUse ? "" : " disabled"}>أضفها للصور الإضافية</button>` : ""}`}
+                        <a class="ab-mini" href="${esc(res.url)}" download="athr-ai-${Date.now()}.${res.mime === "image/jpeg" ? "jpg" : "png"}">تنزيل</a>
+                    </div>
+                </div>` : ""}
+            </div>`;
+    }
+
+    function aiCleanup() {
+        const st = A.ai;
+        if (!st) return;
+        [st.src, st.result, ...st.uploads].forEach((x) => { if (x && x.url && x.url.startsWith("blob:")) URL.revokeObjectURL(x.url); });
+        A.ai = null;
+    }
+
+    async function aiLoadStatus() {
+        try {
+            const { data, error } = await sb.rpc("ai_key_status");
+            A.aiStatus = error ? {} : (data || {});
+        } catch {
+            A.aiStatus = {};
+        }
+        if (A.ai) refreshSheet();
+    }
+
+    function openAi(mode, productId = null, from = "") {
+        aiCleanup();
+        A.ai = { mode, productId, from, src: null, style: "beige", prompt: "", aspect: "16:9", noText: true, adText: "", refs: [], uploads: [], result: null, busy: false, error: "", detail: "" };
+        A.editing = null;
+        openSheet(aiStudio());
+        if (A.aiStatus === undefined || A.aiStatus === null) {
+            A.aiStatus = undefined;
+            aiLoadStatus();
+        }
+    }
+
+    function aiBack() {
+        const st = A.ai;
+        const back = st && st.from === "editor" && st.productId && A.draft.products.some((x) => x.id === st.productId) ? st.productId : null;
+        aiCleanup();
+        if (back) editProduct(back);
+        else closeSheet();
+    }
+
+    function blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]+,/, ""));
+            reader.onerror = () => reject(new Error("تعذر قراءة الصورة."));
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // نصغّر الصورة قبل الإرسال (أسرع وأرخص) مع الحفاظ على تفاصيل الطباعة
+    async function aiInputImage(blob, max = 1536) {
+        const { img, url } = await loadImage(blob);
+        const ratio = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * ratio));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        const out = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+        if (!out) throw new Error("تعذر تجهيز الصورة.");
+        return { mime: "image/jpeg", data: await blobToBase64(out) };
+    }
+
+    async function fetchBlob(src) {
+        const res = await fetch(asset(src), { cache: "force-cache" });
+        if (!res.ok) throw new Error("تعذر تحميل صورة المنتج.");
+        return res.blob();
+    }
+
+    function base64ToBlob(b64, mime) {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new Blob([bytes], { type: mime || "image/png" });
+    }
+
+    async function aiGenerate() {
+        const st = A.ai;
+        if (!st || st.busy) return;
+        const c = aiCfg();
+        const isAd = st.mode === "ad";
+        st.error = "";
+        st.detail = "";
+        if (A.aiStatus && !A.aiStatus[c.provider]) st.error = AI_ERRORS.no_key;
+        else if (!isAd && !st.src) st.error = "اختر صورة المنتج أولاً (من جوالك أو صورته الحالية).";
+        else if (!isAd && st.style === "custom" && String(st.prompt).trim().length < 5) st.error = "اكتب وصف الشكل الذي تريده.";
+        else if (isAd && String(st.prompt).trim().length < 5) st.error = "اكتب فكرة الإعلان أولاً.";
+        else if (isAd && !st.noText && !String(st.adText).trim()) st.error = "اكتب النص الذي تريده داخل الإعلان، أو فعّل «بدون كتابة».";
+        if (st.error) {
+            refreshSheet();
+            return;
+        }
+        st.busy = true;
+        refreshSheet();
+        busyMessage("✨ جاري تصميم الصورة...");
+        try {
+            let images = [];
+            if (isAd) {
+                const blobs = [];
+                for (const id of st.refs) {
+                    const p = A.draft.products.find((x) => x.id === id);
+                    if (p && p.image_url) blobs.push(await fetchBlob(p.image_url));
+                }
+                st.uploads.forEach((u) => blobs.push(u.blob));
+                for (const b of blobs.slice(0, 3)) images.push(await aiInputImage(b, 1280));
+            } else {
+                images = [await aiInputImage(st.src.blob)];
+            }
+            const prompt = isAd ? aiAdPrompt(st, images.length) : aiProductPrompt(st);
+            const { data: sess } = await sb.auth.getSession();
+            const token = sess && sess.session && sess.session.access_token;
+            if (!token) throw Object.assign(new Error("not_admin"), { code: "not_admin" });
+            let res;
+            try {
+                res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/ai-image`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ provider: c.provider, quality: c.quality, model: c.model, aspect: isAd ? st.aspect : "4:5", prompt, images }),
+                    signal: AbortSignal.timeout ? AbortSignal.timeout(170000) : undefined
+                });
+            } catch (error) {
+                throw Object.assign(new Error(String(error && error.message)), { code: error && error.name === "TimeoutError" ? "timeout" : "offline" });
+            }
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.image) throw Object.assign(new Error(json.detail || `HTTP ${res.status}`), { code: json.error || (res.status === 404 ? "offline" : "failed") });
+            if (A.ai !== st) return;
+            if (st.result && st.result.url) URL.revokeObjectURL(st.result.url);
+            const blob = base64ToBlob(json.image, json.mime);
+            st.result = { blob, url: URL.createObjectURL(blob), mime: json.mime || "image/png", model: json.model || "" };
+        } catch (error) {
+            console.warn("AI image failed:", error);
+            if (A.ai !== st) return;
+            st.error = AI_ERRORS[error.code] || (error && /[؀-ۿ]/.test(error.message || "") ? error.message : "تعذر تصميم الصورة. جرّب مرة أخرى.");
+            st.detail = error.code && error.code !== "not_admin" && !/[؀-ۿ]/.test(error.message || "") ? String(error.message || "").slice(0, 200) : "";
+            if (error.code === "no_key" || error.code === "bad_key") aiLoadStatus();
+        } finally {
+            busyMessage("");
+            if (A.ai === st) {
+                st.busy = false;
+                refreshSheet();
+                if (st.result && !st.error) setTimeout(() => $("#admSheet .ai-out")?.scrollIntoView({ block: "start", behavior: "smooth" }), 30);
+            }
+        }
+    }
+
+    async function aiUse(kind) {
+        const st = A.ai;
+        if (!st || !st.result || st.busy) return;
+        await withBusy("جاري حفظ الصورة...", async () => {
+            const { blob, ext, type } = await prepareImage(st.result.blob, kind === "ad" ? "ad" : "product");
+            const url = await uploadBlob(blob, ext, type);
+            if (kind === "ad") {
+                const ad = cfg().ad;
+                ad.type = "image";
+                ad.image_url = url;
+                ad.show = true;
+                if (!ad.image_alt) ad.image_alt = String(st.prompt || "").trim().slice(0, 120);
+                aiCleanup();
+                closeSheet();
+                saveDraft();
+                renderTab({ keepScroll: true });
+                toast("صارت صورة الإعلان. اضغط «نشر» ليراها الزبائن.");
+                return;
+            }
+            let p = st.productId ? A.draft.products.find((x) => x.id === st.productId) : null;
+            if (!p) {
+                p = newProduct();
+                A.draft.products.unshift(p);
+                A.productFilter = "";
+            }
+            if (kind === "extra") {
+                const video = p.media.filter((m) => m.type === "video");
+                p.media = [...p.media.filter((m) => m.type === "image"), { type: "image", url }, ...video];
+            } else {
+                p.image_url = url;
+            }
+            const id = p.id;
+            aiCleanup();
+            saveDraft();
+            renderTab({ keepScroll: true });
+            editProduct(id);
+            toast(kind === "extra" ? "أُضيفت الصورة للمنتج" : "صارت الصورة الرئيسية للمنتج ✨");
+        });
+    }
+
+    async function aiSaveKey(remove = false) {
+        const c = aiCfg();
+        const input = $("#aiKey");
+        const key = remove ? "" : String(input ? input.value : "").trim();
+        if (!remove) {
+            if (key.length < 20 || /\s/.test(key)) { toast("الصق المفتاح كاملاً بدون مسافات."); return; }
+            if (c.provider === "gemini" && /^sk-/.test(key)) { toast("هذا مفتاح OpenAI. غيّر الخدمة إلى OpenAI أو الصق مفتاح Gemini (يبدأ بـ AIza)."); return; }
+            if (c.provider === "openai" && /^AIza/.test(key)) { toast("هذا مفتاح Gemini. غيّر الخدمة إلى Google Gemini."); return; }
+        } else if (!confirm("حذف مفتاح الذكاء الاصطناعي؟ لن تعمل أزرار التصميم حتى تضيف مفتاحاً جديداً.")) return;
+        const { error } = await sb.rpc("set_ai_key", { provider: c.provider, key });
+        if (input) input.value = "";
+        if (error) {
+            toast(/invalid/i.test(error.message || "") ? "المفتاح غير صالح. انسخه من جديد." : "تعذر حفظ المفتاح. تأكد من الإنترنت.");
+            return;
+        }
+        toast(remove ? "حُذف المفتاح" : "حُفظ المفتاح بأمان ✅");
+        if (A.ai) A.ai.error = "";
+        await aiLoadStatus();
+    }
+
+    async function aiAddFiles(input, files) {
+        const st = A.ai;
+        if (!st) return;
+        const d = input.dataset;
+        if (d.aiSrc !== undefined) {
+            if (st.src && st.src.url.startsWith("blob:")) URL.revokeObjectURL(st.src.url);
+            st.src = { blob: files[0], url: URL.createObjectURL(files[0]), current: false };
+            st.error = "";
+        } else if (d.aiRefs !== undefined) {
+            const room = 3 - st.refs.length - st.uploads.length;
+            files.slice(0, Math.max(0, room)).forEach((f) => st.uploads.push({ blob: f, url: URL.createObjectURL(f) }));
+            if (files.length > room) toast("الحد 3 صور في الإعلان.");
+        }
+        refreshSheet();
+    }
+
+    async function aiClick(d) {
+        const st = A.ai;
+        switch (d.a) {
+            case "ai-product": openAi("product", d.id || A.editing || null, A.editing ? "editor" : ""); return true;
+            case "ai-new-product": openAi("product", null); return true;
+            case "ai-ad": openAi("ad"); return true;
+            case "ai-back": aiBack(); return true;
+            case "ai-save-key": await aiSaveKey(false); return true;
+            case "ai-del-key": await aiSaveKey(true); return true;
+            default: break;
+        }
+        if (!st) return false;
+        switch (d.a) {
+            case "ai-generate": aiGenerate(); return true;
+            case "ai-style": st.style = d.v; refreshSheet(); return true;
+            case "ai-aspect": st.aspect = d.v; refreshSheet(); return true;
+            case "ai-ref":
+                if (st.refs.includes(d.id)) st.refs = st.refs.filter((x) => x !== d.id);
+                else if (st.refs.length + st.uploads.length < 3) st.refs.push(d.id);
+                refreshSheet();
+                return true;
+            case "ai-up-del": {
+                const u = st.uploads.splice(Number(d.i), 1)[0];
+                if (u) URL.revokeObjectURL(u.url);
+                refreshSheet();
+                return true;
+            }
+            case "ai-use-current": {
+                const p = A.draft.products.find((x) => x.id === st.productId);
+                if (!p || !p.image_url) return true;
+                await withBusy("جاري تحميل الصورة...", async () => {
+                    const blob = await fetchBlob(p.image_url);
+                    if (A.ai !== st) return;
+                    if (st.src && st.src.url.startsWith("blob:")) URL.revokeObjectURL(st.src.url);
+                    st.src = { blob, url: URL.createObjectURL(blob), current: true };
+                    st.error = "";
+                    refreshSheet();
+                });
+                return true;
+            }
+            case "ai-use-main": aiUse("main"); return true;
+            case "ai-use-extra": aiUse("extra"); return true;
+            case "ai-use-ad": aiUse("ad"); return true;
+            default: return false;
+        }
+    }
+
+    // =====================================================
     // EVENTS (panel + orders)
     // =====================================================
 
@@ -1186,6 +1678,10 @@
         if (t.id === "ordersSearch") {
             A.filter.q = t.value;
             renderOrdersList();
+            return;
+        }
+        if (t.dataset.aiField && A.ai && t.type !== "checkbox") {
+            A.ai[t.dataset.aiField] = t.value;
             return;
         }
         if (t.dataset.bind && t.type !== "checkbox" && t.tagName !== "SELECT") {
@@ -1217,10 +1713,15 @@
             storage.set(t.dataset.pref, t.value);
             return;
         }
+        if (t.dataset.aiField && A.ai) {
+            A.ai[t.dataset.aiField] = t.type === "checkbox" ? t.checked : t.value;
+            if (t.type === "checkbox") refreshSheet();
+            return;
+        }
         if (t.dataset.bind) {
             bindValue(t);
             if (t.dataset.rerender !== undefined) {
-                if (A.editing) refreshSheet();
+                if (A.editing || A.ai) refreshSheet();
                 renderTab({ keepScroll: true });
             }
             return;
@@ -1258,6 +1759,11 @@
 
     async function handleFiles(input, files) {
         const d = input.dataset;
+
+        if (d.aiSrc !== undefined || d.aiRefs !== undefined) {
+            await aiAddFiles(input, files);
+            return;
+        }
 
         if (d.upload) {
             const kind = d.kind || "product";
@@ -1329,6 +1835,11 @@
         if (d.tab) {
             A.tab = d.tab;
             renderTab();
+            return;
+        }
+
+        if (d.a && d.a.startsWith("ai-")) {
+            await aiClick(d);
             return;
         }
 
@@ -1486,6 +1997,7 @@
         if (d.status) { A.filter.status = d.status; renderOrdersList(); return; }
         if (d.orderEdit) { openOrderForm(A.orders.find((o) => o.id === d.orderEdit)); return; }
         if (d.orderWa) { const o = A.orders.find((x) => x.id === d.orderWa); if (o) window.open(customerWa(o, ""), "_blank", "noopener"); return; }
+        if (d.orderWaGift) { const o = A.orders.find((x) => x.id === d.orderWaGift); if (o && o.gift_phone) window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), ""), "_blank", "noopener"); return; }
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
         if (d.orderCopy) { const o = A.orders.find((x) => x.id === d.orderCopy); if (o) ATHR.store.copyText(orderText(o), "نُسخ الطلب"); return; }
         if (d.orderHide) { const o = A.orders.find((x) => x.id === d.orderHide); if (o) updateOrderField(o.id, "hidden", !o.hidden); return; }
@@ -2079,7 +2591,7 @@
             }
             if (f.pay !== "all" && o.payment_type !== f.pay) return false;
             if (!q) return true;
-            const hay = [o.order_no, o.customer_name, o.phone, o.wilaya, o.governorate, o.address, o.office, o.items_text, countryLabel(o.country),
+            const hay = [o.order_no, o.customer_name, o.phone, o.gift_name, o.gift_phone, o.wilaya, o.governorate, o.address, o.office, o.items_text, countryLabel(o.country),
                 ...(o.items || []).map((it) => it.label || it.name)].filter(Boolean).join(" ").toLowerCase();
             return hay.includes(q);
         });
@@ -2128,8 +2640,12 @@
                 </header>
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
                 <div class="oc-cust">
+                    ${giftTo(o) ? `<small class="adm-muted">صاحب الهدية</small>` : ""}
                     <b>${esc(o.customer_name || "بدون اسم")}</b>
-                    ${o.phone ? `<span dir="ltr">${(o.country || "OM") === "OM" ? "" : "+"}${esc(o.phone)}</span>` : ""}
+                    ${o.phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : ""}
+                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
+                    <b>${esc(o.gift_name || "")}</b>
+                    ${o.gift_phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : ""}` : ""}
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
                     ${o.address || o.office ? `<span>${o.office ? `المكتب: ${esc(o.office)}` : esc(o.address)}</span>` : ""}
                 </div>
@@ -2153,7 +2669,8 @@
                 <label class="af"><span>ملاحظتي (لا يراها العميل)</span><textarea class="ai" rows="1" data-order-id="${esc(o.id)}" data-order-field="admin_note">${esc(o.admin_note || "")}</textarea></label>
                 <div class="oc-actions">
                     <button type="button" class="ab-mini" data-order-edit="${esc(o.id)}">ملاحظة وتعديل</button>
-                    ${o.phone ? `<button type="button" class="ab-mini wa" data-order-wa="${esc(o.id)}">واتساب</button>` : ""}
+                    ${o.phone ? `<button type="button" class="ab-mini wa" data-order-wa="${esc(o.id)}">${giftTo(o) ? "واتساب صاحب الهدية" : "واتساب"}</button>` : ""}
+                    ${giftTo(o) && o.gift_phone ? `<button type="button" class="ab-mini wa" data-order-wa-gift="${esc(o.id)}">واتساب المُهدى إليه</button>` : ""}
                     ${o.status === "new" && o.phone ? `<button type="button" class="ab-mini" data-order-remind="${esc(o.id)}">تذكير بالطلب</button>` : ""}
                     ${o.status === "delivered" && o.phone ? `<button type="button" class="ab-mini wa" data-order-review="${esc(o.id)}">اطلب تقييم</button>` : ""}
                     <button type="button" class="ab-mini" data-order-copy="${esc(o.id)}">نسخ</button>
@@ -2182,6 +2699,10 @@
         return ATHR.waLink(ATHR.customerWhatsapp(o.phone, o.country || "OM"), text);
     }
 
+    function giftTo(o) {
+        return Boolean(o.gift && (o.gift_name || o.gift_phone));
+    }
+
     function countryLabel(code) {
         const c = ATHR_COUNTRIES.find((x) => x.code === (code || "OM")) || ATHR_COUNTRIES[0];
         return `${c.flag} ${c.name}`;
@@ -2202,8 +2723,9 @@
             `اليوم: ${when.day}`,
             `التاريخ: ${when.date}`,
             `الوقت: ${when.time}`,
-            `الاسم: ${o.customer_name || ""}`,
-            `الهاتف: ${o.phone || ""}`,
+            ...(giftTo(o)
+                ? ["🎁 الطلب هدية", `صاحب الهدية: ${o.customer_name || ""}`, `رقم صاحب الهدية: ${ATHR.phoneText(o.phone, o.country)}`, `المُهدى إليه: ${o.gift_name || ""}`, `رقم المُهدى إليه: ${ATHR.phoneText(o.gift_phone, o.country)}`]
+                : [`الاسم: ${o.customer_name || ""}`, `الهاتف: ${ATHR.phoneText(o.phone, o.country)}`]),
             `الدولة: ${countryLabel(o.country)}`
         ];
         if (o.governorate) lines.push(`${(o.country || "OM") === "OM" ? "المحافظة" : "المدينة"}: ${o.governorate}`);
@@ -2212,7 +2734,10 @@
         else if (o.address) lines.push(`العنوان: ${o.address}`);
         if (o.notes) lines.push(`الملاحظات: ${o.notes}`);
         if (o.delivery_name) lines.push(`طريقة التوصيل: ${o.delivery_name}`);
-        if (o.gift) lines.push(`🎁 الطلب هدية${o.gift_message ? `: ${o.gift_message}` : ""}`);
+        if (giftTo(o)) {
+            if (o.gift_message) lines.push(`رسالة الهدية: ${o.gift_message}`);
+            if (o.gift_hide_price) lines.push("لا تذكر السعر للمُهدى إليه");
+        } else if (o.gift) lines.push(`🎁 الطلب هدية${o.gift_message ? `: ${o.gift_message}` : ""}`);
         lines.push("المنتجات:", ...itemsList(o).map((l) => (l.startsWith("•") ? l : `• ${l}`)));
         if (Number(o.discount) > 0) lines.push(`${o.discount_label || "الخصم"}: -${money(o.discount)}`);
         lines.push(`التوصيل: ${Number(o.delivery_price) > 0 ? money(o.delivery_price) : "مجاني"}`);

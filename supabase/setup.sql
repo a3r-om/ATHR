@@ -581,3 +581,89 @@ alter table public.products
 alter table public.categories
     add column if not exists name_en text check (name_en is null or char_length(name_en) <= 120),
     add column if not exists description_en text check (description_en is null or char_length(description_en) <= 600);
+
+-- =====================================================
+-- الإصدار 7: الهدية لشخص آخر، وتصميم الصور بالذكاء الاصطناعي
+-- =====================================================
+
+-- طلب هدية: اسم ورقم المُهدى إليه، وهل نخفي السعر عنه
+alter table public.orders
+    add column if not exists gift_name text check (gift_name is null or char_length(gift_name) <= 120),
+    add column if not exists gift_phone text check (gift_phone is null or char_length(gift_phone) <= 30),
+    add column if not exists gift_hide_price boolean not null default false;
+
+-- مفاتيح خدمات الذكاء الاصطناعي: جدول خاص لا يصل له الزوار ولا المتصفح
+create table if not exists private.app_secrets (
+    name text primary key check (name ~ '^[a-z_]{2,40}$'),
+    value text not null check (char_length(value) between 8 and 400),
+    updated_at timestamptz not null default now()
+);
+alter table private.app_secrets enable row level security;
+revoke all on private.app_secrets from public, anon, authenticated;
+
+-- المدير يحفظ المفتاح أو يحذفه، ولا يستطيع قراءته بعد الحفظ
+create or replace function public.set_ai_key(provider text, key text)
+returns void
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+begin
+    if not public.is_admin() then
+        raise exception 'not allowed' using errcode = '42501';
+    end if;
+    if provider is null or provider not in ('gemini', 'openai') then
+        raise exception 'unknown provider' using errcode = '22023';
+    end if;
+    if key is null or btrim(key) = '' then
+        delete from private.app_secrets where name = provider || '_key';
+        return;
+    end if;
+    if char_length(btrim(key)) not between 20 and 300 or btrim(key) ~ '\s' then
+        raise exception 'invalid key' using errcode = '22023';
+    end if;
+    insert into private.app_secrets (name, value) values (provider || '_key', btrim(key))
+    on conflict (name) do update set value = excluded.value, updated_at = now();
+end;
+$$;
+revoke execute on function public.set_ai_key(text, text) from public, anon;
+grant execute on function public.set_ai_key(text, text) to authenticated;
+
+-- حالة المفاتيح بدون كشفها (آخر 4 أحرف فقط)
+create or replace function public.ai_key_status()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, private
+as $$
+declare
+    out jsonb := '{}'::jsonb;
+    r record;
+begin
+    if not public.is_admin() then
+        raise exception 'not allowed' using errcode = '42501';
+    end if;
+    for r in select name, value, updated_at from private.app_secrets where name in ('gemini_key', 'openai_key') loop
+        out := out || jsonb_build_object(replace(r.name, '_key', ''), jsonb_build_object('last4', right(r.value, 4), 'updated_at', r.updated_at));
+    end loop;
+    return out;
+end;
+$$;
+revoke execute on function public.ai_key_status() from public, anon;
+grant execute on function public.ai_key_status() to authenticated;
+
+-- قراءة المفتاح: لدالة السيرفر ai-image فقط (بالمفتاح السري)، ولا يصل للمتصفح أبداً
+create or replace function public.ai_secret(p text)
+returns text
+language sql
+stable
+security definer
+set search_path = public, private
+as $$
+    select value from private.app_secrets where name = p || '_key' and p in ('gemini', 'openai');
+$$;
+revoke execute on function public.ai_secret(text) from public, anon, authenticated;
+grant execute on function public.ai_secret(text) to service_role;
+
+-- دالة السيرفر: supabase/functions/ai-image (تُنشر بدون verify_jwt لأنها تتحقق من المدير بنفسها)

@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="{{BASE}}css/store.css?v={{V_CSS}}">
 <style id="themeVars">{{THEME_CSS}}</style>
 <script>window.ATHR_BASE = "{{BASE}}";
-(function () { try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { var d = document.documentElement; d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {} })();</script>
+(function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("athr_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {} })();</script>
 </head>
 <body>
 
