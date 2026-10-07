@@ -963,7 +963,7 @@
         ].filter(Boolean);
         return `<div class="wrap foot">
             <div class="foot-head">
-                <div class="footer-brand"><img src="${esc(V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url))}" alt="" width="40" height="40"><strong>${esc(ATHR.storeName(cfg))}</strong></div>
+                <div class="footer-brand"><img src="${esc(V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url))}" alt="${esc(ATHR.storeName(cfg))}" width="40" height="40"></div>
                 ${about ? `<p class="foot-about">${esc(fill(v, about))}</p>` : ""}
             </div>
             <ul class="foot-points">${points.map(([ic, text]) => `<li>${ic}<span>${esc(text)}</span></li>`).join("")}</ul>

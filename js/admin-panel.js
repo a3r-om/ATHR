@@ -550,7 +550,7 @@
                                 <span class="prow-info">
                                     <b>${esc(p.name || "منتج بدون اسم")}</b>
                                     <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}</span>
-                                    ${p.is_visible && p.is_available ? "" : `<span class="prow-tags">${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}</span>`}
+                                    ${p.is_visible && p.is_available && !pctOf(p) ? "" : `<span class="prow-tags">${pctOf(p) ? `<span class="tag sale">خصم ${pctOf(p)}%</span>` : ""}${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}</span>`}
                                 </span>
                             </button>
                             <button type="button" class="vis-switch" role="switch" aria-checked="${p.is_visible}" data-toggle-visible="${esc(p.id)}" title="${p.is_visible ? "ظاهر في المتجر — اضغط للإخفاء" : "مخفي — اضغط للإظهار"}" aria-label="ظاهر في المتجر"><span></span></button>
@@ -595,9 +595,13 @@
                 </div>
                 ${text(`${base}.name`, "اسم المنتج", { max: 120 })}
                 ${text(`${base}.name_en`, "اسم المنتج بالإنجليزي (لزوار المتجر بالإنجليزي)", { max: 160, dir: "ltr", placeholder: "Real Madrid Cup" })}
-                <div class="two">
-                    ${number(`${base}.price`, "السعر")}
-                    ${number(`${base}.old_price`, "السعر قبل الخصم (اختياري)", { help: "يظهر مشطوباً بجانب السعر." })}
+                <div class="adm-card flat price-box">
+                    <div class="two">
+                        <label class="af"><span>السعر الأصلي</span><input class="ai" type="number" inputmode="decimal" step="0.001" min="0" data-price-base="${esc(p.id)}" value="${basePrice(p) === null || basePrice(p) === undefined ? "" : esc(basePrice(p))}"></label>
+                        <label class="af"><span>الخصم %</span><input class="ai" type="number" inputmode="decimal" step="1" min="0" max="90" data-price-pct="${esc(p.id)}" value="${pctOf(p) || ""}" placeholder="بدون خصم"></label>
+                    </div>
+                    <div class="pct-chips">${[10, 15, 20, 25, 30, 50].map((n) => `<button type="button" class="ab-mini${pctOf(p) === n ? " on" : ""}" data-price-quick="${n}" data-id="${esc(p.id)}">${n}%</button>`).join("")}${pctOf(p) ? `<button type="button" class="ab-mini danger" data-price-quick="0" data-id="${esc(p.id)}">إزالة الخصم</button>` : ""}</div>
+                    <p class="price-note" id="priceNote">${priceNote(p)}</p>
                 </div>
                 <div class="two">
                     ${select(`${base}.category_id`, "القسم", cats)}
@@ -701,6 +705,60 @@
         saveDraft();
         renderTab();
         editProduct(p.id);
+    }
+
+    // ---------- خصم المنتج: تكتب النسبة ويُحسب السعر الجديد تلقائياً ----------
+    function pctOf(p) {
+        return Number(p.old_price) > Number(p.price) && Number(p.old_price) > 0 ? Math.round((1 - p.price / p.old_price) * 1000) / 10 : 0;
+    }
+
+    function basePrice(p) {
+        return Number(p.old_price) > Number(p.price) ? Number(p.old_price) : p.price;
+    }
+
+    function applyDiscount(p, base, pct) {
+        const decimals = Number.isInteger(Number(cfg().order.decimals)) ? Number(cfg().order.decimals) : 3;
+        const f = 10 ** decimals;
+        if (!(base > 0)) {
+            p.price = base > 0 || base === 0 ? base : null;
+            p.old_price = null;
+            return;
+        }
+        if (pct > 0 && pct <= 90) {
+            p.old_price = Math.round(base * f) / f;
+            p.price = Math.round(base * (1 - pct / 100) * f) / f;
+        } else {
+            p.price = Math.round(base * f) / f;
+            p.old_price = null;
+        }
+    }
+
+    function priceNote(p) {
+        const pct = pctOf(p);
+        if (!(Number(p.price) > 0)) return "اكتب السعر الأصلي للمنتج.";
+        return pct
+            ? `<span class="tag sale">خصم ${pct}%</span> الزبون يرى: <b>${money(p.price)}</b> <s>${money(p.old_price)}</s>`
+            : "بدون خصم. اكتب نسبة الخصم أو اختر من الأزرار، ويُحسب السعر الجديد تلقائياً.";
+    }
+
+    function priceFromSheet(id, pctOverride) {
+        const p = A.draft.products.find((x) => x.id === id);
+        if (!p) return;
+        const baseEl = $(`#admSheet [data-price-base="${id}"]`);
+        const pctEl = $(`#admSheet [data-price-pct="${id}"]`);
+        const base = baseEl && baseEl.value !== "" ? Number(ATHR.digits(baseEl.value)) : null;
+        let pct = pctOverride !== undefined ? pctOverride : pctEl && pctEl.value !== "" ? Number(ATHR.digits(pctEl.value)) : 0;
+        if (pct > 90) {
+            pct = 90;
+            toast("أقصى خصم 90%");
+        }
+        if (pct < 0 || Number.isNaN(pct)) pct = 0;
+        if (pctEl && pctOverride !== undefined) pctEl.value = pct ? String(pct) : "";
+        applyDiscount(p, base, pct);
+        const note = $("#priceNote");
+        if (note) note.innerHTML = priceNote(p);
+        $$("#admSheet [data-price-quick]").forEach((b) => b.classList.toggle("on", Number(b.dataset.priceQuick) === pct && pct > 0));
+        saveDraft();
     }
 
     function newProduct() {
@@ -1764,6 +1822,10 @@
             renderOrdersList();
             return;
         }
+        if (t.dataset.priceBase || t.dataset.pricePct) {
+            priceFromSheet(t.dataset.priceBase || t.dataset.pricePct);
+            return;
+        }
         if (t.dataset.aiField && A.ai && t.type !== "checkbox") {
             A.ai[t.dataset.aiField] = t.value;
             return;
@@ -1795,6 +1857,11 @@
 
         if (t.dataset.pref) {
             storage.set(t.dataset.pref, t.value);
+            return;
+        }
+        if (t.dataset.priceBase || t.dataset.pricePct) {
+            priceFromSheet(t.dataset.priceBase || t.dataset.pricePct);
+            renderTab({ keepScroll: true });
             return;
         }
         if (t.dataset.aiField && A.ai) {
@@ -1920,6 +1987,11 @@
             A.tab = d.tab;
             A.rowMenu = null;
             renderPanel();
+            return;
+        }
+        if (d.priceQuick !== undefined && d.id) {
+            priceFromSheet(d.id, Number(d.priceQuick));
+            refreshSheet();
             return;
         }
         if (d.rowMenu) {
@@ -2121,11 +2193,8 @@
             toast("اكتب سعراً أكبر من صفر.");
             return;
         }
-        if (!confirm(`تطبيق السعر ${money(value)} على كل المنتجات (${A.draft.products.length})؟`)) return;
-        A.draft.products.forEach((p) => {
-            p.price = value;
-            if (p.old_price !== null && p.old_price <= value) p.old_price = null;
-        });
+        if (!confirm(`تطبيق السعر ${money(value)} على كل المنتجات (${A.draft.products.length})؟ المنتجات التي عليها خصم تبقى بنفس نسبة الخصم.`)) return;
+        A.draft.products.forEach((p) => applyDiscount(p, value, pctOf(p)));
         afterChange();
         toast("طُبّق السعر على كل المنتجات");
     }
@@ -2278,7 +2347,7 @@
             if (!(num(p.price) && p.price > 0)) add("products", `${label}: السعر يجب أن يزيد على صفر.`);
             if (p.weight_g !== null && p.weight_g !== undefined && !(num(p.weight_g) && p.weight_g > 0 && p.weight_g <= 50000)) add("products", `${label}: الوزن غير صحيح.`);
             if (p.old_price !== null && p.old_price !== undefined && !(num(p.old_price) && p.old_price > (p.price || 0))) {
-                add("products", `${label}: السعر قبل الخصم يجب أن يكون أكبر من السعر.`);
+                add("products", `${label}: راجع الخصم، السعر الأصلي يجب أن يكون أكبر من السعر بعد الخصم.`);
             }
         });
         return errors;

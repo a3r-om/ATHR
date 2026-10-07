@@ -495,3 +495,13 @@ html.theme-dark .ag-ico svg { stroke: #F1B7C0; }
 .prow-more svg { width: 20px; height: 20px; fill: currentColor; }
 .prow-menu { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; padding: 8px; border-radius: 12px; background: var(--a-bg); }
 .prow.open { background: color-mix(in srgb, var(--a-primary) 4%, transparent); }
+
+/* خصم المنتج */
+.price-box { gap: 10px; }
+.pct-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pct-chips .ab-mini.on { background: var(--a-primary); border-color: var(--a-primary); color: #fff; }
+.price-note { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--a-muted); }
+.price-note b { color: var(--a-text); font-size: 15px; }
+.price-note s { opacity: .7; }
+.tag.sale { background: #E8F5EE; color: #1F7A4D; }
+html.theme-dark .tag.sale { background: #173326; color: #8FD9B0; }

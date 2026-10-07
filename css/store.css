@@ -1540,3 +1540,4 @@ select.input { appearance: auto; }
 .foot .footer-bottom { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; }
 .foot .footer-bottom a { color: #fff; }
 @media (min-width: 760px) { .foot { margin-inline: auto; } }
+.foot-head .footer-brand img { width: auto; height: 48px; }
