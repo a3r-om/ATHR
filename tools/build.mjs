@@ -172,7 +172,8 @@ async function makeThumbs(ATHR, urls) {
             if (!map[h]) fs.unlinkSync(path.join(dir, f));
         });
     }
-    return map;
+    // ترتيب ثابت حتى لا يتغير الملف بدون سبب
+    return Object.fromEntries(Object.keys(map).sort().map((k) => [k, 1]));
 }
 
 // =====================================================
