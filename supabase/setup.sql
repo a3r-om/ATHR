@@ -212,3 +212,74 @@ insert into public.admin_users (id)
 select id from auth.users
 where lower(email) = 'OWNER_EMAIL@example.com' and email_confirmed_at is not null
 on conflict (id) do nothing;
+
+-- =====================================================
+-- الإصدار 2: المتجر الذكي (حقول المنتجات، إعدادات المتجر، دفتر الطلبيات)
+-- =====================================================
+
+alter table public.products
+    add column if not exists description text,
+    add column if not exists color_id text,
+    add column if not exists is_visible boolean not null default true,
+    add column if not exists sort_order int not null default 0,
+    add column if not exists video_url text;
+
+alter table public.categories add column if not exists sort_order int not null default 0;
+alter table public.store_settings add column if not exists config jsonb not null default '{}'::jsonb;
+
+drop policy if exists "visitors see visible products only" on public.products;
+create policy "visitors see visible products only" on public.products
+    as restrictive for select to anon using (is_visible);
+drop policy if exists "signed-in see visible products unless admin" on public.products;
+create policy "signed-in see visible products unless admin" on public.products
+    as restrictive for select to authenticated using (is_visible or (select public.is_admin()));
+
+create table if not exists public.orders (
+    id uuid primary key default gen_random_uuid(),
+    order_no text not null unique check (order_no ~ '^[A-Z]{1,4}-[0-9A-Z]{3,10}$'),
+    created_at timestamptz not null default now(),
+    ordered_at timestamptz not null default now(),
+    source text not null default 'web' check (source in ('web', 'paste', 'manual')),
+    customer_name text check (char_length(customer_name) <= 120),
+    phone text check (char_length(phone) <= 30),
+    governorate text check (char_length(governorate) <= 60),
+    wilaya text check (char_length(wilaya) <= 60),
+    address text check (char_length(address) <= 400),
+    office text check (char_length(office) <= 120),
+    notes text check (char_length(notes) <= 1000),
+    delivery_name text check (char_length(delivery_name) <= 120),
+    delivery_type text check (delivery_type in ('home', 'office')),
+    delivery_price numeric(10,3) not null default 0 check (delivery_price >= 0),
+    payment_name text check (char_length(payment_name) <= 120),
+    payment_type text check (payment_type in ('cod', 'bank', 'online', 'other')),
+    items jsonb not null default '[]'::jsonb check (jsonb_typeof(items) = 'array' and jsonb_array_length(items) <= 100),
+    items_text text check (char_length(items_text) <= 4000),
+    subtotal numeric(10,3) not null default 0 check (subtotal >= 0),
+    discount numeric(10,3) not null default 0 check (discount >= 0),
+    total numeric(10,3) not null default 0 check (total >= 0),
+    status text not null default 'new' check (status in ('new', 'delivered')),
+    hidden boolean not null default false,
+    admin_note text check (char_length(admin_note) <= 2000)
+);
+create index if not exists orders_ordered_idx on public.orders(ordered_at desc);
+alter table public.orders enable row level security;
+grant insert on public.orders to anon, authenticated;
+grant select, update, delete on public.orders to authenticated;
+
+drop policy if exists "visitors place web orders" on public.orders;
+create policy "visitors place web orders" on public.orders
+    for insert to anon, authenticated
+    with check (
+        source = 'web' and status = 'new' and hidden = false and admin_note is null
+        and jsonb_array_length(items) between 1 and 100
+        and char_length(coalesce(customer_name, '')) between 3 and 120
+        and char_length(coalesce(phone, '')) between 8 and 30
+    );
+drop policy if exists "admin adds orders" on public.orders;
+create policy "admin adds orders" on public.orders for insert to authenticated with check ((select public.is_admin()));
+drop policy if exists "admin reads orders" on public.orders;
+create policy "admin reads orders" on public.orders for select to authenticated using ((select public.is_admin()));
+drop policy if exists "admin updates orders" on public.orders;
+create policy "admin updates orders" on public.orders for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+drop policy if exists "admin deletes orders" on public.orders;
+create policy "admin deletes orders" on public.orders for delete to authenticated using ((select public.is_admin()));
