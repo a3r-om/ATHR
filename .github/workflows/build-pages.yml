@@ -62,3 +62,14 @@ jobs:
             git pull -q --rebase origin main && git push -q origin HEAD:main && break
             sleep 5
           done
+
+      - name: فحص المتجر المنشور
+        continue-on-error: true
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"; repo="${GITHUB_REPOSITORY#*/}"
+          site="https://${owner,,}.github.io/${repo}/"
+          for path in "" "index.html" "c/clubs/" "sitemap.xml"; do
+            code=$(curl -s -o /tmp/page -w "%{http_code}" "${site}${path}")
+            title=$(grep -o "<title>[^<]*" /tmp/page | head -1)
+            echo "${code} ${site}${path} ${title}"
+          done
