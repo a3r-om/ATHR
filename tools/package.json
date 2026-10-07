@@ -1,0 +1,9 @@
+{
+  "name": "athr-build",
+  "private": true,
+  "description": "أدوات بناء صفحات متجر أثر",
+  "type": "module",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

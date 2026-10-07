@@ -336,6 +336,10 @@ declare
     m          jsonb;
     pay        jsonb;
     ship       numeric := 0;
+    v_label    text;
+    v_count    int := 0;
+    v_tpct     numeric;
+    v_volume   numeric;
 begin
     -- المدير يدخل طلبات يدوية وملصوقة بمبالغ يحددها بنفسه
     if public.is_admin() then
@@ -403,6 +407,27 @@ begin
             || jsonb_build_object(b ->> 'b', (remaining ->> (b ->> 'b'))::int - pairs);
     end loop;
     v_discount := round(v_discount, 3);
+    v_label := case when v_discount > 0 then 'خصم الباقة' end;
+
+    -- 2ب) خصم الكمية (قطعتين 5%، 3 فأكثر 10%...): لا يجتمع مع خصم الباقات، ويُطبَّق الأفضل للزبون
+    if coalesce((cfg #>> '{sales,volume,enabled}')::boolean, false) then
+        select coalesce(sum(value::int), 0) into v_count from jsonb_each_text(qtys);
+        select t.tpct into v_tpct
+          from (select case when (x.v ->> 'min') ~ '^[0-9]+(\.[0-9]+)?$' then round((x.v ->> 'min')::numeric) end as tmin,
+                       case when (x.v ->> 'pct') ~ '^[0-9]+(\.[0-9]+)?$' then (x.v ->> 'pct')::numeric end as tpct
+                  from jsonb_array_elements(coalesce(cfg #> '{sales,volume,tiers}', '[]')) as x(v)) t
+         where t.tmin is not null and t.tpct is not null
+           and t.tmin >= 2 and t.tpct > 0 and t.tpct <= 90 and v_count >= t.tmin
+         order by t.tmin desc
+         limit 1;
+        if v_tpct is not null then
+            v_volume := round(v_subtotal * v_tpct / 100, 3);
+            if v_volume > v_discount then
+                v_discount := v_volume;
+                v_label := 'خصم الكمية ' || case when v_tpct = trunc(v_tpct) then trunc(v_tpct)::bigint::text else v_tpct::text end || '%';
+            end if;
+        end if;
+    end if;
     v_after := greatest(0, v_subtotal - v_discount);
 
     -- 3) طريقة التوصيل: يجب أن تكون مفعّلة ومتاحة لدولة الطلب
@@ -450,6 +475,7 @@ begin
     new.items          := clean;
     new.subtotal       := round(v_subtotal, 3);
     new.discount       := v_discount;
+    new.discount_label := v_label;
     new.delivery_price := round(ship, 3);
     new.total          := round(v_after + ship, 3);
     new.ordered_at     := now();
@@ -463,3 +489,84 @@ drop trigger if exists athr_recompute_order on public.orders;
 create trigger athr_recompute_order
     before insert on public.orders
     for each row execute function private.athr_recompute_order();
+
+-- =====================================================
+-- الإصدار 5: صفحة لكل منتج في جوجل، تقييمات العملاء، وقياس المبيعات
+-- =====================================================
+
+-- رابط ثابت لكل منتج (صفحة /p/<slug>/) وصورة مصغّرة اختيارية
+alter table public.products
+    add column if not exists slug text,
+    add column if not exists thumb_url text;
+create unique index if not exists products_slug_key on public.products (slug) where slug is not null;
+
+-- وصف القسم (يظهر في صفحته وفي جوجل)
+alter table public.categories
+    add column if not exists description text check (description is null or char_length(description) <= 600);
+
+-- مصدر الزيارة، الهدية، واسم الخصم في كل طلب
+alter table public.orders
+    add column if not exists channel text check (channel is null or channel ~ '^[a-z_]{1,20}$'),
+    add column if not exists gift boolean not null default false,
+    add column if not exists gift_message text check (gift_message is null or char_length(gift_message) <= 300),
+    add column if not exists discount_label text check (discount_label is null or char_length(discount_label) <= 80);
+
+-- تقييمات العملاء: تظهر في المتجر بعد موافقتك فقط
+create table if not exists public.reviews (
+    id uuid primary key default gen_random_uuid(),
+    created_at timestamptz not null default now(),
+    product_id uuid references public.products(id) on delete set null,
+    order_no text check (order_no is null or order_no ~ '^[A-Z]{1,4}-[0-9A-Z]{3,10}$'),
+    name text not null check (char_length(name) between 2 and 60),
+    rating int not null check (rating between 1 and 5),
+    text text not null check (char_length(text) between 3 and 1000),
+    status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'))
+);
+create index if not exists reviews_product_idx on public.reviews (product_id);
+alter table public.reviews enable row level security;
+grant select, insert on public.reviews to anon, authenticated;
+grant update, delete on public.reviews to authenticated;
+
+drop policy if exists "visitors read approved reviews" on public.reviews;
+create policy "visitors read approved reviews" on public.reviews
+    for select to anon, authenticated using (status = 'approved' or (select public.is_admin()));
+drop policy if exists "visitors send reviews for approval" on public.reviews;
+create policy "visitors send reviews for approval" on public.reviews
+    for insert to anon, authenticated with check (status = 'pending');
+drop policy if exists "admin updates reviews" on public.reviews;
+create policy "admin updates reviews" on public.reviews
+    for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+drop policy if exists "admin deletes reviews" on public.reviews;
+create policy "admin deletes reviews" on public.reviews
+    for delete to authenticated using ((select public.is_admin()));
+
+-- عدّادات رحلة الزبون (زيارة، مشاهدة منتج، إضافة للسلة، إتمام، طلب) بدون أي بيانات شخصية
+create table if not exists public.stats_daily (
+    day date not null,
+    key text not null,
+    n int not null default 0,
+    primary key (day, key)
+);
+alter table public.stats_daily enable row level security;
+grant select on public.stats_daily to authenticated;
+drop policy if exists "admin reads stats" on public.stats_daily;
+create policy "admin reads stats" on public.stats_daily
+    for select to authenticated using ((select public.is_admin()));
+
+create or replace function public.track(k text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    if k is null or k !~ '^(visit|view|add|checkout|order)(:(direct|google|instagram|tiktok|whatsapp|snapchat|facebook|x|other))?$' then
+        return;
+    end if;
+    insert into public.stats_daily (day, key, n)
+    values ((now() at time zone 'Asia/Muscat')::date, k, 1)
+    on conflict (day, key) do update set n = public.stats_daily.n + 1;
+end;
+$$;
+revoke execute on function public.track(text) from public;
+grant execute on function public.track(text) to anon, authenticated;

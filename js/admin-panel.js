@@ -9,7 +9,7 @@
     const esc = ATHR.escape;
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-    const sb = athrSupabase;
+    const sb = window.athrSupabase;
     const BUCKET = "product-images";
     const DRAFT_KEY = "athr_admin_draft_v2";
 
@@ -24,7 +24,24 @@
         busy: false,
         orders: [],
         ordersLoaded: false,
-        filter: { q: "", status: "all", pay: "all" }
+        filter: { q: "", status: "all", pay: "all" },
+        book: "orders",
+        reviews: [],
+        reviewsLoaded: false,
+        statsDays: 30,
+        stats: null
+    };
+
+    const CHANNELS = {
+        direct: "مباشر",
+        instagram: "إنستغرام",
+        tiktok: "تيك توك",
+        whatsapp: "واتساب",
+        google: "جوجل",
+        snapchat: "سناب شات",
+        facebook: "فيسبوك",
+        x: "X (تويتر)",
+        other: "مواقع أخرى"
     };
 
     const TABS = [
@@ -48,6 +65,8 @@
     };
 
     const toast = (msg) => ATHR.store.toast(msg);
+    const asset = (src) => ATHR.views.asset(src);
+    const siteLink = (path) => new URL(path, location.origin).href;
     const cfg = () => A.draft.config;
     const money = (v) => ATHR.money(v, A.draft ? A.draft.config : ATHR.fullConfig({}));
 
@@ -108,7 +127,7 @@
         document.body.classList.remove("locked");
         A.view = null;
         A.editing = null;
-        if (location.hash === "#admin" || location.hash === "#orders") location.hash = "#/";
+        ATHR.store.closeOwner();
     }
 
     async function verifyAdmin(userId) {
@@ -125,7 +144,7 @@
         root().innerHTML = `
             <div class="adm-login">
                 <form class="adm-card adm-login-card" id="loginForm" novalidate>
-                    <div class="adm-login-logo"><img src="${esc(config.logo_url || "images/logo.png")}" alt=""></div>
+                    <div class="adm-login-logo"><img src="${esc(asset(config.logo_url || "images/logo.png"))}" alt=""></div>
                     <h1>لوحة التحكم</h1>
                     <p class="adm-muted">ادخل بحساب المتجر لتعديل المتجر ومتابعة الطلبات.</p>
                     <label class="af"><span>البريد الإلكتروني</span><input class="ai" id="loginEmail" type="email" autocomplete="email" dir="ltr" required></label>
@@ -171,8 +190,8 @@
     async function loadServer() {
         const [s, c, p, m] = await Promise.all([
             sb.from("store_settings").select("config").eq("id", 1).maybeSingle(),
-            sb.from("categories").select("id,name,slug,sort_order").order("sort_order", { ascending: true }),
-            sb.from("products").select("id,name,price,old_price,category_id,image_url,is_available,is_visible,description,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
+            sb.from("categories").select("id,name,slug,sort_order,description,image_url").order("sort_order", { ascending: true }),
+            sb.from("products").select("id,name,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
             sb.from("product_media").select("product_id,media_type,media_url,sort_order").order("sort_order", { ascending: true })
         ]);
         const failed = [s, c, p, m].find((r) => r.error);
@@ -186,16 +205,19 @@
 
         A.server = {
             config: ATHR.fullConfig(s.data?.config || {}),
-            categories: (c.data || []).map((x) => ({ id: x.id, name: x.name, slug: x.slug })),
+            categories: (c.data || []).map((x) => ({ id: x.id, name: x.name, slug: x.slug, description: x.description || "", image_url: x.image_url || "" })),
             products: (p.data || []).map((x) => ({
                 id: x.id,
                 name: x.name || "",
+                slug: x.slug || "",
                 price: Number(x.price),
                 old_price: x.old_price === null ? null : Number(x.old_price),
                 category_id: x.category_id,
                 image_url: x.image_url || "",
                 is_available: x.is_available !== false,
                 is_visible: x.is_visible !== false,
+                is_best_seller: x.is_best_seller === true,
+                is_new_arrival: x.is_new_arrival === true,
                 description: x.description || "",
                 color_id: x.color_id || "",
                 video_url: x.video_url || "",
@@ -388,7 +410,7 @@
 
     function uploadButton(label, attrs, { accept = "image/*", current = "", remove = "" } = {}) {
         return `<div class="up">
-            ${current ? `<div class="up-prev">${/\.(mp4|webm|mov)(\?|$)/i.test(current) ? `<video src="${esc(current)}" muted playsinline></video>` : `<img src="${esc(current)}" alt="">`}</div>` : ""}
+            ${current ? `<div class="up-prev">${/\.(mp4|webm|mov)(\?|$)/i.test(current) ? `<video src="${esc(asset(current))}" muted playsinline></video>` : `<img src="${esc(asset(current))}" alt="">`}</div>` : ""}
             <label class="ab ab-soft ab-sm">${label}<input type="file" accept="${accept}" ${attrs} hidden></label>
             ${remove ? `<button type="button" class="ab-mini danger" ${remove}>إزالة</button>` : ""}
         </div>`;
@@ -414,7 +436,7 @@
                 <ul class="plist">
                     ${list.map(({ p, i }) => `
                         <li class="prow${p.is_visible ? "" : " is-hidden"}">
-                            <img src="${esc(p.image_url || "images/logo2.jpeg")}" alt="" loading="lazy">
+                            <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
                             <div class="prow-info">
                                 <b>${esc(p.name || "منتج بدون اسم")}</b>
                                 <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}${p.is_visible ? "" : " · مخفي"}${p.is_available ? "" : " · نفد"}</span>
@@ -469,6 +491,8 @@
                 ${area(`${base}.description`, "الوصف", { rows: 3 })}
                 ${number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب توصيل الخليج بالكيلو." })}
                 ${toggle(`${base}.is_visible`, "ظاهر في المتجر")}
+                ${toggle(`${base}.is_best_seller`, "من «الأكثر طلباً»", { help: "يظهر في قسم الأكثر طلباً أعلى الصفحة الرئيسية مع شارة على صورته (يحتاج منتجين على الأقل)." })}
+                ${toggle(`${base}.is_new_arrival`, "من «وصل حديثاً»")}
                 <label class="at"><input type="checkbox" data-sold-out="${esc(p.id)}"${p.is_available ? "" : " checked"}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>نفد من المخزون</b><small>يبقى ظاهرًا مع شارة «نفد المخزون» ولا يمكن طلبه.</small></span></label>
 
                 <div class="adm-card flat">
@@ -494,8 +518,25 @@
                     ${videoQuality("productVideoQuality", "720")}
                     ${text(`${base}.video_url`, "رابط فيديو خارجي (اختياري)", { dir: "ltr", placeholder: "https://", help: "لفيديو طويل ضع رابط يوتيوب أو إنستغرام، فيظهر زر «شاهد فيديو المنتج»." })}
                 </div>
+                ${productLinkBox(p)}
                 <button class="ab ab-primary ab-block" type="button" data-a="close-sheet">تم</button>
             </div>`;
+    }
+
+    // رابط صفحة المنتج للمشاركة في إنستغرام وتيك توك وواتساب
+    function productLinkBox(p) {
+        const published = A.server && A.server.products.some((x) => x.id === p.id) && p.slug;
+        if (!published) return `<p class="adm-muted">بعد النشر يصبح لهذا المنتج رابط خاص تشاركه في إنستغرام وتيك توك وواتساب، ويظهر في جوجل.</p>`;
+        const url = siteLink(ATHR.url.product(p));
+        return `<div class="adm-card flat">
+            <h3>رابط المنتج</h3>
+            <code class="adm-link-box" dir="ltr">${esc(decodeURI(url))}</code>
+            <div class="inline">
+                <button class="ab ab-soft ab-sm" type="button" data-copy-text="${esc(url)}">نسخ الرابط</button>
+                <a class="ab ab-ghost ab-sm" href="${esc(url)}" target="_blank" rel="noopener">فتح الصفحة</a>
+            </div>
+            <small class="adm-muted">للإعلانات: أضف في آخر الرابط <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code> لتعرف من أين جاءت الطلبات.</small>
+        </div>`;
     }
 
     function videoQuality(id, def) {
@@ -544,6 +585,9 @@
             image_url: "",
             is_available: true,
             is_visible: true,
+            is_best_seller: false,
+            is_new_arrival: true,
+            slug: "",
             description: "",
             color_id: cfg().colors[0]?.id || "",
             video_url: "",
@@ -581,8 +625,8 @@
         }
         body += text("config.ad.link", "رابط عند الضغط على الإعلان (اختياري)", {
             dir: "ltr",
-            placeholder: "https://  أو  #/c/clubs",
-            help: ad.type === "text" ? "إن لم تكتب رابطاً، يفتح الزر قسم المنتجات." : "يمكنك وضع رابط قسم مثل #/c/clubs"
+            placeholder: "https://  أو  c/clubs/",
+            help: ad.type === "text" ? "إن لم تكتب رابطاً، يفتح الزر قسم المنتجات. لرابط قسم اكتب مثلاً c/clubs/" : "لرابط قسم اكتب مثلاً c/clubs/ ولمنتج انسخ رابطه من صفحة المنتج."
         });
         return card("الإعلان", body, "مستطيل يظهر أعلى الصفحة الرئيسية قبل الواجهة.");
     }
@@ -600,12 +644,16 @@
         const colors = cfg().colors;
 
         return card("الأقسام", `
-            <ul class="lst">${cats.map((c, i) => `<li class="lst-row">
-                <input class="ai" data-bind="categories.#${esc(c.id)}.name" value="${esc(c.name)}" placeholder="اسم القسم" aria-label="اسم القسم">
-                <span class="adm-muted nowrap">${counts.get(c.id) || 0} منتج</span>
+            <ul class="items">${cats.map((c, i) => `<li class="item-card">
+                <div class="lst-row">
+                    <input class="ai" data-bind="categories.#${esc(c.id)}.name" value="${esc(c.name)}" placeholder="اسم القسم" aria-label="اسم القسم">
+                    <span class="adm-muted nowrap">${counts.get(c.id) || 0} منتج</span>
+                </div>
+                <label class="af"><span>وصف القسم (يظهر في صفحته وفي جوجل)</span><textarea class="ai" rows="2" maxlength="300" data-bind="categories.#${esc(c.id)}.description" placeholder="مثال: أكواب سيراميك بملمس مطفي بشعارات الأندية، هدية مثالية لكل مشجع.">${esc(c.description || "")}</textarea></label>
+                ${c.slug ? `<small class="adm-muted" dir="ltr">${esc(decodeURI(siteLink(ATHR.url.category(c))))}</small>` : ""}
                 ${listControls("categories", i, cats.length)}
             </li>`).join("")}</ul>
-            <button class="ab ab-ghost ab-sm" type="button" data-a="add-category">+ إضافة قسم</button>`, "رتّبها كما تريد ظهورها في المتجر. حذف قسم لا يحذف منتجاته، تصبح بدون قسم.")
+            <button class="ab ab-ghost ab-sm" type="button" data-a="add-category">+ إضافة قسم</button>`, "رتّبها كما تريد ظهورها في المتجر. حذف قسم لا يحذف منتجاته، تصبح بدون قسم. اكتب لكل قسم وصفاً قصيراً بالكلمات التي يبحث بها الناس، فيساعد على الظهور في جوجل.")
         + card("ألوان الكاسات", `
             <ul class="lst">${colors.map((c, i) => `<li class="lst-row">
                 <input type="color" data-bind="config.colors.${i}.hex" value="${esc(c.hex || "#ffffff")}" aria-label="درجة اللون">
@@ -665,17 +713,15 @@
             + card("الواجهة الرئيسية", `
                 ${text("config.texts.hero_title", "العنوان الرئيسي", { placeholder: d.hero_title, max: 60 })}
                 ${area("config.texts.hero_text", "النص التعريفي", { rows: 3, placeholder: d.hero_text })}
-                ${text("config.texts.hero_button", "نص الزر", { placeholder: d.hero_button, help: "اتركه فارغاً لإخفاء الزر.", max: 30 })}
-                <div class="af"><span>المزايا الصغيرة تحت النص (حتى 6)</span>
+                <div class="af"><span>المزايا الصغيرة تحت النص (حتى 4)</span>
                     <ul class="lst">${t.hero_features.map((f, i) => `<li class="lst-row">
                         <input class="ai" data-bind="config.texts.hero_features.${i}" value="${esc(f)}" aria-label="ميزة ${i + 1}" maxlength="40">
                         ${listControls("config.texts.hero_features", i, t.hero_features.length)}
                     </li>`).join("")}</ul>
-                    ${t.hero_features.length < 6 ? `<button class="ab ab-ghost ab-sm" type="button" data-add-item="config.texts.hero_features">+ إضافة ميزة</button>` : ""}
+                    ${t.hero_features.length < 4 ? `<button class="ab ab-ghost ab-sm" type="button" data-add-item="config.texts.hero_features">+ إضافة ميزة</button>` : ""}
                 </div>`)
             + card("المنتجات والبحث", `
                 ${text("config.texts.search_placeholder", "النص داخل خانة البحث", { placeholder: d.search_placeholder })}
-                ${text("config.texts.all_label", "اسم قسم «الكل»", { placeholder: d.all_label })}
                 ${text("config.texts.add_to_cart", "نص زر الإضافة للسلة", { placeholder: d.add_to_cart })}
                 ${text("config.texts.sold_out", "نص «نفد المخزون»", { placeholder: d.sold_out })}`)
             + card("أسفل الصفحة", `
@@ -804,7 +850,29 @@
             ${listControls("config.sales.bundles", i, s.bundles.length)}
         </li>`).join("");
 
-        return card("شريط الشحن المجاني", `
+        const vol = s.volume || { enabled: false, tiers: [] };
+        const tiers = (vol.tiers || []).map((t, i) => `<li class="lst-row">
+            <label class="af sm"><span>من عدد قطع</span><input class="ai" type="number" inputmode="numeric" step="1" min="2" data-bind="config.sales.volume.tiers.${i}.min" data-type="number" value="${esc(t.min ?? "")}"></label>
+            <label class="af sm"><span>الخصم %</span><input class="ai" type="number" inputmode="numeric" step="1" min="1" max="90" data-bind="config.sales.volume.tiers.${i}.pct" data-type="number" value="${esc(t.pct ?? "")}"></label>
+            ${listControls("config.sales.volume.tiers", i, vol.tiers.length)}
+        </li>`).join("");
+        const volText = ATHR.volumeTiers(cfg()).map((t) => `${ATHR.piecesText(t.min)} خصم ${t.pct}%`).join("، ");
+
+        return card("خصم الكمية (يرفع قيمة الطلب)", `
+                ${toggle("config.sales.volume.enabled", "تفعيل خصم الكمية", { rerender: true })}
+                <ul class="lst">${tiers}</ul>
+                ${(vol.tiers || []).length < 4 ? `<button class="ab ab-ghost ab-sm" type="button" data-add-item="config.sales.volume.tiers">+ إضافة شريحة</button>` : ""}
+                ${vol.enabled && volText ? `<p class="adm-sentence">${esc(volText)} — يُطبَّق تلقائياً في السلة على كل المنتجات.</p>` : ""}`,
+                "الخصم على مجموع الطلب حسب عدد القطع. لا يجتمع مع خصم الباقات، ويُطبَّق تلقائياً الأفضل للزبون. يظهر للزبون في صفحة المنتج وفي السلة («أضف قطعة ووفّر 10%»).")
+            + card("بعد الإضافة للسلة", `
+                ${toggle("config.sales.upsell_show", "نافذة «أُضيف إلى سلتك» مع اقتراحات وإكمال الطقم", { help: "تقترح على الزبون إكمال الطقم ومنتجات مناسبة، وتوضح كم بقي للتوصيل المجاني أو للخصم التالي." })}
+                ${toggle("config.sales.gift_enabled", "خيار «هذا الطلب هدية» مع رسالة للمُهدى إليه")}`)
+            + card("عناوين أقسام الصفحة الرئيسية", `
+                ${text("config.sales.best_title", "عنوان الأكثر طلباً", { placeholder: d.best_title })}
+                ${text("config.sales.sets_title", "عنوان الأطقم", { placeholder: d.sets_title })}
+                ${text("config.sales.new_title", "عنوان وصل حديثاً", { placeholder: d.new_title })}`,
+                "حدّد «الأكثر طلباً» و«وصل حديثاً» من تفاصيل كل منتج. الأطقم تظهر من الباقات المفعّلة.")
+            + card("شريط الشحن المجاني", `
                 ${toggle("config.sales.free_bar_show", "إظهار شريط الشحن المجاني أعلى المتجر")}
                 ${text("config.sales.free_before", "الجملة قبل أن يضيف الزائر شيئاً", { placeholder: d.free_before })}
                 ${text("config.sales.free_during", "الجملة أثناء التسوق", { placeholder: d.free_during, help: "{left} المبلغ المتبقي." })}
@@ -825,10 +893,11 @@
             + card("السلات غير المكتملة", `
                 ${toggle("config.sales.abandoned_show", "تذكير الزائر العائد بسلته غير المكتملة")}
                 ${text("config.sales.abandoned_text", "نص التذكير", { placeholder: d.abandoned_text, help: "{n} عدد المنتجات في السلة." })}
-                ${area("config.sales.reminder_msg", "رسالة تذكير الطلبات في دفتر الطلبيات", { rows: 3, placeholder: d.reminder_msg, help: "{client} اسم العميل، {no} رقم الطلب، {total} المبلغ." })}`)
+                ${area("config.sales.reminder_msg", "رسالة تذكير الطلبات في دفتر الطلبيات", { rows: 3, placeholder: d.reminder_msg, help: "{client} اسم العميل، {no} رقم الطلب، {total} المبلغ." })}
+                ${area("config.sales.review_request_msg", "رسالة طلب التقييم بعد التسليم", { rows: 3, placeholder: d.review_request_msg, help: "{client} اسم العميل، {link} رابط صفحة التقييم." })}`)
             + card("شارات الثقة", `
                 ${toggle("config.sales.trust_show", "إظهار شارات الثقة تحت أزرار الشراء")}
-                <p class="adm-muted">شارات تلقائية تُبنى من إعداداتك: تحويل بنكي مباشر، دفع إلكتروني آمن، الدفع عند الاستلام، توصيل داخل سلطنة عُمان، تواصل مباشر عبر واتساب.</p>
+                <p class="adm-muted">شارات تلقائية تُبنى من إعداداتك لدولة الزائر: الدفع عند الاستلام، التحويل البنكي، التوصيل لدول الخليج، التواصل عبر واتساب.</p>
                 <div class="af"><span>شارات تكتبها بنفسك (حتى 3)</span>
                     <ul class="lst">${s.trust_custom.map((t, i) => `<li class="lst-row">
                         <input class="ai" data-bind="config.sales.trust_custom.${i}" value="${esc(t)}" maxlength="50" aria-label="شارة ${i + 1}">
@@ -867,7 +936,13 @@
 
         return card("قائمة النقاط الثلاث (⋮) أعلى المتجر", `
                 ${toggle("config.contact.menu_show", "إظهار قائمة النقاط الثلاث")}
-                ${text("config.contact.share_url", "رابط متجرك للمشاركة", { dir: "ltr", placeholder: "https://", help: "بدونه لا يظهر خيار «مشاركة المتجر» للزوار." })}`)
+                ${text("config.contact.share_url", "رابط متجرك", { dir: "ltr", placeholder: "https://", help: "يُستعمل في روابط التقييم والمشاركة. غيّره فقط إذا ربطت دومينك الخاص." })}`)
+            + card("الظهور في جوجل", `
+                ${text("config.seo.home_title", "عنوان المتجر في نتائج جوجل", { max: 70, placeholder: `${cfg().name} | ${cfg().texts.hero_title}`, help: "أفضل طول 50 إلى 60 حرفاً، وفيه الكلمات التي يبحث بها الناس مثل «أكواب» و«عُمان»." })}
+                ${area("config.seo.home_description", "وصف المتجر في نتائج جوجل", { rows: 3, help: "أفضل طول 120 إلى 155 حرفاً. اتركه فارغاً ليُكتب تلقائياً من النبذة وطرق التوصيل والدفع." })}
+                ${text("config.seo.google_verification", "رمز التحقق من Google Search Console", { dir: "ltr", placeholder: "الصق الرمز أو وسم meta كاملاً", help: "من Search Console اختر طريقة «علامة HTML» وانسخ الرمز هنا، ثم انشر وانتظر حتى ساعة قبل الضغط على «تحقق»." })}
+                <p class="adm-muted">لكل منتج وقسم صفحة خاصة يقرؤها جوجل، تُحدَّث تلقائياً كل ساعة بعد النشر. خريطة الموقع: <code dir="ltr">${esc(siteLink(ATHR.base() + "sitemap.xml"))}</code></p>`,
+                "عناوين المنتجات وأوصافها تؤثر على ظهورك في البحث. اكتب وصفاً لكل قسم في «الأقسام والألوان».")
             + card("زر واتساب السريع", `
                 ${toggle("config.contact.wa_float", "إظهار زر واتساب العائم في كل الصفحة")}
                 ${text("config.contact.wa_float_msg", "الرسالة الجاهزة عند ضغط الزائر على الزر", { placeholder: d.wa_float_msg })}`)
@@ -897,6 +972,7 @@
         "config.order.payments": () => ({ id: ATHR.uid("p-"), enabled: false, name: "", type: "other", note: "", bank: { number: "", bank: "", holder: "", account: "", swift: "", iban: "" }, link: "" }),
         "config.sales.bundles": () => ({ id: ATHR.uid("b-"), enabled: true, a: "", b: "", pct: 10 }),
         "config.sales.trust_custom": () => "",
+        "config.sales.volume.tiers": () => ({ min: 4, pct: 15 }),
         "config.contact.reviews": () => ({ id: ATHR.uid("r-"), name: "", text: "", stars: 5, images: [], video: "" })
     };
 
@@ -1225,7 +1301,7 @@
             case "add-product": addProduct(); return;
             case "unified-price": unifiedPrice(); return;
             case "add-category":
-                A.draft.categories.push({ id: crypto.randomUUID(), name: "", slug: "" });
+                A.draft.categories.push({ id: crypto.randomUUID(), name: "", slug: "", description: "", image_url: "" });
                 afterChange();
                 setTimeout(() => { const inputs = $$('#admBody .lst input[data-bind^="categories."]'); inputs[inputs.length - 1]?.focus(); }, 30);
                 return;
@@ -1257,6 +1333,12 @@
             default: break;
         }
 
+        if (d.copyText) { ATHR.store.copyText(d.copyText, "نُسخ الرابط"); return; }
+        if (d.book) { A.book = d.book; renderBook(); return; }
+        if (d.days) { A.statsDays = Number(d.days); renderBook(); return; }
+        if (d.reviewSet) { setReviewStatus(d.reviewSet, d.value); return; }
+        if (d.reviewDel) { deleteReview(d.reviewDel); return; }
+        if (d.orderReview) { const o = A.orders.find((x) => x.id === d.orderReview); if (o) window.open(customerWa(o, reviewRequestText(o)), "_blank", "noopener"); return; }
         if (d.edit) { editProduct(d.edit); return; }
         if (d.toggleVisible) {
             const p = A.draft.products.find((x) => x.id === d.toggleVisible);
@@ -1269,6 +1351,7 @@
             if (i < 0) return;
             const copy = ATHR.clone(A.draft.products[i]);
             copy.id = crypto.randomUUID();
+            copy.slug = "";
             copy.name = `${copy.name} (نسخة)`;
             A.draft.products.splice(i + 1, 0, copy);
             afterChange();
@@ -1518,6 +1601,19 @@
             if (!(Number.isInteger(b.pct) && b.pct >= 1 && b.pct <= 90)) add("sales", `نسبة خصم الباقة ${i + 1} يجب أن تكون من 1 إلى 90.`);
         });
 
+        if (c.sales.volume && c.sales.volume.enabled) {
+            const tiers = c.sales.volume.tiers || [];
+            if (!tiers.length) add("sales", "خصم الكمية مفعّل بدون شرائح.");
+            tiers.forEach((t, i) => {
+                if (!(Number.isInteger(t.min) && t.min >= 2 && t.min <= 50)) add("sales", `شريحة خصم الكمية ${i + 1}: عدد القطع يجب أن يكون من 2 إلى 50.`);
+                if (!(Number.isInteger(t.pct) && t.pct >= 1 && t.pct <= 90)) add("sales", `شريحة خصم الكمية ${i + 1}: النسبة يجب أن تكون من 1 إلى 90.`);
+            });
+            const mins = tiers.map((t) => t.min);
+            if (new Set(mins).size !== mins.length) add("sales", "شرائح خصم الكمية فيها عدد قطع مكرر.");
+        }
+        if (c.seo && c.seo.google_verification && !/^[A-Za-z0-9_-]{10,100}$/.test(String(c.seo.google_verification).trim().replace(/^.*content=["']?([^"'\s>]+).*$/i, "$1"))) {
+            add("contact", "رمز التحقق من جوجل غير صحيح. انسخ الرمز فقط أو وسم meta كاملاً.");
+        }
         c.contact.reviews.forEach((r, i) => {
             if (!String(r.text || "").trim()) add("contact", `الرأي ${i + 1} بدون نص.`);
         });
@@ -1560,12 +1656,21 @@
             if (!cfgRes.data || !cfgRes.data.length) throw new Error("no-permission");
 
             // 2) الأقسام
-            const catRows = draft.categories.map((c, i) => ({
-                id: c.id,
-                name: c.name.trim(),
-                slug: c.slug || `cat-${c.id.slice(0, 8)}`,
-                sort_order: i + 1
-            }));
+            const catTaken = new Set([...draft.categories, ...server.categories].map((c) => c.slug).filter(Boolean));
+            const catRows = draft.categories.map((c, i) => {
+                let slug = c.slug;
+                if (!slug) {
+                    slug = ATHR.uniqueSlug(ATHR.slugify(c.name) || `cat-${c.id.slice(0, 8)}`, catTaken);
+                    catTaken.add(slug);
+                }
+                return {
+                    id: c.id,
+                    name: c.name.trim(),
+                    slug,
+                    description: String(c.description || "").trim() || null,
+                    sort_order: i + 1
+                };
+            });
             draft.categories.forEach((c, i) => { c.slug = catRows[i].slug; });
             if (catRows.length) {
                 const r = await sb.from("categories").upsert(catRows, { onConflict: "id" });
@@ -1579,15 +1684,24 @@
 
             // 3) المنتجات
             busyMessage("جاري نشر المنتجات...");
+            const slugTaken = new Set([...draft.products, ...server.products].map((p) => p.slug).filter(Boolean));
+            draft.products.forEach((p) => {
+                if (p.slug) return;
+                p.slug = ATHR.uniqueSlug(ATHR.productSlugBase(p, draft.config) || `p-${p.id.slice(0, 8)}`, slugTaken);
+                slugTaken.add(p.slug);
+            });
             const prodRows = draft.products.map((p, i) => ({
                 id: p.id,
                 name: p.name.trim(),
+                slug: p.slug,
                 price: Number(p.price),
                 old_price: p.old_price === null || p.old_price === undefined ? null : Number(p.old_price),
                 category_id: p.category_id || null,
                 image_url: p.image_url || null,
                 is_available: p.is_available !== false,
                 is_visible: p.is_visible !== false,
+                is_best_seller: p.is_best_seller === true,
+                is_new_arrival: p.is_new_arrival === true,
                 description: p.description || null,
                 color_id: p.color_id || null,
                 video_url: p.video_url || null,
@@ -1622,7 +1736,7 @@
             A.errors = [];
             storage.del(DRAFT_KEY);
             busyMessage("");
-            toast("نُشرت التغييرات ✅");
+            toast("نُشرت التغييرات ✅ تظهر للزبائن فوراً، وفي جوجل خلال ساعة");
             ATHR.store.reload().catch(() => {});
         } catch (error) {
             console.error("Publish error:", error);
@@ -1653,7 +1767,7 @@
             root().innerHTML = `<div class="adm-loading"><p>تعذر تحميل الطلبات. تأكد من الإنترنت.</p><button class="ab ab-primary" data-a="retry">إعادة المحاولة</button> <button class="ab ab-ghost" data-a="close">إغلاق</button></div>`;
             return;
         }
-        renderOrders();
+        renderBook();
     }
 
     async function loadOrders() {
@@ -1663,7 +1777,9 @@
         A.ordersLoaded = true;
     }
 
-    function renderOrders() {
+    function renderBook() {
+        const pending = A.reviews.filter((r) => r.status === "pending").length;
+        const tabs = [["orders", "الطلبات"], ["reviews", `التقييمات${pending ? ` (${pending})` : ""}`], ["stats", "الأداء"]];
         root().innerHTML = `
             <div class="adm-shell">
                 <header class="adm-top">
@@ -1673,7 +1789,10 @@
                         <button class="adm-icon" type="button" data-a="close" aria-label="إغلاق">×</button>
                     </div>
                 </header>
-                <div class="ob-tools">
+                <nav class="adm-tabs" role="tablist" aria-label="أقسام الدفتر">
+                    ${tabs.map(([id, label]) => `<button type="button" role="tab" data-book="${id}" aria-selected="${A.book === id}">${label}</button>`).join("")}
+                </nav>
+                ${A.book === "orders" ? `<div class="ob-tools">
                     <input class="ai" type="search" id="ordersSearch" placeholder="ابحث بالاسم أو الرقم أو الولاية أو المحافظة أو العنوان أو المنتج" value="${esc(A.filter.q)}">
                     <div class="ob-filters">
                         <div class="seg" role="group" aria-label="الحالة">
@@ -1685,16 +1804,178 @@
                             <option value="cod"${A.filter.pay === "cod" ? " selected" : ""}>عند الاستلام</option>
                         </select>
                     </div>
-                </div>
+                </div>` : ""}
                 <main class="adm-body" id="ordersBody"></main>
-                <footer class="adm-foot ob-foot">
+                ${A.book === "orders" ? `<footer class="adm-foot ob-foot">
                     <button class="ab ab-ghost" type="button" data-a="orders-paste">لصق رسالة طلب من واتساب</button>
                     <button class="ab ab-primary" type="button" data-a="orders-manual">+ طلب يدوي</button>
-                    <button class="ab ab-ghost" type="button" data-a="orders-close">إغلاق</button>
-                </footer>
+                </footer>` : ""}
             </div>
             <div class="adm-sheet" id="admSheet" hidden></div>`;
-        renderOrdersList();
+        if (A.book === "reviews") renderReviews();
+        else if (A.book === "stats") renderStats();
+        else renderOrdersList();
+        if (!A.reviewsLoaded) loadReviews().then(() => { if (A.view === "orders") { const tab = $('[data-book="reviews"]'); const n = A.reviews.filter((r) => r.status === "pending").length; if (tab) tab.textContent = `التقييمات${n ? ` (${n})` : ""}`; } }).catch(() => {});
+    }
+
+    // ---------- reviews ----------
+
+    async function loadReviews() {
+        const { data, error } = await sb.from("reviews").select("*").order("created_at", { ascending: false }).limit(500);
+        if (error) throw error;
+        A.reviews = data || [];
+        A.reviewsLoaded = true;
+    }
+
+    async function renderReviews() {
+        const body = $("#ordersBody");
+        if (!body) return;
+        if (!A.reviewsLoaded) {
+            body.innerHTML = `<div class="adm-loading">جاري تحميل التقييمات...</div>`;
+            try { await loadReviews(); } catch { body.innerHTML = `<div class="adm-empty">تعذر تحميل التقييمات. تأكد من الإنترنت.</div>`; return; }
+            if (A.book !== "reviews") return;
+        }
+        const productName = (id) => {
+            const p = (A.server ? A.server.products : []).find((x) => x.id === id);
+            return p ? ATHR.productLabel(p, cfg()) : "";
+        };
+        const order = { pending: 0, approved: 1, rejected: 2 };
+        const list = A.reviews.slice().sort((a, b) => (order[a.status] - order[b.status]) || String(b.created_at).localeCompare(String(a.created_at)));
+        const label = { pending: "بانتظار موافقتك", approved: "ظاهر في المتجر", rejected: "مخفي" };
+        body.innerHTML = `<p class="adm-note">التقييمات التي يرسلها الزبائن من صفحة «قيّم تجربتك» تظهر هنا، ولا تظهر في المتجر حتى توافق عليها. أرسل رابط التقييم للزبون من زر «اطلب تقييم» في بطاقة الطلب بعد التسليم.</p>`
+            + (list.length ? list.map((r) => `<article class="oc rv ${r.status}">
+                <header class="oc-head">
+                    <div><b>${esc(r.name)}</b> <span class="stars-txt" aria-label="${r.rating} من 5">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span></div>
+                    <span class="tag">${label[r.status] || r.status}</span>
+                </header>
+                <p class="rv-text">${esc(r.text)}</p>
+                <p class="adm-muted oc-when">${r.product_id ? `${esc(productName(r.product_id) || "منتج محذوف")} · ` : "تقييم عام للمتجر · "}${r.order_no ? `طلب ${esc(r.order_no)} · ` : ""}${esc(ATHR.muscatParts(r.created_at).date)}</p>
+                <div class="oc-actions">
+                    ${r.status !== "approved" ? `<button type="button" class="ab-mini ok" data-review-set="${esc(r.id)}" data-value="approved">إظهار في المتجر</button>` : ""}
+                    ${r.status !== "rejected" ? `<button type="button" class="ab-mini" data-review-set="${esc(r.id)}" data-value="rejected">إخفاء</button>` : ""}
+                    <button type="button" class="ab-mini danger" data-review-del="${esc(r.id)}">حذف</button>
+                </div>
+            </article>`).join("") : `<div class="adm-empty">لا توجد تقييمات بعد.</div>`);
+    }
+
+    async function setReviewStatus(id, status) {
+        const r = A.reviews.find((x) => x.id === id);
+        if (!r) return;
+        const { error } = await sb.from("reviews").update({ status }).eq("id", id);
+        if (error) { toast("تعذر الحفظ. تأكد من الإنترنت."); return; }
+        r.status = status;
+        toast(status === "approved" ? "ظهر التقييم في المتجر" : "أُخفي التقييم");
+        renderBook();
+        ATHR.store.reload().catch(() => {});
+    }
+
+    async function deleteReview(id) {
+        if (!confirm("حذف هذا التقييم نهائياً؟")) return;
+        const { error } = await sb.from("reviews").delete().eq("id", id);
+        if (error) { toast("تعذر الحذف."); return; }
+        A.reviews = A.reviews.filter((x) => x.id !== id);
+        toast("حُذف التقييم");
+        renderBook();
+        ATHR.store.reload().catch(() => {});
+    }
+
+    function reviewRequestText(o) {
+        const first = (o.items || []).find((it) => it.id);
+        const p = first && A.server ? A.server.products.find((x) => x.id === first.id) : null;
+        const query = [`o=${encodeURIComponent(o.order_no)}`, p && p.slug ? `p=${encodeURIComponent(p.slug)}` : ""].filter(Boolean).join("&");
+        const link = siteLink(ATHR.url.page("review", query));
+        return ATHR.fill(cfg().sales.review_request_msg, cfg(), { client: (o.customer_name || "").split(" ")[0], link });
+    }
+
+    // ---------- performance ----------
+
+    async function renderStats() {
+        const body = $("#ordersBody");
+        if (!body) return;
+        const days = A.statsDays;
+        const since = new Date(Date.now() - (days - 1) * 864e5 + 4 * 3600e3).toISOString().slice(0, 10);
+        body.innerHTML = `<div class="adm-loading">جاري حساب الأداء...</div>`;
+        let rows = [];
+        try {
+            const { data, error } = await sb.from("stats_daily").select("day,key,n").gte("day", since).limit(5000);
+            if (error) throw error;
+            rows = data || [];
+        } catch {
+            body.innerHTML = `<div class="adm-empty">تعذر تحميل الأرقام. تأكد من الإنترنت.</div>`;
+            return;
+        }
+        if (A.book !== "stats" || A.statsDays !== days) return;
+        const sum = (key) => rows.filter((r) => r.key === key).reduce((s2, r) => s2 + Number(r.n || 0), 0);
+        const visits = sum("visit");
+        const views = sum("view");
+        const adds = sum("add");
+        const checkouts = sum("checkout");
+        const sinceTime = new Date(`${since}T00:00:00+04:00`).getTime();
+        const inRange = A.orders.filter((o) => !o.hidden && new Date(o.ordered_at).getTime() >= sinceTime);
+        const web = inRange.filter((o) => o.source === "web");
+        const revenue = (list) => list.reduce((s2, o) => s2 + Number(o.total || 0), 0);
+        const aov = (list) => (list.length ? revenue(list) / list.length : 0);
+        const pct = (a, b) => (b > 0 ? `${Math.round((a / b) * 1000) / 10}%` : "—");
+        const step = (label, n, base) => `<div class="fn-row"><span>${label}</span><div class="fn-bar"><i style="width:${base > 0 ? Math.max(2, Math.round((n / base) * 100)) : 0}%"></i></div><b>${n}</b><small>${base > 0 && n !== base ? pct(n, base) : ""}</small></div>`;
+
+        const channels = Object.keys(CHANNELS).map((k) => ({
+            k,
+            visits: sum(`visit:${k}`),
+            orders: web.filter((o) => (o.channel || "direct") === k).length,
+            revenue: revenue(web.filter((o) => (o.channel || "direct") === k))
+        })).filter((c) => c.visits || c.orders).sort((a, b) => b.visits - a.visits || b.orders - a.orders);
+
+        const counts = new Map();
+        inRange.forEach((o) => (o.items || []).forEach((it) => {
+            const key = it.label || it.name;
+            if (!key) return;
+            const cur = counts.get(key) || { qty: 0, total: 0 };
+            cur.qty += Number(it.qty) || 0;
+            cur.total += Number(it.total) || 0;
+            counts.set(key, cur);
+        }));
+        const top = Array.from(counts.entries()).sort((a, b) => b[1].qty - a[1].qty).slice(0, 8);
+        const discounts = web.filter((o) => Number(o.discount) > 0).length;
+        const gifts = web.filter((o) => o.gift).length;
+        const countries = new Map();
+        web.forEach((o) => countries.set(o.country || "OM", (countries.get(o.country || "OM") || 0) + 1));
+
+        body.innerHTML = `
+            <div class="seg" role="group" aria-label="المدة">${[[7, "7 أيام"], [30, "30 يوماً"], [90, "90 يوماً"]].map(([d, l]) => `<button type="button" data-days="${d}" aria-pressed="${days === d}">${l}</button>`).join("")}</div>
+            <div class="ob-stats">
+                <div><small>زيارات</small><b>${visits}</b></div>
+                <div><small>طلبات من المتجر</small><b>${web.length}</b></div>
+                <div><small>نسبة التحويل</small><b>${pct(web.length, visits)}</b></div>
+                <div><small>متوسط قيمة الطلب</small><b>${money(aov(web))}</b></div>
+                <div><small>مبيعات المتجر</small><b>${money(revenue(web))}</b></div>
+                <div><small>كل الطلبات (مع اليدوية)</small><b>${inRange.length} · ${money(revenue(inRange))}</b></div>
+            </div>
+            <section class="adm-card">
+                <h2>رحلة الزبون</h2>
+                <p class="adm-muted">كم زائراً وصل لكل خطوة (مرة واحدة لكل زيارة). أكبر نزول بين خطوتين هو أول ما يستحق التحسين.</p>
+                <div class="funnel">
+                    ${step("دخل المتجر", visits, visits)}
+                    ${step("فتح صفحة منتج", views, visits)}
+                    ${step("أضاف للسلة", adds, visits)}
+                    ${step("بدأ إتمام الطلب", checkouts, visits)}
+                    ${step("أرسل الطلب", web.length, visits)}
+                </div>
+            </section>
+            <section class="adm-card">
+                <h2>من أين يأتي الزبائن؟</h2>
+                ${channels.length ? `<table class="adm-table"><thead><tr><th>المصدر</th><th>زيارات</th><th>طلبات</th><th>مبيعات</th></tr></thead><tbody>
+                    ${channels.map((c) => `<tr><td>${esc(CHANNELS[c.k])}</td><td>${c.visits}</td><td>${c.orders}</td><td>${money(c.revenue)}</td></tr>`).join("")}
+                </tbody></table>` : `<p class="adm-muted">لا توجد زيارات مسجّلة في هذه المدة بعد.</p>`}
+                <p class="adm-muted">لتعرف أثر كل منصة بدقة، أضف في آخر رابط المتجر أو المنتج الذي تنشره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</p>
+            </section>
+            <section class="adm-card">
+                <h2>الأكثر مبيعاً</h2>
+                ${top.length ? `<table class="adm-table"><thead><tr><th>المنتج</th><th>القطع</th><th>المبلغ</th></tr></thead><tbody>
+                    ${top.map(([name, c]) => `<tr><td>${esc(name)}</td><td>${c.qty}</td><td>${money(c.total)}</td></tr>`).join("")}
+                </tbody></table>` : `<p class="adm-muted">لا توجد طلبات في هذه المدة.</p>`}
+                ${web.length ? `<p class="adm-muted">طلبات فيها خصم (كمية أو طقم): ${discounts} من ${web.length} · طلبات هدايا: ${gifts}${countries.size > 1 || !countries.has("OM") ? ` · ${Array.from(countries.entries()).map(([c, n]) => `${countryLabel(c)}: ${n}`).join("، ")}` : ""}</p>` : ""}
+            </section>
+            <p class="adm-muted">لا تُحسب زياراتك أنت من جهازك المسجّل في اللوحة. الأرقام تقريبية ولا تحفظ أي بيانات شخصية للزوار.</p>`;
     }
 
     function filteredOrders() {
@@ -1752,7 +2033,7 @@
             const when = ATHR.muscatParts(o.ordered_at);
             return `<article class="oc${o.status === "delivered" ? " delivered" : ""}${o.hidden ? " is-hidden" : ""}">
                 <header class="oc-head">
-                    <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : "يدوي"}</span></div>
+                    <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : "يدوي"}</span>${o.source === "web" && o.channel && o.channel !== "direct" ? ` <span class="tag ch">عبر ${esc(CHANNELS[o.channel] || o.channel)}</span>` : ""}${o.gift ? ` <span class="tag gift">🎁 هدية</span>` : ""}</div>
                     <span class="oc-wait${o.status === "new" ? " new" : ""}">${esc(waiting(o))}</span>
                 </header>
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
@@ -1764,11 +2045,12 @@
                 </div>
                 <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
                 <div class="oc-sum">
-                    ${Number(o.discount) > 0 ? `<span>خصم الباقة: -${money(o.discount)}</span>` : ""}
+                    ${Number(o.discount) > 0 ? `<span>${esc(o.discount_label || "الخصم")}: -${money(o.discount)}</span>` : ""}
                     ${o.delivery_name ? `<span>${esc(o.delivery_name)}: ${Number(o.delivery_price) > 0 ? money(o.delivery_price) : "مجاني"}</span>` : ""}
                     <b>الإجمالي: ${money(o.total)}</b>
                 </div>
                 ${o.notes ? `<p class="oc-note">ملاحظة العميل: ${esc(o.notes)}</p>` : ""}
+                ${o.gift && o.gift_message ? `<p class="oc-note">🎁 رسالة الهدية: ${esc(o.gift_message)}</p>` : ""}
                 <div class="oc-ctrl">
                     <label><span class="sr">الدفع</span><select class="ai sm" data-order-id="${esc(o.id)}" data-order-field="payment_type">
                         ${[["bank", "تحويل بنكي"], ["cod", "عند الاستلام"], ["online", "دفع إلكتروني"], ["other", "أخرى"]].map(([v, l]) => `<option value="${v}"${o.payment_type === v ? " selected" : ""}>${l}</option>`).join("")}
@@ -1783,6 +2065,7 @@
                     <button type="button" class="ab-mini" data-order-edit="${esc(o.id)}">ملاحظة وتعديل</button>
                     ${o.phone ? `<button type="button" class="ab-mini wa" data-order-wa="${esc(o.id)}">واتساب</button>` : ""}
                     ${o.status === "new" && o.phone ? `<button type="button" class="ab-mini" data-order-remind="${esc(o.id)}">تذكير بالطلب</button>` : ""}
+                    ${o.status === "delivered" && o.phone ? `<button type="button" class="ab-mini wa" data-order-review="${esc(o.id)}">اطلب تقييم</button>` : ""}
                     <button type="button" class="ab-mini" data-order-copy="${esc(o.id)}">نسخ</button>
                     <button type="button" class="ab-mini" data-order-hide="${esc(o.id)}">${o.hidden ? "إظهار في الدفتر" : "إخفاء"}</button>
                 </div>
@@ -1839,8 +2122,9 @@
         else if (o.address) lines.push(`العنوان: ${o.address}`);
         if (o.notes) lines.push(`الملاحظات: ${o.notes}`);
         if (o.delivery_name) lines.push(`طريقة التوصيل: ${o.delivery_name}`);
+        if (o.gift) lines.push(`🎁 الطلب هدية${o.gift_message ? `: ${o.gift_message}` : ""}`);
         lines.push("المنتجات:", ...itemsList(o).map((l) => (l.startsWith("•") ? l : `• ${l}`)));
-        if (Number(o.discount) > 0) lines.push(`خصم الباقة: -${money(o.discount)}`);
+        if (Number(o.discount) > 0) lines.push(`${o.discount_label || "الخصم"}: -${money(o.discount)}`);
         lines.push(`التوصيل: ${Number(o.delivery_price) > 0 ? money(o.delivery_price) : "مجاني"}`);
         lines.push(`الإجمالي: ${money(o.total)}`);
         if (o.payment_name) lines.push(`الدفع: ${o.payment_name}`);
@@ -2057,7 +2341,8 @@
                 notes: get("الملاحظات") || null,
                 delivery_name: get("طريقة التوصيل") || null,
                 delivery_price: /مجاني/.test(deliveryText) ? 0 : parseNumber(deliveryText),
-                discount: Math.abs(parseNumber(get("خصم الباقة"))),
+                discount: Math.abs(parseNumber((block.find((l) => /^(خصم|الخصم)/.test(l)) || "").replace(/^[^:：]*[:：]/, ""))),
+                discount_label: ((block.find((l) => /^(خصم|الخصم)/.test(l)) || "").split(/[:：]/)[0] || "").trim().slice(0, 80) || null,
                 total: parseNumber(get("الإجمالي")),
                 payment_name: payText || null,
                 payment_type: payType,

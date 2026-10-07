@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://a3r-om.github.io/ATHR/sitemap.xml

@@ -1,7 +1,11 @@
 /* =====================================================
    ATHR STORE — الإعدادات الافتراضية والأدوات المشتركة
    أي إعداد غير محفوظ في قاعدة البيانات يأخذ قيمته من هنا.
+   يعمل في المتصفح وفي سكربت بناء الصفحات (tools/build.mjs).
 ===================================================== */
+
+/* eslint-disable no-var */
+var ATHR_ROOT = typeof window !== "undefined" ? window : globalThis;
 
 const ATHR_GOVERNORATES = [
     "مسقط", "شمال الباطنة", "جنوب الباطنة", "الداخلية", "الظاهرة", "البريمي",
@@ -55,14 +59,14 @@ const ATHR_DEFAULTS = {
         announce_show: false,
         announce_text: "",
         hero_title: "كاسات تترك أثراً",
-        hero_text: "تصاميم أندية وشخصيات على كاسات بملمس مطفي. اختر تصميمك وأرسل طلبك عبر واتساب.",
+        hero_text: "أكواب ومجات ومحافظ بتصاميم الأندية والجامعات والشخصيات. اختر تصميمك ويوصلك أينما كنت في الخليج.",
         hero_button: "تصفّح المنتجات",
         hero_features: ["توصيل لكل دول الخليج", "مجاني داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
         search_placeholder: "ابحث عن فريق أو شخصية…",
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
         sold_out: "نفد المخزون",
-        about: "أثر متجر لكاسات بتصاميم الأندية والشخصيات وتصاميم أخرى.",
+        about: "أثر متجر عُماني لأكواب سيراميك مطبوعة بتصاميم الأندية والجامعات والشخصيات، ومجات ومحافظ وهدايا. نوصّل لكل مناطق عُمان ودول الخليج.",
         footer_delivery_title: "التوصيل والدفع",
         footer_delivery_text: "",
         footer_contact_title: "تواصل معنا",
@@ -127,7 +131,20 @@ const ATHR_DEFAULTS = {
         abandoned_text: "لديك {n} في سلتك. أكمل طلبك قبل أن يفوتك.",
         reminder_msg: "السلام عليكم {client}، نذكّرك بطلبك رقم {no} من متجر {name} بمبلغ {total}. هل ترغب في إتمامه؟ نحن بخدمتك.",
         trust_show: true,
-        trust_custom: []
+        trust_custom: [],
+        volume: { enabled: false, tiers: [{ min: 2, pct: 5 }, { min: 3, pct: 10 }] },
+        gift_enabled: true,
+        best_title: "الأكثر طلباً",
+        new_title: "وصل حديثاً",
+        sets_title: "أطقم وهدايا بسعر أقل",
+        upsell_show: true,
+        review_request_msg: "السلام عليكم {client}، نتمنى أن طلبك من متجر {name} وصلك بخير 🤍 يسعدنا تقييمك في دقيقة من هنا: {link}"
+    },
+
+    seo: {
+        google_verification: "",
+        home_title: "",
+        home_description: ""
     },
 
     contact: {
@@ -146,7 +163,10 @@ const ATHR_DEFAULTS = {
     }
 };
 
-const ATHR = window.ATHR = window.ATHR || {};
+const ATHR = ATHR_ROOT.ATHR = ATHR_ROOT.ATHR || {};
+ATHR.COUNTRIES = ATHR_COUNTRIES;
+ATHR.PHONE_RULES = ATHR_PHONE_RULES;
+ATHR.DEFAULTS = ATHR_DEFAULTS;
 
 ATHR.clone = (value) => JSON.parse(JSON.stringify(value ?? null));
 
@@ -206,11 +226,12 @@ ATHR.isUrl = function (value) {
     }
 };
 
-// رابط داخل المتجر (#/c/clubs) أو رابط https
+// رابط داخل المتجر (c/clubs/ أو #/c/clubs) أو رابط https
 ATHR.isSafeLink = (value) => {
     const link = String(value || "").trim();
     if (!link) return true;
     if (link.startsWith("#")) return true;
+    if (/^[a-z0-9\u0621-\u064a][^:]*$/i.test(link) && !link.startsWith("//")) return true;
     return ATHR.isUrl(link);
 };
 
@@ -298,16 +319,60 @@ ATHR.computeCart = function (cartItems, products, config, country = "OM") {
         }
     });
 
-    const discount = Math.round(savings.reduce((sum, s) => sum + s.amount, 0) * 1000) / 1000;
-    const afterDiscount = Math.max(0, subtotal - discount);
+    const round3 = (x) => Math.round(x * 1000) / 1000;
+    const count = lines.reduce((sum, line) => sum + line.qty, 0);
+    const bundleAmount = round3(savings.reduce((sum, s) => sum + s.amount, 0));
+
+    // خصم الكمية: لا يجتمع مع خصم الباقات، ويُطبَّق الأفضل للزبون
+    const volume = ATHR.volumeFor(config, count, subtotal);
+    let discount = 0;
+    let discountType = null;
+    let discountLabel = "";
+    if (volume.tier && volume.amount > bundleAmount) {
+        discount = volume.amount;
+        discountType = "volume";
+        discountLabel = `خصم الكمية ${volume.tier.pct}%`;
+    } else if (bundleAmount > 0) {
+        discount = bundleAmount;
+        discountType = "bundle";
+        discountLabel = "خصم الباقة";
+    }
+
+    const afterDiscount = Math.max(0, round3(subtotal - discount));
     const freeMin = Number(config.order.free_min) || 0;
     const freeEligible = Boolean(config.order.free_enabled) && freeMin > 0 && ATHR.freeAppliesTo(config, country);
     const freeShipping = freeEligible && afterDiscount >= freeMin;
-    const leftForFree = freeEligible ? Math.max(0, freeMin - afterDiscount) : 0;
-    const count = lines.reduce((sum, line) => sum + line.qty, 0);
+    const leftForFree = freeEligible ? Math.max(0, round3(freeMin - afterDiscount)) : 0;
+    const bundleHints = discountType === "volume" ? [] : hints;
 
-    return { lines, subtotal, discount, afterDiscount, freeEligible, freeShipping, leftForFree, savings, hints, count };
+    return {
+        lines, subtotal, discount, discountType, discountLabel, afterDiscount,
+        freeEligible, freeShipping, leftForFree,
+        savings: discountType === "bundle" ? savings : [], hints: bundleHints,
+        volume, count
+    };
 };
+
+// شرائح خصم الكمية المفعّلة، مرتبة من الأقل
+ATHR.volumeTiers = function (config) {
+    const vol = config.sales && config.sales.volume;
+    if (!vol || !vol.enabled || !Array.isArray(vol.tiers)) return [];
+    return vol.tiers
+        .map((t) => ({ min: Math.round(Number(t.min)), pct: Number(t.pct) }))
+        .filter((t) => t.min >= 2 && t.pct > 0 && t.pct <= 90)
+        .sort((a, b) => a.min - b.min);
+};
+
+ATHR.volumeFor = function (config, count, subtotal) {
+    const tiers = ATHR.volumeTiers(config);
+    const tier = tiers.filter((t) => count >= t.min).pop() || null;
+    const next = tiers.find((t) => count < t.min) || null;
+    const amount = tier ? Math.round(subtotal * tier.pct * 10) / 1000 : 0;
+    return { tiers, tier, next, amount };
+};
+
+// «قطعة واحدة» «قطعتين» «3 قطع»
+ATHR.piecesText = (n) => (n === 1 ? "قطعة واحدة" : n === 2 ? "قطعتين" : n <= 10 ? `${n} قطع` : `${n} قطعة`);
 
 // سطر منتج في الرسائل: الاسم (اللون)
 ATHR.productLabel = function (product, config) {
@@ -394,4 +459,186 @@ ATHR.customerWhatsapp = function (phone, code) {
     const digits = ATHR.digits(phone).replace(/[^\d]/g, "");
     if ((code || "OM") === "OM" && digits.length === 8) return "968" + digits;
     return digits;
+};
+
+
+// =====================================================
+// روابط الصفحات (صفحة حقيقية لكل منتج وقسم)
+// =====================================================
+
+ATHR.base = () => {
+    const b = ATHR_ROOT.ATHR_BASE || "/";
+    return b.endsWith("/") ? b : b + "/";
+};
+
+// رابط عربي ثابت: «كوب الهلال أبيض» ← «كوب-الهلال-أبيض»
+ATHR.slugify = function (text) {
+    return ATHR.digits(String(text || "").normalize("NFC").toLowerCase())
+        .replace(/[ً-ْٰـ]/g, "")
+        .replace(/[^0-9a-zء-ي]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 70)
+        .replace(/-$/, "");
+};
+
+ATHR.uniqueSlug = function (base, taken) {
+    const clean = base || "منتج";
+    if (!taken.has(clean)) return clean;
+    let n = 2;
+    while (taken.has(`${clean}-${n}`)) n++;
+    return `${clean}-${n}`;
+};
+
+ATHR.productSlugBase = function (product, config) {
+    const color = (config.colors || []).find((c) => c.id === product.color_id);
+    return ATHR.slugify(`${product.name || ""} ${color ? color.name : ""}`);
+};
+
+ATHR.url = {
+    home: () => ATHR.base(),
+    product: (p) => `${ATHR.base()}p/${encodeURIComponent(p.slug || p.id)}/`,
+    category: (c) => `${ATHR.base()}c/${encodeURIComponent(c.slug)}/`,
+    page: (name, query) => `${ATHR.base()}${name}/${query ? `?${query}` : ""}`
+};
+
+// الرابط الكامل للمتجر (للمشاركة وجوجل)
+ATHR.siteUrl = function (config) {
+    const raw = String((config && config.contact && config.contact.share_url) || "").trim();
+    const url = ATHR.isUrl(raw) ? raw : "https://a3r-om.github.io/ATHR/";
+    return url.endsWith("/") ? url : url + "/";
+};
+
+// يحوّل مسار داخل المتجر إلى رابط كامل
+ATHR.absUrl = function (config, path) {
+    const site = ATHR.siteUrl(config);
+    const rel = String(path || "").startsWith(ATHR.base()) ? path.slice(ATHR.base().length) : String(path || "").replace(/^\//, "");
+    return site + rel;
+};
+
+// =====================================================
+// ألوان التصميم الواحد: «كوب الهلال» أبيض وأسود = منتج واحد بلونين
+// =====================================================
+
+ATHR.normName = (s) => String(s || "")
+    .replace(/[ً-ْـ]/g, "")
+    .replace(/[إأآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/["'“”«»…().,!؟?\-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+// خريطة: رقم المنتج ← قائمة ألوان نفس التصميم (إن وُجد أكثر من لون مختلف)
+ATHR.buildGroups = function (products, config) {
+    const colorOrder = new Map((config.colors || []).map((c, i) => [c.id, i]));
+    const byKey = new Map();
+    products.forEach((p) => {
+        const key = `${p.category_id || ""}|${ATHR.normName(p.name)}`;
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(p);
+    });
+    const groupOf = new Map();
+    byKey.forEach((list) => {
+        if (list.length < 2) return;
+        const colors = list.map((p) => p.color_id || "");
+        if (colors.some((c) => !c) || new Set(colors).size !== colors.length) return;
+        const sorted = list.slice().sort((a, b) => (colorOrder.get(a.color_id) ?? 99) - (colorOrder.get(b.color_id) ?? 99));
+        sorted.forEach((p) => groupOf.set(p.id, sorted));
+    });
+    return groupOf;
+};
+
+// =====================================================
+// الصور المصغّرة (تُنشأ تلقائيًا في GitHub وتُحفظ في images/t)
+// =====================================================
+
+// بصمة قصيرة ثابتة للنص (cyrb53)
+ATHR.hashStr = function (str) {
+    let h1 = 0xdeadbeef;
+    let h2 = 0x41c6ce57;
+    const s = String(str || "");
+    for (let i = 0; i < s.length; i++) {
+        const ch = s.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+};
+
+// size: "s" للبطاقات، "m" لصفحة المنتج. إن لم توجد نسخة مصغّرة تُستعمل الصورة الأصلية
+ATHR.thumb = function (url, size = "s") {
+    const map = ATHR_ROOT.ATHR_THUMBS;
+    if (!url || !map || !/^https?:/i.test(url)) return url || "";
+    const h = ATHR.hashStr(url);
+    if (!map[h]) return url;
+    return `${ATHR.base()}images/t/${h}${size === "m" ? "-m" : ""}.webp`;
+};
+
+// روابط مؤقتة للمنتجات التي ليس لها رابط محفوظ (نفس النتيجة في المتصفح وسكربت البناء)
+ATHR.assignSlugs = function (products, config) {
+    const taken = new Set(products.map((p) => p.slug).filter(Boolean));
+    return products.map((p) => {
+        if (p.slug) return p;
+        const slug = ATHR.uniqueSlug(ATHR.productSlugBase(p, config), taken);
+        taken.add(slug);
+        return { ...p, slug };
+    });
+};
+
+// =====================================================
+// الألوان والخطوط
+// =====================================================
+
+ATHR.FONT_PARAMS = {
+    "Reem Kufi": "Reem+Kufi:wght@500;700",
+    "Cairo": "Cairo:wght@400;700",
+    "El Messiri": "El+Messiri:wght@500;700",
+    "Lalezar": "Lalezar",
+    "Noto Kufi Arabic": "Noto+Kufi+Arabic:wght@500;700",
+    "Amiri": "Amiri:wght@400;700",
+    "Changa": "Changa:wght@500;700",
+    "Readex Pro": "Readex+Pro:wght@400;600",
+    "IBM Plex Sans Arabic": "IBM+Plex+Sans+Arabic:wght@400;600;700",
+    "Tajawal": "Tajawal:wght@400;700",
+    "Almarai": "Almarai:wght@400;700",
+    "Noto Sans Arabic": "Noto+Sans+Arabic:wght@400;600;700",
+    "Mada": "Mada:wght@400;600;700"
+};
+
+ATHR.isHex = (x) => /^#[0-9a-f]{6}$/i.test(String(x || ""));
+
+ATHR.themeColors = function (config) {
+    const t = (config && config.theme) || {};
+    const D = ATHR_DEFAULTS.theme;
+    const pick = (x, d) => (ATHR.isHex(x) ? x : d);
+    return { primary: pick(t.primary, D.primary), hero: pick(t.hero, D.hero), bg: pick(t.bg, D.bg), text: pick(t.text, D.text) };
+};
+
+ATHR.themeVars = function (config) {
+    const t = config.theme || {};
+    const c = ATHR.themeColors(config);
+    const head = ATHR.FONT_PARAMS[t.font_head] ? `"${t.font_head}"` : "system-ui";
+    const body = ATHR.FONT_PARAMS[t.font_body] ? `"${t.font_body}"` : "system-ui";
+    return `:root{--primary:${c.primary};--hero:${c.hero};--bg:${c.bg};--text:${c.text};--font-head:${head},${body},system-ui,sans-serif;--font-body:${body},system-ui,-apple-system,"Segoe UI",sans-serif}`;
+};
+
+ATHR.fontHref = function (config) {
+    const t = config.theme || {};
+    const families = [t.font_head, t.font_body].filter((f, i, arr) => ATHR.FONT_PARAMS[f] && arr.indexOf(f) === i);
+    return families.length ? `https://fonts.googleapis.com/css2?${families.map((f) => `family=${ATHR.FONT_PARAMS[f]}`).join("&")}&display=swap` : "";
+};
+
+ATHR.themeMode = (config) => (["light", "dark", "auto"].includes(config.theme && config.theme.mode) ? config.theme.mode : "auto");
+
+ATHR.radiusClass = (config) => ({ sharp: "r-sharp", round: "r-round" }[config.theme && config.theme.radius] || "");
+
+// مدة التوصيل «2 إلى 4 أيام» ← {min:2, max:4}
+ATHR.parseDays = function (text) {
+    const nums = (ATHR.digits(text).match(/\d+/g) || []).map(Number);
+    if (!nums.length) return null;
+    return { min: Math.min(...nums), max: Math.max(...nums) };
 };

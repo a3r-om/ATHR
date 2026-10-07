@@ -373,3 +373,32 @@ html.theme-dark .oc-note { background: #33270F; color: #F3D9A3; }
 .cchip input:checked + span { border-color: var(--a-ok); color: var(--a-text); background: color-mix(in srgb, var(--a-ok) 10%, var(--a-surface)); }
 .cchip input:focus-visible + span { outline: 2.5px solid var(--a-primary); outline-offset: 2px; }
 .ctitle { font-size: 15px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+/* ---------- v4: روابط المنتجات، خصم الكمية، التقييمات، الأداء ---------- */
+
+.adm-link-box { display: block; padding: 8px 10px; border-radius: 10px; background: var(--a-bg); font-size: 12.5px; word-break: break-all; }
+.af.sm { flex: 1; min-width: 0; }
+.af.sm > span { font-size: 12px; }
+.ab-mini.ok { color: var(--a-ok); }
+.tag.ch { background: color-mix(in srgb, var(--a-primary) 10%, var(--a-surface)); color: var(--a-primary); }
+.tag.gift { background: #FFF6E5; color: #6A4300; }
+.stars-txt { color: #C58A00; letter-spacing: 1px; font-size: 14px; }
+.rv.pending { border-inline-start: 4px solid #C58A00; }
+.rv.rejected { opacity: .65; }
+.rv-text { margin: 0; white-space: pre-line; }
+#ordersBody > .seg { margin-bottom: 12px; width: max-content; max-width: 100%; }
+#ordersBody .adm-card { margin-top: 12px; }
+.funnel { display: grid; gap: 8px; }
+.fn-row { display: grid; grid-template-columns: 120px 1fr 44px 48px; gap: 8px; align-items: center; font-size: 13.5px; }
+.fn-bar { height: 10px; border-radius: 99px; background: var(--a-bg); overflow: hidden; }
+.fn-bar i { display: block; height: 100%; background: var(--a-primary); border-radius: inherit; }
+.fn-row b { text-align: left; }
+.fn-row small { color: var(--a-muted); text-align: left; }
+@media (max-width: 420px) { .fn-row { grid-template-columns: 96px 1fr 36px 44px; font-size: 12.5px; } }
+.adm-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.adm-table th, .adm-table td { padding: 7px 6px; border-bottom: 1px solid var(--a-line); text-align: right; }
+.adm-table th { color: var(--a-muted); font-weight: 600; font-size: 12.5px; }
+.adm-table td:not(:first-child), .adm-table th:not(:first-child) { text-align: left; white-space: nowrap; }
+.adm-shell { display: flex; flex-direction: column; }
+.adm-shell > .adm-body { flex: 1 1 auto; min-height: 0; }
+.adm-shell > :not(.adm-body) { flex: 0 0 auto; }
