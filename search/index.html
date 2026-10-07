@@ -13,10 +13,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="/ATHR/css/store.css?v=82c344f010">
+<link rel="stylesheet" href="/ATHR/css/store.css?v=73ec7496fd">
 <style id="themeVars">:root{--primary:#7D1420;--hero:#4A0D12;--bg:#EBDDC9;--text:#251A1B;--font-head:"IBM Plex Sans Arabic","IBM Plex Sans Arabic",system-ui,sans-serif;--font-body:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif}</style>
 <script>window.ATHR_BASE = "/ATHR/";
-(function () { try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { var d = document.documentElement; d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {} })();</script>
+(function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("athr_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {} })();</script>
 </head>
 <body>
 
@@ -31,7 +31,7 @@
             <span class="brand-name" id="brandName" hidden>أثر</span></a>
         <form class="search" id="searchBox" role="search" action="/ATHR/search/">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
-            <input id="searchInput" name="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="ابحث عن فريق أو شخصية…" aria-label="بحث في المنتجات">
+            <input id="searchInput" name="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="ابحث" aria-label="بحث في المنتجات">
         </form>
         <button class="lang-btn" id="langBtn" type="button" lang="en" aria-label="Switch to English">EN</button>
         <button class="cur-btn" id="curBtn" type="button" aria-label="الدولة والعملة"><span id="curFlag" aria-hidden="true">🇴🇲</span><span id="curSym">ر.ع</span></button>
@@ -130,10 +130,10 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="/ATHR/js/supabase-config.js?v=a95375e180" defer></script>
-<script src="/ATHR/js/defaults.js?v=072103f6e3" defer></script>
-<script src="/ATHR/js/views.js?v=9d69a502d3" defer></script>
+<script src="/ATHR/js/defaults.js?v=86340d402d" defer></script>
+<script src="/ATHR/js/views.js?v=9c663ec8b0" defer></script>
 <script src="/ATHR/js/i18n-en.js?v={{V_I18N}}" defer></script>
 <script src="/ATHR/js/thumbs.js?v=38ff67ab3d" defer></script>
-<script src="/ATHR/js/store.js?v=f06aa9a835" defer></script>
+<script src="/ATHR/js/store.js?v=01e0bde706" defer></script>
 </body>
 </html>
