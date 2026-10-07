@@ -41,7 +41,7 @@ const ATHR_DEFAULTS = {
     theme: {
         primary: "#7D1420",
         hero: "#4A0D12",
-        bg: "#F6F3F1",
+        bg: "#EBDDC9",
         text: "#251A1B",
         mode: "auto",
         radius: "medium",
@@ -570,12 +570,15 @@ ATHR.hashStr = function (str) {
 };
 
 // size: "s" للبطاقات، "m" لصفحة المنتج. إن لم توجد نسخة مصغّرة تُستعمل الصورة الأصلية
+// يقبل رابطًا كاملًا أو صورة داخل المتجر مثل images/categories/clubs.jpg
 ATHR.thumb = function (url, size = "s") {
+    if (!url) return "";
+    if (/^data:/i.test(url)) return url;
+    const remote = /^https?:/i.test(url);
     const map = ATHR_ROOT.ATHR_THUMBS;
-    if (!url || !map || !/^https?:/i.test(url)) return url || "";
     const h = ATHR.hashStr(url);
-    if (!map[h]) return url;
-    return `${ATHR.base()}images/t/${h}${size === "m" ? "-m" : ""}.webp`;
+    if (map && map[h]) return `${ATHR.base()}images/t/${h}${size === "m" ? "-m" : ""}.webp`;
+    return remote || url.startsWith("/") ? url : ATHR.base() + url;
 };
 
 // روابط مؤقتة للمنتجات التي ليس لها رابط محفوظ (نفس النتيجة في المتصفح وسكربت البناء)

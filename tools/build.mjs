@@ -120,7 +120,8 @@ function resolveSite(config) {
 
 async function makeThumbs(ATHR, urls) {
     const dir = path.join(OUT, "images/t");
-    const unique = Array.from(new Set(urls.filter((u) => /^https?:\/\//i.test(u || ""))));
+    // روابط كاملة، أو صور داخل المتجر (images/...)
+    const unique = Array.from(new Set(urls.filter((u) => u && (/^https?:\/\//i.test(u) || (/^[a-z0-9][^:]*\.(jpe?g|png|webp)$/i.test(u) && exists(path.join(OUT, u)))))));
     const map = {};
     const have = (h) => exists(path.join(dir, `${h}.webp`)) && exists(path.join(dir, `${h}-m.webp`));
 
@@ -148,9 +149,14 @@ async function makeThumbs(ATHR, urls) {
             while (todo.length) {
                 const { url, h } = todo.shift();
                 try {
-                    const res = await fetch(url);
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const buf = Buffer.from(await res.arrayBuffer());
+                    let buf;
+                    if (/^https?:/i.test(url)) {
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        buf = Buffer.from(await res.arrayBuffer());
+                    } else {
+                        buf = fs.readFileSync(path.join(OUT, url));
+                    }
                     await sharp(buf).rotate().resize({ width: 480, withoutEnlargement: true }).webp({ quality: 72 }).toFile(path.join(dir, `${h}.webp`));
                     await sharp(buf).rotate().resize({ width: 960, withoutEnlargement: true }).webp({ quality: 78 }).toFile(path.join(dir, `${h}-m.webp`));
                     map[h] = 1;

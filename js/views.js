@@ -456,7 +456,7 @@
 
     // صورة القسم: صورته إن وُجدت، وإلا صورة أول منتج فيه
     V.categoryImage = function (v, c) {
-        if (c.image_url) return V.asset(c.image_url);
+        if (c.image_url) return ATHR.thumb(c.image_url, "s");
         const p = v.products.find((x) => x.category_id === c.id && V.img(x));
         return p ? V.img(p) : "";
     };
@@ -468,7 +468,7 @@
             ${cats.map((c) => {
                 const img = V.categoryImage(v, c);
                 return `<a class="tile${current && current.id === c.id ? " on" : ""}" href="${ATHR.url.category(c)}"${current && current.id === c.id ? ' aria-current="page"' : ""}>
-                    <span class="tile-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" width="160" height="160">` : ""}</span>
+                    <span class="tile-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" width="180" height="236">` : ""}</span>
                     <span class="tile-name">${esc(c.name)}</span>
                 </a>`;
             }).join("")}
@@ -771,7 +771,7 @@
                     return `<p><b>${esc(d.name)}</b>: ${esc(V.deliveryPriceLabel(v, d))}${d.duration ? `، المدة ${esc(d.duration)}` : ""}${list.length && list.length < enabledCount ? `<br><span class="muted">إلى: ${esc(V.countriesText(list))}</span>` : ""}${d.note ? `<br><span class="muted">${esc(d.note)}</span>` : ""}</p>`;
                 }).join("")}
                 ${free ? `<p>${esc(free)}</p>` : ""}
-                <p class="muted">داخل عُمان نوصّل إلى: ${esc((cfg.order.governorates || []).join("، "))}.</p>
+                <p class="muted">نوصّل لكل ولايات سلطنة عُمان.</p>
                 <h2>طرق الدفع</h2>
                 ${V.paymentGroups(v).map((g) => `<p>${g.countries.length < enabledCount ? `<b>${esc(V.countriesText(g.countries))}:</b> ` : ""}${esc(g.names)}</p>`).join("")}
                 ${(cfg.order.payments || []).filter((p) => p.enabled && p.note).map((p) => `<p class="muted">${esc(p.name)}: ${esc(fill(v, p.note))}</p>`).join("")}

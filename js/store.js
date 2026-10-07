@@ -906,7 +906,7 @@
         out.push("", "المنتجات:", ...productLines(lines));
         if (totals.discount > 0) out.push(`${totals.discountLabel}: -${money(totals.discount)}`);
         out.push(`الإجمالي: ${money(totals.afterDiscount)} (بدون التوصيل)${approx(totals.afterDiscount)}`);
-        out.push("", isBase() ? "اسمي ومحافظتي وولايتي وعنواني:" : "اسمي ومدينتي وعنواني:");
+        out.push("", isBase() ? "اسمي وولايتي وعنواني:" : "اسمي ومدينتي وعنواني:");
         return out.join("\n");
     }
 
@@ -931,8 +931,8 @@
             `الاسم: ${order.customer_name}`,
             `الهاتف: ${isOm ? order.phone : `+${order.phone}`}`,
             `الدولة: ${c.flag} ${c.name}`,
-            `${isOm ? "المحافظة" : "المدينة"}: ${order.governorate}`
         ];
+        if (order.governorate) out.push(`${isOm ? "المحافظة" : "المدينة"}: ${order.governorate}`);
         if (order.wilaya) out.push(`الولاية: ${order.wilaya}`);
         out.push(order.delivery_type === "office" ? `المكتب: ${order.office}` : `العنوان: ${order.address}`);
         if (order.notes) out.push(`الملاحظات: ${order.notes}`);
@@ -1065,8 +1065,8 @@
         return `<label class="field" data-field="${name}"><span>${label}</span>${control}${help ? `<small>${help}</small>` : ""}<span class="err" data-err="${name}"></span></label>`;
     }
 
-    function wilayaOptions(gov) {
-        return (WILAYAS[gov] || []).map((w) => `<option value="${esc(w)}">`).join("");
+    function wilayaOptions() {
+        return Object.values(WILAYAS).flat().map((w) => `<option value="${esc(w)}">`).join("");
     }
 
     function renderCheckout(keep = null) {
@@ -1102,10 +1102,7 @@
                             ${countries.length > 1 ? field("country", "الدولة", `<select class="input" name="country" id="countrySelect">${countries.map((x) => `<option value="${x.code}"${x.code === c.code ? " selected" : ""}>${x.flag} ${esc(x.name)}</option>`).join("")}</select>`) : ""}
                             ${field("name", "الاسم الكامل", `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
                             ${field("phone", "رقم الهاتف (واتساب)", `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${rule.example}" value="${esc(savedPhone)}" required></span>`, `رقم ${esc(c.name)}: ${rule.hint}`)}
-                            ${isOm ? `<div class="two">
-                                ${field("gov", "المحافظة", `<select class="input" name="gov" id="govSelect" required><option value="">اختر المحافظة</option>${(cfg.order.governorates || []).filter(Boolean).map((g) => `<option${saved.gov === g ? " selected" : ""}>${esc(g)}</option>`).join("")}</select>`)}
-                                ${cfg.order.show_wilaya ? field("wilaya", `الولاية${cfg.order.wilaya_required ? "" : " (اختياري)"}`, `<input class="input" name="wilaya" list="wilayaList" autocomplete="off" value="${esc(saved.wilaya || "")}"><datalist id="wilayaList">${wilayaOptions(saved.gov)}</datalist>`) : ""}
-                            </div>` : field("gov", c.code === "AE" ? "الإمارة / المدينة" : "المدينة", `<input class="input" name="gov" autocomplete="address-level2" value="${esc(saved.country === c.code ? saved.gov || "" : "")}" required>`)}
+                            ${isOm ? (cfg.order.show_wilaya ? field("wilaya", `الولاية${cfg.order.wilaya_required ? "" : " (اختياري)"}`, `<input class="input" name="wilaya" list="wilayaList" autocomplete="off" placeholder="مثال: السيب" value="${esc(saved.wilaya || "")}"><datalist id="wilayaList">${wilayaOptions()}</datalist>`) : "") : field("gov", c.code === "AE" ? "الإمارة / المدينة" : "المدينة", `<input class="input" name="gov" autocomplete="address-level2" value="${esc(saved.country === c.code ? saved.gov || "" : "")}" required>`)}
                         </div>
                         <div class="panel form">
                             <h2>طريقة التوصيل</h2>
@@ -1250,7 +1247,7 @@
 
         if (name.length < 3) errors.name = "اكتب اسمك الكامل (3 أحرف على الأقل).";
         if (!phone.valid) errors.phone = `اكتب رقم ${CC().name} الصحيح: ${phone.rule.hint}.`;
-        if (!String(values.gov || "").trim()) errors.gov = isOm ? "اختر المحافظة." : "اكتب المدينة.";
+        if (!isOm && !String(values.gov || "").trim()) errors.gov = "اكتب المدينة.";
         if (isOm && cfg.order.show_wilaya && cfg.order.wilaya_required && !String(values.wilaya || "").trim()) errors.wilaya = "اكتب الولاية.";
         if (!d) errors.delivery = "اختر طريقة التوصيل.";
         else if (d.type === "office") {
@@ -1304,7 +1301,7 @@
             channel,
             customer_name: name,
             phone: phone.stored,
-            governorate: String(values.gov || "").trim(),
+            governorate: isOm ? null : String(values.gov || "").trim(),
             wilaya: isOm && cfg.order.show_wilaya ? String(values.wilaya || "").trim() || null : null,
             address: d.type === "office" ? null : String(values.address || "").trim(),
             office: d.type === "office" ? String(values.office || "").trim() : null,
@@ -1348,7 +1345,7 @@
         if (cfg.sales.remember_customer) {
             storage.set(KEYS.customer, {
                 name, country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
-                gov: values.gov, wilaya: values.wilaya || "", address: values.address || "", office: values.office || "",
+                gov: isOm ? "" : values.gov, wilaya: values.wilaya || "", address: values.address || "", office: values.office || "",
                 delivery: d.id, payment: p.id
             });
         }
@@ -1498,42 +1495,41 @@
         if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
     }
 
+    // قائمة النقاط الثلاث: الأقسام + ثلاثة اختصارات فقط
     function openMenu() {
         const cfg = C();
         const vv = v();
         const cats = vv.categories.filter((c) => vv.counts.get(c.id));
-        const totals = computeCart();
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp);
         const socials = (cfg.texts.socials || []).filter((s) => s.name && ATHR.isUrl(s.url));
-        const items = [];
-        const li = (inner) => `<li>${inner}</li>`;
+        const multi = ATHR.countries(cfg).filter((c) => c.enabled).length > 1;
+        const cur = CC();
+        const parts = [];
         if (cfg.contact.menu_show || S.isAdmin) {
-            items.push(li(`<a href="${BASE}">الرئيسية</a>`));
-            if (cfg.theme.show_search !== false) items.push(li(`<a href="${BASE}search/">بحث في المنتجات</a>`));
-            items.push(`<li class="menu-label">الأقسام</li>`);
-            cats.forEach((c) => items.push(li(`<a class="menu-sub" href="${ATHR.url.category(c)}">${esc(c.name)} <small>${vv.counts.get(c.id)}</small></a>`)));
-            items.push(`<li class="menu-label">المتجر</li>`);
-            if (V.setCards(vv)) items.push(li(`<a href="${BASE}#sets">${esc(cfg.sales.sets_title)}</a>`));
-            if (V.storeReviews(vv)) items.push(li(`<a href="${BASE}#reviews">${esc(cfg.contact.reviews_title)}</a>`));
-            items.push(li(`<a href="${BASE}cart/">السلة <small>${totals.count || ""}</small></a>`));
-            if (wa) items.push(li(`<a href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(cfg.contact.wa_float_msg)))}" target="_blank" rel="noopener">تواصل معنا عبر واتساب</a>`));
-            if (cfg.contact.policy_show) items.push(li(`<a href="${BASE}shipping/">${esc(cfg.contact.policy_title)}</a>`));
-            if (ATHR.countries(cfg).filter((c) => c.enabled).length > 1) items.push(li(`<button type="button" data-open-currency>الدولة والعملة <small>${esc(CC().flag)} ${esc(CC().symbol)}</small></button>`));
-            items.push(li(`<button type="button" data-share>مشاركة المتجر</button>`));
-            items.push(li(`<a href="${BASE}review/" rel="nofollow">${esc(cfg.contact.reviews_share_text || "شاركنا رأيك")}</a>`));
-            if (socials.length) {
-                items.push(`<li class="menu-label">حساباتنا</li>`);
-                socials.forEach((s) => items.push(li(`<a class="menu-sub" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`)));
+            if (cats.length) {
+                parts.push(`<p class="menu-label">تسوّق حسب القسم</p>
+                    <div class="menu-cats">${cats.map((c) => {
+                        const img = V.categoryImage(vv, c);
+                        return `<a class="menu-cat" href="${ATHR.url.category(c)}"><span class="mc-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" width="44" height="44">` : ""}</span><span class="mc-name">${esc(c.name)}</span></a>`;
+                    }).join("")}</div>`);
             }
+            const acts = [];
+            if (wa) acts.push(`<a class="menu-act" href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(cfg.contact.wa_float_msg)))}" target="_blank" rel="noopener"><span class="ma-ico wa">${V.waIcon()}</span><span>تواصل معنا عبر واتساب</span></a>`);
+            if (cfg.contact.policy_show) acts.push(`<a class="menu-act" href="${BASE}shipping/"><span class="ma-ico">${V.icon.truck}</span><span>التوصيل والدفع</span></a>`);
+            if (multi) acts.push(`<button class="menu-act" type="button" data-open-currency><span class="ma-ico flag">${esc(cur.flag)}</span><span>الدولة والعملة</span><small>${esc(cur.symbol)}</small></button>`);
+            if (acts.length) parts.push(`<div class="menu-acts">${acts.join("")}</div>`);
+            if (socials.length) parts.push(`<div class="menu-social">${socials.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`).join("")}</div>`);
         }
         if (S.isAdmin) {
-            items.push(`<li class="menu-label">لك وحدك</li>`);
-            items.push(`<li class="menu-owner"><a href="#admin" data-native>تعديل المتجر</a></li>`);
-            items.push(`<li class="menu-owner"><a href="#orders" data-native>دفتر الطلبيات والتقييمات والأداء</a></li>`);
+            parts.push(`<p class="menu-label">لك وحدك</p>
+                <div class="menu-acts owner">
+                    <a class="menu-act" href="#admin" data-native><span>تعديل المتجر</span></a>
+                    <a class="menu-act" href="#orders" data-native><span>دفتر الطلبيات والتقييمات والأداء</span></a>
+                </div>`);
         }
         openSheet(`
             <div class="sheet-head"><h2>${esc(cfg.name)}</h2><button class="close" type="button" data-close-sheet aria-label="إغلاق">×</button></div>
-            <ul class="menu-list">${items.join("")}</ul>`, { label: "القائمة" });
+            <nav class="menu" aria-label="القائمة">${parts.join("")}</nav>`, { label: "القائمة", kind: "menu" });
     }
 
     function openCurrency() {
@@ -1815,11 +1811,6 @@
             renderCheckout(keep);
             renderBars();
             toast(`التوصيل والدفع الآن لـ${CC().name}`);
-            return;
-        }
-        if (t.id === "govSelect") {
-            const list = $("#wilayaList");
-            if (list) list.innerHTML = wilayaOptions(t.value);
             return;
         }
         if (t.id === "giftToggle") {

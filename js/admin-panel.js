@@ -189,7 +189,7 @@
 
     async function loadServer() {
         const [s, c, p, m] = await Promise.all([
-            sb.from("store_settings").select("config").eq("id", 1).maybeSingle(),
+            sb.from("store_settings").select("config,updated_at").eq("id", 1).maybeSingle(),
             sb.from("categories").select("id,name,slug,sort_order,description,image_url").order("sort_order", { ascending: true }),
             sb.from("products").select("id,name,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
             sb.from("product_media").select("product_id,media_type,media_url,sort_order").order("sort_order", { ascending: true })
@@ -203,6 +203,7 @@
             media.get(row.product_id).push({ type: row.media_type === "video" ? "video" : "image", url: row.media_url });
         });
 
+        A.serverUpdated = Date.parse(s.data?.updated_at || "") || 0;
         A.server = {
             config: ATHR.fullConfig(s.data?.config || {}),
             categories: (c.data || []).map((x) => ({ id: x.id, name: x.name, slug: x.slug, description: x.description || "", image_url: x.image_url || "" })),
@@ -229,6 +230,13 @@
 
     function restoreDraft() {
         const saved = storage.get(DRAFT_KEY);
+        // إن تغيّر المتجر بعد حفظ المسودة (من جهاز آخر)، نفتح آخر نسخة منشورة حتى لا تُرجع المسودة القديمة شيئًا
+        if (saved && saved.saved && A.serverUpdated && saved.saved < A.serverUpdated) {
+            storage.del(DRAFT_KEY);
+            A.draft = ATHR.clone(A.server);
+            setTimeout(() => toast("تم تحديث المتجر من مكان آخر، فتحنا لك آخر نسخة منشورة"), 300);
+            return;
+        }
         if (saved && saved.data && saved.data.config) {
             A.draft = saved.data;
             A.draft.config = ATHR.fullConfig(A.draft.config);
@@ -489,7 +497,7 @@
                     ${select(`${base}.color_id`, "لون الكاسة", colors)}
                 </div>
                 ${area(`${base}.description`, "الوصف", { rows: 3 })}
-                ${number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب توصيل الخليج بالكيلو." })}
+                ${cfg().order.delivery.some((d) => d.enabled && d.pricing === "per_kg") ? number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب التوصيل بالكيلو." }) : ""}
                 ${toggle(`${base}.is_visible`, "ظاهر في المتجر")}
                 ${toggle(`${base}.is_best_seller`, "من «الأكثر طلباً»", { help: "يظهر في قسم الأكثر طلباً أعلى الصفحة الرئيسية مع شارة على صورته (يحتاج منتجين على الأقل)." })}
                 ${toggle(`${base}.is_new_arrival`, "من «وصل حديثاً»")}
@@ -649,6 +657,7 @@
                     <input class="ai" data-bind="categories.#${esc(c.id)}.name" value="${esc(c.name)}" placeholder="اسم القسم" aria-label="اسم القسم">
                     <span class="adm-muted nowrap">${counts.get(c.id) || 0} منتج</span>
                 </div>
+                <div class="af"><span>صورة القسم</span>${uploadButton(c.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="categories.#${esc(c.id)}.image_url" data-kind="category"`, { current: c.image_url ? ATHR.thumb(c.image_url, "s") : "", remove: c.image_url ? `data-clear="categories.#${esc(c.id)}.image_url"` : "" })}<small>تظهر في أعلى المتجر وفي القائمة. الأفضل صورة عمودية بنسبة 3:4 بخلفية بيج مثل باقي الأقسام.</small></div>
                 <label class="af"><span>وصف القسم (يظهر في صفحته وفي جوجل)</span><textarea class="ai" rows="2" maxlength="300" data-bind="categories.#${esc(c.id)}.description" placeholder="مثال: أكواب سيراميك بملمس مطفي بشعارات الأندية، هدية مثالية لكل مشجع.">${esc(c.description || "")}</textarea></label>
                 ${c.slug ? `<small class="adm-muted" dir="ltr">${esc(decodeURI(siteLink(ATHR.url.category(c))))}</small>` : ""}
                 ${listControls("categories", i, cats.length)}
@@ -682,7 +691,7 @@
             + card("الاسم والشعار", `
                 ${text("config.name", "اسم المتجر", { max: 40 })}
                 <div class="af"><span>الشعار</span>${uploadButton("تغيير الشعار", `data-upload="config.logo_url" data-kind="logo"`, { current: c.logo_url })}<small>الشعار الحالي أبيض بخلفية شفافة ويظهر على اللون الأساسي.</small>${c.logo_url !== ATHR_DEFAULTS.logo_url ? `<button class="ab-mini" type="button" data-reset-logo>الرجوع للشعار الأصلي</button>` : ""}</div>
-                ${toggle("config.show_name", "إظهار اسم المتجر بجانب الشعار")}
+                ${toggle("config.show_name", "إظهار اسم المتجر بجانب الشعار", { help: "أوقفه إذا كان الشعار نفسه فيه اسم المتجر. يبقى الاسم في جوجل ورسائل الطلب." })}
                 ${select("config.logo_shape", "شكل الشعار", [["rounded", "زوايا مدوّرة"], ["circle", "دائري"], ["square", "مربع"]])}`)
             + card("الشكل العام", `
                 ${select("config.theme.radius", "استدارة الزوايا", [["sharp", "حادة"], ["medium", "متوسطة"], ["round", "مدوّرة كثيراً"]])}
@@ -812,13 +821,7 @@
                 <hr>
                 ${toggle("config.order.free_enabled", "توصيل مجاني عند حد معيّن", { rerender: true })}
                 ${o.free_enabled ? number("config.order.free_min", "حد التوصيل المجاني (قيمة الطلب)", { help: "يُطبَّق على كل طرق التوصيل في الدول المختارة." }) + countryChecks("config.order.free_countries", "التوصيل المجاني متاح لـ") : ""}
-                <div class="af"><span>المحافظات المتاحة للتوصيل</span>
-                    <ul class="lst">${o.governorates.map((g, i) => `<li class="lst-row">
-                        <input class="ai" data-bind="config.order.governorates.${i}" value="${esc(g)}" aria-label="المحافظة">
-                        ${listControls("config.order.governorates", i, o.governorates.length)}
-                    </li>`).join("")}</ul>
-                    <button class="ab ab-ghost ab-sm" type="button" data-add-item="config.order.governorates">+ إضافة محافظة</button>
-                </div>`)
+`)
             + card("نموذج الطلب", `
                 ${number("config.order.max_qty", "أقصى كمية من المنتج الواحد", { step: "1", min: "1" })}
                 ${toggle("config.order.show_wilaya", "إظهار حقل الولاية", { rerender: true })}
@@ -980,7 +983,7 @@
     // UPLOADS
     // =====================================================
 
-    const IMAGE_SIZES = { product: 1600, ad: 1800, hero: 1920, logo: 512, review: 1200 };
+    const IMAGE_SIZES = { product: 1600, ad: 1800, hero: 1920, logo: 512, review: 1200, category: 1100 };
 
     function loadImage(file) {
         return new Promise((resolve, reject) => {
@@ -1549,13 +1552,11 @@
         const add = (tab, msg) => errors.push({ tab, msg });
         const num = (v) => typeof v === "number" && Number.isFinite(v);
 
-        if (!String(c.name || "").trim()) add("look", "اسم المتجر فارغ.");
+        if (!/[\p{L}]/u.test(String(c.name || ""))) add("look", "اكتب اسم المتجر (يظهر في جوجل ورسائل واتساب). لإخفائه من أعلى المتجر أوقف «إظهار اسم المتجر بجانب الشعار».");
         if (!ATHR.isValidWhatsapp(c.order.whatsapp)) add("order", "رقم واتساب غير صحيح.");
         if (!String(c.order.currency || "").trim()) add("order", "رمز العملة فارغ.");
         if (c.order.free_enabled && !(num(c.order.free_min) && c.order.free_min > 0)) add("order", "حد التوصيل المجاني غير صحيح.");
         if (!(Number.isInteger(c.order.max_qty) && c.order.max_qty >= 1 && c.order.max_qty <= 99)) add("order", "أقصى كمية يجب أن تكون بين 1 و99.");
-        if (!c.order.governorates.length) add("order", "لا توجد محافظة.");
-        if (c.order.governorates.some((g) => !String(g || "").trim())) add("order", "توجد محافظة بلا اسم.");
         const deliveries = c.order.delivery.filter((d) => d.enabled);
         if (!deliveries.length) add("order", "لا توجد طريقة توصيل مفعّلة.");
         deliveries.forEach((d, i) => {
@@ -1632,6 +1633,38 @@
         return errors;
     }
 
+    // دمج ثلاثي: ما غيّرته أنت (المسودة مقابل الأصل) يُطبَّق فوق أحدث نسخة على الخادم
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    function mergeValue(base, mine, theirs) {
+        if (same(mine, base)) return ATHR.clone(theirs === undefined ? mine : theirs);
+        if (ATHR.isPlainObject(base) && ATHR.isPlainObject(mine) && ATHR.isPlainObject(theirs)) {
+            const out = {};
+            new Set([...Object.keys(base), ...Object.keys(mine), ...Object.keys(theirs)]).forEach((k) => {
+                const v = mergeValue(base[k], mine[k], theirs[k]);
+                if (v !== undefined) out[k] = v;
+            });
+            return out;
+        }
+        return ATHR.clone(mine);
+    }
+    function mergeRows(baseRows, mineRows, theirRows) {
+        const byId = (rows) => new Map(rows.map((r) => [r.id, r]));
+        const b = byId(baseRows);
+        const t = byId(theirRows);
+        const mineIds = new Set(mineRows.map((r) => r.id));
+        const merged = mineRows.map((row) => (b.has(row.id) && t.has(row.id) ? mergeValue(b.get(row.id), row, t.get(row.id)) : row));
+        // ما أُضيف من مكان آخر يبقى
+        theirRows.forEach((r) => { if (!b.has(r.id) && !mineIds.has(r.id)) merged.push(ATHR.clone(r)); });
+        return merged;
+    }
+    function mergeDraft(base, mine, theirs) {
+        return {
+            config: ATHR.fullConfig(mergeValue(base.config, mine.config, theirs.config)),
+            categories: mergeRows(base.categories, mine.categories, theirs.categories),
+            products: mergeRows(base.products, mine.products, theirs.products)
+        };
+    }
+
     async function publish() {
         if (A.busy) return;
         A.errors = validate();
@@ -1644,6 +1677,19 @@
         A.busy = true;
         renderStatus();
         busyMessage("جاري النشر...");
+
+        // إن تغيّر المتجر من مكان آخر بعد فتح اللوحة: ندمج تعديلاتك فقط فوق النسخة الأحدث
+        try {
+            const { data: fresh } = await sb.from("store_settings").select("updated_at").eq("id", 1).maybeSingle();
+            const freshTime = Date.parse(fresh?.updated_at || "") || 0;
+            if (A.serverUpdated && freshTime > A.serverUpdated) {
+                const base = A.server;
+                await loadServer();
+                A.draft = mergeDraft(base, A.draft, A.server);
+            }
+        } catch (error) {
+            console.warn("freshness check skipped", error);
+        }
 
         const draft = A.draft;
         const server = A.server;
@@ -1667,6 +1713,7 @@
                     id: c.id,
                     name: c.name.trim(),
                     slug,
+                    image_url: c.image_url || null,
                     description: String(c.description || "").trim() || null,
                     sort_order: i + 1
                 };
@@ -2114,9 +2161,9 @@
             `الوقت: ${when.time}`,
             `الاسم: ${o.customer_name || ""}`,
             `الهاتف: ${o.phone || ""}`,
-            `الدولة: ${countryLabel(o.country)}`,
-            `${(o.country || "OM") === "OM" ? "المحافظة" : "المدينة"}: ${o.governorate || ""}`
+            `الدولة: ${countryLabel(o.country)}`
         ];
+        if (o.governorate) lines.push(`${(o.country || "OM") === "OM" ? "المحافظة" : "المدينة"}: ${o.governorate}`);
         if (o.wilaya) lines.push(`الولاية: ${o.wilaya}`);
         if (o.office) lines.push(`المكتب: ${o.office}`);
         else if (o.address) lines.push(`العنوان: ${o.address}`);
@@ -2172,10 +2219,9 @@
                     <label class="af"><span>رقم الهاتف</span><input class="ai" name="phone" type="tel" dir="ltr" value="${esc(o ? o.phone || "" : "")}"></label>
                 </div>
                 <div class="two">
-                    <label class="af"><span>المحافظة</span><input class="ai" name="governorate" list="govList" value="${esc(o ? o.governorate || "" : "")}"></label>
+                    <label class="af"><span>المدينة (لطلبات الخليج)</span><input class="ai" name="governorate" value="${esc(o ? o.governorate || "" : "")}"></label>
                     <label class="af"><span>الولاية</span><input class="ai" name="wilaya" value="${esc(o ? o.wilaya || "" : "")}"></label>
                 </div>
-                <datalist id="govList">${c.order.governorates.map((g) => `<option value="${esc(g)}">`).join("")}</datalist>
                 <label class="af"><span>العنوان</span><input class="ai" name="address" value="${esc(o ? (o.office ? `المكتب: ${o.office}` : o.address || "") : "")}"></label>
                 <label class="af"><span>تفاصيل الطلب</span><textarea class="ai" name="items_text" rows="4" placeholder="كل منتج في سطر">${esc(items)}</textarea></label>
                 <div class="two">
