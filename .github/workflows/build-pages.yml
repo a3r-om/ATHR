@@ -71,5 +71,5 @@ jobs:
           for path in "" "index.html" "c/clubs/" "sitemap.xml"; do
             code=$(curl -s -o /tmp/page -w "%{http_code}" "${site}${path}")
             title=$(grep -o "<title>[^<]*" /tmp/page | head -1)
-            echo "${code} ${site}${path} ${title}"
+            echo "::notice title=فحص المتجر::${code} ${site}${path} ${title}"
           done
