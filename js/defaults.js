@@ -8,6 +8,26 @@ const ATHR_GOVERNORATES = [
     "شمال الشرقية", "جنوب الشرقية", "الوسطى", "ظفار", "مسندم"
 ];
 
+// دول الخليج: العلم والعملة وسعر الصرف (1 ريال عماني = rate من عملة الدولة)
+const ATHR_COUNTRIES = [
+    { code: "OM", name: "سلطنة عُمان", flag: "🇴🇲", currency: "OMR", currency_name: "ريال عماني", currency_def: "الريال العماني", symbol: "ر.ع", decimals: 3, rate: 1, dial: "968", enabled: true },
+    { code: "AE", name: "الإمارات", flag: "🇦🇪", currency: "AED", currency_name: "درهم إماراتي", currency_def: "الدرهم الإماراتي", symbol: "د.إ", decimals: 2, rate: 9.5514, dial: "971", enabled: true },
+    { code: "SA", name: "السعودية", flag: "🇸🇦", currency: "SAR", currency_name: "ريال سعودي", currency_def: "الريال السعودي", symbol: "ر.س", decimals: 2, rate: 9.7529, dial: "966", enabled: true },
+    { code: "KW", name: "الكويت", flag: "🇰🇼", currency: "KWD", currency_name: "دينار كويتي", currency_def: "الدينار الكويتي", symbol: "د.ك", decimals: 3, rate: 0.8048, dial: "965", enabled: true },
+    { code: "QA", name: "قطر", flag: "🇶🇦", currency: "QAR", currency_name: "ريال قطري", currency_def: "الريال القطري", symbol: "ر.ق", decimals: 2, rate: 9.4669, dial: "974", enabled: true },
+    { code: "BH", name: "البحرين", flag: "🇧🇭", currency: "BHD", currency_name: "دينار بحريني", currency_def: "الدينار البحريني", symbol: "د.ب", decimals: 3, rate: 0.9779, dial: "973", enabled: true }
+];
+
+// أرقام الجوال المحلية لكل دولة (بدون رمز الدولة)
+const ATHR_PHONE_RULES = {
+    OM: { re: /^[79]\d{7}$/, hint: "8 أرقام يبدأ بـ7 أو 9", example: "9XXXXXXX" },
+    AE: { re: /^5\d{8}$/, hint: "9 أرقام يبدأ بـ5 (مثل 50XXXXXXX)", example: "5XXXXXXXX" },
+    SA: { re: /^5\d{8}$/, hint: "9 أرقام يبدأ بـ5 (مثل 55XXXXXXX)", example: "5XXXXXXXX" },
+    KW: { re: /^[569]\d{7}$/, hint: "8 أرقام يبدأ بـ5 أو 6 أو 9", example: "XXXXXXXX" },
+    QA: { re: /^[3567]\d{7}$/, hint: "8 أرقام يبدأ بـ3 أو 5 أو 6 أو 7", example: "XXXXXXXX" },
+    BH: { re: /^[36]\d{7}$/, hint: "8 أرقام يبدأ بـ3 أو 6", example: "XXXXXXXX" }
+};
+
 const ATHR_DEFAULTS = {
     name: "أثر",
     logo_url: "images/logo.png",
@@ -37,7 +57,7 @@ const ATHR_DEFAULTS = {
         hero_title: "كاسات تترك أثراً",
         hero_text: "تصاميم أندية وشخصيات على كاسات بملمس مطفي. اختر تصميمك وأرسل طلبك عبر واتساب.",
         hero_button: "تصفّح المنتجات",
-        hero_features: ["توصيل لكل المحافظات", "مجاني فوق {free}", "الدفع عند الاستلام"],
+        hero_features: ["توصيل لكل دول الخليج", "مجاني داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
         search_placeholder: "ابحث عن فريق أو شخصية…",
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
@@ -73,24 +93,27 @@ const ATHR_DEFAULTS = {
         currency: "ر.ع",
         decimals: 3,
         delivery: [
-            { id: "home", enabled: true, name: "توصيل إلى البيت", type: "home", price: 2, note: "يصلك الطلب إلى باب بيتك.", duration: "2 إلى 4 أيام" },
-            { id: "office", enabled: true, name: "استلام من مكتب جيناكم", type: "office", price: 1.5, note: "تستلم طلبك من أقرب مكتب لك.", duration: "2 إلى 3 أيام" }
+            { id: "home", enabled: true, name: "توصيل إلى البيت", type: "home", pricing: "fixed", price: 2, countries: ["OM"], note: "يصلك الطلب إلى باب بيتك.", duration: "2 إلى 4 أيام" },
+            { id: "office", enabled: true, name: "استلام من مكتب جيناكم", type: "office", pricing: "fixed", price: 1, countries: ["OM"], note: "تستلم طلبك من أقرب مكتب لك.", duration: "2 إلى 3 أيام" }
         ],
         free_enabled: true,
-        free_min: 10,
+        free_min: 20,
+        free_countries: ["OM"],
+        countries: ATHR_COUNTRIES.map((c) => ({ ...c })),
+        default_weight_g: 400,
         governorates: ATHR_GOVERNORATES.slice(),
         max_qty: 10,
         show_wilaya: true,
         wilaya_required: true,
         show_notes: true,
         payments: [
-            { id: "cod", enabled: true, name: "الدفع عند الاستلام", type: "cod", note: "تدفع نقدًا عند استلام طلبك." }
+            { id: "cod", enabled: true, name: "الدفع عند الاستلام", type: "cod", countries: ["OM"], note: "تدفع نقدًا عند استلام طلبك." }
         ]
     },
 
     sales: {
         free_bar_show: true,
-        free_before: "توصيل مجاني للطلبات من {free} أو أكثر",
+        free_before: "توصيل مجاني داخل عُمان للطلبات من {free} أو أكثر",
         free_during: "أضف {left} أخرى للحصول على توصيل مجاني",
         free_done: "مبروك! توصيل طلبك مجاني",
         bundles: [],
@@ -201,7 +224,7 @@ ATHR.money = function (amount, config) {
 
 // أقل سعر توصيل مفعّل
 ATHR.lowestShipping = function (config) {
-    const prices = (config.order.delivery || []).filter((d) => d.enabled).map((d) => Number(d.price) || 0);
+    const prices = (config.order.delivery || []).filter((d) => d.enabled && d.pricing !== "per_kg").map((d) => Number(d.price) || 0);
     return prices.length ? Math.min(...prices) : 0;
 };
 
@@ -242,7 +265,7 @@ ATHR.muscatParts = function (date = new Date()) {
 ATHR.newOrderNo = () => "AT-" + String(Math.floor(10000 + Math.random() * 90000));
 
 // حساب السلة: المجموع، خصم الباقات، التوصيل المجاني
-ATHR.computeCart = function (cartItems, products, config) {
+ATHR.computeCart = function (cartItems, products, config, country = "OM") {
     const byId = new Map(products.map((p) => [p.id, p]));
     const lines = [];
     cartItems.forEach((item) => {
@@ -278,15 +301,97 @@ ATHR.computeCart = function (cartItems, products, config) {
     const discount = Math.round(savings.reduce((sum, s) => sum + s.amount, 0) * 1000) / 1000;
     const afterDiscount = Math.max(0, subtotal - discount);
     const freeMin = Number(config.order.free_min) || 0;
-    const freeShipping = Boolean(config.order.free_enabled) && freeMin > 0 && afterDiscount >= freeMin;
-    const leftForFree = config.order.free_enabled && freeMin > 0 ? Math.max(0, freeMin - afterDiscount) : 0;
+    const freeEligible = Boolean(config.order.free_enabled) && freeMin > 0 && ATHR.freeAppliesTo(config, country);
+    const freeShipping = freeEligible && afterDiscount >= freeMin;
+    const leftForFree = freeEligible ? Math.max(0, freeMin - afterDiscount) : 0;
     const count = lines.reduce((sum, line) => sum + line.qty, 0);
 
-    return { lines, subtotal, discount, afterDiscount, freeShipping, leftForFree, savings, hints, count };
+    return { lines, subtotal, discount, afterDiscount, freeEligible, freeShipping, leftForFree, savings, hints, count };
 };
 
 // سطر منتج في الرسائل: الاسم (اللون)
 ATHR.productLabel = function (product, config) {
     const color = (config.colors || []).find((c) => c.id === product.color_id);
     return color ? `${product.name} (${color.name})` : product.name;
+};
+
+
+// =====================================================
+// دول الخليج والعملات
+// =====================================================
+
+ATHR.BASE_COUNTRY = "OM";
+
+// قائمة الدول بعد دمج إعداداتك (سعر الصرف، التفعيل) مع البيانات الثابتة
+ATHR.countries = function (config) {
+    const saved = (config && config.order && config.order.countries) || [];
+    return ATHR_COUNTRIES.map((base) => {
+        const own = saved.find((c) => c && c.code === base.code) || {};
+        const rate = Number(own.rate);
+        return {
+            ...base,
+            enabled: base.code === ATHR.BASE_COUNTRY ? true : own.enabled !== false,
+            rate: base.code === ATHR.BASE_COUNTRY ? 1 : (rate > 0 ? rate : base.rate),
+            symbol: own.symbol || base.symbol
+        };
+    });
+};
+
+ATHR.country = (config, code) => ATHR.countries(config).find((c) => c.code === code) || ATHR.countries(config)[0];
+
+ATHR.inCountries = (item, code) => !Array.isArray(item.countries) || !item.countries.length || item.countries.includes(code);
+
+ATHR.deliveriesFor = (config, code) => (config.order.delivery || []).filter((d) => d.enabled && ATHR.inCountries(d, code));
+
+ATHR.paymentsFor = (config, code) => (config.order.payments || []).filter((p) => p.enabled && ATHR.inCountries(p, code));
+
+ATHR.freeAppliesTo = (config, code) => {
+    const list = config.order.free_countries;
+    return !Array.isArray(list) || !list.length || list.includes(code);
+};
+
+// المبلغ بعملة الدولة (التحويل من الريال العماني)
+ATHR.moneyIn = function (amount, config, code) {
+    const c = ATHR.country(config, code);
+    if (c.code === ATHR.BASE_COUNTRY) return ATHR.money(amount, config);
+    const value = Number(amount || 0) * c.rate;
+    const text = value.toLocaleString("en-US", { minimumFractionDigits: c.decimals, maximumFractionDigits: c.decimals });
+    return `${text} ${c.symbol}`;
+};
+
+// وزن الطلب بالغرام
+ATHR.cartWeight = function (lines, config) {
+    const fallback = Number(config.order.default_weight_g) || 400;
+    return lines.reduce((sum, l) => sum + (Number(l.product.weight_g) > 0 ? Number(l.product.weight_g) : fallback) * l.qty, 0);
+};
+
+// سعر التوصيل: ثابت، أو لكل كيلو (يُقرَّب لأعلى، والحد الأدنى كيلو واحد)
+ATHR.shippingFor = function (method, lines, config) {
+    if (!method) return { cost: 0, kg: 0, weight: 0 };
+    const price = Number(method.price) || 0;
+    if (method.pricing === "per_kg") {
+        const weight = ATHR.cartWeight(lines, config);
+        const kg = Math.max(1, Math.ceil(weight / 1000));
+        return { cost: kg * price, kg, weight };
+    }
+    return { cost: price, kg: 0, weight: 0 };
+};
+
+// الجوال: OM يُحفظ 8 أرقام، وباقي الدول برمز الدولة
+ATHR.parsePhone = function (value, code) {
+    const c = ATHR_COUNTRIES.find((x) => x.code === code) || ATHR_COUNTRIES[0];
+    let digits = ATHR.digits(value).replace(/[^\d]/g, "");
+    if (digits.startsWith("00")) digits = digits.slice(2);
+    if (digits.startsWith(c.dial) && digits.length > c.dial.length + 6) digits = digits.slice(c.dial.length);
+    if (digits.startsWith("0")) digits = digits.slice(1);
+    const rule = ATHR_PHONE_RULES[c.code] || ATHR_PHONE_RULES.OM;
+    const valid = rule.re.test(digits);
+    return { valid, local: digits, stored: c.code === "OM" ? digits : c.dial + digits, rule };
+};
+
+// رقم واتساب الزبون من الرقم المحفوظ
+ATHR.customerWhatsapp = function (phone, code) {
+    const digits = ATHR.digits(phone).replace(/[^\d]/g, "");
+    if ((code || "OM") === "OM" && digits.length === 8) return "968" + digits;
+    return digits;
 };

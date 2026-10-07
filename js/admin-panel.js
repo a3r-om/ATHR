@@ -172,7 +172,7 @@
         const [s, c, p, m] = await Promise.all([
             sb.from("store_settings").select("config").eq("id", 1).maybeSingle(),
             sb.from("categories").select("id,name,slug,sort_order").order("sort_order", { ascending: true }),
-            sb.from("products").select("id,name,price,old_price,category_id,image_url,is_available,is_visible,description,color_id,sort_order,video_url,created_at").order("sort_order", { ascending: true }),
+            sb.from("products").select("id,name,price,old_price,category_id,image_url,is_available,is_visible,description,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
             sb.from("product_media").select("product_id,media_type,media_url,sort_order").order("sort_order", { ascending: true })
         ]);
         const failed = [s, c, p, m].find((r) => r.error);
@@ -199,6 +199,7 @@
                 description: x.description || "",
                 color_id: x.color_id || "",
                 video_url: x.video_url || "",
+                weight_g: x.weight_g === null || x.weight_g === undefined ? null : Number(x.weight_g),
                 media: media.get(x.id) || []
             }))
         };
@@ -367,6 +368,12 @@
         return `<label class="af af-color"><span>${label}</span><span class="ac"><input type="color" data-bind="${path}" value="${esc(value)}"><code dir="ltr">${esc(value)}</code></span></label>`;
     }
 
+    function countryChecks(path, label, help = "") {
+        const value = getPath(path);
+        const list = Array.isArray(value) && value.length ? value : ATHR_COUNTRIES.map((c) => c.code);
+        return `<div class="af"><span>${label}</span><div class="cchecks">${ATHR_COUNTRIES.map((c) => `<label class="cchip"><input type="checkbox" data-country-path="${path}" value="${c.code}"${list.includes(c.code) ? " checked" : ""}><span>${c.flag} ${esc(c.name)}</span></label>`).join("")}</div>${help ? `<small>${help}</small>` : ""}</div>`;
+    }
+
     function card(title, body, help = "") {
         return `<section class="adm-card"><h2>${title}</h2>${help ? `<p class="adm-muted">${help}</p>` : ""}<div class="af-stack">${body}</div></section>`;
     }
@@ -460,6 +467,7 @@
                     ${select(`${base}.color_id`, "لون الكاسة", colors)}
                 </div>
                 ${area(`${base}.description`, "الوصف", { rows: 3 })}
+                ${number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب توصيل الخليج بالكيلو." })}
                 ${toggle(`${base}.is_visible`, "ظاهر في المتجر")}
                 <label class="at"><input type="checkbox" data-sold-out="${esc(p.id)}"${p.is_available ? "" : " checked"}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>نفد من المخزون</b><small>يبقى ظاهرًا مع شارة «نفد المخزون» ولا يمكن طلبه.</small></span></label>
 
@@ -539,6 +547,7 @@
             description: "",
             color_id: cfg().colors[0]?.id || "",
             video_url: "",
+            weight_g: Number(cfg().order.default_weight_g) || 400,
             media: []
         };
         A.draft.products.unshift(p);
@@ -699,8 +708,10 @@
             ${text(`config.order.delivery.${i}.name`, "الاسم الذي يراه العميل")}
             <div class="two">
                 ${select(`config.order.delivery.${i}.type`, "النوع", [["home", "توصيل إلى بيت العميل"], ["office", "استلام من مكتب (مثل مكتب جيناكم)"]])}
-                ${number(`config.order.delivery.${i}.price`, "السعر")}
+                ${select(`config.order.delivery.${i}.pricing`, "طريقة السعر", [["fixed", "سعر ثابت للطلب"], ["per_kg", "لكل كيلو (حسب الوزن)"]], { rerender: true })}
             </div>
+            ${number(`config.order.delivery.${i}.price`, d.pricing === "per_kg" ? "السعر لكل كيلو" : "السعر", { help: d.pricing === "per_kg" ? "يُقرَّب الوزن لأعلى كيلو، والحد الأدنى كيلو واحد." : "" })}
+            ${countryChecks(`config.order.delivery.${i}.countries`, "متاحة لـ")}
             ${text(`config.order.delivery.${i}.note`, "شرح قصير (اختياري)")}
             ${text(`config.order.delivery.${i}.duration`, "مدة التوصيل (اختياري)", { placeholder: "مثال: 2 إلى 4 أيام" })}
             ${listControls("config.order.delivery", i, o.delivery.length)}
@@ -728,6 +739,7 @@
                     ${select(`${base}.type`, "نوع الطريقة", [["cod", "عند الاستلام"], ["bank", "تحويل بنكي"], ["online", "دفع إلكتروني"], ["other", "أخرى"]], { rerender: true })}
                 </div>
                 ${area(`${base}.note`, "الشرح الذي يظهر للعميل", { rows: 2 })}
+                ${countryChecks(`${base}.countries`, "متاحة لـ")}
                 ${extra}
                 ${listControls("config.order.payments", i, o.payments.length)}
             </li>`;
@@ -738,12 +750,22 @@
                 ${text("config.order.currency", "رمز العملة", { max: 8 })}
                 ${select("config.order.decimals", "عدد الخانات العشرية", [["3", "3 خانات (مثل 3.500)"], ["2", "خانتان"], ["1", "خانة واحدة"], ["0", "بدون كسور"]], { type: "number" })}
             </div>`)
+            + card("دول الخليج والعملات", `
+                <ul class="items">${o.countries.map((c, i) => `<li class="item-card">
+                    <b class="ctitle">${c.flag} ${esc(c.name)} <small class="adm-muted">${esc(c.currency_name)} (${esc(c.currency)})</small></b>
+                    ${c.code === "OM" ? `<small class="adm-muted">العملة الأساسية للمتجر، والطلبات تُحسب بها.</small>` : `
+                    ${toggle(`config.order.countries.${i}.enabled`, "متاحة في المتجر", { rerender: true })}
+                    <div class="two">
+                        ${text(`config.order.countries.${i}.symbol`, "رمز العملة", { max: 6 })}
+                        ${number(`config.order.countries.${i}.rate`, `سعر الصرف: 1 ر.ع = ؟ ${esc(c.symbol)}`, { step: "0.0001" })}
+                    </div>`}
+                </li>`).join("")}</ul>`, "الزبون يختار دولته من أعلى المتجر فتظهر الأسعار بعملتها تقريباً، وتظهر له طرق التوصيل والدفع المتاحة لدولته فقط.")
             + card("التوصيل", `
                 <ul class="items">${deliveries}</ul>
                 <button class="ab ab-ghost ab-sm" type="button" data-add-item="config.order.delivery">+ إضافة طريقة توصيل</button>
                 <hr>
                 ${toggle("config.order.free_enabled", "توصيل مجاني عند حد معيّن", { rerender: true })}
-                ${o.free_enabled ? number("config.order.free_min", "حد التوصيل المجاني (قيمة الطلب)", { help: "يُطبَّق على كل طرق التوصيل." }) : ""}
+                ${o.free_enabled ? number("config.order.free_min", "حد التوصيل المجاني (قيمة الطلب)", { help: "يُطبَّق على كل طرق التوصيل في الدول المختارة." }) + countryChecks("config.order.free_countries", "التوصيل المجاني متاح لـ") : ""}
                 <div class="af"><span>المحافظات المتاحة للتوصيل</span>
                     <ul class="lst">${o.governorates.map((g, i) => `<li class="lst-row">
                         <input class="ai" data-bind="config.order.governorates.${i}" value="${esc(g)}" aria-label="المحافظة">
@@ -1083,6 +1105,15 @@
                 if (A.editing) refreshSheet();
                 renderTab({ keepScroll: true });
             }
+            return;
+        }
+        if (t.dataset.countryPath) {
+            const current = getPath(t.dataset.countryPath);
+            const list = new Set(Array.isArray(current) && current.length ? current : ATHR_COUNTRIES.map((c) => c.code));
+            if (t.checked) list.add(t.value);
+            else list.delete(t.value);
+            setPath(t.dataset.countryPath, ATHR_COUNTRIES.map((c) => c.code).filter((code) => list.has(code)));
+            saveDraft();
             return;
         }
         if (t.dataset.soldOut) {
@@ -1448,6 +1479,17 @@
             if (!String(d.name || "").trim()) add("order", `طريقة توصيل مفعّلة بلا اسم (${i + 1}).`);
             if (!(num(d.price) && d.price >= 0)) add("order", `سعر توصيل غير صحيح في «${d.name || i + 1}».`);
         });
+        deliveries.forEach((d) => {
+            if (d.pricing === "per_kg" && !(num(d.price) && d.price > 0)) add("order", `سعر الكيلو غير صحيح في «${d.name || "طريقة توصيل"}».`);
+            if (Array.isArray(d.countries) && !d.countries.length) add("order", `«${d.name || "طريقة توصيل"}» غير متاحة لأي دولة.`);
+        });
+        ATHR.countries(c).filter((x) => x.enabled).forEach((x) => {
+            if (!ATHR.deliveriesFor(c, x.code).length) add("order", `لا توجد طريقة توصيل مفعّلة لـ${x.name}.`);
+            if (!ATHR.paymentsFor(c, x.code).length) add("order", `لا توجد طريقة دفع مفعّلة لـ${x.name}.`);
+        });
+        c.order.countries.forEach((x) => {
+            if (x.code !== "OM" && x.enabled !== false && !(Number(x.rate) > 0)) add("order", `سعر صرف ${x.name} غير صحيح.`);
+        });
         const payments = c.order.payments.filter((p) => p.enabled);
         if (!payments.length) add("order", "لا توجد طريقة دفع مفعّلة.");
         payments.forEach((p, i) => {
@@ -1486,6 +1528,7 @@
             const label = p.name ? `«${p.name}»` : `المنتج ${i + 1}`;
             if (!String(p.name || "").trim()) add("products", `${label} بلا اسم.`);
             if (!(num(p.price) && p.price > 0)) add("products", `${label}: السعر يجب أن يزيد على صفر.`);
+            if (p.weight_g !== null && p.weight_g !== undefined && !(num(p.weight_g) && p.weight_g > 0 && p.weight_g <= 50000)) add("products", `${label}: الوزن غير صحيح.`);
             if (p.old_price !== null && p.old_price !== undefined && !(num(p.old_price) && p.old_price > (p.price || 0))) {
                 add("products", `${label}: السعر قبل الخصم يجب أن يكون أكبر من السعر.`);
             }
@@ -1548,6 +1591,7 @@
                 description: p.description || null,
                 color_id: p.color_id || null,
                 video_url: p.video_url || null,
+                weight_g: Number(p.weight_g) > 0 ? Math.round(Number(p.weight_g)) : null,
                 sort_order: i + 1
             }));
             for (let i = 0; i < prodRows.length; i += 100) {
@@ -1664,7 +1708,7 @@
             }
             if (f.pay !== "all" && o.payment_type !== f.pay) return false;
             if (!q) return true;
-            const hay = [o.order_no, o.customer_name, o.phone, o.wilaya, o.governorate, o.address, o.office, o.items_text,
+            const hay = [o.order_no, o.customer_name, o.phone, o.wilaya, o.governorate, o.address, o.office, o.items_text, countryLabel(o.country),
                 ...(o.items || []).map((it) => it.label || it.name)].filter(Boolean).join(" ").toLowerCase();
             return hay.includes(q);
         });
@@ -1714,8 +1758,8 @@
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
                 <div class="oc-cust">
                     <b>${esc(o.customer_name || "بدون اسم")}</b>
-                    ${o.phone ? `<span dir="ltr">${esc(o.phone)}</span>` : ""}
-                    <span>${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
+                    ${o.phone ? `<span dir="ltr">${(o.country || "OM") === "OM" ? "" : "+"}${esc(o.phone)}</span>` : ""}
+                    <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
                     ${o.address || o.office ? `<span>${o.office ? `المكتب: ${esc(o.office)}` : esc(o.address)}</span>` : ""}
                 </div>
                 <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
@@ -1762,7 +1806,12 @@
     }
 
     function customerWa(o, text) {
-        return ATHR.waLink(ATHR.localPhone(o.phone).length === 8 ? "968" + ATHR.localPhone(o.phone) : o.phone, text);
+        return ATHR.waLink(ATHR.customerWhatsapp(o.phone, o.country || "OM"), text);
+    }
+
+    function countryLabel(code) {
+        const c = ATHR_COUNTRIES.find((x) => x.code === (code || "OM")) || ATHR_COUNTRIES[0];
+        return `${c.flag} ${c.name}`;
     }
 
     function reminderText(o) {
@@ -1782,7 +1831,8 @@
             `الوقت: ${when.time}`,
             `الاسم: ${o.customer_name || ""}`,
             `الهاتف: ${o.phone || ""}`,
-            `المحافظة: ${o.governorate || ""}`
+            `الدولة: ${countryLabel(o.country)}`,
+            `${(o.country || "OM") === "OM" ? "المحافظة" : "المدينة"}: ${o.governorate || ""}`
         ];
         if (o.wilaya) lines.push(`الولاية: ${o.wilaya}`);
         if (o.office) lines.push(`المكتب: ${o.office}`);
@@ -1833,7 +1883,10 @@
                     <label class="af"><span>الوقت</span><input class="ai" type="time" name="time" value="${when.time}"></label>
                 </div>
                 <label class="af"><span>اسم العميل</span><input class="ai" name="customer_name" value="${esc(o ? o.customer_name || "" : "")}"></label>
-                <label class="af"><span>رقم الهاتف</span><input class="ai" name="phone" type="tel" dir="ltr" value="${esc(o ? o.phone || "" : "")}"></label>
+                <div class="two">
+                    <label class="af"><span>الدولة</span><select class="ai" name="country">${ATHR_COUNTRIES.map((c) => `<option value="${c.code}"${(o ? o.country || "OM" : "OM") === c.code ? " selected" : ""}>${c.flag} ${esc(c.name)}</option>`).join("")}</select></label>
+                    <label class="af"><span>رقم الهاتف</span><input class="ai" name="phone" type="tel" dir="ltr" value="${esc(o ? o.phone || "" : "")}"></label>
+                </div>
                 <div class="two">
                     <label class="af"><span>المحافظة</span><input class="ai" name="governorate" list="govList" value="${esc(o ? o.governorate || "" : "")}"></label>
                     <label class="af"><span>الولاية</span><input class="ai" name="wilaya" value="${esc(o ? o.wilaya || "" : "")}"></label>
@@ -1879,7 +1932,8 @@
         const row = {
             ordered_at: new Date(`${v.date || toMuscatInputs().date}T${v.time || "12:00"}:00+04:00`).toISOString(),
             customer_name: String(v.customer_name || "").trim() || null,
-            phone: ATHR.localPhone(v.phone) || null,
+            country: v.country || "OM",
+            phone: v.phone ? (ATHR.parsePhone(v.phone, v.country || "OM").stored || null) : null,
             governorate: String(v.governorate || "").trim() || null,
             wilaya: String(v.wilaya || "").trim() || null,
             address: isOffice ? null : String(v.address || "").trim() || null,
@@ -1987,13 +2041,16 @@
             const office = get("المكتب");
             const deliveryText = get("التوصيل");
             const noMatch = get("رقم الطلب").match(/[A-Z]{1,4}-[0-9A-Z]{3,10}/i);
+            const countryText = get("الدولة");
+            const country = (ATHR_COUNTRIES.find((c) => countryText.includes(c.name) || countryText.includes(c.flag)) || ATHR_COUNTRIES[0]).code;
             return {
                 order_no: noMatch ? noMatch[0].toUpperCase() : null,
                 ordered_at: orderedAt,
                 source: "paste",
                 customer_name: get("الاسم") || null,
-                phone: ATHR.localPhone(get("الهاتف")) || null,
-                governorate: get("المحافظة") || null,
+                country,
+                phone: get("الهاتف") ? ATHR.parsePhone(get("الهاتف"), country).stored : null,
+                governorate: get("المحافظة") || get("المدينة") || null,
                 wilaya: get("الولاية") || null,
                 address: office ? null : (get("العنوان") || null),
                 office: office || null,

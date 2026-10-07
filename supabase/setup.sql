@@ -283,3 +283,11 @@ drop policy if exists "admin updates orders" on public.orders;
 create policy "admin updates orders" on public.orders for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 drop policy if exists "admin deletes orders" on public.orders;
 create policy "admin deletes orders" on public.orders for delete to authenticated using ((select public.is_admin()));
+
+-- =====================================================
+-- الإصدار 3: دول الخليج (وزن المنتج لحساب الشحن بالكيلو، ودولة الطلب)
+-- =====================================================
+alter table public.products
+    add column if not exists weight_g int check (weight_g is null or (weight_g between 1 and 50000));
+alter table public.orders
+    add column if not exists country text not null default 'OM' check (country ~ '^[A-Z]{2}$');
