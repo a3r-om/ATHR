@@ -291,3 +291,175 @@ alter table public.products
     add column if not exists weight_g int check (weight_g is null or (weight_g between 1 and 50000));
 alter table public.orders
     add column if not exists country text not null default 'OM' check (country ~ '^[A-Z]{2}$');
+
+-- =====================================================
+-- الإصدار 4: حماية إجمالي الطلبات من التلاعب
+-- قبل حفظ طلب من المتجر يُعاد حساب الأسعار والخصم والتوصيل والإجمالي
+-- من جدول المنتجات وإعدادات المتجر (نفس منطق ATHR.computeCart و ATHR.shippingFor
+-- في js/defaults.js؛ أي تغيير هناك يجب أن يُنقل إلى هنا).
+-- طلبات المدير (لصق / يدوي) لا تمر عليه.
+-- =====================================================
+create schema if not exists private;
+
+-- ما أرسله المتصفح يُحفظ للمقارنة فقط (يظهر لو أحد حاول التلاعب)
+alter table public.orders
+    add column if not exists client_total numeric(10,3);
+
+create or replace function private.athr_recompute_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    cfg        jsonb;
+    max_qty    int;
+    def_weight int;
+    it         jsonb;
+    pid        uuid;
+    qty        int;
+    p          record;
+    clean      jsonb := '[]'::jsonb;
+    qtys       jsonb := '{}'::jsonb;   -- product_id -> الكمية
+    prices     jsonb := '{}'::jsonb;   -- product_id -> السعر
+    remaining  jsonb;
+    v_subtotal numeric := 0;
+    v_discount numeric := 0;
+    v_after    numeric;
+    weight_g   numeric := 0;
+    b          jsonb;
+    pairs      int;
+    pct        numeric;
+    free_min   numeric;
+    free_list  jsonb;
+    is_free    boolean;
+    m          jsonb;
+    pay        jsonb;
+    ship       numeric := 0;
+begin
+    -- المدير يدخل طلبات يدوية وملصوقة بمبالغ يحددها بنفسه
+    if public.is_admin() then
+        return new;
+    end if;
+
+    select coalesce(config, '{}'::jsonb) into cfg from public.store_settings where id = 1;
+    max_qty    := coalesce(nullif(cfg #>> '{order,max_qty}', '')::int, 10);
+    def_weight := coalesce(nullif(cfg #>> '{order,default_weight_g}', '')::int, 400);
+
+    new.client_total := new.total;
+
+    -- 1) الأصناف: الاسم والسعر من جدول المنتجات، والكمية بين 1 والحد الأعلى
+    for it in select v from jsonb_array_elements(new.items) as e(v) loop
+        begin
+            pid := (it ->> 'id')::uuid;
+        exception when others then
+            raise exception 'athr: منتج غير صالح في الطلب' using errcode = '22023';
+        end;
+        qty := least(greatest(coalesce(nullif(it ->> 'qty', '')::numeric, 1)::int, 1), max_qty);
+
+        select pr.id, pr.name, pr.price, pr.color_id, pr.weight_g
+          into p
+          from public.products pr
+         where pr.id = pid and pr.is_visible;
+        if not found then
+            raise exception 'athr: المنتج غير موجود' using errcode = '22023';
+        end if;
+        if qtys ? pid::text then
+            raise exception 'athr: منتج مكرر في الطلب' using errcode = '22023';
+        end if;
+
+        qtys   := qtys   || jsonb_build_object(pid::text, qty);
+        prices := prices || jsonb_build_object(pid::text, p.price);
+        v_subtotal := v_subtotal + p.price * qty;
+        weight_g   := weight_g + coalesce(nullif(p.weight_g, 0), def_weight) * qty;
+
+        clean := clean || jsonb_build_array(jsonb_build_object(
+            'id', p.id,
+            'name', p.name,
+            'color', (select c.v ->> 'name' from jsonb_array_elements(coalesce(cfg -> 'colors', '[]')) as c(v)
+                       where c.v ->> 'id' = p.color_id limit 1),
+            'label', p.name || coalesce(' (' || (select c.v ->> 'name' from jsonb_array_elements(coalesce(cfg -> 'colors', '[]')) as c(v)
+                       where c.v ->> 'id' = p.color_id limit 1) || ')', ''),
+            'qty', qty,
+            'price', p.price,
+            'total', p.price * qty
+        ));
+    end loop;
+
+    -- 2) خصم الباقات: نفس ترتيب الإعدادات، وكل قطعة تدخل في باقة واحدة فقط
+    remaining := qtys;
+    for b in select v from jsonb_array_elements(coalesce(cfg #> '{sales,bundles}', '[]')) as e(v) loop
+        continue when coalesce((b ->> 'enabled')::boolean, false) is not true
+                   or coalesce(b ->> 'a', '') = '' or coalesce(b ->> 'b', '') = ''
+                   or b ->> 'a' = b ->> 'b';
+        continue when not exists (select 1 from public.products where id::text = b ->> 'a' and is_visible)
+                   or not exists (select 1 from public.products where id::text = b ->> 'b' and is_visible);
+        pairs := least(coalesce((remaining ->> (b ->> 'a'))::int, 0), coalesce((remaining ->> (b ->> 'b'))::int, 0));
+        continue when pairs <= 0;
+        pct := least(greatest(coalesce(nullif(b ->> 'pct', '')::numeric, 0), 0), 90);
+        v_discount := v_discount + pairs * (prices ->> (b ->> 'b'))::numeric * pct / 100;
+        remaining := remaining
+            || jsonb_build_object(b ->> 'a', (remaining ->> (b ->> 'a'))::int - pairs)
+            || jsonb_build_object(b ->> 'b', (remaining ->> (b ->> 'b'))::int - pairs);
+    end loop;
+    v_discount := round(v_discount, 3);
+    v_after := greatest(0, v_subtotal - v_discount);
+
+    -- 3) طريقة التوصيل: يجب أن تكون مفعّلة ومتاحة لدولة الطلب
+    select d.v into m
+      from jsonb_array_elements(coalesce(cfg #> '{order,delivery}', '[]')) as d(v)
+     where coalesce((d.v ->> 'enabled')::boolean, false)
+       and d.v ->> 'name' = new.delivery_name
+       and (jsonb_array_length(coalesce(d.v -> 'countries', '[]')) = 0 or d.v -> 'countries' ? new.country)
+     limit 1;
+    if m is null then
+        raise exception 'athr: طريقة التوصيل غير متاحة' using errcode = '22023';
+    end if;
+    new.delivery_type := case when m ->> 'type' = 'office' then 'office' else 'home' end;
+
+    -- 4) التوصيل المجاني
+    free_min  := coalesce(nullif(cfg #>> '{order,free_min}', '')::numeric, 0);
+    free_list := coalesce(cfg #> '{order,free_countries}', '[]');
+    is_free := coalesce((cfg #>> '{order,free_enabled}')::boolean, false)
+               and free_min > 0
+               and (jsonb_array_length(free_list) = 0 or free_list ? new.country)
+               and v_after >= free_min;
+
+    -- 5) سعر التوصيل: ثابت أو لكل كيلو (يُقرَّب لأعلى، والحد الأدنى كيلو)
+    if not is_free then
+        if m ->> 'pricing' = 'per_kg' then
+            ship := greatest(1, ceil(weight_g / 1000.0)) * coalesce(nullif(m ->> 'price', '')::numeric, 0);
+        else
+            ship := coalesce(nullif(m ->> 'price', '')::numeric, 0);
+        end if;
+    end if;
+
+    -- 6) طريقة الدفع: يجب أن تكون مفعّلة ومتاحة لدولة الطلب
+    select x.v into pay
+      from jsonb_array_elements(coalesce(cfg #> '{order,payments}', '[]')) as x(v)
+     where coalesce((x.v ->> 'enabled')::boolean, false)
+       and x.v ->> 'name' = new.payment_name
+       and (jsonb_array_length(coalesce(x.v -> 'countries', '[]')) = 0 or x.v -> 'countries' ? new.country)
+     limit 1;
+    if pay is null then
+        raise exception 'athr: طريقة الدفع غير متاحة' using errcode = '22023';
+    end if;
+    new.payment_type := case when pay ->> 'type' in ('cod', 'bank', 'online', 'other') then pay ->> 'type' else 'other' end;
+
+    -- 7) المبالغ النهائية من الخادم تحل محل ما أرسله المتصفح
+    new.items          := clean;
+    new.subtotal       := round(v_subtotal, 3);
+    new.discount       := v_discount;
+    new.delivery_price := round(ship, 3);
+    new.total          := round(v_after + ship, 3);
+    new.ordered_at     := now();
+    return new;
+end;
+$$;
+
+revoke execute on function private.athr_recompute_order() from public, anon, authenticated;
+
+drop trigger if exists athr_recompute_order on public.orders;
+create trigger athr_recompute_order
+    before insert on public.orders
+    for each row execute function private.athr_recompute_order();
