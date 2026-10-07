@@ -13,6 +13,8 @@ on:
       - "sitemap.xml"
       - "robots.txt"
       - "js/thumbs.js"
+      - "js/rates.js"
+      - "gift/**"
       - "images/t/**"
       - "cart/**"
       - "checkout/**"

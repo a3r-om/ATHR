@@ -439,3 +439,59 @@ html.theme-dark .tag.warn { background: #3A2A12; color: #F3C987; }
 .ai-up .ab-mini { position: absolute; top: 4px; inset-inline-end: 4px; min-width: 0; padding: 0 7px; }
 .ai-out img { width: 100%; border-radius: 12px; display: block; background: var(--a-surface); }
 .ai-detail { display: block; margin-top: 6px; opacity: .75; font-size: 11.5px; word-break: break-word; }
+.adm-rate { min-height: 46px; display: flex; align-items: center; padding: 0 12px; border-radius: 12px; background: var(--a-bg); border: 1px dashed var(--a-line); font-weight: 700; font-size: 14.5px; }
+
+/* =====================================================
+   v8 — لوحة أسهل: رئيسية بمربعات، رجوع، شرائح بأيقونات
+===================================================== */
+.adm-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.adm-title h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-back { display: inline-flex; align-items: center; gap: 2px; height: 36px; padding: 0 10px 0 8px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .16); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.adm-back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.adm-top-actions .ab-light { white-space: nowrap; }
+@media (max-width: 400px) { .adm-top-actions [data-a="preview"] { display: none; } }
+
+.adm-chips button { display: inline-flex; align-items: center; gap: 6px; }
+.adm-chips svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.adm-orders-tile { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; border: 0; border-radius: 16px; background: var(--a-primary); color: #fff; font: inherit; text-align: start; cursor: pointer; box-shadow: 0 6px 18px rgba(125, 20, 32, .22); }
+.aot-ico { width: 46px; height: 46px; border-radius: 14px; background: rgba(255, 255, 255, .16); display: grid; place-items: center; flex-shrink: 0; }
+.aot-ico svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.aot-txt { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.aot-txt b { font-size: 16px; }
+.aot-txt small { font-size: 13px; opacity: .85; }
+.aot-txt small.hot { opacity: 1; font-weight: 800; color: #FFE3A3; }
+.aot-go svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transform: scaleX(-1); }
+
+.adm-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.aq { display: grid; justify-items: center; align-content: start; gap: 6px; padding: 12px 4px 10px; border: 1px solid var(--a-line); border-radius: 14px; background: var(--a-surface); color: var(--a-text); font: inherit; font-size: 12px; font-weight: 700; line-height: 1.35; text-align: center; cursor: pointer; }
+.aq svg { width: 24px; height: 24px; padding: 8px; box-sizing: content-box; border-radius: 12px; background: color-mix(in srgb, var(--a-primary) 9%, var(--a-surface)); fill: none; stroke: var(--a-primary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html.theme-dark .aq svg { stroke: #F1B7C0; }
+@media (max-width: 360px) { .adm-quick { grid-template-columns: repeat(2, 1fr); } }
+
+.adm-sec { font-size: 14px; color: var(--a-muted); margin: 6px 2px -2px !important; }
+.adm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ag { display: grid; align-content: start; gap: 4px; padding: 14px 12px; min-height: 118px; border: 1px solid var(--a-line); border-radius: 16px; background: var(--a-surface); color: var(--a-text); font: inherit; text-align: start; cursor: pointer; }
+.ag:active { transform: scale(.98); }
+.ag b { font-size: 15px; }
+.ag small { color: var(--a-muted); font-size: 12.5px; line-height: 1.45; }
+.ag-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 4px; background: color-mix(in srgb, var(--a-primary) 9%, var(--a-surface)); }
+.ag-ico svg { width: 23px; height: 23px; fill: none; stroke: var(--a-primary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html.theme-dark .ag-ico svg { stroke: #F1B7C0; }
+@media (min-width: 640px) { .adm-grid { grid-template-columns: repeat(4, 1fr); } }
+.adm-home-foot { display: flex; justify-content: center; gap: 8px; padding-top: 4px; }
+
+/* صف المنتج: صورة واسم، مفتاح الإظهار، وزر ⋯ */
+.prow { grid-template-columns: 1fr auto auto; gap: 8px; padding: 8px 0; }
+.prow-main { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.prow-main img { grid-row: auto; flex-shrink: 0; }
+.prow-info { display: grid; gap: 1px; min-width: 0; }
+.prow-tags { display: flex; gap: 4px; margin-top: 2px; }
+.vis-switch { position: relative; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 999px; background: var(--a-line); cursor: pointer; flex-shrink: 0; transition: background .15s; }
+.vis-switch span { position: absolute; top: 3px; inset-inline-start: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: inset-inline-start .15s; }
+.vis-switch[aria-checked="true"] { background: var(--a-ok); }
+.vis-switch[aria-checked="true"] span { inset-inline-start: 21px; }
+.prow-more { padding: 0; width: 36px; display: grid; place-items: center; }
+.prow-more svg { width: 20px; height: 20px; fill: currentColor; }
+.prow-menu { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; padding: 8px; border-radius: 12px; background: var(--a-bg); }
+.prow.open { background: color-mix(in srgb, var(--a-primary) 4%, transparent); }

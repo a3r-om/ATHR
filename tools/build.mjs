@@ -52,6 +52,55 @@ function writeFile(rel, content) {
 }
 
 // =====================================================
+// أسعار صرف عملات الخليج (تُحدَّث تلقائيًا مع كل بناء)
+// مصدر مجاني بدون مفتاح، ويُرفض أي سعر غريب (فرق أكثر من 30% عن السعر المرجعي)
+// =====================================================
+
+const RATE_URLS = [
+    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/omr.json",
+    "https://latest.currency-api.pages.dev/v1/currencies/omr.json"
+];
+
+function readRatesFile() {
+    for (const dir of [OUT, ROOT]) {
+        try {
+            const src = fs.readFileSync(path.join(dir, "js/rates.js"), "utf8");
+            return JSON.parse(src.replace(/^window\.ATHR_RATES\s*=\s*/, "").replace(/;\s*$/, ""));
+        } catch {
+            /* جرّب المكان التالي */
+        }
+    }
+    return null;
+}
+
+async function fetchRates(reference) {
+    const previous = readRatesFile();
+    if (args["no-rates"]) return previous;
+    for (const url of RATE_URLS) {
+        try {
+            const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+            if (!res.ok) continue;
+            const json = await res.json();
+            const src = json && json.omr;
+            if (!src) continue;
+            const rates = {};
+            let ok = true;
+            for (const [code, ref] of Object.entries(reference)) {
+                const r = Number(src[code.toLowerCase()]);
+                if (!(r > 0) || !Number.isFinite(r) || Math.abs(r - ref) / ref > 0.3) { ok = false; break; }
+                rates[code] = Math.round(r * 10000) / 10000;
+            }
+            if (!ok) continue;
+            return { date: String(json.date || "").slice(0, 10), rates };
+        } catch {
+            /* نجرب المصدر التالي */
+        }
+    }
+    if (previous) console.warn("! تعذر تحديث أسعار الصرف، أبقيت آخر أسعار محفوظة");
+    return previous;
+}
+
+// =====================================================
 // DATA
 // =====================================================
 
@@ -224,6 +273,15 @@ async function main() {
     sandbox.ATHR_THUMBS = thumbs;
     writeFile("js/thumbs.js", `window.ATHR_THUMBS=${JSON.stringify(thumbs)};\n`);
 
+    // أسعار الصرف اليومية
+    const reference = Object.fromEntries(ATHR.countries({ order: {} }).filter((c) => c.code !== ATHR.BASE_COUNTRY).map((c) => [c.currency, c.rate]));
+    const rates = await fetchRates(reference);
+    if (rates) {
+        writeFile("js/rates.js", `window.ATHR_RATES=${JSON.stringify(rates)};\n`);
+        sandbox.ATHR_RATES = rates;
+    }
+    const ratesSrc = exists(path.join(OUT, "js/rates.js")) ? fs.readFileSync(path.join(OUT, "js/rates.js"), "utf8") : "";
+
     const v = V.ctx({ cfg, products, categories, reviews: data.reviews || [], country: ATHR.BASE_COUNTRY, prerender: true });
     const mediaBy = new Map();
     media.forEach((m) => {
@@ -306,6 +364,7 @@ async function main() {
         V_VIEWS: hashOf(read("js/views.js")),
         V_I18N: hashOf(read("js/i18n-en.js")),
         V_THUMBS: hashOf(JSON.stringify(thumbs)),
+        V_RATES: hashOf(ratesSrc),
         V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"))
     };
     const colors = ATHR.themeColors(cfg);
@@ -320,7 +379,7 @@ async function main() {
         if (cfg.texts.announce_show && cfg.texts.announce_text) parts.push(`<div class="bar bar-announce">${esc(fill(cfg.texts.announce_text))}</div>`);
         const freeMin = Number(cfg.order.free_min) || 0;
         const eligible = Boolean(cfg.order.free_enabled) && freeMin > 0 && ATHR.freeAppliesTo(cfg, ATHR.BASE_COUNTRY);
-        if (cfg.sales.free_bar_show && eligible && !["done", "checkout"].includes(route)) {
+        if (cfg.sales.free_bar_show && eligible && !["done", "checkout", "gift"].includes(route)) {
             parts.push(`<div class="bar bar-ship"><div>${esc(fill(cfg.sales.free_before))}</div></div>`);
         }
         return parts.join("");
@@ -350,7 +409,7 @@ async function main() {
             VIEW_ATTRS: prerendered ? ' data-prerendered="1"' : "",
             VIEW: view,
             FOOTER: footerHTML,
-            WA_CLASS: ["product", "cart", "checkout", "done", "review"].includes(route) ? " off" : "",
+            WA_CLASS: ["product", "cart", "checkout", "done", "review", "gift"].includes(route) ? " off" : "",
             WA_ATTRS: waOk ? `href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(cfg.contact.wa_float_msg)))}"` : "hidden",
             ...versions
         };
@@ -593,7 +652,7 @@ async function main() {
         if (cfg.contact.policy_show) addUrl(url);
     }
 
-    ["cart", "checkout", "done", "review", "search"].forEach((route) => {
+    ["cart", "checkout", "done", "review", "search", "gift"].forEach((route) => {
         writeFile(`${route}/index.html`, page({
             route,
             headHTML: head({ title: V.titles(v, { name: route }), robots: "noindex,follow" }),

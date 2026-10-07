@@ -667,3 +667,9 @@ revoke execute on function public.ai_secret(text) from public, anon, authenticat
 grant execute on function public.ai_secret(text) to service_role;
 
 -- دالة السيرفر: supabase/functions/ai-image (تُنشر بدون verify_jwt لأنها تتحقق من المدير بنفسها)
+
+-- =====================================================
+-- الإصدار 8: مناسبة الهدية (لبطاقة الإهداء الرقمية)
+-- =====================================================
+alter table public.orders
+    add column if not exists gift_occasion text check (gift_occasion is null or gift_occasion ~ '^[a-z_]{2,20}$');

@@ -17,7 +17,8 @@
         view: null,
         server: null,
         draft: null,
-        tab: "products",
+        tab: "home",
+        rowMenu: null,
         editing: null,
         productFilter: "",
         errors: [],
@@ -47,15 +48,33 @@
     };
 
     const TABS = [
-        ["products", "المنتجات"],
-        ["ad", "الإعلان"],
-        ["catalog", "الأقسام والألوان"],
-        ["look", "المظهر"],
-        ["texts", "النصوص"],
-        ["order", "الطلب والتوصيل"],
-        ["sales", "المبيعات"],
-        ["contact", "التواصل والآراء"]
+        ["products", "المنتجات", "box", "إضافة وتعديل المنتجات والصور والأسعار"],
+        ["ad", "الإعلان", "megaphone", "صورة أو فيديو أعلى المتجر"],
+        ["catalog", "الأقسام والألوان", "grid", "أقسام المتجر وصورها وألوان المنتجات"],
+        ["look", "المظهر", "palette", "الألوان والخطوط والشعار والوضع الداكن"],
+        ["texts", "النصوص", "text", "العناوين والجمل ورسائل واتساب"],
+        ["order", "الطلب والتوصيل", "truck", "التوصيل والدفع والدول والعملات"],
+        ["sales", "المبيعات والهدايا", "tag", "الخصومات والعروض والهدايا"],
+        ["contact", "التواصل والآراء", "chat", "واتساب والقائمة وآراء العملاء"]
     ];
+
+    const ICONS = {
+        box: '<path d="M12 3.2 20 7.6v8.8l-8 4.4-8-4.4V7.6l8-4.4Z"/><path d="M4 7.6 12 12l8-4.4M12 12v8.8"/>',
+        megaphone: '<path d="M4 10.5v3a1.5 1.5 0 0 0 1.5 1.5H7l5 4V5L7 9H5.5A1.5 1.5 0 0 0 4 10.5Z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/>',
+        grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>',
+        palette: '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.3 0 1.9-.9 1.6-2-.3-1.3.5-2.3 1.8-2.3h1.9a3.2 3.2 0 0 0 3.2-3.2C20.5 7.2 16.7 3.5 12 3.5Z"/><circle cx="7.8" cy="11" r="1.1"/><circle cx="10.5" cy="7.5" r="1.1"/><circle cx="14.8" cy="7.8" r="1.1"/>',
+        text: '<path d="M5 6.5V5h14v1.5M12 5v14M9 19h6"/>',
+        truck: '<path d="M3 6.5h11v9H3zM14 9.5h3.6l3 3.2v2.8H14"/><circle cx="7" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/>',
+        tag: '<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.7 6.7a1.4 1.4 0 0 1-2 0l-8.3-8.3Z"/><circle cx="8.2" cy="8.2" r="1.5"/>',
+        chat: '<path d="M4 5.5h16v10H9l-5 4v-14Z"/><path d="M8 9.5h8M8 12.5h5"/>',
+        receipt: '<path d="M6 3.5h12v17l-2.5-1.6-2 1.6-1.5-1.6-1.5 1.6-2-1.6L6 20.5v-17Z"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
+        plus: '<path d="M12 5v14M5 12h14"/>',
+        sparkle: '<path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8 1.8-5Z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/>',
+        eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
+        back: '<path d="M9.5 6l6 6-6 6"/>',
+        dots: '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>'
+    };
+    const icon = (key) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key] || ""}</svg>`;
 
     // خطوط بسيطة وواضحة ومشهورة تدعم العربي والإنجليزي
     const SIMPLE_FONTS = ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Almarai", "Rubik", "Alexandria", "Vazirmatn", "Noto Sans Arabic", "Noto Kufi Arabic", "Noto Naskh Arabic", "Readex Pro", "Mada", "Changa", "Zain", "Baloo Bhaijaan 2"];
@@ -335,7 +354,9 @@
         root().innerHTML = `
             <div class="adm-shell">
                 <header class="adm-top">
-                    <h1>لوحة التحكم</h1>
+                    ${A.tab === "home"
+                        ? `<h1>لوحة التحكم</h1>`
+                        : `<div class="adm-title"><button class="adm-back" type="button" data-tab="home" aria-label="رجوع للرئيسية">${icon("back")}<span>الرئيسية</span></button><h1>${esc(tabLabel(A.tab))}</h1></div>`}
                     <div class="adm-top-actions">
                         <button class="ab ab-light ab-sm" type="button" data-a="preview">معاينة المتجر</button>
                         <button class="adm-icon" type="button" data-a="account" aria-label="الحساب">
@@ -344,9 +365,9 @@
                         <button class="adm-icon" type="button" data-a="close" aria-label="إغلاق">×</button>
                     </div>
                 </header>
-                <nav class="adm-tabs" role="tablist" aria-label="أقسام اللوحة">
-                    ${TABS.map(([id, label]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${A.tab === id}">${label}</button>`).join("")}
-                </nav>
+                ${A.tab === "home" ? "" : `<nav class="adm-tabs adm-chips" role="tablist" aria-label="أقسام اللوحة">
+                    ${TABS.map(([id, label, ic]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${A.tab === id}">${icon(ic)}${label}</button>`).join("")}
+                </nav>`}
                 <main class="adm-body" id="admBody"></main>
                 <footer class="adm-foot">
                     <span class="adm-status" id="admStatus"></span>
@@ -359,6 +380,7 @@
             <div class="adm-sheet" id="admSheet" hidden></div>`;
         renderTab();
         renderStatus();
+        $(".adm-chips [aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center" });
     }
 
     function renderTab({ keepScroll = false } = {}) {
@@ -368,13 +390,60 @@
         $$(".adm-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === A.tab)));
         const errors = A.errors.length ? `<div class="adm-errors" role="alert"><strong>لم يتم النشر. صحّح التالي:</strong><ul>${A.errors.map((e) => `<li><button type="button" class="adm-link" data-tab="${e.tab}">${esc(tabLabel(e.tab))}</button>: ${esc(e.msg)}</li>`).join("")}</ul></div>` : "";
         const banner = isDirty() && !A.errors.length ? `<div class="adm-note">لديك تعديلات غير منشورة. لن يراها الزبائن حتى تضغط «نشر التغييرات».</div>` : "";
-        const views = { products: tabProducts, ad: tabAd, catalog: tabCatalog, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, contact: tabContact };
+        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, contact: tabContact };
         body.innerHTML = errors + banner + views[A.tab]();
         if (keepScroll) body.scrollTop = scroll;
         else body.scrollTop = 0;
+        if (A.tab === "home") loadHomeCounts();
     }
 
-    const tabLabel = (id) => (TABS.find((t) => t[0] === id) || [id, id])[1];
+    const tabLabel = (id) => (id === "home" ? "الرئيسية" : (TABS.find((t) => t[0] === id) || [id, id])[1]);
+
+    // =====================================================
+    // HOME: صفحة رئيسية واضحة بمربعات كبيرة واختصارات سريعة
+    // =====================================================
+
+    function tabHome() {
+        const products = A.draft.products;
+        const hidden = products.filter((p) => !p.is_visible).length;
+        const out = products.filter((p) => !p.is_available).length;
+        const quick = [
+            ["add-product", "plus", "إضافة منتج"],
+            ["ai-new-product", "sparkle", "منتج بصورة ذكاء اصطناعي"],
+            ["ai-ad", "sparkle", "صورة إعلانية بالذكاء"],
+            ["preview", "eye", "معاينة المتجر"]
+        ];
+        return `
+            <button class="adm-orders-tile" type="button" data-a="open-orders">
+                <span class="aot-ico">${icon("receipt")}</span>
+                <span class="aot-txt"><b>الطلبات والتقييمات والأداء</b><small id="homeOrders">دفتر الطلبيات</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>
+            <div class="adm-quick">${quick.map(([a, ic, label]) => `<button class="aq" type="button" data-a="${a}">${icon(ic)}<span>${label}</span></button>`).join("")}</div>
+            <h2 class="adm-sec">أقسام المتجر</h2>
+            <div class="adm-grid">${TABS.map(([id, label, ic, hint]) => `<button class="ag" type="button" data-tab="${id}">
+                <span class="ag-ico">${icon(ic)}</span>
+                <b>${label}</b>
+                <small>${id === "products" ? `${products.length} منتج${hidden ? ` · ${hidden} مخفي` : ""}${out ? ` · ${out} نفد` : ""}` : hint}</small>
+            </button>`).join("")}</div>
+            <div class="adm-home-foot">
+                <button class="ab-mini" type="button" data-a="account">الحساب وكلمة المرور</button>
+                <button class="ab-mini" type="button" data-a="signout">تسجيل الخروج</button>
+            </div>`;
+    }
+
+    async function loadHomeCounts() {
+        try {
+            const { data, error } = await sb.from("orders").select("id,status,hidden").eq("status", "new").limit(500);
+            const el = $("#homeOrders");
+            if (error || !el) return;
+            const n = (data || []).filter((o) => !o.hidden).length;
+            el.textContent = n ? `${n === 1 ? "طلب جديد واحد" : n === 2 ? "طلبان جديدان" : `${n} طلبات جديدة`} بانتظارك` : "لا توجد طلبات جديدة الآن";
+            el.classList.toggle("hot", n > 0);
+        } catch {
+            /* العدد اختياري */
+        }
+    }
 
     // ---------- form helpers ----------
 
@@ -475,22 +544,26 @@
                 <input class="ai" type="search" id="productFilter" placeholder="ابحث باسم المنتج أو القسم" value="${esc(A.productFilter)}">
                 <ul class="plist">
                     ${list.map(({ p, i }) => `
-                        <li class="prow${p.is_visible ? "" : " is-hidden"}">
-                            <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
-                            <div class="prow-info">
-                                <b>${esc(p.name || "منتج بدون اسم")}</b>
-                                <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}${p.is_visible ? "" : " · مخفي"}${p.is_available ? "" : " · نفد"}</span>
-                            </div>
-                            <div class="prow-actions">
-                                <button type="button" class="ab ab-soft ab-sm" data-edit="${esc(p.id)}">كل التفاصيل</button>
-                                ${q ? "" : `<button type="button" class="ab-mini" data-move="products" data-i="${i}" data-dir="-1" aria-label="تحريك للأعلى"${i === 0 ? " disabled" : ""}>▲</button>
-                                <button type="button" class="ab-mini" data-move="products" data-i="${i}" data-dir="1" aria-label="تحريك للأسفل"${i === products.length - 1 ? " disabled" : ""}>▼</button>`}
-                                <button type="button" class="ab-mini" data-toggle-visible="${esc(p.id)}">${p.is_visible ? "إخفاء" : "إظهار"}</button>
+                        <li class="prow${p.is_visible ? "" : " is-hidden"}${A.rowMenu === p.id ? " open" : ""}">
+                            <button type="button" class="prow-main" data-edit="${esc(p.id)}">
+                                <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
+                                <span class="prow-info">
+                                    <b>${esc(p.name || "منتج بدون اسم")}</b>
+                                    <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}</span>
+                                    ${p.is_visible && p.is_available ? "" : `<span class="prow-tags">${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}</span>`}
+                                </span>
+                            </button>
+                            <button type="button" class="vis-switch" role="switch" aria-checked="${p.is_visible}" data-toggle-visible="${esc(p.id)}" title="${p.is_visible ? "ظاهر في المتجر — اضغط للإخفاء" : "مخفي — اضغط للإظهار"}" aria-label="ظاهر في المتجر"><span></span></button>
+                            <button type="button" class="ab-mini prow-more" data-row-menu="${esc(p.id)}" aria-expanded="${A.rowMenu === p.id}" aria-label="خيارات أخرى">${icon("dots")}</button>
+                            ${A.rowMenu === p.id ? `<div class="prow-menu">
+                                ${q ? "" : `<button type="button" class="ab-mini" data-move="products" data-i="${i}" data-dir="-1"${i === 0 ? " disabled" : ""}>▲ للأعلى</button>
+                                <button type="button" class="ab-mini" data-move="products" data-i="${i}" data-dir="1"${i === products.length - 1 ? " disabled" : ""}>▼ للأسفل</button>`}
                                 <button type="button" class="ab-mini" data-copy-product="${esc(p.id)}">نسخ</button>
                                 <button type="button" class="ab-mini danger" data-del-product="${esc(p.id)}">حذف</button>
-                            </div>
+                            </div>` : ""}
                         </li>`).join("") || `<li class="adm-empty">لا توجد منتجات مطابقة.</li>`}
                 </ul>
+                <p class="adm-muted">اضغط على المنتج لتعديله. المفتاح يُظهر أو يخفي المنتج، و«⋯» للترتيب والنسخ والحذف.</p>
             </section>
             ${card("سعر موحّد", `
                 <div class="inline">
@@ -829,6 +902,7 @@
 
     function tabOrder() {
         const o = cfg().order;
+        const live = window.ATHR_RATES && window.ATHR_RATES.rates ? window.ATHR_RATES : null;
         const deliveries = o.delivery.map((d, i) => `<li class="item-card${d.enabled ? "" : " off"}">
             ${toggle(`config.order.delivery.${i}.enabled`, d.enabled ? "مفعّلة" : "متوقفة", { rerender: true })}
             ${text(`config.order.delivery.${i}.name`, "الاسم الذي يراه العميل")}
@@ -885,15 +959,23 @@
                 ${select("config.order.decimals", "عدد الخانات العشرية", [["3", "3 خانات (مثل 3.500)"], ["2", "خانتان"], ["1", "خانة واحدة"], ["0", "بدون كسور"]], { type: "number" })}
             </div>`)
             + card("دول الخليج والعملات", `
-                <ul class="items">${o.countries.map((c, i) => `<li class="item-card">
+                ${toggle("config.order.auto_rates", "تحديث أسعار الصرف تلقائياً كل يوم", { rerender: true, help: "تتغير أسعار العملات في المتجر حسب السوق بدون أي تدخل منك. أطفئه إذا تريد تكتب الأسعار بنفسك." })}
+                ${o.auto_rates !== false ? `<p class="adm-sentence">${live ? `آخر تحديث للأسعار: <b dir="ltr">${esc(live.date || "")}</b>` : "تُجلب الأسعار مع التحديث القادم للمتجر (خلال ساعة)."}</p>` : ""}
+                <ul class="items">${o.countries.map((c, i) => {
+                    const base = ATHR_COUNTRIES.find((x) => x.code === c.code) || c;
+                    const liveRate = live && live.rates[base.currency];
+                    return `<li class="item-card">
                     <b class="ctitle">${c.flag} ${esc(c.name)} <small class="adm-muted">${esc(c.currency_name)} (${esc(c.currency)})</small></b>
                     ${c.code === "OM" ? `<small class="adm-muted">العملة الأساسية للمتجر، والطلبات تُحسب بها.</small>` : `
                     ${toggle(`config.order.countries.${i}.enabled`, "متاحة في المتجر", { rerender: true })}
                     <div class="two">
                         ${text(`config.order.countries.${i}.symbol`, "رمز العملة", { max: 6 })}
-                        ${number(`config.order.countries.${i}.rate`, `سعر الصرف: 1 ر.ع = ؟ ${esc(c.symbol)}`, { step: "0.0001" })}
+                        ${o.auto_rates !== false && liveRate
+                            ? `<div class="af"><span>سعر الصرف اليوم (تلقائي)</span><div class="adm-rate" dir="ltr">1 OMR = ${esc(String(liveRate))} ${esc(base.currency)}</div></div>`
+                            : number(`config.order.countries.${i}.rate`, `سعر الصرف: 1 ر.ع = ؟ ${esc(c.symbol)}`, { step: "0.0001" })}
                     </div>`}
-                </li>`).join("")}</ul>`, "الزبون يختار دولته من أعلى المتجر فتظهر الأسعار بعملتها تقريباً، وتظهر له طرق التوصيل والدفع المتاحة لدولته فقط.")
+                </li>`;
+                }).join("")}</ul>`, "الزبون يختار دولته من أعلى المتجر فتظهر الأسعار بعملتها تقريباً، وتظهر له طرق التوصيل والدفع المتاحة لدولته فقط.")
             + card("التوصيل", `
                 <ul class="items">${deliveries}</ul>
                 <button class="ab ab-ghost ab-sm" type="button" data-add-item="config.order.delivery">+ إضافة طريقة توصيل</button>
@@ -950,7 +1032,9 @@
                 ${toggle("config.sales.upsell_show", "نافذة «أُضيف إلى سلتك» مع اقتراحات وإكمال الطقم", { help: "تقترح على الزبون إكمال الطقم ومنتجات مناسبة، وتوضح كم بقي للتوصيل المجاني أو للخصم التالي." })}`)
             + card("🎁 إرسال هدية لشخص", `
                 ${toggle("config.sales.gift_enabled", "تفعيل «هدية لشخص» في إتمام الطلب", { rerender: true, help: "يختار الزبون «لي» أو «هدية لشخص»، ثم يكتب رقمه ورقم المُهدى إليه واسمه وولايته وعنوانه ورسالة الهدية." })}
-                ${cfg().sales.gift_enabled ? `${toggle("config.sales.gift_button", "زر «أرسله هدية» في صفحة المنتج والسلة", { help: "زر واضح يأخذ الزبون مباشرة لطلب الهدية." })}
+                ${cfg().sales.gift_enabled ? `${toggle("config.sales.gift_banner", "بنر «أرسلها هدية لمن تحب» في الصفحة الرئيسية", { help: "بطاقة جذابة أعلى المتجر، ويظهر «أرسل هدية» أيضاً في القائمة ⋮." })}
+                ${toggle("config.sales.gift_card", "بطاقة إهداء رقمية للمُهدى إليه", { help: "صفحة جميلة يفتحها المُهدى إليه من جواله: صندوق هدية يتفتح، واسمه، والمناسبة، ورسالة الهدية، بدون أي سعر. يرسلها صاحب الهدية بعد الطلب، ورابطها يصلك في رسالة الطلب أيضاً." })}
+                ${toggle("config.sales.gift_button", "زر «أرسله هدية» في صفحة المنتج والسلة", { help: "زر واضح يأخذ الزبون مباشرة لطلب الهدية." })}
                 ${toggle("config.sales.gift_prepaid", "الهدايا بالدفع المسبق فقط", { help: "يُخفي «الدفع عند الاستلام» في طلبات الهدايا حتى لا يُطلب المبلغ من المُهدى إليه." })}` : ""}`,
                 "يصلك طلب الهدية في واتساب ولوحة الطلبات مع رقم صاحب الهدية ورقم المُهدى إليه، وتنبيه «لا تذكر السعر» لو طلبه الزبون.")
             + card("عناوين أقسام الصفحة الرئيسية", `
@@ -1834,7 +1918,13 @@
 
         if (d.tab) {
             A.tab = d.tab;
-            renderTab();
+            A.rowMenu = null;
+            renderPanel();
+            return;
+        }
+        if (d.rowMenu) {
+            A.rowMenu = A.rowMenu === d.rowMenu ? null : d.rowMenu;
+            renderTab({ keepScroll: true });
             return;
         }
 
@@ -1997,6 +2087,16 @@
         if (d.status) { A.filter.status = d.status; renderOrdersList(); return; }
         if (d.orderEdit) { openOrderForm(A.orders.find((o) => o.id === d.orderEdit)); return; }
         if (d.orderWa) { const o = A.orders.find((x) => x.id === d.orderWa); if (o) window.open(customerWa(o, ""), "_blank", "noopener"); return; }
+        if (d.orderGiftCard) {
+            const o = A.orders.find((x) => x.id === d.orderGiftCard);
+            if (o && o.gift_phone) {
+                const link = siteLink(ATHR.giftCardPath(o));
+                const from = String(o.customer_name || "").trim().split(/\s+/)[0];
+                const text = `🎁 ${from} أرسل لك هدية من ${ATHR.storeName(cfg())}! افتح بطاقتك: ${link}`;
+                window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), text), "_blank", "noopener");
+            }
+            return;
+        }
         if (d.orderWaGift) { const o = A.orders.find((x) => x.id === d.orderWaGift); if (o && o.gift_phone) window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), ""), "_blank", "noopener"); return; }
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
         if (d.orderCopy) { const o = A.orders.find((x) => x.id === d.orderCopy); if (o) ATHR.store.copyText(orderText(o), "نُسخ الطلب"); return; }
@@ -2123,7 +2223,7 @@
             if (!ATHR.paymentsFor(c, x.code).length) add("order", `لا توجد طريقة دفع مفعّلة لـ${x.name}.`);
         });
         c.order.countries.forEach((x) => {
-            if (x.code !== "OM" && x.enabled !== false && !(Number(x.rate) > 0)) add("order", `سعر صرف ${x.name} غير صحيح.`);
+            if (x.code !== "OM" && x.enabled !== false && !(Number(x.rate) > 0) && !ATHR.liveRates(c)) add("order", `سعر صرف ${x.name} غير صحيح.`);
         });
         const payments = c.order.payments.filter((p) => p.enabled);
         if (!payments.length) add("order", "لا توجد طريقة دفع مفعّلة.");
@@ -2221,7 +2321,7 @@
         A.errors = validate();
         if (A.errors.length) {
             A.tab = A.errors[0].tab;
-            renderTab();
+            renderPanel();
             toast("لم يتم النشر، راجع الأخطاء");
             return;
         }
@@ -2643,7 +2743,7 @@
                     ${giftTo(o) ? `<small class="adm-muted">صاحب الهدية</small>` : ""}
                     <b>${esc(o.customer_name || "بدون اسم")}</b>
                     ${o.phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : ""}
-                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
+                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${o.gift_occasion && o.gift_occasion !== "other" ? ` · ${esc(ATHR.giftOccasion(o.gift_occasion).emoji)} ${esc(ATHR.giftOccasion(o.gift_occasion).name)}` : ""}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
                     <b>${esc(o.gift_name || "")}</b>
                     ${o.gift_phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : ""}` : ""}
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
@@ -2671,6 +2771,7 @@
                     <button type="button" class="ab-mini" data-order-edit="${esc(o.id)}">ملاحظة وتعديل</button>
                     ${o.phone ? `<button type="button" class="ab-mini wa" data-order-wa="${esc(o.id)}">${giftTo(o) ? "واتساب صاحب الهدية" : "واتساب"}</button>` : ""}
                     ${giftTo(o) && o.gift_phone ? `<button type="button" class="ab-mini wa" data-order-wa-gift="${esc(o.id)}">واتساب المُهدى إليه</button>` : ""}
+                    ${giftTo(o) && o.gift_phone && cfg().sales.gift_card !== false ? `<button type="button" class="ab-mini wa" data-order-gift-card="${esc(o.id)}">💌 أرسل بطاقة الإهداء</button>` : ""}
                     ${o.status === "new" && o.phone ? `<button type="button" class="ab-mini" data-order-remind="${esc(o.id)}">تذكير بالطلب</button>` : ""}
                     ${o.status === "delivered" && o.phone ? `<button type="button" class="ab-mini wa" data-order-review="${esc(o.id)}">اطلب تقييم</button>` : ""}
                     <button type="button" class="ab-mini" data-order-copy="${esc(o.id)}">نسخ</button>
@@ -2735,8 +2836,10 @@
         if (o.notes) lines.push(`الملاحظات: ${o.notes}`);
         if (o.delivery_name) lines.push(`طريقة التوصيل: ${o.delivery_name}`);
         if (giftTo(o)) {
+            if (o.gift_occasion && o.gift_occasion !== "other") lines.push(`المناسبة: ${ATHR.giftOccasion(o.gift_occasion).name}`);
             if (o.gift_message) lines.push(`رسالة الهدية: ${o.gift_message}`);
             if (o.gift_hide_price) lines.push("لا تذكر السعر للمُهدى إليه");
+            if (cfg().sales.gift_card !== false) lines.push(`بطاقة الإهداء: ${siteLink(ATHR.giftCardPath(o))}`);
         } else if (o.gift) lines.push(`🎁 الطلب هدية${o.gift_message ? `: ${o.gift_message}` : ""}`);
         lines.push("المنتجات:", ...itemsList(o).map((l) => (l.startsWith("•") ? l : `• ${l}`)));
         if (Number(o.discount) > 0) lines.push(`${o.discount_label || "الخصم"}: -${money(o.discount)}`);

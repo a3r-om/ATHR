@@ -96,6 +96,7 @@ const ATHR_DEFAULTS = {
     order: {
         whatsapp: "",
         currency: "ر.ع",
+        auto_rates: true,
         decimals: 3,
         delivery: [
             { id: "home", enabled: true, name: "توصيل إلى البيت", type: "home", pricing: "fixed", price: 2, countries: ["OM"], note: "يصلك الطلب إلى باب بيتك.", duration: "2 إلى 4 أيام" },
@@ -137,6 +138,8 @@ const ATHR_DEFAULTS = {
         gift_enabled: true,
         gift_button: true,
         gift_prepaid: false,
+        gift_banner: true,
+        gift_card: true,
         best_title: "الأكثر طلباً",
         new_title: "وصل حديثاً",
         sets_title: "أطقم وهدايا بسعر أقل",
@@ -469,15 +472,25 @@ ATHR.productLabel = function (product, config) {
 ATHR.BASE_COUNTRY = "OM";
 
 // قائمة الدول بعد دمج إعداداتك (سعر الصرف، التفعيل) مع البيانات الثابتة
+// أسعار الصرف اليومية (js/rates.js يُحدَّث تلقائيًا مع بناء الصفحات)، إلا إذا اخترت الأسعار اليدوية
+ATHR.liveRates = function (config) {
+    const live = ATHR_ROOT.ATHR_RATES;
+    if (!live || !live.rates) return null;
+    if (config && config.order && config.order.auto_rates === false) return null;
+    return live;
+};
+
 ATHR.countries = function (config) {
     const saved = (config && config.order && config.order.countries) || [];
+    const live = ATHR.liveRates(config);
     return ATHR_COUNTRIES.map((base) => {
         const own = saved.find((c) => c && c.code === base.code) || {};
         const rate = Number(own.rate);
+        const auto = live ? Number(live.rates[base.currency]) : 0;
         return {
             ...base,
             enabled: base.code === ATHR.BASE_COUNTRY ? true : own.enabled !== false,
-            rate: base.code === ATHR.BASE_COUNTRY ? 1 : (rate > 0 ? rate : base.rate),
+            rate: base.code === ATHR.BASE_COUNTRY ? 1 : (auto > 0 ? auto : rate > 0 ? rate : base.rate),
             symbol: own.symbol || base.symbol
         };
     });
@@ -541,6 +554,59 @@ ATHR.customerWhatsapp = function (phone, code) {
     if ((code || "OM") === "OM" && digits.length === 8) return "968" + digits;
     return digits;
 };
+
+// =====================================================
+// الهدية: المناسبات، ورسائل مقترحة، وبطاقة الإهداء الرقمية
+// =====================================================
+
+ATHR.GIFT_OCCASIONS = [
+    { id: "birthday", emoji: "🎂", name: "عيد ميلاد", title: "عيد ميلاد سعيد", msgs: ["كل عام وأنت بخير، عسى أيامك كلها فرح 🎉", "عيد ميلاد سعيد يا أغلى الناس ❤️"], name_en: "Birthday", title_en: "Happy birthday", msgs_en: ["Happy birthday! Wishing you a year full of joy 🎉", "Happy birthday to someone very special ❤️"] },
+    { id: "graduation", emoji: "🎓", name: "تخرّج", title: "مبروك التخرج", msgs: ["مبروك التخرج! فخورين فيك 🎓", "ألف مبروك، والقادم أجمل بإذن الله ✨"], name_en: "Graduation", title_en: "Congratulations, graduate", msgs_en: ["Congratulations on your graduation! So proud of you 🎓", "Congrats, the best is yet to come ✨"] },
+    { id: "wedding", emoji: "💍", name: "زواج", title: "ألف مبروك", msgs: ["ألف مبروك، بالرفاه والبنين 💍", "مبروك الزواج، الله يتمم عليكم بخير ❤️"], name_en: "Wedding", title_en: "Congratulations", msgs_en: ["Congratulations on your wedding 💍", "Wishing you a lifetime of love and happiness ❤️"] },
+    { id: "newborn", emoji: "👶", name: "مولود جديد", title: "مبروك المولود", msgs: ["مبروك المولود، يتربى في عزّكم 👶", "الحمد لله على السلامة، ومبروك ما جاكم 🤍"], name_en: "New baby", title_en: "Congratulations on the new baby", msgs_en: ["Congratulations on your little one 👶", "Welcome to the world, little one 🤍"] },
+    { id: "eid", emoji: "🌙", name: "عيد", title: "عيدكم مبارك", msgs: ["عيدكم مبارك، وكل عام وأنتم بخير 🌙", "عساكم من عوّاده، وعيدكم سعيد ✨"], name_en: "Eid", title_en: "Eid Mubarak", msgs_en: ["Eid Mubarak! Wishing you joy and blessings 🌙", "Happy Eid to you and your family ✨"] },
+    { id: "thanks", emoji: "💐", name: "شكر وتقدير", title: "شكراً لك", msgs: ["شكراً لأنك موجود في حياتي 💐", "هدية بسيطة تعبيراً عن شكري وتقديري 🤍"], name_en: "Thank you", title_en: "Thank you", msgs_en: ["Thank you for being in my life 💐", "A small gift to say thank you 🤍"] },
+    { id: "other", emoji: "🎁", name: "بدون مناسبة", title: "وصلتك هدية", msgs: ["هدية بسيطة لشخص غالي ❤️", "حبيت أفرحك بهذي الهدية 🎁"], name_en: "Just because", title_en: "A gift for you", msgs_en: ["A little gift for someone special ❤️", "Just wanted to make you smile 🎁"] }
+];
+
+ATHR.giftOccasion = (id) => ATHR.GIFT_OCCASIONS.find((o) => o.id === id) || ATHR.GIFT_OCCASIONS[ATHR.GIFT_OCCASIONS.length - 1];
+
+function athrB64url(text) {
+    const bytes = new TextEncoder().encode(text);
+    let bin = "";
+    bytes.forEach((b) => { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function athrUnB64url(code) {
+    const bin = atob(String(code).replace(/-/g, "+").replace(/_/g, "/"));
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+}
+
+// محتوى البطاقة داخل الرابط نفسه (بدون أي سعر أو رقم هاتف)
+ATHR.giftCode = (card) => athrB64url(JSON.stringify({
+    t: String(card.to || "").slice(0, 60),
+    f: String(card.from || "").slice(0, 60),
+    m: String(card.msg || "").slice(0, 300),
+    o: String(card.occasion || "other").slice(0, 20)
+}));
+
+ATHR.giftDecode = function (code) {
+    try {
+        const d = JSON.parse(athrUnB64url(code || ""));
+        return { to: String(d.t || ""), from: String(d.f || ""), msg: String(d.m || ""), occasion: String(d.o || "other") };
+    } catch {
+        return null;
+    }
+};
+
+ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
+    to: order.gift_name,
+    from: String(order.customer_name || "").trim().split(/\s+/)[0],
+    msg: order.gift_message,
+    occasion: order.gift_occasion
+})}`);
 
 // الرقم كما يُكتب في الرسائل: رقم عماني محلي كما هو، وغيره بالمفتاح الدولي
 ATHR.phoneText = function (phone, code) {

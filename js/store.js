@@ -32,7 +32,8 @@
         channelLast: "athr_ch_last",
         sort: "athr_sort",
         lang: "athr_lang",
-        mode: "athr_mode"
+        mode: "athr_mode",
+        giftIntent: "athr_gift_intent"
     };
 
     // أسماء ولايات عُمان (اقتراحات فقط، ويمكن للعميل كتابة غيرها)
@@ -90,7 +91,8 @@
 
     const session = {
         get(key) { try { return sessionStorage.getItem(key); } catch { return null; } },
-        set(key, value) { try { sessionStorage.setItem(key, value); } catch { /* ignore */ } }
+        set(key, value) { try { sessionStorage.setItem(key, value); } catch { /* ignore */ } },
+        del(key) { try { sessionStorage.removeItem(key); } catch { /* ignore */ } }
     };
 
     const C = () => S.config;
@@ -504,7 +506,7 @@
         const totals = computeCart();
         const freeMin = Number(cfg.order.free_min) || 0;
         const routeName = S.route.name;
-        if (cfg.sales.free_bar_show && totals.freeEligible && freeMin > 0 && !["done", "checkout"].includes(routeName)) {
+        if (cfg.sales.free_bar_show && totals.freeEligible && freeMin > 0 && !["done", "checkout", "gift"].includes(routeName)) {
             let text;
             let pct = 0;
             let done = false;
@@ -521,9 +523,12 @@
             parts.push(`<div class="bar bar-ship${done ? " done" : ""}"><div>${esc(text)}</div>${totals.count ? `<div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><span style="width:${pct}%"></span></div>` : ""}</div>`);
         }
         if (cfg.sales.abandoned_show && S.returningGap >= 10 * 60 * 1000 && totals.count > 0
-            && !session.get(KEYS.cartBarClosed) && !["cart", "checkout", "done"].includes(routeName)) {
+            && !session.get(KEYS.cartBarClosed) && !["cart", "checkout", "done", "gift"].includes(routeName)) {
             const n = ATHR.isEn() ? (totals.count === 1 ? "1 item" : `${totals.count} items`) : totals.count === 1 ? "منتج واحد" : totals.count === 2 ? "منتجان" : `${totals.count} منتجات`;
             parts.push(`<div class="bar bar-cart"><span>${esc(fill(ct("sales.abandoned_text"), { n }))}</span><a href="${BASE}cart/">${esc(t("أكمل الطلب"))}</a><button type="button" data-close-cartbar aria-label="${esc(t("إخفاء"))}">×</button></div>`);
+        }
+        if (session.get(KEYS.giftIntent) && cfg.sales.gift_enabled && !["checkout", "done", "gift"].includes(routeName)) {
+            parts.push(`<div class="bar bar-gift">${V.icon.gift}<span>${esc(t("تجهّز هدية: اختر المنتج ثم اضغط «أرسله هدية»"))}</span>${totals.count ? `<a href="${BASE}checkout/?gift=1">${esc(t("أكمل الهدية"))}</a>` : ""}<button type="button" data-gift-cancel aria-label="${esc(t("إلغاء"))}">×</button></div>`);
         }
         const html = parts.join("");
         const bars = $("#bars");
@@ -552,6 +557,7 @@
             case "done": return { name: "done", no: params.get("no") || "" };
             case "review": return { name: "review", p: params.get("p") || "", o: params.get("o") || "" };
             case "search": return { name: "search", q: params.get("q") || "" };
+            case "gift": return { name: "gift", c: params.get("c") || "" };
             default: return { name: "notfound" };
         }
     }
@@ -626,6 +632,7 @@
             case "checkout": renderCheckout(); break;
             case "done": renderDone(route.no); break;
             case "review": renderReview(route); break;
+            case "gift": view.innerHTML = V.giftPage(v(), ATHR.giftDecode(route.c)); break;
             default: renderNotFound();
         }
 
@@ -634,7 +641,7 @@
         renderBars();
         renderBuyBar();
         const float = $("#waFloat");
-        float.classList.toggle("off", ["product", "cart", "checkout", "done", "review"].includes(route.name));
+        float.classList.toggle("off", ["product", "cart", "checkout", "done", "review", "gift"].includes(route.name));
         const input = $("#searchInput");
         if (route.name === "search" && document.activeElement !== input) input.value = route.q;
         if (route.name !== "search" && !hydrate && document.activeElement !== input) input.value = "";
@@ -911,6 +918,7 @@
             ${offerHTML}
             ${suggestions.length ? `<h3 class="added-title">${esc(ct("sales.related_title") || t("قد يعجبك أيضاً"))}</h3><div class="added-list">${suggestions.map((p) => miniItem(p)).join("")}</div>` : ""}
             <div class="added-actions">
+                ${cfg.sales.gift_enabled && session.get(KEYS.giftIntent) ? V.giftCta(vv, { href: `${BASE}checkout/?gift=1`, title: t("أكمل طلب الهدية"), sub: money(totals.afterDiscount) }) : ""}
                 <a class="btn btn-primary btn-block" href="${BASE}checkout/">${esc(t("إتمام الطلب"))} · ${money(totals.afterDiscount)}</a>
                 <a class="btn btn-ghost btn-block" href="${BASE}cart/">${esc(t("عرض السلة ({n})", { n: totals.count }))}</a>
                 <button class="link-btn" type="button" data-close-sheet>${esc(t("مواصلة التسوق"))}</button>
@@ -993,8 +1001,11 @@
         if (order.notes) out.push(`الملاحظات: ${order.notes}`);
         out.push(`طريقة التوصيل: ${order.delivery_name}`);
         if (giftTo) {
+            const occ = ATHR.giftOccasion(order.gift_occasion);
+            if (order.gift_occasion && order.gift_occasion !== "other") out.push(`المناسبة: ${occ.emoji} ${occ.name}`);
             if (order.gift_message) out.push(`رسالة الهدية: ${order.gift_message}`);
             if (order.gift_hide_price) out.push("🤫 لا تذكر السعر للمُهدى إليه");
+            if (cfg.sales.gift_card !== false) out.push(`💌 بطاقة الإهداء: ${new URL(ATHR.giftCardPath(order), location.origin).href}`);
         } else if (order.gift) {
             out.push("🎁 الطلب هدية");
             if (order.gift_message) out.push(`رسالة الهدية: ${order.gift_message}`);
@@ -1099,7 +1110,7 @@
                             </div>
                             <div class="cart-actions">
                                 <a class="btn btn-primary btn-block" href="${BASE}checkout/">${esc(t("متابعة الطلب"))}</a>
-                                ${cfg.sales.gift_enabled && cfg.sales.gift_button ? `<a class="btn btn-gift btn-block" href="${BASE}checkout/?gift=1">${V.icon.gift}${esc(t("أرسل الطلب هدية"))}</a>` : ""}
+                                ${cfg.sales.gift_enabled && cfg.sales.gift_button ? V.giftCta(v(), { href: `${BASE}checkout/?gift=1`, attrs: "data-gift-start", title: t("أرسل الطلب هدية") }) : ""}
                                 ${cfg.sales.wa_quick && wa ? `<button class="btn btn-wa btn-block" type="button" data-wa-cart>${V.waIcon()}${esc(t("اطلب عبر واتساب"))}</button>` : ""}
                                 <a class="link-btn center" href="${BASE}">${esc(t("مواصلة التسوق"))}</a>
                             </div>
@@ -1136,7 +1147,27 @@
     function giftMode(keep) {
         if (!giftOn()) return false;
         if (keep && keep.gift !== undefined) return keep.gift === "1";
-        return new URLSearchParams(location.search).get("gift") === "1";
+        return new URLSearchParams(location.search).get("gift") === "1" || Boolean(session.get(KEYS.giftIntent));
+    }
+
+    // «أرسل هدية» من الرئيسية أو القائمة أو السلة: نجهّز وضع الهدية
+    function giftStart() {
+        session.set(KEYS.giftIntent, "1");
+        closeSheet();
+        locStash.self = null;
+        locStash.gift = null;
+        if (computeCart().count) {
+            navigate(`${BASE}checkout/?gift=1`);
+            return;
+        }
+        if (S.route.name !== "home") navigate(`${BASE}#catalog`);
+        else document.getElementById("catalog")?.scrollIntoView({ block: "start", behavior: "smooth" });
+        renderBars();
+        toast(t("اختر الهدية ثم اضغط «أرسله هدية» 🎁"));
+    }
+
+    function giftEnd() {
+        session.del(KEYS.giftIntent);
     }
 
     function giftPayments(list, gift) {
@@ -1146,7 +1177,12 @@
     }
 
     const LOC_KEYS = ["wilaya", "gov", "address", "office"];
-    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country"];
+    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion"];
+
+    function giftSugs(occasion) {
+        const o = ATHR.giftOccasion(occasion);
+        return L(o, "msgs").map((m) => `<button type="button" class="sug" data-gift-sug="${esc(m)}">${esc(m)}</button>`).join("");
+    }
     const locStash = { self: null, gift: null };
 
     function locationField(c, saved, gift) {
@@ -1221,7 +1257,12 @@
                             ${field("gift_name", t("اسم المُهدى إليه"), `<input class="input" name="gift_name" maxlength="120" autocomplete="off" value="${esc(saved.gift_name || "")}" required>`)}
                             ${field("gift_phone", t("رقم المُهدى إليه"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="gift_phone" type="tel" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="${rule.example}" value="${esc(saved.gift_phone || "")}" required></span>`, esc(t("نتواصل معه لتنسيق التوصيل فقط.")))}
                             ${locationField(c, saved, true)}
-                            ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("مثال: كل عام وأنت بخير يا أحمد"))}">${esc(saved.gift_message || "")}</textarea>`, esc(t("نرفقها مع طلبك للمُهدى إليه.")))}
+                            <div class="field occ-field"><span>${esc(t("المناسبة"))}</span>
+                                <div class="occ-chips" role="radiogroup" aria-label="${esc(t("المناسبة"))}">${ATHR.GIFT_OCCASIONS.map((o) => `<label class="occ"><input type="radio" name="gift_occasion" value="${o.id}"${(saved.gift_occasion || "other") === o.id ? " checked" : ""}><span>${o.emoji} ${esc(L(o, "name"))}</span></label>`).join("")}</div>
+                            </div>
+                            ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("اكتب رسالتك أو اختر من المقترحات"))}">${esc(saved.gift_message || "")}</textarea>`)}
+                            <div class="msg-sugs" id="msgSugs">${giftSugs(saved.gift_occasion)}</div>
+                            ${cfg.sales.gift_card !== false ? `<p class="gift-card-note">💌 ${esc(t("يستلم المُهدى إليه بطاقة إهداء رقمية جميلة فيها اسمه ورسالتك، ترسلها له بعد تأكيد الطلب."))}</p>` : ""}
                             <label class="check-line"><input type="checkbox" name="gift_hide_price" value="1"${hidePrice ? " checked" : ""}><span>${esc(t("لا تذكر السعر للمُهدى إليه"))}</span></label>
                         </div>` : ""}
                         <div class="panel form">
@@ -1442,6 +1483,7 @@
             gift_name: gift ? String(values.gift_name || "").trim().slice(0, 120) : null,
             gift_phone: gift ? giftPhone.stored : null,
             gift_hide_price: gift && Boolean(values.gift_hide_price),
+            gift_occasion: gift ? ATHR.giftOccasion(values.gift_occasion).id : null,
             delivery_name: d.name,
             delivery_type: d.type === "office" ? "office" : "home",
             delivery_price: tt.ship,
@@ -1489,6 +1531,7 @@
         }
         locStash.self = null;
         locStash.gift = null;
+        giftEnd();
 
         track("order");
         const message = orderMessage({ ...order, ship_kg: tt.kg });
@@ -1507,6 +1550,29 @@
     function deliveryName(name) {
         const d = (C().order.delivery || []).find((x) => x.name === name);
         return d ? L(d, "name") : name;
+    }
+
+    // بطاقة الإهداء الرقمية بعد طلب الهدية: معاينة وإرسال للمُهدى إليه عبر واتساب
+    function giftDoneHTML(order, code) {
+        const cfg = C();
+        if (!order.gift || !order.gift_name || cfg.sales.gift_card === false) return "";
+        const occ = ATHR.giftOccasion(order.gift_occasion);
+        const cardUrl = new URL(ATHR.giftCardPath(order), location.origin).href;
+        const from = String(order.customer_name || "").trim().split(/\s+/)[0];
+        const text = t("🎁 {from} أرسل لك هدية من {store}! افتح بطاقتك: {link}", { from, store: ATHR.storeName(cfg), link: cardUrl });
+        const wa = order.gift_phone ? ATHR.waLink(ATHR.customerWhatsapp(order.gift_phone, code), text) : "";
+        return `<div class="panel gift-done">
+            <div class="gd-card">
+                <span class="gd-emoji" aria-hidden="true">${occ.emoji}</span>
+                <div><b>${esc(t("بطاقة إهداء لـ{name}", { name: order.gift_name }))}</b><small>${esc(order.gift_message || L(occ, "title"))}</small></div>
+            </div>
+            ${wa ? `<a class="btn btn-wa btn-block" href="${esc(wa)}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("أرسل البطاقة لـ{name} عبر واتساب", { name: order.gift_name }))}</a>` : ""}
+            <div class="gd-row">
+                <a class="link-btn" href="${esc(cardUrl)}" target="_blank" rel="noopener">${esc(t("معاينة البطاقة"))}</a>
+                <button class="link-btn" type="button" data-copy="${esc(cardUrl)}">${esc(t("نسخ رابط البطاقة"))}</button>
+            </div>
+            <p class="muted small">${esc(t("أرسلها الآن، أو احتفظ بالرابط وأرسلها يوم وصول الهدية."))}</p>
+        </div>`;
     }
 
     function renderDone(no) {
@@ -1534,6 +1600,7 @@
                     ${isOnline ? `<a class="btn btn-primary btn-block" href="${esc(payment.link)}" target="_blank" rel="noopener">${esc(t("ادفع الآن ({amount})", { amount: money(order.total) }))}</a>` : ""}
                     ${payment && payment.type === "bank" ? `<div><p class="muted" style="font-weight:500">${esc(t("حوّل {amount}:", { amount: `${money(order.total)}${code === "OM" ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, code)})`}` }))}</p>${bankRows(payment)}</div>` : ""}
                 </div>
+                ${giftDoneHTML(order, code)}
                 <div class="panel">
                     <h2>${esc(t("ملخص الطلب"))}</h2>
                     <div class="rows">
@@ -1654,44 +1721,62 @@
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp);
         const multi = ATHR.countries(cfg).filter((c) => c.enabled).length > 1;
         const cur = CC();
+        const chev = `<span class="mchev">${V.icon.side}</span>`;
+        const row = (inner, { href = "", attrs = "", cls = "" } = {}) => href
+            ? `<a class="mrow${cls}" href="${href}" ${attrs}>${inner}${chev}</a>`
+            : `<button class="mrow${cls}" type="button" ${attrs}>${inner}${chev}</button>`;
+        const ico = (svg, extra = "") => `<span class="mi${extra}">${svg}</span>`;
         const parts = [];
         if (cfg.contact.menu_show || S.isAdmin) {
+            const main = [];
+            if (cfg.contact.menu_home !== false) main.push(row(`${ico(V.icon.home)}<span class="ml">${esc(t("الصفحة الرئيسية"))}</span>`, { href: BASE }));
             if (cats.length) {
-                parts.push(`<button class="menu-toggle" type="button" data-menu-cats aria-expanded="${menuCatsOpen}" aria-controls="menuCats">
-                        <span>${esc(t("تسوّق حسب القسم"))}</span><small>${cats.length}</small>${V.icon.chevron}
-                    </button>
+                main.push(`<button class="mrow" type="button" data-menu-cats aria-expanded="${menuCatsOpen}" aria-controls="menuCats">${ico(V.icon.grid)}<span class="ml">${esc(t("تسوّق حسب القسم"))}</span><small class="mval">${cats.length}</small><span class="mchev down">${V.icon.chevron}</span></button>
                     <div class="menu-cats" id="menuCats"${menuCatsOpen ? "" : " hidden"}>${cats.map((c) => {
                         const img = V.categoryImage(vv, c);
-                        return `<a class="menu-cat" href="${ATHR.url.category(c)}"><span class="mc-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" width="44" height="44">` : ""}</span><span class="mc-name">${esc(V.cname(c))}</span></a>`;
+                        return `<a class="menu-cat" href="${ATHR.url.category(c)}"><span class="mc-img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" width="40" height="40">` : ""}</span><span class="mc-name">${esc(V.cname(c))}</span><small class="mc-n">${vv.counts.get(c.id)}</small></a>`;
                     }).join("")}</div>`);
             }
-            const acts = [];
-            if (cfg.contact.menu_home !== false) acts.push(`<a class="menu-act" href="${BASE}"><span class="ma-ico">${V.icon.home}</span><span>${esc(t("الصفحة الرئيسية"))}</span></a>`);
-            if (wa) acts.push(`<a class="menu-act" href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(ct("contact.wa_float_msg"))))}" target="_blank" rel="noopener"><span class="ma-ico wa">${V.waIcon()}</span><span>${esc(t("تواصل معنا عبر واتساب"))}</span></a>`);
-            if (cfg.contact.policy_show) acts.push(`<a class="menu-act" href="${BASE}shipping/"><span class="ma-ico">${V.icon.truck}</span><span>${esc(t("التوصيل والدفع"))}</span></a>`);
-            if (multi) acts.push(`<button class="menu-act" type="button" data-open-currency><span class="ma-ico flag">${esc(cur.flag)}</span><span>${esc(t("الدولة والعملة"))}</span><small>${esc(ATHR.isEn() ? cur.currency : cur.symbol)}</small></button>`);
-            acts.push(`<button class="menu-act" type="button" data-set-lang="${ATHR.isEn() ? "ar" : "en"}"><span class="ma-ico lang" aria-hidden="true">${ATHR.isEn() ? "ع" : "EN"}</span><span lang="${ATHR.isEn() ? "ar" : "en"}">${ATHR.isEn() ? "العربية" : "English"}</span></button>`);
-            parts.push(`<div class="menu-acts">${acts.join("")}</div>`);
+            if (cfg.sales.gift_enabled) main.push(row(`${ico(V.icon.gift, " gift")}<span class="ml">${esc(t("أرسل هدية"))}<small>${esc(V.giftSub(vv))}</small></span>`, { attrs: "data-gift-start", cls: " mrow-gift" }));
+            if (cfg.contact.policy_show) main.push(row(`${ico(V.icon.truck)}<span class="ml">${esc(t("التوصيل والدفع"))}</span>`, { href: `${BASE}shipping/` }));
+            parts.push(`<div class="mgroup">${main.join("")}</div>`);
+
+            const settings = [];
+            settings.push(`<div class="mrow mrow-set">${ico(V.icon.globe)}<span class="ml">${esc(t("اللغة"))}</span>
+                <span class="mini-seg" role="group" aria-label="${esc(t("اللغة"))}">
+                    <button type="button" data-set-lang="ar" aria-pressed="${!ATHR.isEn()}" lang="ar">العربية</button>
+                    <button type="button" data-set-lang="en" aria-pressed="${ATHR.isEn()}" lang="en">English</button>
+                </span></div>`);
+            if (multi) settings.push(row(`<span class="mi flag">${esc(cur.flag)}</span><span class="ml">${esc(t("الدولة والعملة"))}</span><small class="mval">${esc(ATHR.isEn() ? cur.currency : cur.symbol)}</small>`, { attrs: "data-open-currency" }));
             if (cfg.theme.visitor_mode !== false) {
                 const mode = document.documentElement.dataset.mode || "auto";
-                const opt = (m, icon, label) => `<button type="button" data-set-mode="${m}" aria-pressed="${mode === m}">${icon}<span>${esc(t(label))}</span></button>`;
-                parts.push(`<p class="menu-label">${esc(t("المظهر"))}</p>
-                    <div class="mode-seg" role="group" aria-label="${esc(t("المظهر"))}">
-                        ${opt("light", V.icon.sun, "فاتح")}${opt("dark", V.icon.moon, "داكن")}${opt("auto", V.icon.auto, "تلقائي")}
-                    </div>`);
+                const opt = (m, icon, label) => `<button type="button" data-set-mode="${m}" aria-pressed="${mode === m}" aria-label="${esc(t(label))}">${icon}<span>${esc(t(label))}</span></button>`;
+                settings.push(`<div class="mrow mrow-set">${ico(mode === "dark" ? V.icon.moon : V.icon.sun)}<span class="ml">${esc(t("المظهر"))}</span>
+                    <span class="mini-seg mode-seg" role="group" aria-label="${esc(t("المظهر"))}">${opt("light", V.icon.sun, "فاتح")}${opt("dark", V.icon.moon, "داكن")}${opt("auto", V.icon.auto, "تلقائي")}</span></div>`);
             }
-            const socials = V.socials(vv, "msoc");
-            if (socials) parts.push(`<div class="menu-social" aria-label="${esc(t("حساباتنا"))}">${socials}</div>`);
+            parts.push(`<p class="menu-label">${esc(t("الإعدادات"))}</p><div class="mgroup">${settings.join("")}</div>`);
+
+            // آخر سطر: إنستغرام، تيك توك، واتساب (مع أيقوناتها)
+            const follow = [];
+            const socials = (cfg.texts.socials || []).filter((x) => ATHR.isUrl(x.url));
+            const ig = socials.find((x) => /instagram\.com/i.test(x.url));
+            const tt = socials.find((x) => /tiktok\.com/i.test(x.url));
+            if (ig) follow.push(`<a class="mf ig" href="${esc(ig.url)}" target="_blank" rel="noopener">${V.icon.instagram}<span>${esc(t("إنستغرام"))}</span></a>`);
+            if (tt) follow.push(`<a class="mf tt" href="${esc(tt.url)}" target="_blank" rel="noopener">${V.icon.tiktok}<span>${esc(t("تيك توك"))}</span></a>`);
+            if (wa) follow.push(`<a class="mf wa" href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(ct("contact.wa_float_msg"))))}" target="_blank" rel="noopener">${V.waIcon()}<span>${esc(t("واتساب"))}</span></a>`);
+            const others = V.socials({ ...vv, cfg: { ...cfg, texts: { ...cfg.texts, socials: socials.filter((x) => x !== ig && x !== tt) } } }, "msoc");
+            if (follow.length || others) parts.push(`<p class="menu-label">${esc(t("تابعنا وتواصل معنا"))}</p><div class="mfollow">${follow.join("")}</div>${others ? `<div class="menu-social">${others}</div>` : ""}`);
         }
         if (S.isAdmin) {
             parts.push(`<p class="menu-label">${esc(t("لك وحدك"))}</p>
-                <div class="menu-acts owner">
-                    <a class="menu-act" href="#admin" data-native><span>تعديل المتجر</span></a>
-                    <a class="menu-act" href="#orders" data-native><span>دفتر الطلبيات والتقييمات والأداء</span></a>
+                <div class="mgroup owner">
+                    <a class="mrow" href="#admin" data-native><span class="ml">تعديل المتجر</span></a>
+                    <a class="mrow" href="#orders" data-native><span class="ml">دفتر الطلبيات والتقييمات والأداء</span></a>
                 </div>`);
         }
+        const logo = cfg.logo_url ? `<span class="menu-logo"><img src="${esc(V.asset(cfg.logo_url))}" alt="${esc(ATHR.storeName(cfg))}" height="26"></span>` : `<b>${esc(ATHR.storeName(cfg))}</b>`;
         openSheet(`
-            <div class="sheet-head"><h2>${esc(ATHR.storeName(cfg))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
+            <div class="sheet-head menu-head"><a class="menu-brand" href="${BASE}" aria-label="${esc(ATHR.storeName(cfg))}">${logo}</a><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
             <nav class="menu" aria-label="${esc(t("القائمة"))}">${parts.join("")}</nav>`, { label: t("القائمة"), kind: "menu" });
     }
 
@@ -1700,7 +1785,7 @@
         const countries = ATHR.countries(cfg).filter((c) => c.enabled);
         openSheet(`
             <div class="sheet-head"><h2>${esc(t("الدولة والعملة"))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
-            <p class="muted" style="margin:0 0 10px">${esc(t("اختر دولتك لتظهر الأسعار بعملتها وطرق التوصيل والدفع المتاحة لك. الأسعار تقريبية، ويُحسب الطلب بالريال العماني."))}</p>
+            <p class="muted" style="margin:0 0 10px">${esc(t("اختر دولتك لتظهر الأسعار بعملتها وطرق التوصيل والدفع المتاحة لك. الأسعار تقريبية، ويُحسب الطلب بالريال العماني."))}${ATHR.liveRates(cfg) ? ` ${esc(t("أسعار الصرف تُحدَّث تلقائياً كل يوم."))}` : ""}</p>
             <ul class="cur-list">
                 ${countries.map((c) => `<li><button type="button" data-set-country="${c.code}" aria-pressed="${c.code === S.country}">
                     <span class="cur-flag" aria-hidden="true">${c.flag}</span>
@@ -1806,6 +1891,38 @@
             return;
         }
         const d = el.dataset;
+
+        if (d.giftStart !== undefined) {
+            e.preventDefault();
+            afterReady(giftStart);
+            return;
+        }
+        if (d.giftOpen !== undefined) {
+            const stage = $("#giftStage");
+            const card = $("#giftCard");
+            if (stage && card) {
+                stage.classList.add("opening");
+                setTimeout(() => {
+                    stage.hidden = true;
+                    card.hidden = false;
+                    card.classList.add("show");
+                }, 650);
+            }
+            return;
+        }
+        if (d.giftSug) {
+            const box = $('#checkoutForm textarea[name="gift_message"]');
+            if (box) {
+                box.value = d.giftSug;
+                box.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            return;
+        }
+        if (d.giftCancel !== undefined) {
+            giftEnd();
+            renderBars();
+            return;
+        }
 
         // روابط داخل المتجر بدون إعادة تحميل
         if (el.tagName === "A" && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
@@ -1943,6 +2060,7 @@
                 track("add");
                 locStash.self = null;
                 locStash.gift = null;
+                session.set(KEYS.giftIntent, "1");
                 navigate(`${BASE}checkout/?gift=1`);
             });
             return;
@@ -2002,7 +2120,13 @@
             toast(t("التوصيل والدفع الآن لـ{country}", { country: L(CC(), "name") }));
             return;
         }
+        if (el.name === "gift_occasion") {
+            const box = $("#msgSugs");
+            if (box) box.innerHTML = giftSugs(el.value);
+            return;
+        }
         if (el.name === "gift" && el.closest("#checkoutForm")) {
+            if (el.value !== "1") giftEnd();
             const form = $("#checkoutForm");
             const keep = Object.fromEntries(new FormData(form).entries());
             const next = keep.gift === "1" ? "gift" : "self";

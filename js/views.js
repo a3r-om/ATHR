@@ -92,7 +92,12 @@
         sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>',
         moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10Z"/></svg>',
         auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16a8 8 0 0 0 0-16Z" class="fill"/></svg>',
-        user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>'
+        user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>',
+        grid: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',
+        globe: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5Z"/></svg>',
+        side: '<svg class="side" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>',
+        instagram: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" class="fill"/></svg>',
+        tiktok: '<svg class="solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>'
     };
     V.icon = ICON;
 
@@ -571,6 +576,54 @@
         </figure>`;
     };
 
+    // =====================================================
+    // GIFT (بنر الهدية، زر الهدية المميز، وبطاقة الإهداء)
+    // =====================================================
+
+    V.giftSub = (v) => (v.cfg.sales.gift_card !== false ? t("بطاقة إهداء رقمية باسمك، وبدون ذكر السعر") : t("نوصلها باسمك، وبدون ذكر السعر"));
+
+    V.giftCta = function (v, { attrs = "", href = "", title, sub = V.giftSub(v) }) {
+        const inner = `<span class="gcta-ico">${V.icon.gift}</span><span class="gcta-txt"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span><span class="gcta-go">${V.icon.side}</span>`;
+        return href ? `<a class="gift-cta" href="${href}" ${attrs}>${inner}</a>` : `<button class="gift-cta" type="button" ${attrs}>${inner}</button>`;
+    };
+
+    V.giftBanner = function (v) {
+        const s = v.cfg.sales;
+        if (!s.gift_enabled || s.gift_banner === false) return "";
+        return `<section class="wrap gift-promo" aria-label="${esc(t("أرسل هدية"))}">
+            <a class="gp" href="${ATHR.url.page("checkout", "gift=1")}" data-gift-start>
+                <span class="gp-art" aria-hidden="true">${V.icon.gift}</span>
+                <span class="gp-text"><b>${esc(t("أرسلها هدية لمن تحب"))}</b><small>${esc(s.gift_card !== false ? t("نوصلها باسمك مع بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر.") : t("نوصلها باسمك مع رسالتك، وبدون ذكر السعر."))}</small></span>
+                <span class="gp-go">${esc(t("ابدأ"))}${V.icon.side}</span>
+            </a>
+        </section>`;
+    };
+
+    V.giftPage = function (v, card) {
+        const store = ATHR.storeName(v.cfg);
+        if (!card || !card.to) {
+            return `<div class="wrap empty page"><p>${esc(t("رابط بطاقة الإهداء غير صحيح."))}</p><a class="btn btn-primary" href="${ATHR.base()}">${esc(t("العودة للمتجر"))}</a></div>`;
+        }
+        const o = ATHR.giftOccasion(card.occasion);
+        return `<div class="gift-page" data-occ="${esc(o.id)}">
+            <div class="gp-stage" id="giftStage">
+                <div class="gbox" aria-hidden="true"><span class="gbox-body"></span><span class="gbox-lid"></span><span class="gbox-rib"></span><span class="gbox-bow"></span></div>
+                <p class="gp-hello">${esc(t("{name}، وصلتك هدية!", { name: card.to }))}</p>
+                <button class="btn btn-primary gp-open" type="button" data-gift-open>${esc(t("افتح هديتك"))}</button>
+            </div>
+            <article class="gcard" id="giftCard" hidden>
+                <div class="confetti" aria-hidden="true">${Array.from({ length: 26 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--h:${(i * 47) % 360};--d:${(i * 131) % 700}ms;--t:${(1.7 + ((i * 7) % 10) / 10).toFixed(1)}s;--r:${(i % 2 ? 1 : -1) * (180 + ((i * 53) % 360))}deg"></i>`).join("")}</div>
+                <div class="gcard-emoji" aria-hidden="true">${o.emoji}</div>
+                <p class="gcard-to">${esc(t("إلى"))} <b>${esc(card.to)}</b></p>
+                <h1 class="gcard-title">${esc(L(o, "title"))}</h1>
+                ${card.msg ? `<blockquote class="gcard-msg">${esc(card.msg)}</blockquote>` : ""}
+                ${card.from ? `<p class="gcard-from">${esc(t("مع خالص المحبة،"))} <b>${esc(card.from)}</b></p>` : ""}
+                <p class="gcard-note">${esc(t("هديتك في الطريق إليك من {store} 🎁", { store }))}</p>
+            </article>
+            <a class="link-btn center gp-shop" href="${ATHR.base()}">${esc(t("تسوّق من {store}", { store }))}</a>
+        </div>`;
+    };
+
     V.home = function (v, { sort = "default" } = {}) {
         const all = V.sortList(V.listings(v, v.products), sort);
         const best = V.bestSellers(v);
@@ -581,6 +634,7 @@
         return `${V.ad(v)}
             ${V.hero(v)}
             ${V.tiles(v)}
+            ${V.giftBanner(v)}
             ${best.length ? V.rail(v, { id: "best", title: ct(v, "sales.best_title") || t("الأكثر طلباً"), items: best }) : ""}
             ${sets ? V.rail(v, { id: "sets", title: ct(v, "sales.sets_title") || t("أطقم بسعر أقل"), cards: sets }) : ""}
             <section class="catalog section" id="catalog" aria-labelledby="catalog-t">
@@ -735,7 +789,7 @@
                 ${buyNow ? `<button class="btn btn-ghost" type="button" data-buy-now="${esc(p.id)}">${esc(t("اشترِ الآن"))}</button>` : ""}
                 ${wa ? `<button class="btn btn-wa" type="button" data-wa-product="${esc(p.id)}">${V.waIcon()}${esc(t("اطلب عبر واتساب"))}</button>` : ""}
             </div>` : ""}
-            ${cfg.sales.gift_enabled && cfg.sales.gift_button ? `<button class="btn btn-gift btn-block" type="button" data-gift-now="${esc(p.id)}">${V.icon.gift}${esc(t("أرسله هدية"))}</button>` : ""}
+            ${cfg.sales.gift_enabled && cfg.sales.gift_button ? V.giftCta(v, { attrs: `data-gift-now="${esc(p.id)}"`, title: t("أرسله هدية") }) : ""}
         </div>`;
     };
 
@@ -901,6 +955,7 @@
             case "done": return `${t("تم استلام طلبك")} | ${name}`;
             case "review": return `${t("قيّم تجربتك")} | ${name}`;
             case "search": return `${t("بحث")} | ${name}`;
+            case "gift": return `${t("🎁 وصلتك هدية")} | ${name}`;
             default: {
                 const seo = ct(v, "seo.home_title");
                 return seo || `${name} | ${fill(v, ct(v, "texts.hero_title"))}`;
