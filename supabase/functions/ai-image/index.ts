@@ -121,6 +121,8 @@ function rankGemini(list: string[], quality: string): string[] {
         if (/pro/.test(n)) s += fast ? 1 : 8;
         else if (/lite/.test(n)) s += fast ? 4 : 0;
         else if (/flash|nano-banana/.test(n)) s += fast ? 8 : 5;
+        // Nano Banana 2.1: أحدث وأرخص نموذج صور (الأفضل لخيار «أسرع وأرخص»)
+        if (/nano-banana/.test(n)) s += fast ? 30 : 10;
         if (/preview|exp/.test(n)) s -= 0.5;
         if (/generation/.test(n)) s -= 15;
         return s;
@@ -128,7 +130,7 @@ function rankGemini(list: string[], quality: string): string[] {
     return [...new Set(list)].sort((a, b) => score(b) - score(a));
 }
 
-const GEMINI_FALLBACK = ["gemini-3-pro-image-preview", "gemini-3-pro-image", "gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-2.5-flash-image"];
+const GEMINI_FALLBACK = ["gemini-3-pro-image", "gemini-nano-banana-2.1", "gemini-3.1-flash-image", "gemini-3-pro-image-preview", "gemini-2.5-flash-image"];
 
 function pickImage(json: any): Img | null {
     for (const c of json?.candidates || []) {

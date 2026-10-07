@@ -1306,7 +1306,7 @@
             <summary>⚙️ إعداد الذكاء الاصطناعي ${status === undefined ? "" : saved ? `<span class="tag ok">✅ جاهز</span>` : `<span class="tag warn">مطلوب مرة واحدة</span>`}</summary>
             <div class="af-stack">
                 ${select("config.ai.provider", "الخدمة", [["gemini", "Google Gemini (موصى به)"], ["openai", "OpenAI"]], { rerender: true })}
-                ${select("config.ai.quality", "الجودة", [["best", "أعلى جودة (أبطأ قليلاً)"], ["fast", "أسرع وأرخص"]])}
+                ${select("config.ai.quality", "الجودة", [["best", "أعلى جودة — حوالي 0.13$ للصورة"], ["fast", "أسرع وأرخص — حوالي 0.05$ للصورة"]])}
                 <p class="adm-sentence">${saved ? `✅ مفتاح ${providerName} محفوظ (ينتهي بـ <b dir="ltr">${esc(saved.last4 || "")}</b>).` : `لا يوجد مفتاح ${providerName} بعد.`}</p>
                 <label class="af"><span>${saved ? "تغيير المفتاح" : "الصق المفتاح هنا"}</span><input class="ai" type="password" id="aiKey" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr" placeholder="${c.provider === "openai" ? "sk-..." : "AIza..."}"></label>
                 <div class="inline">
