@@ -317,7 +317,14 @@
         "مع خالص المحبة،": "With love,",
         "هديتك في الطريق إليك من {store} 🎁": "Your gift from {store} is on its way 🎁",
         "تسوّق من {store}": "Shop at {store}",
-        "🎁 وصلتك هدية": "🎁 You've got a gift"
+        "🎁 وصلتك هدية": "🎁 You've got a gift",
+        "توصيل لكل ولايات عُمان": "Delivery across Oman",
+        "توصيل مجاني فوق {amount}": "Free delivery over {amount}",
+        "توصيل مجاني في عُمان فوق {amount}": "Free delivery in Oman over {amount}",
+        "تحويل بنكي آمن": "Secure bank transfer",
+        "التفاصيل كاملة": "Full details",
+        "الدفع: {names}": "Payment: {names}",
+        "الدفع في {countries}: {names}": "Payment in {countries}: {names}"
     };
 
     // نصوص المتجر العامة بالإنجليزي (تُستبدل بما تكتبه في لوحة التحكم ← النصوص بالإنجليزي)

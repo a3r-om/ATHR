@@ -1436,3 +1436,35 @@ select.input { appearance: auto; }
 @media (prefers-reduced-motion: reduce) {
     .gp-art, .gbox, .gift-cta::after, .gcard.show, .gcard.show .confetti i { animation: none !important; }
 }
+
+/* =====================================================
+   Footer v2 — مختصر وواضح
+===================================================== */
+.foot { display: grid; gap: 14px; max-width: 760px; }
+.foot-head .footer-brand { margin-bottom: 6px; }
+.foot-about { margin: 0; opacity: .85; line-height: 1.7; }
+.foot-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.foot-points li { display: grid; justify-items: center; gap: 6px; padding: 12px 6px; border-radius: 14px; background: rgba(255, 255, 255, .07); text-align: center; font-size: 12.5px; font-weight: 600; line-height: 1.45; color: #fff; }
+.foot-points svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; opacity: .95; }
+.foot-acc { border-top: 1px solid rgba(255, 255, 255, .14); }
+.foot-acc:last-of-type { border-bottom: 1px solid rgba(255, 255, 255, .14); }
+.foot-acc summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 2px; list-style: none; cursor: pointer; color: #fff; font-weight: 700; font-size: 15.5px; }
+.foot-acc summary::-webkit-details-marker { display: none; }
+.foot-acc summary svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; opacity: .8; }
+.foot-acc[open] summary svg { transform: rotate(180deg); }
+.foot-acc .footer-cats { padding: 0 2px 14px; }
+.foot-lines { list-style: none; margin: 0; padding: 0 2px 10px; display: grid; gap: 8px; }
+.foot-lines li { line-height: 1.6; opacity: .9; padding-inline-start: 14px; position: relative; }
+.foot-lines li::before { content: ""; position: absolute; inset-inline-start: 0; top: .7em; width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, .55); }
+.foot-more { display: inline-block; margin: 0 2px 14px; font-weight: 700; text-underline-offset: 3px; }
+.foot-follow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
+.foot-follow > span { color: #fff; font-weight: 700; font-size: 15.5px; }
+.foot-icons { display: flex; gap: 10px; }
+.foot-icons a { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .3); color: #fff; }
+.foot-icons svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.foot-icons svg.solid, .foot-icons svg .fill { fill: currentColor; stroke: none; }
+.foot-icons a.wa svg { fill: #fff; stroke: none; }
+.foot-icons a.wa .wa-glyph { fill: var(--hero); }
+.foot .footer-bottom { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+.foot .footer-bottom a { color: #fff; }
+@media (min-width: 760px) { .foot { margin-inline: auto; } }

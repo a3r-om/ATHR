@@ -890,37 +890,70 @@
     // FOOTER
     // =====================================================
 
+    // تذييل مختصر: نبذة، ثلاث مزايا، أقسام وتوصيل قابلة للفتح، وأيقونات التواصل
+    V.footerDelivery = function (v) {
+        const cfg = v.cfg;
+        const own = String(ct(v, "texts.footer_delivery_text") || "").trim();
+        if (own) return own.split("\n").filter(Boolean).map((line) => fill(v, line));
+        const lines = (cfg.order.delivery || []).filter((d) => d.enabled)
+            .map((d) => `${L(d, "name")} · ${V.deliveryPriceLabel(v, d)}${d.duration ? ` · ${ATHR.duration(d.duration)}` : ""}`);
+        const free = V.freeLine(v);
+        if (free) lines.push(free);
+        V.paymentGroups(v).forEach((g, i, all) => {
+            lines.push(all.length === 1
+                ? t("الدفع: {names}", { names: g.names })
+                : t("الدفع في {countries}: {names}", { countries: g.countries.map((c) => L(c, "name")).join(sep()), names: g.names }));
+        });
+        return lines;
+    };
+
     V.footer = function (v) {
         const cfg = v.cfg;
-        const ownDelivery = String(ct(v, "texts.footer_delivery_text") || "").trim();
-        const deliveryText = ownDelivery ? ownDelivery.split("\n").filter(Boolean).map((line) => fill(v, line)) : V.deliveryLines(v);
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp);
         const cats = v.categories.filter((c) => v.counts.get(c.id));
         const about = ct(v, "texts.about");
-        const socials = V.socials(v, "fsoc");
-        return `<div class="wrap">
-            <div class="footer-grid">
-                <div>
-                    <div class="footer-brand"><img src="${esc(V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url))}" alt="" width="40" height="40"><strong>${esc(ATHR.storeName(cfg))}</strong></div>
-                    ${about ? `<p>${esc(fill(v, about))}</p>` : ""}
-                    ${cfg.contact.policy_show ? `<p><a href="${ATHR.url.page("shipping")}">${esc(ct(v, "contact.policy_title"))}</a></p>` : ""}
-                </div>
-                <div>
-                    <h2>${esc(t("الأقسام"))}</h2>
-                    <ul class="footer-cats">${cats.map((c) => `<li><a href="${ATHR.url.category(c)}">${esc(V.cname(c))}</a></li>`).join("")}</ul>
-                </div>
-                <div>
-                    <h2>${esc(ct(v, "texts.footer_delivery_title"))}</h2>
-                    ${deliveryText.map((line) => `<p>${esc(line)}</p>`).join("")}
-                </div>
-                <div>
-                    <h2>${esc(ct(v, "texts.footer_contact_title"))}</h2>
-                    ${wa ? `<p>${esc(t("واتساب:"))} <a href="${esc(ATHR.waLink(cfg.order.whatsapp))}" target="_blank" rel="noopener" dir="ltr">${esc(ATHR.localPhone(cfg.order.whatsapp))}</a></p>` : ""}
-                    ${socials ? `<div class="footer-social">${socials}</div>` : ""}
-                    ${cfg.contact.reviews_share_btn ? `<div class="footer-links"><a href="${ATHR.url.page("review")}" rel="nofollow">${esc(ct(v, "contact.reviews_share_text"))}</a></div>` : ""}
-                </div>
+        const enabled = ATHR.countries(cfg).filter((c) => c.enabled);
+        const gulf = enabled.some((c) => c.code !== ATHR.BASE_COUNTRY);
+        const free = cfg.order.free_enabled && Number(cfg.order.free_min) > 0;
+        const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
+        const points = [
+            [V.icon.truck, gulf ? t("توصيل لكل دول الخليج") : t("توصيل لكل ولايات عُمان")],
+            free ? [V.icon.tag, gulf && enabled.filter((c) => ATHR.freeAppliesTo(cfg, c.code)).every((c) => c.code === ATHR.BASE_COUNTRY)
+                ? t("توصيل مجاني في عُمان فوق {amount}", { amount: money(v, cfg.order.free_min) })
+                : t("توصيل مجاني فوق {amount}", { amount: money(v, cfg.order.free_min) })] : null,
+            [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
+        ].filter(Boolean);
+        const socials = (cfg.texts.socials || []).filter((x) => ATHR.isUrl(x.url));
+        const ig = socials.find((x) => /instagram\.com/i.test(x.url));
+        const tt = socials.find((x) => /tiktok\.com/i.test(x.url));
+        const follow = [
+            ig ? `<a href="${esc(ig.url)}" target="_blank" rel="noopener" aria-label="${esc(t("إنستغرام"))}">${V.icon.instagram}</a>` : "",
+            tt ? `<a href="${esc(tt.url)}" target="_blank" rel="noopener" aria-label="${esc(t("تيك توك"))}">${V.icon.tiktok}</a>` : "",
+            wa ? `<a class="wa" href="${esc(ATHR.waLink(cfg.order.whatsapp))}" target="_blank" rel="noopener" aria-label="${esc(t("واتساب"))}">${V.waIcon()}</a>` : ""
+        ].join("");
+        const others = V.socials({ ...v, cfg: { ...cfg, texts: { ...cfg.texts, socials: socials.filter((x) => x !== ig && x !== tt) } } }, "fsoc");
+        const bottom = [
+            `© ${new Date().getFullYear()} ${esc(ATHR.storeName(cfg))}`,
+            cfg.contact.policy_show ? `<a href="${ATHR.url.page("shipping")}">${esc(ct(v, "contact.policy_title"))}</a>` : "",
+            cfg.contact.reviews_share_btn ? `<a href="${ATHR.url.page("review")}" rel="nofollow">${esc(ct(v, "contact.reviews_share_text"))}</a>` : ""
+        ].filter(Boolean);
+        return `<div class="wrap foot">
+            <div class="foot-head">
+                <div class="footer-brand"><img src="${esc(V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url))}" alt="" width="40" height="40"><strong>${esc(ATHR.storeName(cfg))}</strong></div>
+                ${about ? `<p class="foot-about">${esc(fill(v, about))}</p>` : ""}
             </div>
-            <div class="footer-bottom">© ${new Date().getFullYear()} ${esc(ATHR.storeName(cfg))}</div>
+            <ul class="foot-points">${points.map(([ic, text]) => `<li>${ic}<span>${esc(text)}</span></li>`).join("")}</ul>
+            ${cats.length ? `<details class="foot-acc">
+                <summary>${esc(t("الأقسام"))}${V.icon.chevron}</summary>
+                <ul class="footer-cats">${cats.map((c) => `<li><a href="${ATHR.url.category(c)}">${esc(V.cname(c))}</a></li>`).join("")}</ul>
+            </details>` : ""}
+            <details class="foot-acc">
+                <summary>${esc(ct(v, "texts.footer_delivery_title"))}${V.icon.chevron}</summary>
+                <ul class="foot-lines">${V.footerDelivery(v).map((line) => `<li>${esc(line)}</li>`).join("")}</ul>
+                ${cfg.contact.policy_show ? `<a class="foot-more" href="${ATHR.url.page("shipping")}">${esc(t("التفاصيل كاملة"))}</a>` : ""}
+            </details>
+            ${follow || others ? `<div class="foot-follow"><span>${esc(ct(v, "texts.footer_contact_title"))}</span><div class="foot-icons">${follow}</div>${others ? `<div class="footer-social">${others}</div>` : ""}</div>` : ""}
+            <div class="footer-bottom">${bottom.join(" · ")}</div>
         </div>`;
     };
 
