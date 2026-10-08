@@ -35,7 +35,10 @@
         customers: [],
         customersLoaded: false,
         custFilter: { q: "", kind: "all" },
-        offer: null
+        offer: null,
+        promo: null,
+        restockRun: null,
+        couponEdit: null
     };
 
     const CHANNELS = {
@@ -59,7 +62,7 @@
         ["look", "المظهر", "palette", "الألوان والخطوط والشعار والوضع الداكن"],
         ["texts", "النصوص", "text", "العناوين والجمل ورسائل واتساب"],
         ["order", "الطلب والتوصيل", "truck", "التوصيل والدفع والدول والعملات"],
-        ["sales", "المبيعات والعروض", "tag", "الخصومات والعروض والعملاء"],
+        ["sales", "المبيعات والعروض", "tag", "أكواد المؤثرين والخصومات والمفضلة"],
         ["gift", "الهدية", "gift", "شكل البطاقة والألوان والخط والرسالة"],
         ["ads", "تتبع الإعلانات", "chart", "Meta Pixel و TikTok Pixel ونتائج إعلاناتك"],
         ["contact", "التواصل والآراء", "chat", "واتساب والقائمة وآراء العملاء"]
@@ -544,6 +547,7 @@
 
     function tabProducts() {
         const products = A.draft.products;
+        promoMaybeLoad();
         const q = A.productFilter.trim().toLowerCase();
         const catName = (id) => (A.draft.categories.find((c) => c.id === id) || {}).name || "بدون قسم";
         const list = products.map((p, i) => ({ p, i })).filter(({ p }) => !q || p.name.toLowerCase().includes(q) || catName(p.category_id).toLowerCase().includes(q));
@@ -563,7 +567,7 @@
                                 <span class="prow-info">
                                     <b>${esc(p.name || "منتج بدون اسم")}</b>
                                     <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}</span>
-                                    ${p.is_visible && p.is_available && !pctOf(p) ? "" : `<span class="prow-tags">${pctOf(p) ? `<span class="tag sale">خصم ${pctOf(p)}%</span>` : ""}${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}</span>`}
+                                    ${p.is_visible && p.is_available && !pctOf(p) && !promoFavs(p.id) && !promoWaiting(p.id) ? "" : `<span class="prow-tags">${pctOf(p) ? `<span class="tag sale">خصم ${pctOf(p)}%</span>` : ""}${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}${promoFavs(p.id) ? `<span class="tag fav" title="أضافه زبائن للمفضلة">❤️ ${promoFavs(p.id)}</span>` : ""}${promoWaiting(p.id) ? `<span class="tag bell" title="ينتظرون توفره">🔔 ${promoWaiting(p.id)}</span>` : ""}</span>`}
                                 </span>
                             </button>
                             <button type="button" class="vis-switch" role="switch" aria-checked="${p.is_visible}" data-toggle-visible="${esc(p.id)}" title="${p.is_visible ? "ظاهر في المتجر — اضغط للإخفاء" : "مخفي — اضغط للإظهار"}" aria-label="ظاهر في المتجر"><span></span></button>
@@ -698,6 +702,10 @@
         sheet.innerHTML = "";
         if (A.editing) {
             A.editing = null;
+            renderTab({ keepScroll: true });
+        } else if (A.restockRun || A.couponEdit) {
+            A.restockRun = null;
+            A.couponEdit = null;
             renderTab({ keepScroll: true });
         }
     }
@@ -1168,7 +1176,9 @@
                 ${toggle("config.theme.show_search", "إظهار البحث")}
                 ${text("config.texts.search_placeholder", "الكلمة داخل خانة البحث", { placeholder: "ابحث", max: 40 })}
                 ${toggle("config.theme.visitor_mode", "زر المظهر للزائر (فاتح / داكن / تلقائي) في قائمة النقاط الثلاث", { help: "الزائر يختار ما يريحه، ويُحفظ اختياره على جهازه. «وضع العرض» أعلاه هو الافتراضي لمن لم يختر." })}
-                ${toggle("config.theme.show_sort", "إظهار الترتيب حسب السعر")}`)
+                ${toggle("config.theme.show_sort", "إظهار الترتيب حسب السعر")}
+                ${toggle("config.theme.home_filter", "أزرار الأقسام السريعة فوق المنتجات في الرئيسية", { help: "الزائر يضغط على القسم فتظهر منتجاته فوراً بدون ما يتنقل." })}
+                ${select("config.theme.page_size", "عدد المنتجات قبل زر «عرض المزيد»", [["8", "8 منتجات"], ["12", "12 منتجاً"], ["16", "16 منتجاً"], ["24", "24 منتجاً"], ["0", "الكل بدون زر (صفحة طويلة)"]], { type: "number", help: "صفحة أخف وأسرع على الجوال. الزائر يضغط «عرض المزيد» ليكمل." })}`)
             + card("الخطوط", `
                 ${select("config.theme.font_head", "خط العناوين", HEAD_FONTS.map((f) => [f, f]), { rerender: true })}
                 ${select("config.theme.font_body", "خط النصوص", BODY_FONTS.map((f) => [f, f === "system" ? "خط الجهاز" : f]), { rerender: true })}
@@ -1371,7 +1381,9 @@
         </li>`).join("");
         const volText = ATHR.volumeTiers(cfg()).map((t) => `${ATHR.piecesText(t.min)} خصم ${t.pct}%`).join("، ");
 
-        return card("خصم الكمية (يرفع قيمة الطلب)", `
+        promoMaybeLoad();
+        return couponsCard() + restockCard() + favCard()
+            + card("خصم الكمية (يرفع قيمة الطلب)", `
                 ${toggle("config.sales.volume.enabled", "تفعيل خصم الكمية", { rerender: true })}
                 <ul class="lst">${tiers}</ul>
                 ${(vol.tiers || []).length < 4 ? `<button class="ab ab-ghost ab-sm" type="button" data-add-item="config.sales.volume.tiers">+ إضافة شريحة</button>` : ""}
@@ -1422,6 +1434,484 @@
                     </li>`).join("")}</ul>
                     ${s.trust_custom.length < 3 ? `<button class="ab ab-ghost ab-sm" type="button" data-add-item="config.sales.trust_custom">+ إضافة شارة</button>` : ""}
                 </div>`);
+    }
+
+    // =====================================================
+    // أكواد المؤثرين + المفضلة + «أخبرني عند التوفر»
+    // تُحفظ في قاعدة البيانات مباشرة (بدون «نشر»)
+    // =====================================================
+
+    const COUPON_KINDS = [["pct", "نسبة %"], ["fixed", "مبلغ ثابت"], ["ship", "توصيل مجاني"]];
+    const RESTOCK_KEY = "athr_restock_msg";
+    const RESTOCK_MSG = "هلا {name} 👋\n\n🎉 رجع *{product}* في {store}\n💰 السعر: *{price}*\n\nطلبت منّا نخبرك أول ما يتوفر، احجز قطعتك قبل لا يخلص 👇\n{link}";
+    const TRANSLIT = { "ا": "A", "أ": "A", "إ": "I", "آ": "A", "ب": "B", "ت": "T", "ث": "TH", "ج": "J", "ح": "H", "خ": "KH", "د": "D", "ذ": "TH", "ر": "R", "ز": "Z", "س": "S", "ش": "SH", "ص": "S", "ض": "D", "ط": "T", "ظ": "Z", "ع": "A", "غ": "GH", "ف": "F", "ق": "Q", "ك": "K", "ل": "L", "م": "M", "ن": "N", "ه": "H", "ة": "A", "و": "W", "ي": "Y", "ى": "A", "ئ": "E", "ؤ": "O" };
+
+    const promoFavs = (id) => (A.promo && A.promo.favs ? A.promo.favs[id] || 0 : 0);
+    const promoWaiting = (id) => (A.promo && A.promo.restock ? A.promo.restock.filter((r) => r.product_id === id && !r.notified_at).length : 0);
+    const findCoupon = (code) => ((A.promo && A.promo.coupons) || []).find((k) => k.code === code) || null;
+    const waitText = (n) => (n === 1 ? "شخص واحد ينتظر" : n === 2 ? "شخصان ينتظران" : `${n} ينتظرون`);
+    const couponLink = (code) => `${siteLink(ATHR.base())}?code=${encodeURIComponent(code)}`;
+
+    // نحمّل البيانات عند فتح القسم، ونحدّثها إذا مرّت دقيقة
+    function promoMaybeLoad() {
+        const st = A.promo;
+        if (!st || (!st.loading && Date.now() - (st.at || 0) > 60000)) loadPromo();
+    }
+
+    async function loadPromo() {
+        A.promo = { ...(A.promo || {}), loading: true };
+        try {
+            const [k, o, f, r] = await Promise.all([
+                sb.from("coupons").select("*").order("created_at", { ascending: false }),
+                sb.from("orders").select("coupon,total,coupon_discount,hidden").not("coupon", "is", null).limit(5000),
+                sb.from("product_stats").select("product_id,favs").gt("favs", 0),
+                sb.from("restock_requests").select("*").order("created_at", { ascending: true }).limit(3000)
+            ]);
+            const failed = [k, o, f, r].find((x) => x.error);
+            if (failed) throw failed.error;
+            const uses = {};
+            (o.data || []).forEach((x) => {
+                if (x.hidden || !x.coupon) return;
+                const u = uses[x.coupon] || (uses[x.coupon] = { orders: 0, sales: 0, disc: 0 });
+                u.orders++;
+                u.sales += Number(x.total || 0);
+                u.disc += Number(x.coupon_discount || 0);
+            });
+            A.promo = {
+                at: Date.now(),
+                coupons: k.data || [],
+                uses,
+                favs: Object.fromEntries((f.data || []).map((x) => [x.product_id, Number(x.favs) || 0])),
+                restock: r.data || []
+            };
+        } catch (error) {
+            console.warn("Promo data failed:", error);
+            A.promo = { ...(A.promo || {}), loading: false, error: true, at: Date.now() };
+        }
+        refreshPromoTab();
+    }
+
+    function refreshPromoTab() {
+        if (A.view !== "admin" || !["sales", "products"].includes(A.tab)) return;
+        const active = document.activeElement;
+        const keep = active && active.id === "productFilter" ? active.selectionStart : null;
+        renderTab({ keepScroll: true });
+        if (keep !== null) {
+            const input = $("#productFilter");
+            if (input) {
+                input.focus();
+                try { input.setSelectionRange(keep, keep); } catch { /* ignore */ }
+            }
+        }
+    }
+
+    function promoState(empty) {
+        const st = A.promo || {};
+        if (st.error && !st.coupons) return `<p class="adm-note">تعذر التحميل. تأكد من الإنترنت. <button class="ab-mini" type="button" data-a="promo-reload">إعادة المحاولة</button></p>`;
+        if (!st.coupons) return `<p class="adm-muted">جاري التحميل...</p>`;
+        return empty;
+    }
+
+    // ---------- 🎟️ أكواد الخصم ----------
+
+    function couponState(k) {
+        const used = ((A.promo && A.promo.uses) || {})[k.code];
+        if (!k.enabled) return ["", "متوقف"];
+        if (k.ends_at && new Date(k.ends_at).getTime() <= Date.now()) return ["warn", "انتهى"];
+        if (k.max_uses && used && used.orders >= k.max_uses) return ["warn", "اكتمل العدد"];
+        return ["ok", "فعّال"];
+    }
+
+    function couponsCard() {
+        const st = A.promo || {};
+        const list = st.coupons || [];
+        const uses = st.uses || {};
+        const sum = list.reduce((a, k) => {
+            const u = uses[k.code];
+            if (u) { a.orders += u.orders; a.sales += u.sales; }
+            return a;
+        }, { orders: 0, sales: 0 });
+        const rows = list.map((k) => {
+            const u = uses[k.code] || { orders: 0, sales: 0, disc: 0 };
+            const [cls, label] = couponState(k);
+            const bits = [k.owner ? `👤 ${esc(k.owner)}` : "", esc(ATHR.couponText(k, cfg())), Number(k.min_total) > 0 ? `للطلبات من ${money(k.min_total)}` : "", k.ends_at ? `حتى ${esc(ATHR.muscatParts(k.ends_at).date)}` : "", k.max_uses ? `${u.orders} من ${k.max_uses} استخدام` : ""].filter(Boolean).join(" · ");
+            return `<li class="cp-row${k.enabled ? "" : " off"}">
+                <div class="cp-top">
+                    <div class="cp-main"><span class="cp-code"><b dir="ltr">${esc(k.code)}</b> <span class="tag ${cls}">${label}</span></span><small>${bits}</small></div>
+                    <button type="button" class="vis-switch" role="switch" aria-checked="${Boolean(k.enabled)}" data-cp-toggle="${esc(k.code)}" aria-label="تفعيل الكود ${esc(k.code)}"><span></span></button>
+                </div>
+                <div class="cp-stats"><span><small>طلبات</small><b>${u.orders}</b></span><span><small>مبيعات</small><b>${money(u.sales)}</b></span><span><small>خصومات</small><b>${money(u.disc)}</b></span></div>
+                <div class="cp-btns">
+                    <button type="button" class="ab-mini" data-cp-link="${esc(k.code)}">🔗 نسخ الرابط</button>
+                    <button type="button" class="ab-mini wa" data-cp-msg="${esc(k.code)}">💬 رسالة للمؤثر</button>
+                    <button type="button" class="ab-mini" data-cp-edit="${esc(k.code)}">تعديل</button>
+                </div>
+            </li>`;
+        }).join("");
+        const off = cfg().sales.coupons === false;
+        return card("🎟️ أكواد الخصم والمؤثرين", `
+            ${toggle("config.sales.coupons", "خانة «عندك كود خصم؟» في صفحة الطلب", { rerender: true, help: "أوقفها لإخفاء الخانة وإيقاف كل الأكواد عند الزبائن (تحتاج «نشر التغييرات»)." })}
+            ${off ? `<p class="adm-note">الخانة متوقفة، فلن تعمل الأكواد عند الزبائن حتى تفعّلها وتنشر.</p>` : ""}
+            ${promoState(`${list.length ? `<div class="ob-stats cp-sum"><div><small>طلبات بالأكواد</small><b>${sum.orders}</b></div><div><small>مبيعاتها</small><b>${money(sum.sales)}</b></div></div>
+                <ul class="cp-list">${rows}</ul>` : `<p class="adm-muted cp-empty">لا توجد أكواد بعد. أنشئ أول كود لمؤثر، مثل SARA10.</p>`}
+                <button class="ab ab-primary ab-sm" type="button" data-a="coupon-new">+ كود جديد</button>`)}`,
+            "أعطِ كل مؤثر كوداً باسمه (مثل SARA10) ورابطاً يفعّل الكود تلقائياً، وتعرف كم طلب ومبيعات جاب كل واحد. الخصم يُحسب بعد خصومات المتجر، والخادم يتحقق منه فلا يمكن التلاعب به. الأكواد تُحفظ فوراً بدون «نشر».");
+    }
+
+    function suggestCode(owner, kind, value) {
+        const raw = String(owner || "").trim().replace(/^@/, "").split(/\s+/)[0] || "";
+        const base = (/[a-z]/i.test(raw) ? raw.toUpperCase().replace(/[^A-Z0-9]/g, "") : [...raw].map((ch) => TRANSLIT[ch] || "").join("")).slice(0, 12);
+        if (!base) return "";
+        const n = Math.round(Number(ATHR.digits(String(value || ""))) || 0);
+        return (base + (kind === "ship" ? "FREE" : n > 0 ? String(n) : "")).slice(0, 20);
+    }
+
+    function couponSummary(form) {
+        const get = (n) => String((form.elements.namedItem(n) || {}).value || "");
+        const kind = (form.querySelector("input[name=kind]:checked") || {}).value || "pct";
+        const code = ATHR.couponCode(get("code")) || "…";
+        const who = get("owner").trim();
+        const min = Number(ATHR.digits(get("min_total"))) || 0;
+        const ends = get("ends");
+        const what = ATHR.couponText({ kind, value: Number(ATHR.digits(get("value"))) || 0 }, cfg());
+        return `${who ? `متابعو ${who} يكتبون` : "الزبون يكتب"} ${code} ${who ? "فيحصلون" : "فيحصل"} على ${what}${min > 0 ? ` للطلبات من ${money(min)}` : ""}${ends ? ` حتى ${ends.split("-").reverse().join("/")}` : ""}.`;
+    }
+
+    function couponSheet(k) {
+        const isNew = !k;
+        const c = k || { code: "", owner: "", kind: "pct", value: 10, min_total: 0, ends_at: null, max_uses: null, enabled: true };
+        A.couponEdit = { orig: isNew ? null : c.code, auto: isNew };
+        const ends = c.ends_at ? toMuscatInputs(c.ends_at).date : "";
+        openSheet(`
+            <div class="adm-sheet-head"><h2>${isNew ? "🎟️ كود خصم جديد" : `تعديل الكود <span dir="ltr">${esc(c.code)}</span>`}</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>
+            <form class="af-stack" id="couponForm" novalidate>
+                <label class="af"><span>اسم المؤثر أو صاحب الكود</span><input class="ai" name="owner" maxlength="80" value="${esc(c.owner || "")}" placeholder="مثال: سارة"><small>لتعرف مبيعات كل مؤثر.</small></label>
+                <label class="af"><span>الكود</span><input class="ai cp-input" name="code" dir="ltr" maxlength="20" autocapitalize="characters" autocomplete="off" spellcheck="false" value="${esc(c.code)}" placeholder="SARA10"${isNew ? "" : " readonly"}>
+                    <small>${isNew ? "حروف إنجليزية وأرقام فقط (3 إلى 20)، مثل SARA10. الزبون يكتبه في صفحة الطلب، أو يفتح رابط المؤثر فيتفعّل وحده." : "لا يتغيّر الكود بعد إنشائه حتى لا تضيع مبيعاته. لكود مختلف أنشئ كوداً جديداً."}</small></label>
+                <div class="af"><span>نوع الخصم</span><div class="cp-kind" role="radiogroup" aria-label="نوع الخصم">${COUPON_KINDS.map(([v, l]) => `<label><input type="radio" name="kind" value="${v}"${c.kind === v ? " checked" : ""}><span>${l}</span></label>`).join("")}</div></div>
+                <label class="af" id="cpValueBox"${c.kind === "ship" ? " hidden" : ""}><span id="cpValueLabel">${c.kind === "fixed" ? "المبلغ (ر.ع)" : "النسبة %"}</span><input class="ai" name="value" id="cpValue" type="number" inputmode="decimal" step="${c.kind === "fixed" ? "0.001" : "1"}" min="0" value="${c.kind === "ship" ? "" : esc(c.value ?? "")}"></label>
+                <div class="two">
+                    <label class="af"><span>أقل مبلغ للطلب</span><input class="ai" name="min_total" type="number" inputmode="decimal" step="0.001" min="0" value="${Number(c.min_total) > 0 ? esc(c.min_total) : ""}" placeholder="بدون حد"></label>
+                    <label class="af"><span>عدد مرات الاستخدام</span><input class="ai" name="max_uses" type="number" inputmode="numeric" step="1" min="1" value="${c.max_uses ? esc(c.max_uses) : ""}" placeholder="بلا حد"></label>
+                </div>
+                <label class="af"><span>ينتهي في (اختياري)</span><input class="ai" name="ends" type="date" value="${esc(ends)}"><small>آخر يوم يعمل فيه الكود، بتوقيت مسقط.</small></label>
+                <label class="at"><input type="checkbox" name="enabled"${c.enabled ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>الكود مفعّل</b></span></label>
+                <p class="adm-sentence" id="cpSum"></p>
+                <p class="adm-error" id="cpErr" role="alert"></p>
+                <button class="ab ab-primary ab-block" type="submit">${isNew ? "إنشاء الكود" : "حفظ"}</button>
+                ${isNew ? "" : `<button class="ab ab-ghost ab-block danger cp-del" type="button" data-a="coupon-delete">حذف الكود</button>`}
+            </form>`);
+        $("#cpSum").textContent = couponSummary($("#couponForm"));
+    }
+
+    function couponFormInput(t) {
+        const form = $("#couponForm");
+        const ed = A.couponEdit;
+        if (!form || !ed) return;
+        if (t.name === "code") {
+            const clean = ATHR.couponCode(ATHR.digits(t.value)).replace(/[^A-Z0-9_-]/g, "");
+            if (clean !== t.value) t.value = clean;
+            ed.auto = !clean;
+        }
+        const kind = (form.querySelector("input[name=kind]:checked") || {}).value || "pct";
+        const value = form.elements.namedItem("value");
+        if (t.name === "kind") {
+            $("#cpValueBox").hidden = kind === "ship";
+            $("#cpValueLabel").textContent = kind === "fixed" ? "المبلغ (ر.ع)" : "النسبة %";
+            value.step = kind === "fixed" ? "0.001" : "1";
+            if (kind !== "ship" && !value.value) value.value = kind === "fixed" ? "1" : "10";
+        }
+        if (ed.auto && !ed.orig && ["owner", "kind", "value"].includes(t.name)) {
+            form.elements.namedItem("code").value = suggestCode(form.elements.namedItem("owner").value, kind, value.value);
+        }
+        $("#cpSum").textContent = couponSummary(form);
+    }
+
+    async function saveCoupon(form) {
+        const f = Object.fromEntries(new FormData(form).entries());
+        const err = $("#cpErr");
+        const fail = (msg) => { err.textContent = msg; return false; };
+        const ed = A.couponEdit || {};
+        const num = (x) => (String(x ?? "").trim() === "" ? null : Number(ATHR.digits(String(x))));
+        const code = ed.orig || ATHR.couponCode(ATHR.digits(f.code || ""));
+        const kind = COUPON_KINDS.some(([v]) => v === f.kind) ? f.kind : "pct";
+        const value = kind === "ship" ? 0 : num(f.value);
+        const minTotal = num(f.min_total) || 0;
+        const maxUses = num(f.max_uses);
+        if (!ATHR.couponValid(code)) return fail("اكتب الكود بالحروف الإنجليزية والأرقام فقط (3 إلى 20)، مثل SARA10.");
+        if (kind === "pct" && !(value >= 1 && value <= 90)) return fail("اكتب نسبة الخصم بين 1% و 90%.");
+        if (kind === "fixed" && !(value > 0)) return fail("اكتب مبلغ الخصم.");
+        if (!(minTotal >= 0)) return fail("أقل مبلغ للطلب غير صحيح.");
+        if (maxUses !== null && !(Number.isInteger(maxUses) && maxUses > 0)) return fail("عدد مرات الاستخدام رقم صحيح أكبر من صفر.");
+        const row = {
+            owner: String(f.owner || "").trim().slice(0, 80) || null,
+            kind,
+            value: Math.round(value * 1000) / 1000,
+            min_total: Math.round(minTotal * 1000) / 1000,
+            ends_at: /^\d{4}-\d{2}-\d{2}$/.test(f.ends || "") ? `${f.ends}T23:59:59+04:00` : null,
+            max_uses: maxUses,
+            enabled: Boolean(f.enabled)
+        };
+        err.textContent = "";
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        const { error } = ed.orig ? await sb.from("coupons").update(row).eq("code", code) : await sb.from("coupons").insert({ code, ...row });
+        btn.disabled = false;
+        if (error) {
+            if (error.code === "23505") return fail("هذا الكود موجود من قبل. اختر كوداً آخر.");
+            console.warn("Coupon save failed:", error);
+            return fail("تعذر الحفظ. تأكد من الإنترنت وحاول مرة أخرى.");
+        }
+        A.couponEdit = null;
+        closeSheet();
+        toast(ed.orig ? "حُفظ الكود ✓" : `أُنشئ الكود ${code} ✓ انسخ رابطه أو رسالته للمؤثر`);
+        await loadPromo();
+        return true;
+    }
+
+    async function toggleCoupon(code) {
+        const k = findCoupon(code);
+        if (!k) return;
+        k.enabled = !k.enabled;
+        refreshPromoTab();
+        const { error } = await sb.from("coupons").update({ enabled: k.enabled }).eq("code", code);
+        if (error) {
+            k.enabled = !k.enabled;
+            refreshPromoTab();
+            toast("تعذر الحفظ. تأكد من الإنترنت.");
+        } else toast(k.enabled ? `الكود ${code} مفعّل` : `أُوقف الكود ${code}`);
+    }
+
+    async function deleteCoupon() {
+        const code = A.couponEdit && A.couponEdit.orig;
+        if (!code) return;
+        const used = (((A.promo && A.promo.uses) || {})[code] || {}).orders || 0;
+        if (!confirm(used ? `حذف الكود ${code}؟ عليه ${used} طلب، وبعد الحذف تختفي أرقامه من هنا. الأفضل «إيقافه» بالمفتاح.` : `حذف الكود ${code}؟`)) return;
+        const { error } = await sb.from("coupons").delete().eq("code", code);
+        if (error) {
+            toast("تعذر الحذف. تأكد من الإنترنت.");
+            return;
+        }
+        A.couponEdit = null;
+        closeSheet();
+        toast(`حُذف الكود ${code}`);
+        await loadPromo();
+    }
+
+    // رسالة جاهزة للمؤثر: كوده، ورابطه، ونص للستوري
+    function couponMessage(k) {
+        const store = ATHR.storeName(cfg());
+        const link = couponLink(k.code);
+        const what = ATHR.couponText(k, cfg());
+        const first = String(k.owner || "").trim().split(/\s+/)[0];
+        const cond = [Number(k.min_total) > 0 ? `للطلبات من ${money(k.min_total)}` : "على كل الطلبات", k.ends_at ? `حتى ${ATHR.muscatParts(k.ends_at).date}` : ""].filter(Boolean).join(" ");
+        return [
+            `هلا${first ? ` ${first}` : ""} 👋`,
+            `هذا كود الخصم الخاص فيك من ${store} 🎟️`,
+            "",
+            `الكود: *${k.code}*`,
+            `يعطي متابعينك ${what} ${cond}`,
+            "",
+            "🔗 رابطك الخاص (الكود يتفعّل تلقائياً عند الطلب):",
+            link,
+            "",
+            "✨ نص جاهز للستوري:",
+            `كود خصم لمتابعيني من ${store} 😍`,
+            `استخدموا الكود ${k.code} واحصلوا على ${what}`,
+            "اطلبوا من هنا 👇",
+            link
+        ].join("\n");
+    }
+
+    // ---------- 🔔 أخبرني عند التوفر ----------
+
+    // المنتج كما هو منشور الآن (لأن الرابط يجب أن يعمل عند الزبون)
+    function publishedProduct(id) {
+        const visible = (A.server ? A.server.products : []).filter((p) => p.is_visible !== false);
+        return ATHR.assignSlugs(visible, cfg()).find((p) => p.id === id) || null;
+    }
+
+    function restockGroups() {
+        const map = new Map();
+        ((A.promo && A.promo.restock) || []).forEach((r) => {
+            const g = map.get(r.product_id) || { pid: r.product_id, wait: [], done: 0 };
+            if (r.notified_at) g.done++;
+            else g.wait.push(r);
+            map.set(r.product_id, g);
+        });
+        return [...map.values()]
+            .map((g) => ({ ...g, p: A.draft.products.find((x) => x.id === g.pid), live: publishedProduct(g.pid) }))
+            .filter((g) => g.p)
+            .sort((a, b) => b.wait.length - a.wait.length);
+    }
+
+    function restockCard() {
+        const groups = restockGroups();
+        const waiting = groups.reduce((n, g) => n + g.wait.length, 0);
+        const rows = groups.map((g) => {
+            const ready = g.live && g.live.is_available !== false;
+            const [cls, label] = ready ? ["ok", "✅ متوفر الآن"] : !g.live ? ["", "مخفي"] : g.p.is_available !== false ? ["warn", "انشر التغييرات ثم أرسل"] : ["", "ما زال نافداً"];
+            return `<li class="rs-row">
+                <img src="${esc(ATHR.thumb(g.p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
+                <span class="op-info"><b>${esc(g.p.name)}</b><small>${g.wait.length ? `🔔 ${waitText(g.wait.length)}` : "لا أحد ينتظر"}${g.done ? ` · أُبلغ ${g.done}` : ""}</small><span><span class="tag ${cls}">${label}</span></span></span>
+                <span class="rs-btns">
+                    ${ready && g.wait.length ? `<button class="ab ab-primary ab-sm" type="button" data-restock-send="${esc(g.pid)}">أرسل لهم (${g.wait.length})</button>` : ""}
+                    ${g.live && g.p.is_available === false && g.wait.length ? `<button class="ab-mini" type="button" data-restock-avail="${esc(g.pid)}">صار متوفراً</button>` : ""}
+                    ${g.done ? `<button class="ab-mini" type="button" data-restock-clear="${esc(g.pid)}">مسح من أُبلغوا</button>` : ""}
+                </span>
+            </li>`;
+        }).join("");
+        return card(`🔔 أخبرني عند التوفر${waiting ? ` <span class="tag warn">${waitText(waiting)}</span>` : ""}`, `
+            ${toggle("config.sales.restock", "زر «أخبرني عند التوفر» على المنتجات النافدة", { help: "الزبون يترك اسمه ورقمه، وأول ما يتوفر المنتج ترسل له رسالة واتساب جاهزة بضغطة." })}
+            ${promoState(groups.length ? `<ul class="rs-list">${rows}</ul>` : `<p class="adm-muted">لا أحد ينتظر منتجاً الآن. يظهر هنا كل من يضغط «أخبرني عند التوفر».</p>`)}`,
+            "عند توفر المنتج: أطفئ «نفد من المخزون» (أو اضغط «صار متوفراً» هنا) ثم «نشر التغييرات»، وبعدها «أرسل لهم».");
+    }
+
+    function restockText(st, r) {
+        const first = String((r && r.name) || "").trim().split(/\s+/)[0] || "";
+        const p = st.product;
+        return fillOffer(st.text, { name: first, store: ATHR.storeName(cfg()), product: p.name, price: money(p.price), link: `${siteLink(ATHR.url.product(p))}?ref=whatsapp`, old: "", pct: "", save: "", ends: "" });
+    }
+
+    function openRestock(pid) {
+        const g = restockGroups().find((x) => x.pid === pid);
+        if (!g || !g.live || !g.wait.length) return;
+        A.restockRun = { pid, product: g.live, list: g.wait.slice(), i: 0, sent: 0, step: "compose", text: storage.get(RESTOCK_KEY) || RESTOCK_MSG };
+        renderRestock();
+    }
+
+    function renderRestock() {
+        const st = A.restockRun;
+        if (!st) return;
+        const p = st.product;
+        const head = (title) => `<div class="adm-sheet-head"><h2>${title}</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>`;
+        if (st.step === "compose") {
+            openSheet(`${head("🔔 أخبرهم أنه رجع")}
+                <div class="af-stack">
+                    <div class="op-chosen"><img src="${esc(ATHR.thumb(p.image_url, "s") || asset(p.image_url))}" alt=""><span class="op-info"><b>${esc(p.name)}</b><small>${waitText(st.list.length)} · ${money(p.price)}</small></span></div>
+                    <label class="af"><span>نص الرسالة (تقدر تعدّله)</span><textarea class="ai" id="restockText" rows="8">${esc(st.text)}</textarea><small>{name} اسم الزبون · {product} المنتج · {price} السعر · {link} رابط المنتج.</small></label>
+                    <div class="af"><span>👀 هكذا تصل الرسالة</span><div id="restockPreview">${waBubble(restockText(st, st.list[0]), st)}</div></div>
+                    <button class="ab ab-primary ab-block" type="button" data-a="restock-start">ابدأ الإرسال (${st.list.length})</button>
+                    <p class="adm-muted">تضغط «أرسل» لكل شخص وننقلك للتالي تلقائياً. من تُرسل له يُعلَّم «أُبلغ» حتى لا تكرر عليه.</p>
+                </div>`);
+            return;
+        }
+        const r = st.list[st.i];
+        if (!r) {
+            openSheet(`${head("تم ✅")}
+                <div class="af-stack">
+                    <div class="offer-done"><span aria-hidden="true">🎉</span><p class="adm-sentence">أبلغت <b>${st.sent}</b> من ${st.list.length} أن «${esc(p.name)}» رجع.</p></div>
+                    <button class="ab ab-primary ab-block" type="button" data-a="close-sheet">إغلاق</button>
+                </div>`);
+            return;
+        }
+        const first = String(r.name || "").trim().split(/\s+/)[0];
+        openSheet(`${head("🔔 إرسال التنبيه")}
+            <div class="af-stack offer-run">
+                <div class="offer-progress"><span style="width:${Math.round((st.i / st.list.length) * 100)}%"></span></div>
+                <p class="adm-muted">الشخص ${st.i + 1} من ${st.list.length} · أُرسل ${st.sent}</p>
+                <div class="offer-who"><b>${esc(r.name || "بدون اسم")}</b><span dir="ltr">+${esc(r.phone)}</span></div>
+                ${waBubble(restockText(st, r), st)}
+                <button class="ab ab-primary ab-block offer-send" type="button" data-a="restock-send">${ATHR.views.waIcon()}أرسل${first ? ` لـ${esc(first)}` : ""} في واتساب</button>
+                <div class="inline"><button class="ab-mini" type="button" data-a="restock-skip">تخطي</button><button class="ab-mini" type="button" data-a="restock-stop">إيقاف</button></div>
+            </div>`);
+    }
+
+    function restockSend() {
+        const st = A.restockRun;
+        const r = st && st.list[st.i];
+        if (!r) return;
+        window.open(ATHR.waLink(r.phone, restockText(st, r)), "_blank", "noopener");
+        st.sent++;
+        st.i++;
+        const at = new Date().toISOString();
+        r.notified_at = at;
+        sb.from("restock_requests").update({ notified_at: at }).eq("product_id", r.product_id).eq("phone", r.phone).then(() => {}, () => {});
+        renderRestock();
+    }
+
+    async function clearRestock(pid) {
+        const g = restockGroups().find((x) => x.pid === pid);
+        if (!g || !g.done || !confirm(`مسح ${g.done} ممن أُبلغوا عن «${g.p.name}» من القائمة؟`)) return;
+        const { error } = await sb.from("restock_requests").delete().eq("product_id", pid).not("notified_at", "is", null);
+        if (error) {
+            toast("تعذر المسح. تأكد من الإنترنت.");
+            return;
+        }
+        A.promo.restock = A.promo.restock.filter((r) => r.product_id !== pid || !r.notified_at);
+        refreshPromoTab();
+        toast("مُسحت القائمة");
+    }
+
+    // ---------- ❤️ المفضلة ----------
+
+    function favCard() {
+        const favs = (A.promo && A.promo.favs) || {};
+        const top = Object.entries(favs)
+            .map(([pid, n]) => ({ p: A.draft.products.find((x) => x.id === pid), n }))
+            .filter((x) => x.p && x.n > 0)
+            .sort((a, b) => b.n - a.n)
+            .slice(0, 8);
+        const offerIds = new Set(offerProducts().map((p) => p.id));
+        const rows = top.map(({ p, n }, i) => `<li class="ft-row">
+            <span class="ft-rank">${i + 1}</span>
+            <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
+            <span class="op-info"><b>${esc(p.name)}</b><small>${money(p.price)}${p.is_available === false ? " · نفد" : ""}</small></span>
+            <span class="ft-n">❤️ ${n}</span>
+            ${offerIds.has(p.id) ? `<button class="ab-mini gift" type="button" data-fav-offer="${esc(p.id)}">📣 عرض</button>` : ""}
+        </li>`).join("");
+        return card("❤️ المفضلة", `
+            ${toggle("config.sales.favorites", "زر القلب ♥ على المنتجات وصفحة «المفضلة»", { help: "الزبون يحفظ التصاميم التي أعجبته ويرجع لها من القائمة أو من الصفحة الرئيسية." })}
+            ${promoState(top.length ? `<p class="adm-muted ft-head">الأكثر إعجاباً عند زبائنك:</p><ol class="ft-list">${rows}</ol>` : `<p class="adm-muted">لم يُضف أحد منتجاً للمفضلة بعد.</p>`)}`,
+            "نعرض لك عدد الإعجابات فقط، بدون أي بيانات عن الزوار. أرسل عرضاً على التصميم الأكثر إعجاباً، أو استخدمه في إعلانك القادم.");
+    }
+
+    // فتح استوديو العروض على منتج من المفضلة مباشرة
+    async function offerFor(pid) {
+        A.book = "customers";
+        location.hash = "#orders";
+        await open("orders");
+        if (A.view !== "orders") return;
+        if (!A.customersLoaded) {
+            try {
+                await loadCustomers();
+                renderCustomers();
+            } catch {
+                return;
+            }
+        }
+        openOffer();
+        offerChoose(pid);
+    }
+
+    async function promoClick(d) {
+        const st = A.restockRun;
+        switch (d.a) {
+            case "coupon-new": couponSheet(null); return;
+            case "coupon-delete": await deleteCoupon(); return;
+            case "promo-reload": loadPromo(); refreshPromoTab(); return;
+            case "restock-start": if (st) { st.step = "run"; renderRestock(); } return;
+            case "restock-send": restockSend(); return;
+            case "restock-skip": if (st) { st.i++; renderRestock(); } return;
+            case "restock-stop": if (st) { st.i = st.list.length; renderRestock(); } return;
+            default: break;
+        }
+        if (d.cpToggle) { toggleCoupon(d.cpToggle); return; }
+        if (d.cpEdit) { const k = findCoupon(d.cpEdit); if (k) couponSheet(k); return; }
+        if (d.cpLink) { ATHR.store.copyText(couponLink(d.cpLink), "نُسخ رابط الكود ✓"); return; }
+        if (d.cpMsg) { const k = findCoupon(d.cpMsg); if (k) ATHR.store.copyText(couponMessage(k), "نُسخت رسالة المؤثر ✓ الصقها له في واتساب أو إنستغرام"); return; }
+        if (d.restockSend) { openRestock(d.restockSend); return; }
+        if (d.restockClear) { clearRestock(d.restockClear); return; }
+        if (d.restockAvail) {
+            const p = A.draft.products.find((x) => x.id === d.restockAvail);
+            if (p) {
+                p.is_available = true;
+                afterChange();
+                toast("صار متوفراً في المسودة. اضغط «نشر التغييرات» ثم «أرسل لهم».");
+            }
+            return;
+        }
+        if (d.favOffer) offerFor(d.favOffer);
     }
 
     // =====================================================
@@ -1781,6 +2271,17 @@
             renderCustomers();
             return;
         }
+        if (t.closest && t.closest("#couponForm")) {
+            couponFormInput(t);
+            return;
+        }
+        if (t.id === "restockText" && A.restockRun) {
+            A.restockRun.text = t.value;
+            storage.set(RESTOCK_KEY, t.value);
+            const box = $("#restockPreview");
+            if (box) box.innerHTML = waBubble(restockText(A.restockRun, A.restockRun.list[0]), A.restockRun);
+            return;
+        }
         if (t.id === "offerText" && A.offer) {
             A.offer.text = t.value;
             refreshOfferPreview();
@@ -1823,6 +2324,10 @@
         const t = e.target;
         if (t.dataset.pixel) {
             setPixel(t);
+            return;
+        }
+        if (t.closest && t.closest("#couponForm")) {
+            couponFormInput(t);
             return;
         }
         if (t.id === "offerSkip" && A.offer) {
@@ -1996,6 +2501,10 @@
             return;
         }
         if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
+        if ((d.a && /^(coupon|restock|promo)-/.test(d.a)) || d.cpToggle || d.cpEdit || d.cpLink || d.cpMsg || d.restockSend || d.restockClear || d.restockAvail || d.favOffer) {
+            await promoClick(d);
+            return;
+        }
 
         switch (d.a) {
             case "close": close(); return;
@@ -2178,6 +2687,7 @@
         if (e.target.id === "loginForm") doLogin();
         if (e.target.id === "passwordForm") changePassword(e.target);
         if (e.target.id === "orderForm") saveOrderForm(e.target);
+        if (e.target.id === "couponForm") saveCoupon(e.target);
     }
 
     // =====================================================
@@ -3253,7 +3763,7 @@
             const when = ATHR.muscatParts(o.ordered_at);
             return `<article class="oc${o.status === "delivered" ? " delivered" : ""}${o.hidden ? " is-hidden" : ""}">
                 <header class="oc-head">
-                    <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : "يدوي"}</span>${o.source === "web" && o.channel && o.channel !== "direct" ? ` <span class="tag ch">عبر ${esc(CHANNELS[o.channel] || o.channel)}</span>` : ""}${o.gift ? ` <span class="tag gift">🎁 هدية</span>` : ""}</div>
+                    <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : "يدوي"}</span>${o.source === "web" && o.channel && o.channel !== "direct" ? ` <span class="tag ch">عبر ${esc(CHANNELS[o.channel] || o.channel)}</span>` : ""}${o.gift ? ` <span class="tag gift">🎁 هدية</span>` : ""}${o.coupon ? ` <span class="tag cp" dir="ltr">🎟️ ${esc(o.coupon)}</span>` : ""}</div>
                     <span class="oc-wait${o.status === "new" ? " new" : ""}">${esc(waiting(o))}</span>
                 </header>
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
@@ -3270,6 +3780,7 @@
                 <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
                 <div class="oc-sum">
                     ${Number(o.discount) > 0 ? `<span>${esc(o.discount_label || "الخصم")}: -${money(o.discount)}</span>` : ""}
+                    ${o.coupon ? `<span>🎟️ كود ${esc(o.coupon)}${Number(o.coupon_discount) > 0 ? `: -${money(o.coupon_discount)}` : Number(o.delivery_price) === 0 ? " (توصيل مجاني)" : ""}</span>` : ""}
                     ${o.delivery_name ? `<span>${esc(o.delivery_name)}: ${Number(o.delivery_price) > 0 ? money(o.delivery_price) : "مجاني"}</span>` : ""}
                     <b>الإجمالي: ${money(o.total)}</b>
                 </div>

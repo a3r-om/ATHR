@@ -34,7 +34,10 @@
         lang: "athr_lang",
         mode: "athr_mode",
         giftIntent: "athr_gift_intent",
-        offer: "athr_offer"
+        offer: "athr_offer",
+        favs: "athr_favs",
+        restock: "athr_restock",
+        coupon: "athr_coupon"
     };
 
     // أسماء ولايات عُمان (اقتراحات فقط، ويمكن للعميل كتابة غيرها)
@@ -66,7 +69,10 @@
         country: "OM",
         route: { name: "home" },
         ctx: null,
-        lastAdded: []
+        lastAdded: [],
+        homeCat: "",
+        shown: {},
+        coupon: null
     };
 
     let readyResolve;
@@ -119,7 +125,8 @@
                 categories: S.categories,
                 reviews: S.reviews,
                 country: S.country,
-                cartQty
+                cartQty,
+                isFav: (id) => favSet().has(id)
             });
         }
         return S.ctx;
@@ -127,12 +134,14 @@
 
     // ---------- toast ----------
     let toastTimer;
-    function toast(message) {
+    function toast(message, link = null) {
         const el = $("#toast");
-        el.textContent = message;
+        if (link) el.innerHTML = `<span>${esc(message)}</span> <a href="${esc(link.href)}">${esc(link.text)}</a>`;
+        else el.textContent = message;
+        el.classList.toggle("has-link", Boolean(link));
         el.classList.add("show");
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+        toastTimer = setTimeout(() => el.classList.remove("show"), link ? 3600 : 2400);
     }
 
     async function copyText(text, label = t("تم النسخ")) {
@@ -517,6 +526,10 @@
         if (offer && !(S.route.name === "product" && findProduct(S.route.slug) === offer.product) && !["checkout", "done", "gift"].includes(S.route.name)) {
             parts.push(`<div class="bar bar-offer"><span aria-hidden="true">🎁</span> <span>${esc(offer.name ? t("عرضك الخاص يا {name}:", { name: offer.name }) : t("عرضك الخاص:"))}</span> <a href="${ATHR.url.product(offer.product)}">${esc(V.pname(offer.product))}</a>${offer.ends ? ` <span class="bo-left">⏳ <b data-offer-left="${offer.ends}">${offerClock(offer.ends)}</b></span>` : ""}</div>`);
         }
+        // كود المؤثر مفعّل: تذكير بسيط حتى يكمل الطلب
+        if (S.coupon && cfg.sales.coupons !== false && !["checkout", "done", "gift"].includes(S.route.name)) {
+            parts.push(`<div class="bar bar-coupon"><span aria-hidden="true">🎟️</span> ${esc(t("كود {code} مفعّل: {desc} عند إتمام الطلب", { code: S.coupon.code, desc: couponDesc(S.coupon) }))}</div>`);
+        }
         const totals = computeCart();
         const freeMin = Number(cfg.order.free_min) || 0;
         const routeName = S.route.name;
@@ -571,6 +584,7 @@
             case "done": return { name: "done", no: params.get("no") || "" };
             case "review": return { name: "review", p: params.get("p") || "", o: params.get("o") || "" };
             case "search": return { name: "search", q: params.get("q") || "" };
+            case "fav": return { name: "fav" };
             case "gift": return { name: "gift", c: params.get("c") || "" };
             default: return { name: "notfound" };
         }
@@ -641,6 +655,7 @@
             case "category": renderCategory(route); break;
             case "product": renderProduct(route, { changed }); break;
             case "search": renderSearch(route); break;
+            case "fav": renderFav(); break;
             case "shipping": view.innerHTML = V.shipping(v()); break;
             case "cart": renderCart(); break;
             case "checkout": renderCheckout(); break;
@@ -710,14 +725,32 @@
     // PAGES: home, category, search, not found
     // =====================================================
 
+    const shownKey = () => (S.route.name === "home" ? `home:${S.homeCat}` : `${S.route.name}:${S.route.slug || ""}`);
+
     function renderHome() {
-        $("#view").innerHTML = V.home(v(), { sort: S.sort });
+        $("#view").innerHTML = V.home(v(), { sort: S.sort, cat: S.homeCat, shown: S.shown[shownKey()] || 0 });
+        homeFavRail();
+    }
+
+    // «مفضلتك» في الرئيسية لمن حفظ تصاميم
+    function homeFavRail() {
+        if (C().sales.favorites === false) return;
+        const vv = v();
+        const items = favIds().map((id) => vv.byId.get(id)).filter(Boolean).slice(0, 12);
+        if (!items.length) return;
+        const html = V.rail(vv, { id: "favs", title: `♥ ${t("مفضلتك")}`, link: { href: `${BASE}fav/`, text: t("عرض الكل") }, items });
+        const anchor = $("#view .gift-promo") || $("#view .tiles");
+        if (anchor) anchor.insertAdjacentHTML(anchor.classList.contains("tiles") ? "afterend" : "beforebegin", html);
+    }
+
+    function renderFav() {
+        $("#view").innerHTML = V.favPage(v(), favIds());
     }
 
     function renderCategory(route) {
         const cat = findCategory(route.slug);
         if (!cat) return renderNotFound();
-        $("#view").innerHTML = V.category(v(), cat, { sort: S.sort });
+        $("#view").innerHTML = V.category(v(), cat, { sort: S.sort, shown: S.shown[shownKey()] || 0 });
         const on = $(".tile.on");
         if (on && on.scrollIntoView) on.scrollIntoView({ inline: "center", block: "nearest" });
     }
@@ -738,14 +771,221 @@
         if (!box) return;
         const r = S.route;
         const vv = v();
+        if (r.name === "home") {
+            const inner = $("#catalogInner");
+            if (inner) inner.innerHTML = V.catalogHome(vv, { sort: S.sort, cat: S.homeCat, shown: S.shown[shownKey()] || 0 });
+            return;
+        }
+        if (r.name === "fav") {
+            renderFav();
+            return;
+        }
         let list = [];
-        if (r.name === "home") list = V.listings(vv, vv.products);
+        if (r.name === "category") {
+            const cat = findCategory(r.slug);
+            if (cat) list = V.listings(vv, vv.products.filter((p) => p.category_id === cat.id));
+            box.innerHTML = V.limitedGrid(vv, V.sortList(list, S.sort), S.shown[shownKey()] || 0);
+            return;
+        }
+        if (r.name === "search") list = V.searchResults(vv, r.q);
+        box.innerHTML = V.grid(vv, V.sortList(list, S.sort));
+    }
+
+    // «عرض المزيد»: نضيف الدفعة التالية تحت الموجود بدون قفز الصفحة
+    function showMore() {
+        const box = $("#gridBox");
+        const grid = box && box.querySelector(".grid");
+        if (!grid) return;
+        const vv = v();
+        const r = S.route;
+        let list = [];
+        if (r.name === "home") list = V.listings(vv, vv.products.filter((p) => !S.homeCat || p.category_id === S.homeCat));
         else if (r.name === "category") {
             const cat = findCategory(r.slug);
             if (cat) list = V.listings(vv, vv.products.filter((p) => p.category_id === cat.id));
-        } else if (r.name === "search") list = V.searchResults(vv, r.q);
-        box.innerHTML = V.grid(vv, V.sortList(list, S.sort));
+        }
+        list = V.sortList(list, S.sort);
+        const size = V.pageSize(vv) || list.length;
+        const now = grid.children.length;
+        const next = Math.min(list.length, now + size);
+        grid.insertAdjacentHTML("beforeend", list.slice(now, next).map((p) => V.card(vv, p)).join(""));
+        S.shown[shownKey()] = next;
+        const more = box.querySelector(".more-wrap");
+        if (more) more.outerHTML = V.moreBtn(vv, list.length, next);
+        startDeferredMedia();
     }
+
+    // =====================================================
+    // المفضلة (على جهاز الزبون فقط) + عدّاد بسيط لكل منتج لصاحب المتجر
+    // =====================================================
+
+    function favIds() {
+        const list = storage.get(KEYS.favs, []);
+        return Array.isArray(list) ? list.filter((id) => typeof id === "string").slice(0, 200) : [];
+    }
+    function favSet() {
+        return new Set(favIds());
+    }
+
+    function toggleFav(id) {
+        const p = productById(id);
+        if (!p) return;
+        const list = favIds();
+        const on = !list.includes(id);
+        const next = on ? [id, ...list] : list.filter((x) => x !== id);
+        storage.set(KEYS.favs, next);
+        $$(`[data-fav="${CSS.escape(id)}"]`).forEach((b) => {
+            b.classList.toggle("on", on);
+            b.setAttribute("aria-pressed", String(on));
+            b.setAttribute("aria-label", on ? t("إزالة من المفضلة") : t("أضف للمفضلة"));
+            const label = b.querySelector("span");
+            if (label) label.textContent = on ? t("في المفضلة") : t("أضف للمفضلة");
+            if (on) {
+                b.classList.remove("pop");
+                void b.offsetWidth;
+                b.classList.add("pop");
+            }
+        });
+        toast(on ? t("أُضيف للمفضلة ♥") : t("أُزيل من المفضلة"), on ? { href: `${BASE}fav/`, text: t("عرض المفضلة") } : null);
+        if (on) pixelSend("AddToWishlist", [{ product: p, qty: 1 }]);
+        if (!trackingOff()) rest("rpc/fav", { method: "POST", body: { p: id, d: on ? 1 : -1 } }).catch(() => {});
+        if (S.route.name === "fav" && !on) renderFav();
+    }
+
+    // =====================================================
+    // «أخبرني عند التوفر»: الاسم والرقم يُحفظان لصاحب المتجر فقط
+    // =====================================================
+
+    function restockDone(id) {
+        const list = storage.get(KEYS.restock, []);
+        return Array.isArray(list) && list.includes(id);
+    }
+
+    function markRestockButtons() {
+        $$("[data-notify]").forEach((b) => {
+            if (restockDone(b.dataset.notify)) {
+                b.classList.add("done");
+                b.innerHTML = `${V.icon.check}${esc(t("سنخبرك عند التوفر ✓"))}`;
+            }
+        });
+    }
+
+    function openNotify(id) {
+        const p = productById(id);
+        if (!p) return;
+        const saved = storage.get(KEYS.customer, null) || {};
+        const countries = ATHR.countries(C()).filter((c) => c.enabled);
+        const code = countries.some((c) => c.code === S.country) ? S.country : (countries[0] || ATHR.country(C(), "OM")).code;
+        const dial = countries.length > 1
+            ? `<select class="dial dial-pick" id="notifyCountry" dir="ltr" aria-label="${esc(t("مفتاح الدولة"))}">${countries.map((x) => `<option value="${x.code}"${x.code === code ? " selected" : ""}>${x.flag} +${x.dial}</option>`).join("")}</select>`
+            : `<span class="dial" dir="ltr">+${ATHR.country(C(), code).dial}</span>`;
+        openSheet(`
+            <div class="sheet-head"><h2>${V.icon.bell}${esc(t("أخبرني عند التوفر"))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
+            <form class="notify-form" id="notifyForm" data-product="${esc(p.id)}" novalidate>
+                <div class="notify-item">${V.img(p) ? `<img src="${esc(V.img(p))}" alt="" width="56" height="70">` : ""}<div><b>${esc(V.label(v(), p))}</b><small>${esc(t("أول ما يتوفر نرسل لك رسالة على واتساب."))}</small></div></div>
+                <label class="field"><span>${esc(t("الاسم"))}</span><input class="input" name="n" maxlength="80" autocomplete="name" value="${esc(saved.name || "")}"></label>
+                <label class="field"><span>${esc(t("رقم الواتساب"))}</span><span class="phone-wrap">${dial}<input class="input" name="ph" type="tel" inputmode="numeric" dir="ltr" autocomplete="tel-national" value="${esc(saved.phoneLocal || "")}" required></span></label>
+                <p class="err" id="notifyErr" role="alert"></p>
+                <button class="btn btn-primary btn-block" type="submit">${esc(t("نبّهني"))}</button>
+                <small class="muted">${esc(t("نستخدم رقمك لهذا التنبيه فقط."))}</small>
+            </form>`, { label: t("أخبرني عند التوفر"), kind: "notify" });
+    }
+
+    async function submitNotify(form) {
+        const id = form.dataset.product;
+        const code = $("#notifyCountry") ? $("#notifyCountry").value : S.country;
+        const values = Object.fromEntries(new FormData(form).entries());
+        const phone = ATHR.parsePhone(values.ph, code);
+        const err = $("#notifyErr");
+        if (!phone.valid) {
+            err.textContent = t("اكتب رقم {country} الصحيح: {hint}.", { country: L(ATHR.country(C(), code), "name"), hint: L(phone.rule, "hint") });
+            return;
+        }
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        try {
+            await rest("rpc/request_restock", { method: "POST", body: { p: id, n: String(values.n || "").trim(), ph: ATHR.country(C(), code).dial + phone.local, c: code } });
+            const list = storage.get(KEYS.restock, []);
+            storage.set(KEYS.restock, [...new Set([...(Array.isArray(list) ? list : []), id])].slice(-100));
+            form.outerHTML = `<div class="notify-done"><span aria-hidden="true">🔔</span><b>${esc(t("تم! سنخبرك أول ما يتوفر"))}</b><small>${esc(t("تصلك رسالة على واتساب. وتقدر تحفظه في المفضلة ♥ حتى ترجع له."))}</small><button class="btn btn-ghost btn-block" type="button" data-close-sheet>${esc(t("تم"))}</button></div>`;
+            markRestockButtons();
+        } catch (error) {
+            console.warn("Restock request failed:", error);
+            err.textContent = t("تعذر الإرسال. تأكد من الإنترنت وحاول مرة أخرى.");
+            btn.disabled = false;
+        }
+    }
+
+    // =====================================================
+    // كود الخصم: من خانة الطلب أو من رابط المؤثر (?code=SARA10)
+    // =====================================================
+
+    async function applyCoupon(raw, { quiet = false } = {}) {
+        const code = ATHR.couponCode(raw);
+        if (!ATHR.couponValid(code)) return { error: t("اكتب الكود بالحروف الإنجليزية والأرقام.") };
+        try {
+            const data = await rest("rpc/check_coupon", { method: "POST", body: { c: code } });
+            if (!data || !data.code) return { error: t("الكود غير صحيح أو انتهت صلاحيته.") };
+            S.coupon = { code: data.code, kind: data.kind, value: Number(data.value), min_total: Number(data.min_total) || 0 };
+            session.set(KEYS.coupon, JSON.stringify(S.coupon));
+            if (!quiet) toast(t("تم تفعيل الكود {code} ✓", { code: data.code }));
+            return { ok: true };
+        } catch {
+            return { error: t("تعذر التحقق من الكود. حاول مرة أخرى.") };
+        }
+    }
+
+    function removeCoupon() {
+        S.coupon = null;
+        session.del(KEYS.coupon);
+    }
+
+    function captureCouponParam() {
+        const raw = new URLSearchParams(location.search).get("code");
+        if (!raw || C().sales.coupons === false) return;
+        applyCoupon(raw, { quiet: true }).then((r) => {
+            if (r.ok) {
+                renderBars();
+                if (S.route.name === "checkout") { renderCouponBox(); updateCheckoutSummary(); }
+            }
+        });
+    }
+
+    function couponDesc(c) {
+        if (!c) return "";
+        if (c.kind === "ship") return t("توصيل مجاني");
+        if (c.kind === "fixed") return t("خصم {amount}", { amount: money(c.value) });
+        return t("خصم {pct}%", { pct: Number(c.value) });
+    }
+
+    function renderCouponBox() {
+        const box = $("#couponBox");
+        if (!box) return;
+        if (C().sales.coupons === false) {
+            box.innerHTML = "";
+            return;
+        }
+        const c = S.coupon;
+        if (c) {
+            const tt = checkoutTotals();
+            box.innerHTML = `<div class="coupon-on">
+                <span class="cp-ico" aria-hidden="true">🎟️</span>
+                <span class="cp-txt"><b dir="ltr">${esc(c.code)}</b><small>${esc(couponDesc(c))}${tt.couponShort > 0 ? ` · ${esc(t("أضف {amount} لتفعيله", { amount: money(tt.couponShort) }))}` : ""}</small></span>
+                <button class="link-btn" type="button" data-coupon-remove>${esc(t("إزالة"))}</button>
+            </div>`;
+            return;
+        }
+        box.innerHTML = `<details class="coupon-box">
+            <summary>🎟️ ${esc(t("عندك كود خصم؟"))}</summary>
+            <div class="coupon-row">
+                <input class="input" id="couponInput" dir="ltr" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="SARA10" maxlength="20">
+                <button class="btn btn-ghost btn-sm" type="button" data-coupon-apply>${esc(t("تطبيق"))}</button>
+            </div>
+            <small class="err" id="couponErr" role="alert"></small>
+        </details>`;
+    }
+
+
 
     // =====================================================
     // PRODUCT PAGE
@@ -827,6 +1067,11 @@
         $("#view").innerHTML = V.product(v(), p);
         const banner = offerBanner(p);
         if (banner) $("#view .pdp")?.insertAdjacentHTML("beforebegin", banner);
+        markRestockButtons();
+        if (location.hash === "#notify" && p.is_available === false && C().sales.restock !== false) {
+            history.replaceState(history.state, "", location.pathname + location.search);
+            setTimeout(() => openNotify(p.id), 60);
+        }
 
         const keepIndex = !changed && gallery.product === p.id;
         gallery = { items: p.image_url ? [{ type: "image", url: p.image_url }] : [], index: keepIndex ? gallery.index : 0, product: p.id };
@@ -1368,6 +1613,7 @@
                     <aside>
                         <div class="panel">
                             <h2>${esc(t("ملخص الطلب"))}</h2>
+                            <div id="couponBox"></div>
                             <div id="checkoutSummary"></div>
                             <div class="cart-actions">
                                 <button class="btn btn-primary btn-block" type="submit" id="placeOrder"${delivery.length && payments.length ? "" : " disabled"}>${esc(gift ? t("تأكيد طلب الهدية") : t("تأكيد الطلب"))}</button>
@@ -1382,6 +1628,7 @@
 
         renderAddressField(saved);
         renderPayExtra();
+        renderCouponBox();
         updateCheckoutSummary();
     }
 
@@ -1443,8 +1690,15 @@
         const totals = computeCart();
         const d = selectedDelivery() || ATHR.deliveriesFor(C(), S.country)[0];
         const shipping = ATHR.shippingFor(d, totals.lines, C());
-        const ship = totals.freeShipping ? 0 : shipping.cost;
-        return { ...totals, ship, kg: totals.freeShipping ? 0 : shipping.kg, total: Math.round((totals.afterDiscount + ship) * 1000) / 1000, delivery: d };
+        const coupon = C().sales.coupons === false ? null : S.coupon;
+        const eff = ATHR.couponEffect(coupon, totals.afterDiscount);
+        const freeShip = totals.freeShipping || eff.freeShip;
+        const ship = freeShip ? 0 : shipping.cost;
+        return {
+            ...totals, ship, kg: freeShip ? 0 : shipping.kg, delivery: d,
+            coupon: coupon && coupon.code ? coupon : null, couponAmount: eff.amount, couponFree: eff.freeShip, couponShort: eff.short,
+            total: Math.round((totals.afterDiscount - eff.amount + ship) * 1000) / 1000
+        };
     }
 
     function updateCheckoutSummary() {
@@ -1463,12 +1717,14 @@
         const html = `<div class="rows">
             ${tt.lines.map((l) => `<div class="row"><span>${esc(V.label(v(), l.product))} × ${l.qty}</span><span>${money(l.total)}</span></div>`).join("")}
             ${tt.discount > 0 ? `<div class="row ok"><span>${esc(ATHR.discountName(tt))}</span><span>-${money(tt.discount)}</span></div>` : ""}
+            ${tt.couponAmount > 0 ? `<div class="row ok"><span>🎟️ ${esc(t("كود {code}", { code: tt.coupon.code }))}</span><span>-${money(tt.couponAmount)}</span></div>` : ""}
             <div class="row"><span>${esc(tt.kg ? t("التوصيل ({kg} كيلو تقريبًا)", { kg: tt.kg }) : t("التوصيل"))}</span><span>${tt.ship > 0 ? money(tt.ship) : esc(t("مجاني"))}</span></div>
             <div class="row total"><span>${esc(t("الإجمالي"))}</span><span>${money(tt.total)}</span></div>
             ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(tt.total)}</span></div>`}
             ${tt.kg ? `<p class="muted small" style="margin:4px 0 0">${esc(t("سعر التوصيل حسب الوزن التقريبي، ونؤكد لك الوزن النهائي قبل الشحن."))}</p>` : ""}
         </div>`;
         box.innerHTML = html;
+        if (S.coupon && $("#couponBox .coupon-on")) renderCouponBox();
         const m = $("#checkoutSummaryM");
         if (m) m.innerHTML = html;
         const mt = $("#sumMobileTotal");
@@ -1596,6 +1852,8 @@
             subtotal: tt.subtotal,
             discount: tt.discount,
             discount_label: tt.discount > 0 ? tt.discountLabel : null,
+            coupon: tt.coupon ? tt.coupon.code : null,
+            coupon_discount: tt.couponAmount || 0,
             total: tt.total
         };
 
@@ -1827,6 +2085,7 @@
         if (cfg.contact.menu_show || S.isAdmin) {
             const main = [];
             if (cfg.contact.menu_home !== false) main.push(row(`${ico(V.icon.home)}<span class="ml">${esc(t("الصفحة الرئيسية"))}</span>`, { href: BASE }));
+            if (cfg.sales.favorites !== false) main.push(row(`${ico(V.icon.heart, " fav")}<span class="ml">${esc(t("المفضلة"))}</span>${favIds().length ? `<small class="mval">${favIds().length}</small>` : ""}`, { href: `${BASE}fav/` }));
             if (cats.length) {
                 main.push(`<button class="mrow" type="button" data-menu-cats aria-expanded="${menuCatsOpen}" aria-controls="menuCats">${ico(V.icon.grid)}<span class="ml">${esc(t("تسوّق حسب القسم"))}</span><small class="mval">${cats.length}</small><span class="mchev down">${V.icon.chevron}</span></button>
                     <div class="menu-cats" id="menuCats"${menuCatsOpen ? "" : " hidden"}>${cats.map((c) => {
@@ -2070,6 +2329,65 @@
         const d = el.dataset;
         // تواصل عبر واتساب (زر واتساب العائم أو أزرار واتساب)
         if (el.id === "waFloat" || el.classList.contains("btn-wa")) pixelSend("Contact");
+
+        if (d.fav) {
+            e.preventDefault();
+            afterReady(() => toggleFav(d.fav));
+            return;
+        }
+        if (d.favAll !== undefined) {
+            afterReady(() => {
+                const ids = favIds().filter((id) => { const p = productById(id); return p && p.is_available !== false; });
+                let n = 0;
+                ids.forEach((id) => { if (!cartQty(id) && setQty(id, 1, { silent: true })) { n++; track("add"); pixelAdd(id, 1); } });
+                updateCartUI();
+                toast(n ? t("أُضيف {n} للسلة", { n: ATHR.piecesText(n) }) : t("كلها موجودة في سلتك"), { href: `${BASE}cart/`, text: t("السلة") });
+            });
+            return;
+        }
+        if (d.notify) {
+            afterReady(() => openNotify(d.notify));
+            return;
+        }
+        if (d.more !== undefined) {
+            showMore();
+            return;
+        }
+        if (d.homeCat !== undefined) {
+            S.homeCat = d.homeCat;
+            rerenderGrid();
+            // الزر المختار يبقى ظاهراً في وسط شريط الأقسام
+            const row = $(".cat-chips");
+            const on = row && row.querySelector(".chip.on");
+            if (on && row.scrollBy) {
+                const a = on.getBoundingClientRect();
+                const b = row.getBoundingClientRect();
+                row.scrollBy({ left: (a.left + a.width / 2) - (b.left + b.width / 2) });
+            }
+            const head = $("#catalog");
+            if (head && head.getBoundingClientRect().top < 0) head.scrollIntoView({ block: "start" });
+            return;
+        }
+        if (d.couponApply !== undefined) {
+            const input = $("#couponInput");
+            const err = $("#couponErr");
+            el.disabled = true;
+            applyCoupon(input ? input.value : "").then((r) => {
+                el.disabled = false;
+                if (r.ok) {
+                    renderCouponBox();
+                    updateCheckoutSummary();
+                } else if (err) err.textContent = r.error;
+            });
+            return;
+        }
+        if (d.couponRemove !== undefined) {
+            removeCoupon();
+            renderCouponBox();
+            updateCheckoutSummary();
+            renderBars();
+            return;
+        }
 
         if (d.giftStart !== undefined) {
             e.preventDefault();
@@ -2370,8 +2688,20 @@
         }
     });
 
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.target && e.target.id === "couponInput") {
+            e.preventDefault();
+            $("[data-coupon-apply]")?.click();
+        }
+    });
+
     document.addEventListener("submit", (e) => {
         const f = e.target;
+        if (f.id === "notifyForm") {
+            e.preventDefault();
+            submitNotify(f);
+            return;
+        }
         if (f.id === "checkoutForm") {
             e.preventDefault();
             afterReady(() => placeOrder(f));
@@ -2563,5 +2893,6 @@
     updateCartUI();
     sessionChannel();
     track("visit");
-    loadData().then(checkAdmin);
+    try { S.coupon = JSON.parse(session.get(KEYS.coupon) || "null"); } catch { S.coupon = null; }
+    loadData().then(() => { captureCouponParam(); return checkAdmin(); });
 })();

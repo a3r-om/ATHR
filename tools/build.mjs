@@ -651,7 +651,7 @@ async function main() {
         if (cfg.contact.policy_show) addUrl(url);
     }
 
-    ["cart", "checkout", "done", "review", "search", "gift"].forEach((route) => {
+    ["cart", "checkout", "done", "review", "search", "gift", "fav"].forEach((route) => {
         // بطاقة الإهداء: معاينة جميلة عند إرسال رابطها في واتساب
         const giftHead = route === "gift" ? {
             og: true,

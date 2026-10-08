@@ -55,7 +55,9 @@ const ATHR_DEFAULTS = {
         hero_image: "",
         visitor_mode: true,
         template: "classic",
-        header: "color"
+        header: "color",
+        page_size: 12,
+        home_filter: true
     },
 
     texts: {
@@ -120,6 +122,9 @@ const ATHR_DEFAULTS = {
     },
 
     sales: {
+        favorites: true,
+        restock: true,
+        coupons: true,
         free_bar_show: true,
         free_before: "توصيل مجاني داخل عُمان للطلبات من {free} أو أكثر",
         free_during: "أضف {left} أخرى للحصول على توصيل مجاني",
@@ -732,6 +737,28 @@ ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store, config }) 
 };
 
 // =====================================================
+// كود الخصم: يُحسب بعد خصومات المتجر (نفس منطق الخادم في athr_recompute_order)
+// =====================================================
+ATHR.couponCode = (x) => String(x || "").trim().toUpperCase().replace(/\s+/g, "");
+ATHR.couponValid = (x) => /^[A-Z0-9_-]{3,20}$/.test(ATHR.couponCode(x));
+ATHR.couponEffect = function (coupon, afterDiscount) {
+    if (!coupon || !coupon.code) return { amount: 0, freeShip: false, ok: false, short: 0 };
+    const min = Number(coupon.min_total) || 0;
+    if (afterDiscount < min) return { amount: 0, freeShip: false, ok: false, short: Math.round((min - afterDiscount) * 1000) / 1000 };
+    const value = Number(coupon.value) || 0;
+    if (coupon.kind === "ship") return { amount: 0, freeShip: true, ok: true, short: 0 };
+    const amount = coupon.kind === "fixed" ? Math.min(value, afterDiscount) : Math.round(afterDiscount * Math.min(value, 90) * 10) / 1000;
+    return { amount: Math.round(amount * 1000) / 1000, freeShip: false, ok: true, short: 0 };
+};
+// وصف الكود: «خصم 10%» / «خصم 1.000 ر.ع» / «توصيل مجاني»
+ATHR.couponText = function (coupon, config) {
+    if (!coupon) return "";
+    if (coupon.kind === "ship") return "توصيل مجاني";
+    if (coupon.kind === "fixed") return `خصم ${ATHR.money(coupon.value, config)}`;
+    return `خصم ${Number(coupon.value)}%`;
+};
+
+// =====================================================
 // بكسل الإعلانات: نقبل الرقم وحده، أو الكود كاملاً كما تنسخه من Meta أو TikTok
 // =====================================================
 ATHR.metaPixelId = function (raw) {
@@ -843,6 +870,7 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
         block([
             ...items,
             Number(order.discount) > 0 ? `${order.discount_label || "الخصم"}: -${num(order.discount)}` : "",
+            order.coupon ? `🎟️ كود الخصم ${order.coupon}${Number(order.coupon_discount) > 0 ? `: -${num(order.coupon_discount)}` : ""}` : "",
             order.delivery_name || Number(order.delivery_price) > 0 ? `التوصيل: ${Number(order.delivery_price) > 0 ? num(order.delivery_price) : "مجاني"}` : "",
             `💰 الإجمالي: ${ATHR.money(order.total, cfg)}${local}`,
             order.payment_name ? `💳 الدفع: ${order.payment_name}` : ""

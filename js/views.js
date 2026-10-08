@@ -55,6 +55,7 @@
             reviews,
             country: o.country || ATHR.BASE_COUNTRY,
             cartQty: o.cartQty || (() => 0),
+            isFav: o.isFav || (() => false),
             prerender: Boolean(o.prerender),
             byId,
             catById,
@@ -96,6 +97,8 @@
         grid: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',
         globe: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5Z"/></svg>',
         side: '<svg class="side" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>',
+        heart: '<svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg>',
+        bell: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15l1.5-2Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>',
         instagram: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" class="fill"/></svg>',
         tiktok: '<svg class="solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>'
     };
@@ -220,7 +223,9 @@
 
     V.cardAction = function (v, p) {
         if (p.is_available === false) {
-            return `<button class="btn btn-ghost" type="button" disabled>${esc(ct(v, "texts.sold_out"))}</button>`;
+            return v.cfg.sales.restock !== false
+                ? `<a class="btn btn-ghost notify-link" href="${ATHR.url.product(p)}#notify">${ICON.bell}${esc(t("أخبرني عند التوفر"))}</a>`
+                : `<button class="btn btn-ghost" type="button" disabled>${esc(ct(v, "texts.sold_out"))}</button>`;
         }
         const qty = v.cartQty(p.id);
         if (qty > 0) {
@@ -249,6 +254,7 @@
                 ${src ? `<img src="${esc(src)}" alt="" width="400" height="500"${eager ? "" : ' loading="lazy"'}${high ? ' fetchpriority="high"' : ""} decoding="async">` : ""}
                 ${badge}
             </a>
+            ${V.favBtn(v, p)}
             <div class="card-body">
                 <a class="card-name" href="${url}">${esc(V.pname(p))}</a>
                 ${stats ? `<span class="card-rate">${V.stars(stats.avg, "sm")}<small>(${stats.count})</small></span>` : ""}
@@ -257,6 +263,13 @@
             </div>
             <div class="card-action" data-action-for="${esc(p.id)}">${V.cardAction(v, p)}</div>
         </article>`;
+    };
+
+    // زر القلب (المفضلة)
+    V.favBtn = function (v, p, { big = false } = {}) {
+        if (v.cfg.sales.favorites === false) return "";
+        const on = v.isFav(p.id);
+        return `<button class="fav-btn${big ? " big" : ""}${on ? " on" : ""}" type="button" data-fav="${esc(p.id)}" aria-pressed="${on}" aria-label="${esc(on ? t("إزالة من المفضلة") : t("أضف للمفضلة"))}">${ICON.heart}${big ? `<span>${esc(on ? t("في المفضلة") : t("أضف للمفضلة"))}</span>` : ""}</button>`;
     };
 
     V.grid = function (v, list, { eagerCount = 4 } = {}) {
@@ -677,8 +690,47 @@
         </div>`;
     };
 
-    V.home = function (v, { sort = "default" } = {}) {
-        const all = V.sortList(V.listings(v, v.products), sort);
+    // عدد المنتجات قبل «عرض المزيد» (0 = الكل)
+    V.pageSize = (v) => {
+        const n = Number(v.cfg.theme.page_size);
+        return Number.isFinite(n) && n >= 0 ? n : 12;
+    };
+
+    // «عرض المزيد» تحت الشبكة
+    V.moreBtn = function (v, total, shown) {
+        const left = total - shown;
+        return left > 0 ? `<div class="more-wrap"><button class="btn btn-ghost more-btn" type="button" data-more>${esc(t("عرض المزيد"))} <small>(${left})</small></button></div>` : "";
+    };
+
+    V.limitedGrid = function (v, list, shown) {
+        const size = V.pageSize(v);
+        const n = size ? Math.max(size, shown || 0) : list.length;
+        return `${V.grid(v, list.slice(0, n))}${V.moreBtn(v, list.length, Math.min(n, list.length))}`;
+    };
+
+    // كل المنتجات في الرئيسية: فلترة سريعة بالقسم + «عرض المزيد»
+    V.catalogHome = function (v, { sort = "default", cat = "", shown = 0 } = {}) {
+        const cats = v.categories.filter((c) => v.counts.get(c.id));
+        const current = cat && cats.find((c) => c.id === cat) ? cat : "";
+        const all = V.sortList(V.listings(v, v.products.filter((p) => !current || p.category_id === current)), sort);
+        const total = V.listings(v, v.products).length;
+        const chips = v.cfg.theme.home_filter !== false && cats.length > 1
+            ? `<div class="cat-chips" role="group" aria-label="${esc(t("تصفية حسب القسم"))}">
+                <button type="button" class="chip${current ? "" : " on"}" data-home-cat="" aria-pressed="${!current}">${esc(ct(v, "texts.all_label") || t("الكل"))} <small>${total}</small></button>
+                ${cats.map((c) => `<button type="button" class="chip${current === c.id ? " on" : ""}" data-home-cat="${esc(c.id)}" aria-pressed="${current === c.id}">${esc(V.cname(c))} <small>${v.counts.get(c.id)}</small></button>`).join("")}
+            </div>`
+            : "";
+        const curCat = current ? v.catById.get(current) : null;
+        return `<div class="section-head">
+                <h2 id="catalog-t">${esc(curCat ? V.cname(curCat) : t("كل المنتجات"))} <small class="muted">(${all.length})</small></h2>
+                ${V.sortSelect(v, sort)}
+            </div>
+            ${chips}
+            ${V.curNote(v)}
+            <div id="gridBox">${V.limitedGrid(v, all, shown)}</div>`;
+    };
+
+    V.home = function (v, { sort = "default", cat = "", shown = 0 } = {}) {
         const best = V.bestSellers(v);
         const sets = V.setCards(v);
         const fresh = V.newArrivals(v);
@@ -691,14 +743,7 @@
             ${best.length ? V.rail(v, { id: "best", title: ct(v, "sales.best_title") || t("الأكثر طلباً"), items: best }) : ""}
             ${sets ? V.rail(v, { id: "sets", title: ct(v, "sales.sets_title") || t("أطقم بسعر أقل"), cards: sets }) : ""}
             <section class="catalog section" id="catalog" aria-labelledby="catalog-t">
-                <div class="wrap">
-                    <div class="section-head">
-                        <h2 id="catalog-t">${esc(t("كل المنتجات"))} <small class="muted">(${all.length})</small></h2>
-                        ${V.sortSelect(v, sort)}
-                    </div>
-                    ${V.curNote(v)}
-                    <div id="gridBox">${V.grid(v, all)}</div>
-                </div>
+                <div class="wrap" id="catalogInner">${V.catalogHome(v, { sort, cat, shown })}</div>
             </section>
             ${fresh.length && !best.length ? V.rail(v, { id: "new", title: ct(v, "sales.new_title") || t("وصل حديثاً"), items: fresh }) : ""}
             ${V.storeReviews(v)}
@@ -717,7 +762,7 @@
         </nav>`;
     };
 
-    V.category = function (v, cat, { sort = "default" } = {}) {
+    V.category = function (v, cat, { sort = "default", shown = 0 } = {}) {
         const list = V.sortList(V.listings(v, v.products.filter((p) => p.category_id === cat.id)), sort);
         const desc = L(cat, "description");
         return `${V.crumbs([{ name: t("الرئيسية"), href: ATHR.url.home() }, { name: V.cname(cat) }])}
@@ -730,7 +775,7 @@
                     </div>
                     ${desc ? `<p class="cat-desc">${esc(desc)}</p>` : ""}
                     ${V.curNote(v)}
-                    <div id="gridBox">${list.length ? V.grid(v, list) : `<div class="empty"><p>${esc(t("لا توجد منتجات في هذا القسم حاليًا."))}</p><a class="btn btn-primary" href="${ATHR.url.home()}">${esc(t("تصفّح كل المنتجات"))}</a></div>`}</div>
+                    <div id="gridBox">${list.length ? V.limitedGrid(v, list, shown) : `<div class="empty"><p>${esc(t("لا توجد منتجات في هذا القسم حاليًا."))}</p><a class="btn btn-primary" href="${ATHR.url.home()}">${esc(t("تصفّح كل المنتجات"))}</a></div>`}</div>
                 </div>
             </section>`;
     };
@@ -825,6 +870,12 @@
     V.buyBox = function (v, p) {
         const cfg = v.cfg;
         if (p.is_available === false) {
+            if (cfg.sales.restock !== false) {
+                return `<div class="buy out" id="buyBox">
+                    <div class="out-note">${esc(ct(v, "texts.sold_out"))}. ${esc(t("نخبرك على واتساب أول ما يتوفر."))}</div>
+                    <button class="btn btn-primary btn-block" type="button" data-notify="${esc(p.id)}">${ICON.bell}${esc(t("أخبرني عند التوفر"))}</button>
+                </div>`;
+            }
             return `<div class="out-note" id="buyBox">${esc(ct(v, "texts.sold_out"))}. ${ATHR.isValidWhatsapp(cfg.order.whatsapp) ? esc(t("تواصل معنا لمعرفة موعد توفره.")) : ""}</div>`;
         }
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp) && cfg.sales.wa_quick;
@@ -874,7 +925,7 @@
                 <div class="pdp">
                     <div class="gallery" id="gallery">${V.galleryStage(v, p)}</div>
                     <div class="pdp-info">
-                        <h1>${esc(V.pname(p))}</h1>
+                        <div class="pdp-title"><h1>${esc(V.pname(p))}</h1>${V.favBtn(v, p)}</div>
                         ${stats ? `<a class="pdp-rate" href="#reviews">${V.stars(stats.avg)}<span>${stats.avg.toFixed(1)} · ${esc(V.reviewCount(stats.count))}</span></a>` : ""}
                         ${V.priceHTML(v, p, { big: true })}
                         ${v.groups.get(p.id) ? V.variantPicker(v, p) : (V.colorOf(v, p) ? `<div class="pdp-color">${esc(t("اللون:"))} ${V.colorTag(v, p)}</div>` : "")}
@@ -1025,6 +1076,23 @@
     // TITLES
     // =====================================================
 
+    // صفحة المفضلة
+    V.favPage = function (v, ids) {
+        const list = ids.map((id) => v.byId.get(id)).filter(Boolean);
+        const avail = list.filter((p) => p.is_available !== false);
+        return `<section class="catalog section fav-page" id="catalog">
+            <div class="wrap">
+                <div class="section-head">
+                    <h1>${ICON.heart} ${esc(t("المفضلة"))} <small class="muted">(${list.length})</small></h1>
+                    ${avail.length > 1 ? `<button class="btn btn-primary btn-sm" type="button" data-fav-all>${esc(t("أضف الكل للسلة"))}</button>` : ""}
+                </div>
+                ${list.length
+                    ? `<p class="cat-desc">${esc(t("التصاميم التي أعجبتك محفوظة هنا على جهازك. ارجع لها متى ما تحب."))}</p><div id="gridBox">${V.grid(v, list)}</div>`
+                    : `<div class="empty"><span class="fav-empty" aria-hidden="true">${ICON.heart}</span><p>${esc(t("لا توجد منتجات في المفضلة بعد. اضغط ♡ على أي تصميم يعجبك لتحفظه هنا."))}</p><a class="btn btn-primary" href="${ATHR.url.home()}">${esc(t("تصفّح المنتجات"))}</a></div>`}
+            </div>
+        </section>`;
+    };
+
     V.titles = function (v, route) {
         const cfg = v.cfg;
         const name = ATHR.storeName(cfg) || t("المتجر");
@@ -1041,6 +1109,7 @@
             case "done": return `${t("تم استلام طلبك")} | ${name}`;
             case "review": return `${t("قيّم تجربتك")} | ${name}`;
             case "search": return `${t("بحث")} | ${name}`;
+            case "fav": return `${t("المفضلة")} | ${name}`;
             case "gift": return `${t("🎁 وصلتك هدية")} | ${name}`;
             default: {
                 const seo = ct(v, "seo.home_title");

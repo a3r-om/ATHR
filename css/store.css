@@ -1866,3 +1866,71 @@ html.tpl-fun .gp-go { background: #22163A; color: #fff; }
 .bo-left b { color: var(--danger); }
 .bar-offer .clock i { min-width: 24px; padding: 1px 3px; border-radius: 5px; background: var(--danger); color: #fff; font-size: 12.5px; }
 .bar-offer .clock em { color: var(--danger); }
+
+/* =====================================================
+   v13 — المفضلة، «أخبرني عند التوفر»، كود الخصم، فلترة الرئيسية و«عرض المزيد»
+===================================================== */
+/* القلب */
+.fav-btn { position: absolute; top: 8px; inset-inline-end: 8px; z-index: 2; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, .14); backdrop-filter: blur(6px); }
+.fav-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; transition: transform .2s; }
+.fav-btn.on { color: #E0245E; }
+.fav-btn.on svg { fill: currentColor; }
+.fav-btn.pop svg { animation: favPop .45s ease; }
+@keyframes favPop { 30% { transform: scale(1.35); } 60% { transform: scale(.9); } }
+.pdp-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.pdp-title h1 { flex: 1; min-width: 0; }
+.pdp-title .fav-btn { position: static; flex-shrink: 0; width: 44px; height: 44px; box-shadow: inset 0 0 0 1px var(--line); background: var(--surface); }
+.pdp-title .fav-btn svg { width: 22px; height: 22px; }
+.mi.fav svg { fill: none; }
+/* المفضلة */
+.fav-page .section-head h1 { display: inline-flex; align-items: center; gap: 8px; }
+.fav-page .section-head h1 svg { width: 24px; height: 24px; fill: #E0245E; stroke: none; }
+.fav-empty svg { width: 54px; height: 54px; fill: color-mix(in srgb, #E0245E 18%, transparent); stroke: #E0245E; stroke-width: 1.4; }
+#favs .section-head h2 { color: var(--text); }
+/* فلترة الأقسام في الرئيسية */
+.cat-chips { display: flex; gap: 8px; overflow-x: auto; margin: -2px calc(-1 * var(--gutter)) 14px; padding: 2px var(--gutter) 4px; scrollbar-width: none; }
+.cat-chips::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.chip small { color: var(--muted); font-size: 12px; font-weight: 600; }
+.chip.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.chip.on small { color: inherit; opacity: .8; }
+.more-wrap { display: grid; justify-items: center; margin-top: 18px; }
+.more-btn { min-width: 210px; }
+.more-btn small { color: var(--muted); font-weight: 600; }
+/* أخبرني عند التوفر */
+.notify-link, [data-notify] { gap: 6px; }
+.notify-link svg, [data-notify] svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.card-action .notify-link { font-size: 13px; padding-inline: 6px; }
+.buy.out { display: grid; gap: 10px; }
+.buy.out .out-note { margin: 0; }
+[data-notify].done { background: var(--surface); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.sheet-head h2 { display: inline-flex; align-items: center; gap: 8px; }
+.sheet-head h2 svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.notify-form { display: grid; gap: 12px; padding: 4px 0 6px; }
+.notify-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: var(--r-sm); background: var(--soft); }
+.notify-item img { width: 56px; height: 70px; object-fit: cover; border-radius: 8px; }
+.notify-item b { display: block; }
+.notify-item small { color: var(--muted); }
+.notify-done { display: grid; justify-items: center; gap: 8px; padding: 18px 4px; text-align: center; }
+.notify-done > span { font-size: 44px; }
+.notify-done small { color: var(--muted); }
+/* كود الخصم */
+#couponBox:empty { display: none; }
+#couponBox { margin-bottom: 10px; }
+.coupon-box { border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--r-sm); padding: 10px 12px; background: var(--soft); }
+.coupon-box summary { cursor: pointer; font-weight: 700; font-size: 14.5px; list-style: none; }
+.coupon-box summary::-webkit-details-marker { display: none; }
+.coupon-row { display: flex; gap: 8px; margin-top: 10px; }
+.coupon-row .input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: .04em; }
+.coupon-on { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--ok) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--line)); }
+.cp-ico { font-size: 22px; }
+.cp-txt { flex: 1; min-width: 0; display: grid; }
+.cp-txt b { font-size: 15px; letter-spacing: .04em; }
+.cp-txt small { color: var(--muted); font-size: 12.5px; }
+.bar-coupon { background: color-mix(in srgb, var(--ok) 14%, var(--surface)); color: var(--text); border-bottom: 1px solid var(--line); }
+/* إشعار برابط */
+.toast.has-link { pointer-events: auto; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.toast a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+/* القالب البسيط: زر «+» أسفل الصورة لأن القلب في الأعلى */
+html.tpl-minimal .card { container-type: inline-size; }
+html.tpl-minimal .card-action { top: calc(125cqw - 48px); }
