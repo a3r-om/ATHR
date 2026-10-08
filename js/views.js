@@ -862,6 +862,45 @@
         </div>`;
     };
 
+    // شريط المزايا تحت صورة المنتج: الشحن المجاني (حسب إعداداتك الحقيقية) + الدفع عند الاستلام
+    V.pdpPerks = function (v, p) {
+        const cfg = v.cfg;
+        if (cfg.sales.pdp_perks === false) return "";
+        const items = [];
+        const min = Number(cfg.order.free_min) || 0;
+        if (cfg.order.free_enabled && min > 0 && ATHR.freeAppliesTo(cfg, v.country)) {
+            items.push([Number(p.price) >= min ? t("الشحن مجاناً") : t("شحن مجاني فوق {amount}", { amount: local(v, min).replace(/[.٫]0+(?=\s|$)/, "") }), true]);
+        }
+        const pays = ATHR.paymentsFor(cfg, v.country);
+        if (pays.some((x) => x.type === "cod")) items.push([t("الدفع عند الاستلام")]);
+        (ct(v, "sales.trust_custom") || []).filter(Boolean).forEach((x) => items.push([fill(v, x)]));
+        if (items.length < 2) {
+            const gulf = (cfg.order.delivery || []).some((d) => d.enabled && Array.isArray(d.countries) && d.countries.some((x) => x !== "OM"));
+            items.push([gulf ? t("توصيل لكل دول الخليج") : t("توصيل داخل سلطنة عُمان")]);
+        }
+        const inner = items.slice(0, 2).map(([x, hot]) => `<span class="perk${hot ? " hot" : ""}">${ICON.check}<span>${esc(x)}</span></span>`).join('<i class="perk-sep" aria-hidden="true"></i>');
+        return cfg.contact.policy_show
+            ? `<a class="perks" href="${ATHR.url.page("shipping")}">${inner}<span class="perks-go">${ICON.chevron}</span></a>`
+            : `<div class="perks">${inner}</div>`;
+    };
+
+    // السعر قبل وبعد الخصم + شارة «خصم %» + «وفّر» + «الأكثر طلباً»
+    V.pdpPrice = function (v, p) {
+        const sale = Number(p.old_price) > Number(p.price);
+        const pct = sale ? Math.round((1 - p.price / p.old_price) * 100) : 0;
+        const chips = [];
+        if (sale) {
+            chips.push(`<span class="pchip off">${esc(t("خصم {pct}%", { pct }))}</span>`);
+            chips.push(`<span class="pchip save">${esc(t("وفّر {amount}", { amount: local(v, Math.round((p.old_price - p.price) * 1000) / 1000) }))}</span>`);
+        }
+        if (p.is_best_seller && p.is_available !== false) chips.push(`<span class="pchip hot">🔥 ${esc(ATHR.isEn() ? "Best seller" : ct(v, "sales.best_title") || t("الأكثر طلباً"))}</span>`);
+        return `<div class="pdp-price">
+            <div class="pp-row">${sale ? `<s class="pp-was">${local(v, p.old_price)}</s>` : ""}<b class="pp-now">${local(v, p.price)}</b></div>
+            ${isBase(v) ? "" : `<small class="base-price">${money(v, p.price)}</small>`}
+            ${chips.length ? `<div class="pp-chips">${chips.join("")}</div>` : ""}
+        </div>`;
+    };
+
     V.galleryStage = function (v, p) {
         const label = V.label(v, p);
         return `<div class="stage">${p.image_url ? `<img src="${esc(V.big(p))}" alt="${esc(label)}" fetchpriority="high" width="800" height="1000">` : ""}</div>`;
@@ -925,19 +964,19 @@
                 <div class="pdp">
                     <div class="gallery" id="gallery">${V.galleryStage(v, p)}</div>
                     <div class="pdp-info">
+                        ${V.pdpPerks(v, p)}
                         <div class="pdp-title"><h1>${esc(V.pname(p))}</h1>${V.favBtn(v, p)}</div>
+                        ${desc ? `<p class="pdp-desc">${esc(desc)}</p>` : ""}
                         ${stats ? `<a class="pdp-rate" href="#reviews">${V.stars(stats.avg)}<span>${stats.avg.toFixed(1)} · ${esc(V.reviewCount(stats.count))}</span></a>` : ""}
-                        ${V.priceHTML(v, p, { big: true })}
+                        ${V.pdpPrice(v, p)}
                         ${v.groups.get(p.id) ? V.variantPicker(v, p) : (V.colorOf(v, p) ? `<div class="pdp-color">${esc(t("اللون:"))} ${V.colorTag(v, p)}</div>` : "")}
                         ${V.buyBox(v, p)}
                         ${p.is_available === false ? "" : V.volumeTeaser(v)}
                         ${V.bundleOffers(v, p)}
                         ${V.deliveryBox(v, p)}
                         ${V.trust(v)}
-                        ${desc || p.video_url ? `<div class="pdp-details">
-                            <h2>${esc(t("تفاصيل المنتج"))}</h2>
-                            ${desc ? `<p>${esc(desc)}</p>` : ""}
-                            ${p.video_url && ATHR.isUrl(p.video_url) ? `<a class="btn btn-ghost btn-sm" href="${esc(p.video_url)}" target="_blank" rel="noopener">▶ ${esc(t("شاهد فيديو المنتج"))}</a>` : ""}
+                        ${p.video_url && ATHR.isUrl(p.video_url) ? `<div class="pdp-details">
+                            <a class="btn btn-ghost btn-sm" href="${esc(p.video_url)}" target="_blank" rel="noopener">▶ ${esc(t("شاهد فيديو المنتج"))}</a>
                         </div>` : ""}
                         <div class="share-row">
                             <button class="link-btn" type="button" data-share-product="${esc(p.id)}">${ICON.share} ${esc(t("شارك المنتج مع صديق"))}</button>

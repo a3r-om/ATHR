@@ -123,6 +123,7 @@ const ATHR_DEFAULTS = {
 
     sales: {
         favorites: true,
+        pdp_perks: true,
         restock: true,
         coupons: true,
         free_bar_show: true,

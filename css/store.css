@@ -1934,3 +1934,36 @@ html.tpl-fun .gp-go { background: #22163A; color: #fff; }
 /* القالب البسيط: زر «+» أسفل الصورة لأن القلب في الأعلى */
 html.tpl-minimal .card { container-type: inline-size; }
 html.tpl-minimal .card-action { top: calc(125cqw - 48px); }
+
+/* =====================================================
+   v15 — رأس صفحة المنتج: شريط المزايا، الوصف، والسعر قبل وبعد الخصم
+===================================================== */
+:root { --deal: #D9480F; }
+html[data-mode="dark"] { --deal: #FF9A57; }
+@media (prefers-color-scheme: dark) { html[data-mode="auto"] { --deal: #FF9A57; } }
+
+.perks { display: flex; align-items: center; gap: 10px; margin: -14px calc(-1 * var(--gutter)) 0; padding: 11px var(--gutter); background: color-mix(in srgb, #F2A65A 16%, var(--surface)); color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600; line-height: 1.45; }
+.pdp:has(.thumbs) .perks { margin-top: 0; }
+.pdp-info { grid-template-columns: minmax(0, 1fr); }
+.perks { min-width: 0; overflow: hidden; }
+.perk { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.perk > span { text-wrap: balance; }
+.perk svg { width: 17px; height: 17px; flex-shrink: 0; fill: none; stroke: var(--ok); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.perk.hot { color: var(--ok); }
+.perk-sep { width: 1px; align-self: stretch; flex-shrink: 0; background: color-mix(in srgb, var(--text) 18%, transparent); }
+.perks-go { margin-inline-start: auto; display: grid; place-items: center; color: var(--muted); }
+.perks-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transform: rotate(90deg); }
+[dir="ltr"] .perks-go svg { transform: rotate(-90deg); }
+@media (min-width: 860px) { .perks, .pdp:has(.thumbs) .perks { margin: 0; padding: 11px 14px; border-radius: var(--r-sm); } }
+
+.pdp-desc { margin: -4px 0 0; color: var(--muted); font-size: 15px; line-height: 1.7; white-space: pre-line; }
+
+.pdp-price { display: grid; gap: 8px; }
+.pp-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.pp-now { font-size: 30px; font-weight: 800; line-height: 1.15; color: var(--accent); }
+.pp-was { font-size: 21px; font-weight: 700; color: color-mix(in srgb, var(--text) 60%, transparent); text-decoration-thickness: 2px; }
+.pdp-price .base-price { margin-top: -6px; }
+.pp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pchip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 1.5px solid currentColor; border-radius: 8px; font-size: 14px; font-weight: 800; line-height: 1.35; }
+.pchip.off, .pchip.hot { color: var(--deal); background: color-mix(in srgb, var(--deal) 7%, transparent); }
+.pchip.save { color: var(--ok); border-color: transparent; background: color-mix(in srgb, var(--ok) 11%, transparent); }

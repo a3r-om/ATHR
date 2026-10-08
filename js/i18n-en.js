@@ -292,6 +292,8 @@
         "أضف للمفضلة": "Add to favorites",
         "في المفضلة": "In favorites",
         "عرض المزيد": "Show more",
+        "الشحن مجاناً": "Free shipping",
+        "شحن مجاني فوق {amount}": "Free shipping over {amount}",
         "تصفية حسب القسم": "Filter by category",
         "المفضلة": "Favorites",
         "أضف الكل للسلة": "Add all to cart",
