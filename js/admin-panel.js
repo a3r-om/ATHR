@@ -61,6 +61,7 @@
         ["order", "الطلب والتوصيل", "truck", "التوصيل والدفع والدول والعملات"],
         ["sales", "المبيعات والعروض", "tag", "الخصومات والعروض والعملاء"],
         ["gift", "الهدية", "gift", "شكل البطاقة والألوان والخط والرسالة"],
+        ["ads", "تتبع الإعلانات", "chart", "Meta Pixel و TikTok Pixel ونتائج إعلاناتك"],
         ["contact", "التواصل والآراء", "chat", "واتساب والقائمة وآراء العملاء"]
     ];
 
@@ -76,6 +77,7 @@
         receipt: '<path d="M6 3.5h12v17l-2.5-1.6-2 1.6-1.5-1.6-1.5 1.6-2-1.6L6 20.5v-17Z"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
         plus: '<path d="M12 5v14M5 12h14"/>',
         layout: '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M10 9v11"/>',
+        chart: '<path d="M4 19.5h16"/><path d="M7 16v-4M12 16V8M17 16v-6"/><path d="M6 9.5l5-4 3 2.5 5-4"/>',
         sparkle: '<path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8 1.8-5Z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/>',
         eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
         back: '<path d="M9.5 6l6 6-6 6"/>',
@@ -399,7 +401,7 @@
         $$(".adm-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === A.tab)));
         const errors = A.errors.length ? `<div class="adm-errors" role="alert"><strong>لم يتم النشر. صحّح التالي:</strong><ul>${A.errors.map((e) => `<li><button type="button" class="adm-link" data-tab="${e.tab}">${esc(tabLabel(e.tab))}</button>: ${esc(e.msg)}</li>`).join("")}</ul></div>` : "";
         const banner = isDirty() && !A.errors.length ? `<div class="adm-note">لديك تعديلات غير منشورة. لن يراها الزبائن حتى تضغط «نشر التغييرات».</div>` : "";
-        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, templates: tabTemplates, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, gift: tabGift, contact: tabContact };
+        const views = { home: tabHome, products: tabProducts, ad: tabAd, catalog: tabCatalog, templates: tabTemplates, look: tabLook, texts: tabTexts, order: tabOrder, sales: tabSales, gift: tabGift, ads: tabAds, contact: tabContact };
         body.innerHTML = errors + banner + views[A.tab]();
         if (keepScroll) body.scrollTop = scroll;
         else body.scrollTop = 0;
@@ -1426,6 +1428,118 @@
     // TAB 8: CONTACT & REVIEWS
     // =====================================================
 
+    // =====================================================
+    // TAB: تتبع الإعلانات (Meta Pixel + TikTok Pixel + نتائج كل منصة)
+    // =====================================================
+
+    const AD_CHANNELS = [["instagram", "إنستغرام", "📸"], ["tiktok", "تيك توك", "🎵"], ["snapchat", "سناب شات", "👻"], ["facebook", "فيسبوك", "📘"]];
+
+    async function loadAdStats() {
+        A.adStats = { loading: true };
+        try {
+            const since = new Date(Date.now() - 30 * 864e5);
+            const sinceDay = new Date(since.getTime() + 4 * 36e5).toISOString().slice(0, 10);
+            const chs = AD_CHANNELS.map((c) => c[0]);
+            const [st, od] = await Promise.all([
+                sb.from("stats_daily").select("key,n").in("key", chs.map((c) => `visit:${c}`)).gte("day", sinceDay),
+                sb.from("orders").select("channel,total,hidden,ordered_at").in("channel", chs).gte("ordered_at", since.toISOString())
+            ]);
+            if (st.error || od.error) throw st.error || od.error;
+            const sum = (key) => (st.data || []).filter((r) => r.key === key).reduce((n, r) => n + Number(r.n || 0), 0);
+            A.adStats = {
+                rows: AD_CHANNELS.map(([ch, label, emoji]) => {
+                    const orders = (od.data || []).filter((o) => o.channel === ch && !o.hidden);
+                    return { ch, label, emoji, visits: sum(`visit:${ch}`), orders: orders.length, sales: orders.reduce((n, o) => n + Number(o.total || 0), 0) };
+                })
+            };
+        } catch (error) {
+            console.warn("Ad stats failed:", error);
+            A.adStats = { error: true };
+        }
+        if (A.view === "admin" && A.tab === "ads") renderTab({ keepScroll: true });
+    }
+
+    function adResults() {
+        const st = A.adStats;
+        if (!st || st.loading) return `<section class="adm-card ad-results"><h2>📈 نتائج إعلاناتك <small class="adm-muted">آخر 30 يوم</small></h2><p class="adm-muted">جاري التحميل...</p></section>`;
+        if (st.error) return "";
+        const rows = st.rows.filter((r) => r.visits || r.orders || r.ch === "instagram" || r.ch === "tiktok");
+        return `<section class="adm-card ad-results"><h2>📈 نتائج إعلاناتك <small class="adm-muted">آخر 30 يوم · حسب متجرك</small></h2>
+            <div class="ad-rows">${rows.map((r) => `<div class="ad-row">
+                <b><span aria-hidden="true">${r.emoji}</span> ${r.label}</b>
+                <span><small>زيارات</small><b>${r.visits}</b></span>
+                <span><small>طلبات</small><b>${r.orders}</b></span>
+                <span><small>مبيعات</small><b>${money(r.sales)}</b></span>
+                <span><small>تحويل</small><b>${r.visits ? `${Math.round((r.orders / r.visits) * 1000) / 10}%` : "—"}</b></span>
+            </div>`).join("")}</div>
+            <p class="adm-muted">تُحسب الزيارة لإنستغرام أو تيك توك تلقائياً عند الفتح من التطبيق أو من الروابط الجاهزة بالأسفل. تفاصيل أكثر في دفتر الطلبيات ← «الأداء».</p>
+        </section>`;
+    }
+
+    function tabAds() {
+        const t = cfg().tracking || {};
+        const metaId = ATHR.metaPixelId(t.meta_pixel);
+        const ttId = ATHR.tiktokPixelId(t.tiktok_pixel);
+        if (!A.adStats) loadAdStats();
+        const status = (id, raw) => (id ? `<span class="tag ok">✅ مفعّل</span>` : String(raw || "").trim() ? `<span class="tag warn">الرقم غير صحيح</span>` : `<span class="tag">غير مفعّل</span>`);
+        const base = siteLink(ATHR.base());
+        const link = (ref, label) => `<div class="ad-link"><span><b>${label}</b><code dir="ltr">${esc(decodeURI(base))}?ref=${ref}</code></span><button class="ab ab-soft ab-sm" type="button" data-copy-text="${esc(`${base}?ref=${ref}`)}">نسخ</button></div>`;
+        return `
+            <p class="adm-sentence">اربط متجرك بإعلانات إنستغرام وتيك توك: تعرف كم شخص شاف المنتج وأضاف للسلة واشترى من كل إعلان، والمنصة نفسها تتعلم وتوصّل إعلانك لناس أكثر احتمالاً للشراء.</p>
+            ${adResults()}
+            ${card(`Meta Pixel <small class="adm-muted">(إنستغرام وفيسبوك)</small> ${status(metaId, t.meta_pixel)}`, `
+                <label class="af"><span>رقم البكسل (Pixel ID)</span><input class="ai" dir="ltr" data-pixel="meta" value="${esc(t.meta_pixel || "")}" placeholder="1234567890123456" autocomplete="off" spellcheck="false">
+                    <small>الصق الرقم وحده، أو الصق الكود كاملاً ونطلع الرقم منه تلقائياً.${metaId ? ` الرقم: <b dir="ltr">${esc(metaId)}</b>` : ""}</small></label>
+                <details class="howto"><summary>من أين أحصل على الرقم؟</summary><ol>
+                    <li>افتح <b dir="ltr">business.facebook.com</b> بحسابك المرتبط بصفحة إنستغرام.</li>
+                    <li>ادخل «مدير الأحداث» (Events Manager) ← «ربط مصادر البيانات» ← «ويب» ← Meta Pixel.</li>
+                    <li>سمِّه «أثر»، واختر الإعداد اليدوي، ثم انسخ رقم Pixel ID (15–16 رقماً) والصقه هنا.</li>
+                    <li>اضغط «نشر التغييرات». لا تحتاج تضيف أي كود آخر.</li>
+                </ol></details>`)}
+            ${card(`TikTok Pixel ${status(ttId, t.tiktok_pixel)}`, `
+                <label class="af"><span>رقم البكسل (Pixel ID)</span><input class="ai" dir="ltr" data-pixel="tiktok" value="${esc(t.tiktok_pixel || "")}" placeholder="C4ABCD1234EFGH5678IJ" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                    <small>الصق الرقم وحده، أو الكود كاملاً.${ttId ? ` الرقم: <b dir="ltr">${esc(ttId)}</b>` : ""}</small></label>
+                <details class="howto"><summary>من أين أحصل على الرقم؟</summary><ol>
+                    <li>افتح <b dir="ltr">ads.tiktok.com</b>.</li>
+                    <li>من «الأدوات» (Tools) اختر «الأحداث» (Events) ← «أحداث الويب» (Web Events).</li>
+                    <li>أنشئ بكسل جديد واختر «تثبيت الكود يدوياً» (Manually install pixel code).</li>
+                    <li>انسخ رقم البكسل (حروف وأرقام) أو الكود كاملاً والصقه هنا، ثم «نشر التغييرات».</li>
+                </ol></details>`)}
+            ${card("ماذا يُرسل للمنصات؟", `
+                <ul class="px-events">
+                    <li>👀 <b>زيارة صفحة</b> <small dir="ltr">PageView</small></li>
+                    <li>🛍️ <b>مشاهدة منتج</b> <small dir="ltr">ViewContent</small></li>
+                    <li>🛒 <b>إضافة للسلة</b> <small dir="ltr">AddToCart</small></li>
+                    <li>📝 <b>بدء الطلب</b> <small dir="ltr">InitiateCheckout</small></li>
+                    <li>✅ <b>الشراء مع قيمته</b> <small dir="ltr">Purchase</small></li>
+                    <li>🔍 <b>بحث</b> · 💬 <b>تواصل واتساب</b> <small dir="ltr">Search · Contact</small></li>
+                </ul>
+                <small class="adm-muted">القيم تُرسل بالدولار (1 ر.ع = 2.60 $) لأن المنصات تدعمه دائماً. لا نرسل أسماء أو أرقام العملاء. وزياراتك أنت من جوالك (المسجّل كصاحب المتجر) لا تُرسل، حتى لا تختلط بنتائج الإعلانات.</small>`)}
+            ${card("روابط جاهزة لإعلاناتك", `
+                ${link("instagram", "📸 إنستغرام (البايو والإعلانات والستوري)")}
+                ${link("tiktok", "🎵 تيك توك")}
+                ${link("snapchat", "👻 سناب شات")}
+                <small class="adm-muted">لرابط منتج معيّن: انسخ رابطه من «المنتجات» وأضف في آخره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</small>`, "استخدمها في البايو والإعلانات، حتى يُعرف من أين جاء كل زائر وكل طلب.")}
+            ${card("كيف تتأكد أنه يعمل؟", `
+                <ol class="howto-ol">
+                    <li>اضغط «نشر التغييرات».</li>
+                    <li>افتح المتجر من جوال آخر (ليس جوالك)، وافتح منتجاً وأضفه للسلة.</li>
+                    <li>في Meta: مدير الأحداث ← «اختبار الأحداث» (Test events). وفي TikTok: Web Events ← «اختبار الأحداث». تظهر الأحداث خلال دقائق.</li>
+                </ol>`)}`;
+    }
+
+    // لصق الرقم أو الكود كاملاً: نحفظ الرقم فقط
+    function setPixel(input) {
+        const kind = input.dataset.pixel;
+        const raw = input.value;
+        const id = kind === "meta" ? ATHR.metaPixelId(raw) : ATHR.tiktokPixelId(raw);
+        setPath(`config.tracking.${kind === "meta" ? "meta_pixel" : "tiktok_pixel"}`, id || raw.trim());
+        saveDraft();
+        if (id && id !== raw.trim()) input.value = id;
+        renderTab({ keepScroll: true });
+        if (raw.trim()) toast(id ? "✅ تم التعرّف على رقم البكسل. اضغط «نشر التغييرات»." : "الرقم غير صحيح. انسخه من جديد.");
+    }
+
     function tabContact() {
         const c = cfg().contact;
         const d = ATHR_DEFAULTS.contact;
@@ -1707,6 +1821,10 @@
 
     async function onChange(e) {
         const t = e.target;
+        if (t.dataset.pixel) {
+            setPixel(t);
+            return;
+        }
         if (t.id === "offerSkip" && A.offer) {
             A.offer.skipRecent = t.checked;
             saveOfferPref(A.offer);
@@ -2152,6 +2270,9 @@
         const add = (tab, msg) => errors.push({ tab, msg });
         const num = (v) => typeof v === "number" && Number.isFinite(v);
 
+        const tr = c.tracking || {};
+        if (String(tr.meta_pixel || "").trim() && !ATHR.metaPixelId(tr.meta_pixel)) add("ads", "رقم Meta Pixel غير صحيح: أرقام فقط (15–16 رقماً تقريباً).");
+        if (String(tr.tiktok_pixel || "").trim() && !ATHR.tiktokPixelId(tr.tiktok_pixel)) add("ads", "رقم TikTok Pixel غير صحيح: حروف إنجليزية وأرقام فقط.");
         if (!/[\p{L}]/u.test(String(c.name || ""))) add("look", "اكتب اسم المتجر (يظهر في جوجل ورسائل واتساب). لإخفائه من أعلى المتجر أوقف «إظهار اسم المتجر بجانب الشعار».");
         if (!ATHR.isValidWhatsapp(c.order.whatsapp)) add("order", "رقم واتساب غير صحيح.");
         if (!String(c.order.currency || "").trim()) add("order", "رمز العملة فارغ.");

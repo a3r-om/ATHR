@@ -257,6 +257,7 @@
         }
         setQty(id, current + qty, { silent: true });
         track("add");
+        pixelAdd(id, qty);
         const count = $("#cartCount");
         count.classList.remove("bump");
         void count.offsetWidth;
@@ -373,6 +374,11 @@
         };
     }
 
+    // عند مغادرة الصفحة يلغي المتصفح الطلبات الجارية؛ هذا ليس خطأ
+    let leavingPage = false;
+    window.addEventListener("beforeunload", () => { leavingPage = true; });
+    window.addEventListener("pagehide", () => { leavingPage = true; });
+
     async function loadData() {
         const cached = storage.get(KEYS.cache, null);
         if (cached && cached.products) applyData(cached, { fromCache: true });
@@ -381,6 +387,7 @@
             storage.set(KEYS.cache, fresh);
             if (!S.preview) applyData(fresh);
         } catch (error) {
+            if (leavingPage) return;
             console.error("Store load error:", error);
             if (!cached && !$("#view").dataset.prerendered) {
                 $("#view").innerHTML = `<div class="wrap empty"><p>${esc(t("تعذر تحميل المتجر. تأكد من اتصالك بالإنترنت ثم أعد المحاولة."))}</p><button class="btn btn-primary" type="button" onclick="location.reload()">${esc(t("إعادة المحاولة"))}</button></div>`;
@@ -666,6 +673,7 @@
 
         if (route.name === "product") track("view");
         if (route.name === "checkout" && computeCart().count) track("checkout");
+        pixelRoute(route);
     }
 
     window.addEventListener("popstate", () => {
@@ -1621,6 +1629,7 @@
         giftEnd();
 
         track("order");
+        pixelSend("Purchase", tt.lines, { value: order.total, eventId: order.order_no });
         const message = orderMessage({ ...order, ship_kg: tt.kg });
         storage.set(KEYS.lastOrder, { order, message, payment: p, saved });
         placing = false;
@@ -1953,6 +1962,86 @@
         return S.preview || S.isAdmin || ownerDevice() || (navigator.webdriver && !window.__ATHR_TRACK_TEST);
     }
 
+    // =====================================================
+    // بكسل الإعلانات (Meta / TikTok): يعمل فقط إذا أضاف صاحب المتجر الرقم،
+    // ولا يعمل على جهاز صاحب المتجر حتى لا تختلط زياراته بنتائج الإعلانات
+    // =====================================================
+
+    const PX = { meta: "", tiktok: "", on: false, lastUrl: "" };
+
+    function setupPixels() {
+        if (PX.on) return;
+        const t = C().tracking || {};
+        const meta = ATHR.metaPixelId(t.meta_pixel);
+        const tiktok = ATHR.tiktokPixelId(t.tiktok_pixel);
+        if ((!meta && !tiktok) || trackingOff()) return;
+        Object.assign(PX, { meta, tiktok, on: true });
+        try {
+            if (meta) {
+                /* eslint-disable */
+                !function (f, b, e, v, n, tt, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); }; if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = "2.0"; n.queue = []; tt = b.createElement(e); tt.async = !0; tt.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(tt, s); }(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+                /* eslint-enable */
+                window.fbq("init", meta);
+            }
+            if (tiktok) {
+                /* eslint-disable */
+                !function (w, d, t) { w.TiktokAnalyticsObject = t; var ttq = w[t] = w[t] || []; ttq.methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "disableCookie", "holdConsent", "revokeConsent", "grantConsent"], ttq.setAndDefer = function (t, e) { t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))); }; }; for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]); ttq.instance = function (t) { for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++) ttq.setAndDefer(e, ttq.methods[n]); return e; }, ttq.load = function (e, n) { var r = "https://analytics.tiktok.com/i18n/pixel/events.js", o = n && n.partner; ttq._i = ttq._i || {}, ttq._i[e] = [], ttq._i[e]._u = r, ttq._t = ttq._t || {}, ttq._t[e] = +new Date, ttq._o = ttq._o || {}, ttq._o[e] = n || {}; n = document.createElement("script"); n.type = "text/javascript", n.async = !0, n.src = r + "?sdkid=" + e + "&lib=" + t; e = document.getElementsByTagName("script")[0]; e.parentNode.insertBefore(n, e); }; }(window, document, "ttq");
+                /* eslint-enable */
+                window.ttq.load(tiktok);
+            }
+        } catch (error) {
+            console.warn("Pixel setup failed:", error);
+        }
+    }
+
+    // نفس البيانات بصيغة كل منصة. القيم بالدولار (المنصات تدعمه دائماً)
+    function pixelSend(event, lines = [], { value, eventId, extra = {} } = {}) {
+        if (!PX.on) return;
+        const items = lines.filter((l) => l && l.product);
+        const usd = ATHR.toUSD(value !== undefined ? value : items.reduce((sum, l) => sum + Number(l.product.price) * l.qty, 0));
+        try {
+            if (PX.meta && window.fbq) {
+                const data = items.length ? { content_ids: items.map((l) => l.product.id), contents: items.map((l) => ({ id: l.product.id, quantity: l.qty })), content_type: "product", content_name: items.length === 1 ? items[0].product.name : undefined, num_items: items.reduce((n, l) => n + l.qty, 0), value: usd, currency: "USD", ...extra } : { ...extra };
+                if (eventId) window.fbq("track", event, data, { eventID: eventId });
+                else window.fbq("track", event, data);
+            }
+            if (PX.tiktok && window.ttq) {
+                const data = items.length ? { contents: items.map((l) => ({ content_id: l.product.id, content_type: "product", content_name: l.product.name, quantity: l.qty, price: ATHR.toUSD(l.product.price) })), content_ids: items.map((l) => l.product.id), content_type: "product", value: usd, currency: "USD", ...extra } : { ...extra };
+                if (eventId) window.ttq.track(event, data, { event_id: eventId });
+                else window.ttq.track(event, data);
+            }
+        } catch (error) {
+            console.warn("Pixel event failed:", error);
+        }
+    }
+
+    // زيارة صفحة + مشاهدة منتج / بحث / بدء الطلب (مرة لكل صفحة)
+    function pixelRoute(route) {
+        setupPixels();
+        if (!PX.on) return;
+        const url = location.pathname + location.search;
+        if (url === PX.lastUrl) return;
+        PX.lastUrl = url;
+        try {
+            if (PX.meta && window.fbq) window.fbq("track", "PageView");
+            if (PX.tiktok && window.ttq) window.ttq.page();
+        } catch { /* ignore */ }
+        if (route.name === "product") {
+            const p = findProduct(route.slug);
+            if (p) pixelSend("ViewContent", [{ product: p, qty: 1 }]);
+        } else if (route.name === "search" && route.q) {
+            pixelSend("Search", [], { extra: { search_string: String(route.q).slice(0, 100) } });
+        } else if (route.name === "checkout") {
+            const tt = computeCart();
+            if (tt.count) pixelSend("InitiateCheckout", tt.lines, { value: tt.afterDiscount });
+        }
+    }
+
+    function pixelAdd(id, qty = 1) {
+        const p = productById(id);
+        if (p) pixelSend("AddToCart", [{ product: p, qty }]);
+    }
+
     function track(stage) {
         if (trackingOff()) return;
         const key = `athr_tr_${stage}`;
@@ -1979,6 +2068,8 @@
             return;
         }
         const d = el.dataset;
+        // تواصل عبر واتساب (زر واتساب العائم أو أزرار واتساب)
+        if (el.id === "waFloat" || el.classList.contains("btn-wa")) pixelSend("Contact");
 
         if (d.giftStart !== undefined) {
             e.preventDefault();
@@ -2141,6 +2232,7 @@
                 if (current >= maxQty()) return;
                 if (setQty(id, current + qty, { silent: true })) {
                     track("add");
+                    pixelAdd(id, qty);
                     openAdded([id]);
                 }
             });
@@ -2152,6 +2244,7 @@
                 const qty = Number($("#pdpQty")?.textContent) || 1;
                 if (cartQty(id) < qty) setQty(id, qty, { silent: true });
                 track("add");
+                pixelAdd(id, qty);
                 navigate(`${BASE}checkout/`);
             });
             return;
@@ -2162,6 +2255,7 @@
                 const qty = Number($("#pdpQty")?.textContent) || 1;
                 if (cartQty(id) < qty) setQty(id, qty, { silent: true });
                 track("add");
+                pixelAdd(id, qty);
                 locStash.self = null;
                 locStash.gift = null;
                 session.set(KEYS.giftIntent, "1");

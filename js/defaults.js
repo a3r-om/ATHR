@@ -173,6 +173,12 @@ const ATHR_DEFAULTS = {
     },
 
     // بطاقة الإهداء: نصوصها وألوانها وخطها ورسالة واتساب للمُهدى إليه (كلها تتعدل من لوحة التحكم ← الهدية)
+    // بكسل الإعلانات: رقم Meta Pixel (إنستغرام وفيسبوك) ورقم TikTok Pixel. الفارغ = متوقف
+    tracking: {
+        meta_pixel: "",
+        tiktok_pixel: ""
+    },
+
     gift: {
         kicker: "هدية خاصة لك",
         title: "{to}، وصلتك هدية!",
@@ -724,6 +730,23 @@ ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store, config }) 
     });
     return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 };
+
+// =====================================================
+// بكسل الإعلانات: نقبل الرقم وحده، أو الكود كاملاً كما تنسخه من Meta أو TikTok
+// =====================================================
+ATHR.metaPixelId = function (raw) {
+    const text = String(raw || "").trim();
+    const m = text.match(/fbq\(\s*['"]init['"]\s*,\s*['"]?(\d{8,20})/) || text.match(/[?&]id=(\d{8,20})/) || text.match(/^\s*(\d{8,20})\s*$/);
+    return m ? m[1] : "";
+};
+ATHR.tiktokPixelId = function (raw) {
+    const text = String(raw || "").trim();
+    const m = text.match(/ttq\.load\(\s*['"]([A-Z0-9]{10,40})['"]/i) || text.match(/sdkid=([A-Z0-9]{10,40})/i) || text.match(/^\s*([A-Z0-9]{10,40})\s*$/i);
+    return m ? m[1].toUpperCase() : "";
+};
+// منصات الإعلان تدعم الدولار دائماً، والريال العماني مربوط به: 1 ر.ع = 2.6008 دولار
+ATHR.OMR_USD = 2.6008;
+ATHR.toUSD = (omr) => Math.round(Number(omr || 0) * ATHR.OMR_USD * 100) / 100;
 
 // =====================================================
 // العرض الخاص: رابط منتج شخصي يرسله صاحب المتجر للعميل في واتساب
