@@ -193,6 +193,12 @@ const ATHR_DEFAULTS = {
         banner_button: "ابدأ",
         cta_title: "أرسله هدية",
         cta_sub: "بطاقة إهداء رقمية باسمك، وبدون ذكر السعر",
+        // الزبون يختار: الهدية لولد (أزرق وأبيض) أو لبنت (وردي وأبيض) فتتلوّن البطاقة والصندوق
+        genders: {
+            enabled: true,
+            boy: { label: "ولد", emoji: "👦", colors: { bg: "#0D3B7D", box: "#2F7DE1", ribbon: "#FFFFFF", paper: "#FFFFFF", ink: "#14325A", accent: "#1F64C8" } },
+            girl: { label: "بنت", emoji: "👧", colors: { bg: "#B23C74", box: "#F27DAE", ribbon: "#FFFFFF", paper: "#FFFFFF", ink: "#55203F", accent: "#D23F7C" } }
+        },
         occasions: {
             birthday: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
             graduation: { enabled: true, emoji: "", name: "", title: "", for: "", msgs: "" },
@@ -628,6 +634,37 @@ ATHR.giftOccasion = (id, config) => {
     return list.find((o) => o.id === id) || list[list.length - 1];
 };
 
+// الهدية لولد أو لبنت: الاسم والإيموجي والألوان (من لوحة التحكم، والفارغ يأخذ الأصلي)
+ATHR.GIFT_FOR = ["boy", "girl"];
+ATHR.giftGendersOn = (config) => !(config && config.gift && config.gift.genders && config.gift.genders.enabled === false);
+ATHR.giftFor = function (id, config) {
+    if (!ATHR.GIFT_FOR.includes(id)) return null;
+    const D = ATHR_DEFAULTS.gift.genders[id];
+    const o = (config && config.gift && config.gift.genders && config.gift.genders[id]) || {};
+    const label = typeof o.label === "string" && o.label.trim() ? o.label.trim() : D.label;
+    const colors = {};
+    Object.keys(D.colors).forEach((k) => { colors[k] = ATHR.isHex(o.colors && o.colors[k]) ? o.colors[k] : D.colors[k]; });
+    return {
+        id,
+        label,
+        label_en: label === D.label ? (id === "boy" ? "Boy" : "Girl") : "",
+        emoji: typeof o.emoji === "string" && o.emoji.trim() ? o.emoji.trim() : D.emoji,
+        heart: id === "boy" ? "💙" : "💗",
+        colors
+    };
+};
+
+// ألوان بطاقة الإهداء: ألوان الولد/البنت إن اختارها الزبون، وإلا ألوان الهدية العامة
+ATHR.giftColors = function (config, gender) {
+    const f = ATHR.giftGendersOn(config) ? ATHR.giftFor(gender, config) : null;
+    if (f) return f.colors;
+    const D = ATHR_DEFAULTS.gift.colors;
+    const c = (config && config.gift && config.gift.colors) || {};
+    const out = {};
+    Object.keys(D).forEach((k) => { out[k] = ATHR.isHex(c[k]) ? c[k] : D[k]; });
+    return out;
+};
+
 // تعبئة نص البطاقة: {to} {from} {store}
 ATHR.giftFill = (text, vars) => String(text ?? "").replace(/\{(to|from|store)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
 
@@ -649,13 +686,14 @@ ATHR.giftCode = (card) => athrB64url(JSON.stringify({
     t: String(card.to || "").slice(0, 60),
     f: String(card.from || "").slice(0, 60),
     m: String(card.msg || "").slice(0, 300),
-    o: String(card.occasion || "other").slice(0, 20)
+    o: String(card.occasion || "other").slice(0, 20),
+    ...(card.gender === "boy" ? { g: "b" } : card.gender === "girl" ? { g: "g" } : {})
 }));
 
 ATHR.giftDecode = function (code) {
     try {
         const d = JSON.parse(athrUnB64url(code || ""));
-        return { to: String(d.t || ""), from: String(d.f || ""), msg: String(d.m || ""), occasion: String(d.o || "other") };
+        return { to: String(d.t || ""), from: String(d.f || ""), msg: String(d.m || ""), occasion: String(d.o || "other"), gender: d.g === "b" ? "boy" : d.g === "g" ? "girl" : "" };
     } catch {
         return null;
     }
@@ -691,7 +729,8 @@ ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
     to: order.gift_name,
     from: String(order.customer_name || "").trim().split(/\s+/)[0],
     msg: order.gift_message,
-    occasion: order.gift_occasion
+    occasion: order.gift_occasion,
+    gender: order.gift_for
 })}`);
 
 // =====================================================
@@ -718,9 +757,11 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
         block([String(first || "").trim(), `🧾 رقم الطلب: ${order.order_no}`, `🗓️ ${when.day} ${when.date} · ${when.time}`]);
 
         const occ = ATHR.giftOccasion(order.gift_occasion, cfg);
+        const gfor = order.gift ? ATHR.giftFor(order.gift_for, cfg) : null;
         block([
             `👤 ${giftTo ? "من: " : ""}${order.customer_name || ""}${order.phone ? ` · ${phone(order.phone)}` : ""}`,
             giftTo ? `🎁 إلى: ${order.gift_name || ""}${order.gift_phone ? ` · ${phone(order.gift_phone)}` : ""}` : order.gift ? "🎁 الطلب هدية" : "",
+            gfor ? `${gfor.emoji} الهدية لـ: ${gfor.label} ${gfor.heart}` : "",
             order.gift && order.gift_occasion && order.gift_occasion !== "other" ? `🎉 المناسبة: ${occ.emoji} ${occ.name}` : "",
             order.gift && order.gift_message ? `💬 رسالة الهدية: ${order.gift_message}` : "",
             giftTo && order.gift_hide_price ? "🤫 لا تذكر السعر للمُهدى إليه" : ""
@@ -977,43 +1018,43 @@ ATHR.TEMPLATES = [
     {
         id: "classic",
         name: "أثر الكلاسيكي",
-        desc: "عنابي وبيج دافئ مع زخرفة عربية — الشكل الأصلي للمتجر.",
+        desc: "الشكل الأصلي: عنابي وبيج مع زخرفة عربية، وأقسام بصور مستطيلة.",
         theme: { primary: "#7D1420", hero: "#4A0D12", bg: "#EBDDC9", text: "#251A1B", font_head: "Reem Kufi", font_body: "IBM Plex Sans Arabic", radius: "medium", header: "color", hero_pattern: true }
     },
     {
         id: "minimal",
         name: "أبيض بسيط",
-        desc: "أبيض وأسود نظيف مثل الماركات العالمية. المنتج هو البطل.",
+        desc: "مثل الماركات العالمية: الشعار في المنتصف، أقسام بالكلمات فقط، وزر «+» صغير فوق صورة المنتج.",
         theme: { primary: "#111111", hero: "#111111", bg: "#FFFFFF", text: "#111111", font_head: "IBM Plex Sans Arabic", font_body: "IBM Plex Sans Arabic", radius: "sharp", header: "light", hero_pattern: false }
     },
     {
         id: "boutique",
         name: "بوتيك ناعم",
-        desc: "كريمي وتراكوتا بزوايا ناعمة وأقسام دائرية — مثالي للهدايا.",
+        desc: "واجهة كبطاقة مدوّرة فيها صور منتجاتك، أقسام دائرية، وكل شيء في المنتصف. مثالي للهدايا.",
         theme: { primary: "#9C5B45", hero: "#4E342B", bg: "#F7F1EA", text: "#2E2420", font_head: "El Messiri", font_body: "Tajawal", radius: "round", header: "light", hero_pattern: false }
     },
     {
         id: "luxe",
         name: "أسود فاخر",
-        desc: "أسود مع لمسات ذهبية وخط كلاسيكي — فخامة الماركات الراقية.",
+        desc: "أسود وذهبي: واجهة كبيرة في المنتصف، أقسام كبطاقات مجلة، وإطار ذهبي حول صور المنتجات.",
         theme: { primary: "#121212", hero: "#0B0B0C", bg: "#F5F2EC", text: "#1A1814", font_head: "Amiri", font_body: "IBM Plex Sans Arabic", radius: "sharp", header: "color", hero_pattern: true }
     },
     {
         id: "bold",
         name: "عصري جريء",
-        desc: "أزرق قوي وعناوين عريضة — حيوي مثل متاجر الرياضة.",
+        desc: "أزرق قوي: واجهة مقسومة فيها صورة منتج مائلة، أقسام عريضة، وأسعار كبيرة واضحة.",
         theme: { primary: "#1F4BFF", hero: "#0A0F2C", bg: "#F2F4F8", text: "#0D1020", font_head: "Alexandria", font_body: "Readex Pro", radius: "medium", header: "color", hero_pattern: false }
     },
     {
         id: "calm",
         name: "طبيعي هادئ",
-        desc: "أخضر زيتي وكتّاني وأشكال مقوّسة — مريح وهادئ للعين.",
+        desc: "أخضر هادئ: واجهة بحافة مقوّسة، أقسام على شكل أقواس، والمنتجات قائمة أفقية سهلة التصفح.",
         theme: { primary: "#4F6B52", hero: "#2E3F31", bg: "#F1F0E8", text: "#22291F", font_head: "Almarai", font_body: "Almarai", radius: "round", header: "light", hero_pattern: false }
     },
     {
         id: "fun",
         name: "مرح ملوّن",
-        desc: "بنفسجي وأصفر بحدود واضحة — شبابي وملفت.",
+        desc: "بنفسجي وأصفر: صور منتجاتك كملصقات، أقسام ككبسولات ملوّنة، وحدود سوداء شبابية.",
         theme: { primary: "#6C3BE0", hero: "#2B1660", bg: "#FFF6E5", text: "#22163A", font_head: "Baloo Bhaijaan 2", font_body: "Baloo Bhaijaan 2", radius: "round", header: "color", hero_pattern: false }
     }
 ];

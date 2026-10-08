@@ -810,9 +810,9 @@
         if (link.getAttribute("href") !== href) link.setAttribute("href", href);
     }
 
-    function giftMini() {
+    function giftMini(gender = "") {
         const g = cfg().gift;
-        return `<div class="gift-mini gift-page" id="giftMini" style="${esc(ATHR.views.giftStyle({ cfg: cfg() }))}">
+        return `<div class="gift-mini gift-page" id="giftMini${gender ? `-${gender}` : ""}" style="${esc(ATHR.views.giftStyle({ cfg: cfg() }, gender))}">
             <div class="gm-stage">
                 <div class="gm-box"><span class="gm-lid"></span><span class="gm-body"></span></div>
                 <b class="gm-title">${esc(ATHR.giftFill(g.title, { to: GIFT_SAMPLE.to, from: GIFT_SAMPLE.from, store: ATHR.storeName(cfg()) }))}</b>
@@ -836,8 +836,10 @@
     }
 
     function refreshGiftPreview() {
-        const mini = $("#giftMini");
-        if (mini) mini.outerHTML = giftMini();
+        ["", "boy", "girl"].forEach((g) => {
+            const mini = document.getElementById(`giftMini${g ? `-${g}` : ""}`);
+            if (mini) mini.outerHTML = giftMini(g);
+        });
         const wa = $("#giftWaPreview");
         if (wa) wa.textContent = giftWaSample();
     }
@@ -873,7 +875,34 @@
                 ${toggle("config.sales.gift_banner", "بنر «أرسلها هدية» في الصفحة الرئيسية")}
                 ${toggle("config.sales.gift_button", "زر «أرسله هدية» في صفحة المنتج والسلة")}
                 ${toggle("config.sales.gift_prepaid", "الهدايا بالدفع المسبق فقط", { help: "يُخفي «الدفع عند الاستلام» في طلبات الهدايا حتى لا يُطلب المبلغ من المُهدى إليه." })}` : ""}`)}
-            ${card("الألوان", `
+            ${card("👦 ولد أو 👧 بنت", `
+                ${toggle("config.gift.genders.enabled", "الزبون يختار: الهدية لولد أو لبنت", { rerender: true, help: "خانة إجبارية في طلب الهدية. بطاقة الإهداء والصندوق يتلوّنان حسب الاختيار، ويظهر في رسالة الطلب حتى تغلّف الهدية بنفس اللون." })}
+                ${cfg().gift.genders.enabled === false ? "" : ["boy", "girl"].map((id) => {
+                    const base = `config.gift.genders.${id}`;
+                    const D = ATHR_DEFAULTS.gift.genders[id];
+                    return `<div class="item-card gfor-admin ${id}">
+                        <b>${D.emoji} ${id === "boy" ? "الولد — أزرق وأبيض" : "البنت — وردي وأبيض"}</b>
+                        ${giftMini(id)}
+                        <div class="two">
+                            ${text(`${base}.label`, "الاسم في صفحة الطلب", { placeholder: D.label, max: 20 })}
+                            ${text(`${base}.emoji`, "الرمز", { placeholder: D.emoji, max: 8 })}
+                        </div>
+                        <div class="two">
+                            ${colorField(`${base}.colors.bg`, "خلفية الصفحة")}
+                            ${colorField(`${base}.colors.box`, "لون الصندوق")}
+                        </div>
+                        <div class="two">
+                            ${colorField(`${base}.colors.ribbon`, "لون الشريطة")}
+                            ${colorField(`${base}.colors.accent`, "لون الاسم")}
+                        </div>
+                        <div class="inline">
+                            <button class="ab ab-ghost ab-sm" type="button" data-a="gift-preview" data-gender="${id}">👁️ معاينة بطاقة ${id === "boy" ? "الولد" : "البنت"}</button>
+                            <button class="ab-mini" type="button" data-gfor-reset="${id}">الألوان الأصلية</button>
+                        </div>
+                    </div>`;
+                }).join("")}`, "الولد أزرق مع أبيض، والبنت وردي مع أبيض. تقدر تغيّر أي لون.")}
+            ${card("الألوان العامة", `
+                <p class="adm-muted" style="margin:0">${cfg().gift.genders.enabled === false ? "ألوان بطاقة الإهداء." : "تُستخدم فقط إذا أطفأت اختيار الولد والبنت."}</p>
                 <div class="two">
                     ${colorField("config.gift.colors.bg", "خلفية الصفحة")}
                     ${colorField("config.gift.colors.box", "لون الصندوق")}
@@ -1022,14 +1051,23 @@
         const c = cfg();
         const logo = c.logo_url || ATHR_DEFAULTS.logo_url;
         const photo = !/logo\.png$/.test(logo);
-        const imgs = A.draft.products.filter((p) => p.is_visible && p.image_url).slice(0, 3).map((p) => ATHR.thumb(p.image_url, "s") || asset(p.image_url));
+        const thumb = (url) => ATHR.thumb(url, "s") || asset(url);
+        const prods = A.draft.products.filter((p) => p.is_visible && p.image_url);
+        const imgs = prods.slice(0, 3).map((p) => thumb(p.image_url));
         while (imgs.length < 3) imgs.push(asset("images/logo2.jpeg"));
+        const cats = A.draft.categories.map((cat) => {
+            const p = prods.find((x) => x.category_id === cat.id);
+            const img = cat.image_url ? thumb(cat.image_url) : p ? thumb(p.image_url) : "";
+            return img && cat.name ? { name: cat.name, img } : null;
+        }).filter(Boolean).slice(0, 4);
         const vars = `--p:${t.primary};--h:${t.hero};--b:${t.bg};--t:${t.text};--op:${ATHR.onColor(t.primary)};--fh:'${t.font_head}';--fb:'${t.font_body}';--rr:${TPL_RADIUS[t.radius] || "8px"}`;
         const title = (c.texts && c.texts.hero_title) || ATHR_DEFAULTS.texts.hero_title;
+        const card = (src) => `<div class="tm-card"><span class="tm-img"><img src="${esc(src)}" alt="" loading="lazy"><i class="tm-plus">+</i></span><span class="tm-info"><span class="tm-name"></span><span class="tm-price">${esc(money(3.5))}</span><span class="tm-add">أضف للسلة</span></span></div>`;
         return `<div class="tm tm-${tp.id}${t.header === "light" ? " tm-light" : ""}" style="${esc(vars)}" aria-hidden="true">
-            <div class="tm-top"><i class="tm-ic"></i><span class="tm-logo${photo ? " photo" : ""}"><img src="${esc(asset(logo))}" alt=""></span><i class="tm-ic"></i></div>
-            <div class="tm-hero${t.hero_pattern ? " pat" : ""}"><b>${esc(title)}</b><span class="tm-chips"><i></i><i></i></span></div>
-            <div class="tm-grid">${imgs.map((src) => `<div class="tm-card"><img src="${esc(src)}" alt="" loading="lazy"><span class="tm-name"></span><span class="tm-price">${esc(money(3.5))}</span><span class="tm-add">أضف</span></div>`).join("")}</div>
+            <div class="tm-top"><i class="tm-ic tm-menu"></i><i class="tm-ic tm-ic1"></i><span class="tm-logo${photo ? " photo" : ""}"><img src="${esc(asset(logo))}" alt=""></span><i class="tm-ic tm-ic2"></i><i class="tm-ic tm-cart"></i><span class="tm-search"></span></div>
+            <div class="tm-hero${t.hero_pattern ? " pat" : ""}"><div class="tm-ht"><b>${esc(title)}</b><span class="tm-chips"><i></i><i></i></span><span class="tm-shots">${imgs.map((src) => `<img src="${esc(src)}" alt="" loading="lazy">`).join("")}</span></div></div>
+            ${cats.length ? `<div class="tm-tiles">${cats.map((x, i) => `<span class="tm-tile${i === 0 ? " on" : ""}"><img src="${esc(x.img)}" alt="" loading="lazy"><i>${esc(x.name)}</i></span>`).join("")}</div>` : ""}
+            <div class="tm-grid">${imgs.map(card).join("")}</div>
         </div>`;
     }
 
@@ -1788,6 +1826,11 @@
             renderPanel();
             return;
         }
+        if (d.gforReset && ATHR_DEFAULTS.gift.genders[d.gforReset]) {
+            cfg().gift.genders[d.gforReset].colors = { ...ATHR_DEFAULTS.gift.genders[d.gforReset].colors };
+            afterChange();
+            return;
+        }
         if (d.giftTheme && GIFT_THEMES[d.giftTheme]) {
             cfg().gift.colors = { ...GIFT_THEMES[d.giftTheme] };
             afterChange();
@@ -1842,7 +1885,7 @@
             case "tpl-apply": applyTemplate(d.id); return;
             case "tpl-undo": undoTemplate(); return;
             case "tpl-preview": previewTemplate(d.id); return;
-            case "gift-preview": preview(`${ATHR.base()}gift/?c=${ATHR.giftCode(GIFT_SAMPLE)}`); return;
+            case "gift-preview": preview(`${ATHR.base()}gift/?c=${ATHR.giftCode({ ...GIFT_SAMPLE, gender: d.gender || "" })}`); return;
             case "account": openAccount(); return;
             case "discard": discard(); return;
             case "publish": publish(); return;
@@ -2854,7 +2897,7 @@
                     ${giftTo(o) ? `<small class="adm-muted">صاحب الهدية</small>` : ""}
                     <b>${esc(o.customer_name || "بدون اسم")}</b>
                     ${o.phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : ""}
-                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${o.gift_occasion && o.gift_occasion !== "other" ? ` · ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).emoji)} ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).name)}` : ""}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
+                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${ATHR.giftFor(o.gift_for, cfg()) ? ` · <span class="gfor-tag ${o.gift_for}">${esc(ATHR.giftFor(o.gift_for, cfg()).emoji)} ${esc(ATHR.giftFor(o.gift_for, cfg()).label)}</span>` : ""}${o.gift_occasion && o.gift_occasion !== "other" ? ` · ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).emoji)} ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).name)}` : ""}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
                     <b>${esc(o.gift_name || "")}</b>
                     ${o.gift_phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : ""}` : ""}
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
@@ -3159,6 +3202,8 @@
             const noMatch = get("رقم الطلب").match(/[A-Z]{1,4}-[0-9A-Z]{3,10}/i);
             const discountLine = block.find((l) => /^(خصم|الخصم)/.test(l)) || "";
             const giftName = to[0] || get("المُهدى إليه") || null;
+            const forText = get("الهدية لـ") || get("الهدية ل");
+            const giftFor = forText ? (ATHR.GIFT_FOR.find((id) => forText.includes(ATHR.giftFor(id, cfg()).label)) || (/بنت/.test(forText) ? "girl" : /ولد/.test(forText) ? "boy" : null)) : null;
             const giftPhone = to[1] || get("رقم المُهدى إليه");
             return {
                 order_no: noMatch ? noMatch[0].toUpperCase() : null,
@@ -3185,6 +3230,7 @@
                 gift_phone: isGift && giftPhone ? phoneOf(giftPhone) : null,
                 gift_message: isGift ? (get("رسالة الهدية") || null) : null,
                 gift_hide_price: isGift && block.some((l) => l.includes("لا تذكر السعر")),
+                gift_for: isGift ? giftFor : null,
                 status: "new"
             };
         });

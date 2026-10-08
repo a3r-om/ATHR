@@ -1565,78 +1565,241 @@ html.head-light .cart-count { background: var(--primary); color: var(--on-primar
 html.head-light[data-mode="dark"] { --logo-filter: none; }
 @media (prefers-color-scheme: dark) { html.head-light[data-mode="auto"] { --logo-filter: none; } }
 
-/* 1) أبيض بسيط */
+/* صور المنتجات داخل الواجهة: مخفية في الكلاسيكي، ولكل قالب طريقة عرض */
+.hero-shots { display: none; }
+.hs { display: block; overflow: hidden; background: var(--img-bg); }
+.hs img { width: 100%; height: 100%; object-fit: cover; }
+.tile-img { display: block; }
+
+/* الشعار في المنتصف (أبيض بسيط، بوتيك ناعم، أسود فاخر) */
+html.tpl-minimal .top-row, html.tpl-boutique .top-row, html.tpl-luxe .top-row { grid-template-columns: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "menu lang brand cur cart" "search search search search search"; }
+html.tpl-minimal .top-row.no-search, html.tpl-boutique .top-row.no-search, html.tpl-luxe .top-row.no-search { grid-template-areas: "menu lang brand cur cart"; }
+html.tpl-minimal .brand, html.tpl-boutique .brand, html.tpl-luxe .brand { justify-self: center; }
+
+/* =====================================================
+   1) أبيض بسيط — مثل الماركات العالمية: أبيض، خطوط رفيعة، المنتج هو البطل
+===================================================== */
 html.tpl-minimal { --line: color-mix(in srgb, var(--text) 9%, var(--bg)); --img-bg: color-mix(in srgb, var(--text) 5%, var(--surface)); --accent: var(--text); }
+html.tpl-minimal .icon-btn, html.tpl-minimal .cur-btn, html.tpl-minimal .lang-btn { background: transparent; }
+html.tpl-minimal .search { background: transparent; box-shadow: none; border-radius: 0; border-bottom: 1.5px solid var(--text); height: 40px; padding: 0 2px; }
+html.tpl-minimal .search:focus-within { box-shadow: none; }
+/* الواجهة: بدون لون، عنوان كبير رفيع في المنتصف */
+html.tpl-minimal .hero:not(.has-image) { background: var(--bg); color: var(--text); border-bottom: 1px solid var(--line); }
+html.tpl-minimal .hero.pattern::before { display: none; }
+html.tpl-minimal .hero:not(.has-image) .hero-inner { justify-items: center; text-align: center; padding: 36px 0 28px; gap: 10px; }
+html.tpl-minimal .hero:not(.has-image) h1 { font-weight: 500; font-size: clamp(30px, 9.4vw, 58px); letter-spacing: -.01em; max-width: 16ch; }
+html.tpl-minimal .hero:not(.has-image) p { color: var(--muted); opacity: 1; font-size: 14px; }
+html.tpl-minimal .hero:not(.has-image) .hero-features { justify-content: center; gap: 6px 0; }
+html.tpl-minimal .hero:not(.has-image) .hero-features li { background: none; box-shadow: none; padding: 0 10px; border-radius: 0; font-weight: 500; font-size: 12.5px; color: var(--muted); }
+html.tpl-minimal .hero:not(.has-image) .hero-features li + li { border-inline-start: 1px solid var(--line); }
+html.tpl-minimal .hero-features svg { display: none; }
+/* الأقسام: كلمات فقط مع خط تحت القسم المختار */
+html.tpl-minimal .tiles { gap: 24px; padding-top: 4px; padding-bottom: 0; border-bottom: 1px solid var(--line); }
+html.tpl-minimal .tile { flex: 0 0 auto; padding: 12px 0 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+html.tpl-minimal .tile-img { display: none; }
+html.tpl-minimal .tile-name { display: block; font-size: 14.5px; font-weight: 500; white-space: nowrap; }
+html.tpl-minimal .tile.on, html.tpl-minimal .tile:hover { border-bottom-color: var(--text); }
+html.tpl-minimal .tile.on .tile-name { color: var(--text); font-weight: 700; }
+/* المنتجات: بدون إطار، وزر «+» دائري فوق الصورة */
 html.tpl-minimal .card { border: 0; background: transparent; overflow: visible; }
 html.tpl-minimal .card-img { border-radius: var(--r); overflow: hidden; }
-html.tpl-minimal .card-body { padding: 9px 2px 6px; }
-html.tpl-minimal .card-action { padding: 0 0 4px; }
+html.tpl-minimal .card-body { padding: 9px 2px 4px; }
 html.tpl-minimal .card-name { font-weight: 500; }
 html.tpl-minimal .price b { color: var(--text); }
-html.tpl-minimal .card-action .btn-primary { background: transparent; color: var(--text); border-color: var(--text); }
-html.tpl-minimal .tile-img { box-shadow: none; }
-html.tpl-minimal .tile.on .tile-img, html.tpl-minimal .tile:hover .tile-img { box-shadow: 0 0 0 1.5px var(--text); }
-html.tpl-minimal .section-head h1, html.tpl-minimal .section-head h2 { font-weight: 600; }
-html.tpl-minimal .hero h1 { font-weight: 600; }
-html.tpl-minimal .hero-features li { background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
-html.tpl-minimal .badge { box-shadow: none; border-radius: 3px; }
-html.tpl-minimal .badge.hot { background: var(--surface); color: var(--text); }
+html.tpl-minimal .card-action { position: absolute; top: 8px; inset-inline-end: 8px; padding: 0; z-index: 2; }
+html.tpl-minimal .card-action .btn { width: 40px; height: 40px; min-height: 40px; padding: 0; gap: 0; font-size: 0; border: 0; border-radius: 50%; background: var(--surface); color: var(--text); box-shadow: 0 2px 10px rgba(0, 0, 0, .14); }
+html.tpl-minimal .card-action .btn::before { content: "+"; font-size: 27px; font-weight: 300; line-height: 1; }
+html.tpl-minimal .card-action .stepper { height: 40px; grid-template-columns: 34px 26px 34px; border-radius: 999px; background: var(--surface); box-shadow: 0 2px 10px rgba(0, 0, 0, .14); }
+html.tpl-minimal .card.soldout .card-action { display: none; }
+html.tpl-minimal .badge { box-shadow: none; border-radius: 3px; background: var(--surface); color: var(--text); }
+html.tpl-minimal .badge.sale { background: var(--text); color: var(--surface); }
+html.tpl-minimal .rail { grid-auto-columns: minmax(160px, 58%); }
+@media (min-width: 760px) { html.tpl-minimal .rail { grid-auto-columns: minmax(220px, 27%); } }
+html.tpl-minimal .section-head h1, html.tpl-minimal .section-head h2 { font-size: 17px; font-weight: 600; }
+html.tpl-minimal .section-head .more { color: var(--text); text-decoration: underline; text-underline-offset: 4px; font-weight: 500; }
+/* بنر الهدية: إطار أسود رفيع بدل اللون */
+html.tpl-minimal .gp { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--text); }
+html.tpl-minimal .gp-art { background: var(--img-bg); }
+html.tpl-minimal .gp-art svg { stroke: var(--text); }
+html.tpl-minimal .gp-go { background: var(--text); color: var(--surface); }
 
-/* 2) بوتيك ناعم */
-html.tpl-boutique .card { border: 0; box-shadow: 0 1px 2px rgba(46, 36, 32, .05), 0 8px 22px rgba(46, 36, 32, .08); }
-html.tpl-boutique .btn, html.tpl-boutique .stepper { border-radius: 999px; }
+/* =====================================================
+   2) بوتيك ناعم — واجهة كبطاقة مدوّرة فيها صور منتجاتك، وأقسام دائرية
+===================================================== */
+html.tpl-boutique .hero:not(.has-image) { background: transparent; color: #fff; }
+html.tpl-boutique .hero.pattern:not(.has-image)::before { display: none; }
+html.tpl-boutique .hero:not(.has-image) .hero-inner { margin-top: 12px; padding: 24px 18px 20px; border-radius: 28px; background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hero) 72%, #fff), var(--hero) 72%); justify-items: center; text-align: center; box-shadow: var(--shadow); overflow: hidden; }
+html.tpl-boutique .hero h1 { font-size: clamp(26px, 8vw, 46px); }
+html.tpl-boutique .hero-features { justify-content: center; }
+html.tpl-boutique .hero-features li { background: rgba(255, 255, 255, .14); }
+html.tpl-boutique .hero-shots { display: flex; justify-content: center; align-items: flex-end; margin-top: 14px; padding-bottom: 4px; }
+html.tpl-boutique .hs { width: 29%; max-width: 140px; aspect-ratio: 4 / 5; border: 5px solid #fff; border-radius: 16px; box-shadow: 0 10px 22px rgba(0, 0, 0, .28); }
+html.tpl-boutique .hs1 { transform: rotate(-8deg) translateY(4px); }
+html.tpl-boutique .hs2 { position: relative; z-index: 1; margin-inline: -12px; transform: translateY(-6px) scale(1.06); }
+html.tpl-boutique .hs3 { transform: rotate(8deg) translateY(4px); }
 html.tpl-boutique .tiles { gap: 14px; }
 html.tpl-boutique .tile { flex-basis: 76px; }
 html.tpl-boutique .tile-img { width: 70px; height: 70px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px color-mix(in srgb, var(--primary) 40%, transparent); }
 html.tpl-boutique .tile.on .tile-img, html.tpl-boutique .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary); }
-html.tpl-boutique .section-head h1, html.tpl-boutique .section-head h2 { font-size: 22px; }
-html.tpl-boutique .hero-features li { background: rgba(255, 255, 255, .14); }
 @media (min-width: 760px) {
     html.tpl-boutique .tile { flex-basis: 100px; }
     html.tpl-boutique .tile-img { width: 92px; height: 92px; }
 }
+html.tpl-boutique .card { border: 0; box-shadow: 0 1px 2px rgba(46, 36, 32, .05), 0 8px 22px rgba(46, 36, 32, .08); }
+html.tpl-boutique .card-body { justify-items: center; text-align: center; }
+html.tpl-boutique .price, html.tpl-boutique .swatches, html.tpl-boutique .card-rate { justify-content: center; }
+html.tpl-boutique .btn, html.tpl-boutique .stepper { border-radius: 999px; }
+html.tpl-boutique .section-head { flex-direction: column; gap: 4px; }
+html.tpl-boutique .section-head h1, html.tpl-boutique .section-head h2 { font-size: 22px; text-align: center; }
+html.tpl-boutique .section-head h2::before, html.tpl-boutique .section-head h2::after { content: "✦"; color: var(--primary); font-size: .5em; vertical-align: middle; margin-inline: 9px; }
+html.tpl-boutique .gp { border-radius: 24px; }
 
-/* 3) أسود فاخر — ذهبي مع أسود */
+/* =====================================================
+   3) أسود فاخر — واجهة طويلة في المنتصف، ذهبي، أقسام كبطاقات مجلة
+===================================================== */
 html.tpl-luxe { --gold: #B8924A; --accent: #94713A; --btn-ink: #EBD5A6; }
 html.tpl-luxe[data-mode="dark"] { --accent: #D2B47A; --btn-bg: #CFAE72; --btn-ink: #141414; }
 @media (prefers-color-scheme: dark) { html.tpl-luxe[data-mode="auto"] { --accent: #D2B47A; --btn-bg: #CFAE72; --btn-ink: #141414; } }
 html.tpl-luxe .top { box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--gold) 75%, transparent); }
-html.tpl-luxe .hero h1 { color: #E9D3A3; letter-spacing: .01em; }
-html.tpl-luxe .hero-features li { background: transparent; box-shadow: inset 0 0 0 1px rgba(233, 211, 163, .35); color: #F1E4C6; }
+html.tpl-luxe .icon-btn, html.tpl-luxe .cur-btn, html.tpl-luxe .lang-btn { background: transparent; box-shadow: inset 0 0 0 1px rgba(233, 211, 163, .32); }
+html.tpl-luxe .search { background: rgba(255, 255, 255, .07); color: #F1E4C6; box-shadow: inset 0 0 0 1px rgba(233, 211, 163, .3); }
+html.tpl-luxe .search svg { stroke: #CFAE72; }
+html.tpl-luxe .search input::placeholder { color: rgba(241, 228, 198, .6); }
+html.tpl-luxe .cart-count { background: var(--gold); color: #141414; }
 html.tpl-luxe .bar-announce { box-shadow: inset 0 -1px 0 rgba(233, 211, 163, .35); color: #F1E4C6; }
-html.tpl-luxe .card { border-color: color-mix(in srgb, var(--gold) 28%, var(--line)); }
-html.tpl-luxe .card-name { font-weight: 600; }
+html.tpl-luxe .hero-inner { min-height: min(52vh, 520px); align-content: center; justify-items: center; text-align: center; padding: 46px 0 40px; gap: 14px; }
+html.tpl-luxe .hero h1 { color: #E9D3A3; font-size: clamp(34px, 10.5vw, 66px); max-width: 14ch; letter-spacing: .01em; }
+html.tpl-luxe .hero h1::after { content: ""; display: block; width: 76px; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, #CFAE72, transparent); }
+html.tpl-luxe .hero p { max-width: 40ch; }
+html.tpl-luxe .hero-features { justify-content: center; }
+html.tpl-luxe .hero-features li { background: transparent; box-shadow: inset 0 0 0 1px rgba(233, 211, 163, .35); color: #F1E4C6; }
+html.tpl-luxe .tiles { gap: 10px; padding-top: 16px; }
+html.tpl-luxe .tile { position: relative; display: block; flex: 0 0 136px; }
+html.tpl-luxe .tile-img { width: 136px; height: 180px; box-shadow: none; }
+html.tpl-luxe .tile-name { position: absolute; inset: auto 0 0; padding: 28px 8px 10px; border-radius: 0 0 var(--r-sm) var(--r-sm); background: linear-gradient(transparent, rgba(0, 0, 0, .8)); color: #F1E4C6; font-family: var(--font-head); font-size: 15px; text-align: center; }
+html.tpl-luxe .tile.on .tile-img, html.tpl-luxe .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--gold); }
+html.tpl-luxe .tile.on .tile-name { color: #F1E4C6; }
+@media (min-width: 760px) {
+    html.tpl-luxe .tile { flex-basis: 170px; }
+    html.tpl-luxe .tile-img { width: 170px; height: 226px; }
+}
+html.tpl-luxe .card { background: transparent; border: 0; }
+html.tpl-luxe .card-img { border-radius: var(--r-sm); }
+html.tpl-luxe .card-img::after { content: ""; position: absolute; inset: 7px; border: 1px solid rgba(233, 211, 163, .8); pointer-events: none; }
+html.tpl-luxe .card-body { justify-items: center; text-align: center; padding: 10px 4px 6px; }
+html.tpl-luxe .card-name { font-family: var(--font-head); font-size: 16px; }
+html.tpl-luxe .price, html.tpl-luxe .swatches, html.tpl-luxe .card-rate { justify-content: center; }
+html.tpl-luxe .card-action { padding: 0 4px 6px; }
+html.tpl-luxe .card-action .btn-primary { background: transparent; color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 70%, transparent); font-weight: 600; }
 html.tpl-luxe .badge { box-shadow: none; }
 html.tpl-luxe .badge.sale, html.tpl-luxe .badge.hot { background: var(--gold); color: #141414; }
-html.tpl-luxe .cart-count { background: var(--gold); color: #141414; }
-html.tpl-luxe .section-head h1, html.tpl-luxe .section-head h2 { font-size: 23px; }
-html.tpl-luxe .tile.on .tile-img, html.tpl-luxe .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--gold); }
+html.tpl-luxe .section-head { flex-direction: column; gap: 6px; }
+html.tpl-luxe .section-head h1, html.tpl-luxe .section-head h2 { display: flex; align-items: center; gap: 12px; font-size: 24px; text-align: center; }
+html.tpl-luxe .section-head h2::before, html.tpl-luxe .section-head h2::after { content: ""; flex-shrink: 0; width: 26px; height: 1px; background: var(--gold); }
+html.tpl-luxe .gp { background: linear-gradient(135deg, #1B1812, #0B0B0C); box-shadow: inset 0 0 0 1px rgba(233, 211, 163, .4); color: #F1E4C6; }
+html.tpl-luxe .gp-art { background: rgba(233, 211, 163, .12); }
+html.tpl-luxe .gp-art svg { stroke: #E9D3A3; }
+html.tpl-luxe .gp-go { background: #CFAE72; color: #141414; }
 
-/* 4) عصري جريء */
-html.tpl-bold .hero h1 { font-size: clamp(28px, 8.6vw, 58px); letter-spacing: -.01em; }
-html.tpl-bold .section-head h1, html.tpl-bold .section-head h2 { font-size: 23px; }
+/* =====================================================
+   4) عصري جريء — واجهة مقسومة بصورة مائلة، أقسام عريضة، أسعار كبيرة
+===================================================== */
+html.tpl-bold .brand-logo { width: 46px; height: 46px; }
+html.tpl-bold .hero:not(.has-image) .hero-inner { min-height: 250px; align-content: center; padding: 30px 0 24px; }
+html.tpl-bold .hero:not(.has-image) h1 { max-width: 64%; }
+html.tpl-bold .hero:not(.has-image) p { max-width: 58%; }
+html.tpl-bold .hero h1 { font-size: clamp(28px, 8.4vw, 58px); line-height: 1.12; letter-spacing: -.01em; }
+html.tpl-bold .hero p { font-size: 13.5px; }
+html.tpl-bold .hero-features { position: relative; z-index: 1; }
+html.tpl-bold .hero-features li { background: rgba(10, 15, 44, .55); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+html.tpl-bold .hero:not(.has-image)::after { content: ""; position: absolute; top: 0; bottom: 0; inset-inline-end: -14%; width: 54%; background: var(--primary); transform: skewX(-12deg); z-index: -1; }
+html.tpl-bold .hero-shots { display: block; position: absolute; top: 26px; inset-inline-end: 5%; width: 33%; max-width: 280px; transform: rotate(-7deg); }
+html.tpl-bold .hs { display: none; }
+html.tpl-bold .hs1 { display: block; aspect-ratio: 4 / 5; border: 4px solid #fff; border-radius: 18px; box-shadow: 0 22px 40px rgba(0, 0, 0, .45); }
+html.tpl-bold .tiles { gap: 10px; }
+html.tpl-bold .tile { position: relative; display: block; flex: 0 0 156px; }
+html.tpl-bold .tile-img { width: 156px; height: 96px; box-shadow: none; }
+html.tpl-bold .tile-name { position: absolute; inset: auto 0 0; padding: 20px 10px 8px; border-radius: 0 0 var(--r-sm) var(--r-sm); background: linear-gradient(transparent, rgba(10, 15, 44, .88)); color: #fff; font-size: 14px; font-weight: 800; text-align: start; -webkit-line-clamp: 1; }
+html.tpl-bold .tile.on .tile-img, html.tpl-bold .tile:hover .tile-img { box-shadow: 0 0 0 3px var(--primary); }
+html.tpl-bold .tile.on .tile-name { color: #fff; }
+@media (min-width: 760px) {
+    html.tpl-bold .tile { flex-basis: 200px; }
+    html.tpl-bold .tile-img { width: 200px; height: 120px; }
+}
 html.tpl-bold .card { border: 0; box-shadow: 0 1px 2px rgba(13, 16, 32, .06); }
-html.tpl-bold .card-name { font-weight: 700; }
-html.tpl-bold .price b { color: var(--text); font-size: 16px; }
+html.tpl-bold .card-img { background: color-mix(in srgb, var(--text) 7%, var(--surface)); }
+html.tpl-bold .card-name { font-weight: 700; font-size: 14.5px; }
+html.tpl-bold .price b { color: var(--text); font-size: 17px; font-weight: 800; }
 html.tpl-bold .btn { font-weight: 800; }
-html.tpl-bold .badge { border-radius: 4px; box-shadow: none; }
+html.tpl-bold .card-action .btn-primary { background: var(--text); color: var(--bg); border-radius: 8px; }
+html.tpl-bold .badge { border-radius: 3px; box-shadow: none; transform: skewX(-10deg); font-weight: 800; }
 html.tpl-bold .badge.hot { background: #D4FF3A; color: #0D1020; }
-html.tpl-bold .tile-img { box-shadow: none; }
-html.tpl-bold .tile-name { font-weight: 700; }
-html.tpl-bold .hero-features li { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+html.tpl-bold .rail { grid-auto-columns: minmax(170px, 62%); }
+@media (min-width: 760px) { html.tpl-bold .rail { grid-auto-columns: minmax(230px, 30%); } }
+html.tpl-bold .section-head h1, html.tpl-bold .section-head h2 { font-size: 24px; font-weight: 800; }
+html.tpl-bold .section-head h2::before { content: ""; display: inline-block; width: 7px; height: .85em; margin-inline-end: 9px; background: var(--primary); transform: skewX(-12deg); vertical-align: -1px; }
+html.tpl-bold .gp { border-radius: var(--r-sm); background: linear-gradient(110deg, var(--primary) 58%, color-mix(in srgb, var(--primary) 30%, #000) 58%); }
 
-/* 5) طبيعي هادئ */
-html.tpl-calm .card { border-color: color-mix(in srgb, var(--primary) 14%, var(--line)); }
-html.tpl-calm .btn, html.tpl-calm .stepper { border-radius: 999px; }
+/* =====================================================
+   5) طبيعي هادئ — واجهة بحافة مقوّسة، أقسام كالأقواس، والمنتجات قائمة أفقية
+===================================================== */
+html.tpl-calm .hero:not(.has-image) { border-radius: 0 0 38px 38px; }
+html.tpl-calm .hero:not(.has-image)::after { content: ""; position: absolute; width: 260px; height: 260px; border-radius: 50%; inset-inline-start: -90px; bottom: -150px; background: rgba(255, 255, 255, .07); z-index: -1; }
+html.tpl-calm .hero-inner { justify-items: center; text-align: center; padding: 26px 0 34px; }
+html.tpl-calm .hero h1::before { content: ""; display: block; width: 38px; height: 38px; margin: 0 auto 8px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23DCE7D3' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 19c0-8 5-13 14-14 0 9-5 14-13 14'/%3E%3Cpath d='M5 19c3-4 6-7 10-9'/%3E%3C/svg%3E") center / contain no-repeat; }
+html.tpl-calm .hero-features { justify-content: center; }
+html.tpl-calm .hero-features li { background: rgba(255, 255, 255, .1); }
 html.tpl-calm .tile-img { border-radius: 999px 999px var(--r-sm) var(--r-sm); box-shadow: none; }
 html.tpl-calm .tile.on .tile-img, html.tpl-calm .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--primary); }
+html.tpl-calm .card { border-color: color-mix(in srgb, var(--primary) 14%, var(--line)); }
+html.tpl-calm .btn, html.tpl-calm .stepper { border-radius: 999px; }
 html.tpl-calm .badge { box-shadow: none; }
 html.tpl-calm .badge.hot { background: #E9E3C8; color: #2E3F31; }
-html.tpl-calm .hero-features li { background: rgba(255, 255, 255, .1); }
+/* كل المنتجات: بطاقات أفقية (صورة صغيرة + التفاصيل) */
+html.tpl-calm .grid, html.tpl-calm .grid.one { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 640px) { html.tpl-calm .grid, html.tpl-calm .grid.one { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+@media (min-width: 980px) { html.tpl-calm .grid, html.tpl-calm .grid.one { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+html.tpl-calm .grid .card { display: grid; grid-template-columns: 108px minmax(0, 1fr); grid-template-rows: 1fr auto; column-gap: 12px; padding: 8px; }
+html.tpl-calm .grid .card-img { grid-column: 1; grid-row: 1 / 3; align-self: start; border-radius: calc(var(--r) - 8px); overflow: hidden; }
+html.tpl-calm .grid .card-body { grid-column: 2; grid-row: 1; padding: 4px 0 0; }
+html.tpl-calm .grid .card-name { font-size: 15px; }
+html.tpl-calm .grid .card-action { grid-column: 2; grid-row: 2; padding: 6px 0 0; align-self: end; }
+html.tpl-calm .grid .card-action .btn { min-height: 40px; }
+html.tpl-calm .grid .stepper { height: 40px; }
+html.tpl-calm .grid .badge { top: 5px; inset-inline-start: 5px; padding: 1px 7px; font-size: 10.5px; }
+html.tpl-calm .section-head h1::before, html.tpl-calm .section-head h2::before { content: ""; display: inline-block; width: 20px; height: 20px; margin-inline-end: 7px; vertical-align: -3px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F6B52' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 19c0-8 5-13 14-14 0 9-5 14-13 14'/%3E%3Cpath d='M5 19c3-4 6-7 10-9'/%3E%3C/svg%3E") center / contain no-repeat; }
 
-/* 6) مرح ملوّن — حدود واضحة وظل مزاح */
+/* =====================================================
+   6) مرح ملوّن — حدود سوداء وظلال مزاحة، ملصقات، أقسام ككبسولات ملوّنة
+===================================================== */
 html.tpl-fun { --ink: var(--text); --pop: #FFD23F; }
-html.tpl-fun .top { box-shadow: inset 0 -2px 0 var(--ink); }
+html.tpl-fun .top { box-shadow: inset 0 -3px 0 #22163A; }
+html.tpl-fun .hero:not(.has-image) { padding-bottom: 14px; }
+html.tpl-fun .hero:not(.has-image)::after { content: ""; position: absolute; inset: auto 0 0; height: 14px; z-index: 1; background: linear-gradient(-45deg, var(--bg) 9px, transparent 0) 0 100% / 18px 18px repeat-x, linear-gradient(45deg, var(--bg) 9px, transparent 0) 0 100% / 18px 18px repeat-x; }
+html.tpl-fun .hero-inner { justify-items: center; text-align: center; padding: 24px 0 20px; }
+html.tpl-fun .hero h1 { color: var(--pop); font-size: clamp(30px, 10vw, 60px); text-shadow: 3px 3px 0 rgba(0, 0, 0, .35); transform: rotate(-2deg); }
+html.tpl-fun .hero-features { justify-content: center; }
+html.tpl-fun .hero-features li { background: #fff; color: #22163A; box-shadow: 2px 2px 0 rgba(0, 0, 0, .35); }
+html.tpl-fun .hero-features svg { stroke: #6C3BE0; }
+html.tpl-fun .hero-shots { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+html.tpl-fun .hs { width: 27%; max-width: 130px; aspect-ratio: 1; border: 3px solid #fff; border-radius: 18px; box-shadow: 4px 4px 0 var(--pop); }
+html.tpl-fun .hs1 { transform: rotate(-6deg); }
+html.tpl-fun .hs2 { transform: translateY(-8px) rotate(3deg); }
+html.tpl-fun .hs3 { transform: rotate(7deg); }
+html.tpl-fun .tiles { gap: 10px; padding-top: 16px; padding-bottom: 10px; }
+html.tpl-fun .tile { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding-block: 5px; padding-inline: 5px 16px; border: 2px solid #22163A; border-radius: 999px; background: #FFD23F; box-shadow: 3px 3px 0 #22163A; }
+html.tpl-fun .tile:nth-child(4n+2) { background: #8BE3FF; }
+html.tpl-fun .tile:nth-child(4n+3) { background: #FF9EC7; }
+html.tpl-fun .tile:nth-child(4n+4) { background: #B8F28B; }
+html.tpl-fun .tile-img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22163A; box-shadow: none; }
+html.tpl-fun .tile-name { display: block; color: #22163A; font-size: 14px; font-weight: 700; white-space: nowrap; }
+html.tpl-fun .tile.on, html.tpl-fun .tile:hover { box-shadow: 4px 4px 0 #22163A; transform: translate(-1px, -1px); }
+html.tpl-fun .tile.on .tile-img, html.tpl-fun .tile:hover .tile-img { box-shadow: none; border-color: #22163A; }
+html.tpl-fun .tile.on .tile-name { color: #22163A; text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width: 760px) {
+    html.tpl-fun .tile { flex-basis: auto; }
+    html.tpl-fun .tile-img { width: 44px; height: 44px; }
+}
 html.tpl-fun .grid { gap: 16px 12px; }
 html.tpl-fun .card { border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 html.tpl-fun .card-img { border-bottom: 2px solid var(--ink); }
@@ -1645,7 +1808,36 @@ html.tpl-fun .card-action .btn { box-shadow: none; }
 html.tpl-fun .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 html.tpl-fun .badge { box-shadow: none; border: 1.5px solid var(--ink); }
 html.tpl-fun .badge.hot { background: var(--pop); color: #22163A; }
-html.tpl-fun .tile-img { box-shadow: 3px 3px 0 var(--ink); border: 2px solid var(--ink); }
-html.tpl-fun .tile.on .tile-img, html.tpl-fun .tile:hover .tile-img { box-shadow: 3px 3px 0 var(--primary); border-color: var(--primary); }
-html.tpl-fun .hero h1 { color: var(--pop); }
-html.tpl-fun .hero-features li { background: rgba(255, 255, 255, .14); }
+html.tpl-fun .section-head h1, html.tpl-fun .section-head h2 { font-size: 22px; padding: 0 4px; background: linear-gradient(transparent 55%, color-mix(in srgb, var(--pop) 80%, transparent) 55%, color-mix(in srgb, var(--pop) 80%, transparent) 92%, transparent 92%); }
+html.tpl-fun .gp { background: var(--pop); color: #22163A; box-shadow: 4px 4px 0 #22163A; border: 2px solid #22163A; }
+html.tpl-fun .gp-art { background: #fff; box-shadow: inset 0 0 0 2px #22163A; }
+html.tpl-fun .gp-art svg { stroke: #22163A; }
+html.tpl-fun .gp-go { background: #22163A; color: #fff; }
+
+/* =====================================================
+   v11 — الهدية لولد (أزرق وأبيض) أو لبنت (وردي وأبيض)
+===================================================== */
+.gfor { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.gfor-opt { position: relative; cursor: pointer; display: block; }
+.gfor-opt input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.gfor-opt > span { display: grid; justify-items: center; gap: 4px; padding: 12px 8px 10px; border-radius: var(--r); border: 2px solid var(--line); background: var(--surface); text-align: center; transition: border-color .15s, background .15s, transform .1s; }
+.gfor-opt i { font-style: normal; font-size: 30px; line-height: 1.1; }
+.gfor-opt b { font-size: 16px; }
+.gfor-opt em { display: flex; gap: 4px; }
+.gfor-opt s { width: 18px; height: 8px; border-radius: 99px; background: var(--gf); }
+.gfor-opt s + s { background: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gf) 40%, var(--line)); }
+.gfor-opt input:checked + span { border-color: var(--gf); background: color-mix(in srgb, var(--gf) 13%, var(--surface)); transform: scale(1.02); box-shadow: 0 6px 16px color-mix(in srgb, var(--gf) 22%, transparent); }
+.gfor-opt input:checked + span b { color: color-mix(in srgb, var(--gf) 70%, var(--text)); }
+.gfor-opt input:focus-visible + span { outline: 2.5px solid var(--gf); outline-offset: 2px; }
+.gfor-field.invalid .gfor-opt > span { border-color: var(--danger); }
+/* لون لوحة الهدية يتبع الاختيار */
+.gift-panel:has(input[name="gift_for"][value="boy"]:checked) { border-color: #2F7DE1; background: linear-gradient(180deg, color-mix(in srgb, #2F7DE1 7%, var(--surface)), var(--surface) 140px); }
+.gift-panel:has(input[name="gift_for"][value="girl"]:checked) { border-color: #F27DAE; background: linear-gradient(180deg, color-mix(in srgb, #F27DAE 9%, var(--surface)), var(--surface) 140px); }
+.gift-done[style*="--gd"] { border-color: var(--gd); }
+.gift-done[style*="--gd"] .gd-card { background: linear-gradient(135deg, color-mix(in srgb, var(--gd) 18%, var(--surface)), var(--surface)); }
+/* ورق متطاير أبيض مع الأزرق أو الوردي */
+.gift-boy .confetti i:nth-child(3n), .gift-girl .confetti i:nth-child(3n), .gift-boy .gx-burst i:nth-child(3n), .gift-girl .gx-burst i:nth-child(3n) { background: #fff; }
+
+/* على البطاقة الورقية: إطار وزخارف بلون الولد/البنت بدل الذهبي */
+.gift-boy .gcard, .gift-girl .gcard { --gold1: #FFFFFF; --gold2: color-mix(in srgb, var(--g-accent) 45%, #fff); --gold3: var(--g-accent); }
+.gift-boy .gc-occ, .gift-girl .gc-occ { background-image: linear-gradient(90deg, var(--g-accent), color-mix(in srgb, var(--g-accent) 65%, #000), var(--g-accent)); }

@@ -494,8 +494,18 @@
                 <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
                 ${text ? `<p>${esc(fill(v, text))}</p>` : ""}
                 ${features ? `<ul class="hero-features">${features}</ul>` : ""}
+                ${image ? "" : V.heroShots(v)}
             </div>
         </section>`;
+    };
+
+    // صور منتجات صغيرة داخل الواجهة: مخفية في القالب الكلاسيكي، وتظهر بأشكال مختلفة في بعض القوالب
+    V.heroShots = function (v) {
+        const list = V.listings(v, v.products.filter((p) => p.is_available !== false && V.img(p)));
+        const best = list.filter((p) => p.is_best_seller);
+        const pick = (best.length >= 3 ? best : list).slice(0, 3);
+        if (pick.length < 3) return "";
+        return `<div class="hero-shots" aria-hidden="true">${pick.map((p, i) => `<span class="hs hs${i + 1}"><img src="${esc(V.img(p))}" alt="" loading="lazy" decoding="async" width="200" height="250"></span>`).join("")}</div>`;
     };
 
     // صورة القسم: صورته إن وُجدت، وإلا صورة أول منتج فيه
@@ -601,14 +611,15 @@
 
     // بطاقة الإهداء: صندوق هدية فاخر يتفتح، ثم بطاقة ورقية بإطار ذهبي
     // ألوان وخط بطاقة الإهداء من لوحة التحكم
-    V.giftStyle = function (v) {
+    V.giftStyle = function (v, gender = "") {
         const g = v.cfg.gift || {};
-        const c = g.colors || {};
-        const D = ATHR.DEFAULTS.gift.colors;
-        const hex = (x, d) => (ATHR.isHex(x) ? x : d);
+        const c = ATHR.giftColors(v.cfg, gender);
         const font = ATHR.FONT_PARAMS[g.font] ? `"${g.font}"` : g.font === "system" ? "system-ui" : `"Aref Ruqaa"`;
-        return `--g-bg:${hex(c.bg, D.bg)};--g-box:${hex(c.box, D.box)};--g-ribbon:${hex(c.ribbon, D.ribbon)};--g-paper:${hex(c.paper, D.paper)};--g-ink:${hex(c.ink, D.ink)};--g-accent:${hex(c.accent, D.accent)};--g-font:${font}`;
+        return `--g-bg:${c.bg};--g-box:${c.box};--g-ribbon:${c.ribbon};--g-paper:${c.paper};--g-ink:${c.ink};--g-accent:${c.accent};--g-font:${font}`;
     };
+
+    // ألوان الورق المتطاير: ذهبي ملوّن عادةً، وأزرق للولد، ووردي للبنت
+    const CONFETTI = { "": [44, 350, 330, 160, 200, 30], boy: [208, 196, 220, 188, 214, 202], girl: [330, 340, 320, 350, 325, 345] };
 
     // بطاقة الإهداء: صندوق فاخر يتفتح، ثم بطاقة ورقية بإطار ذهبي
     V.giftPage = function (v, card) {
@@ -622,12 +633,14 @@
         const txt = (key, fallback) => ATHR.giftFill(ct(v, `gift.${key}`) || fallback, vars);
         const o = ATHR.giftOccasion(card.occasion, cfg);
         const logo = V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url);
+        const gender = ATHR.giftGendersOn(cfg) && ATHR.giftFor(card.gender, cfg) ? card.gender : "";
+        const hues = CONFETTI[gender];
         const stars = g.stars === false ? "" : Array.from({ length: 16 }, (_, i) => `<i style="--x:${(i * 61) % 100}%;--y:${(i * 37) % 100}%;--d:${(i * 0.37) % 3}s;--s:${0.6 + ((i * 7) % 6) / 10}"></i>`).join("");
         const party = g.confetti !== false;
-        const burst = party ? Array.from({ length: 28 }, (_, i) => `<i style="--a:${i * (360 / 28)}deg;--r:${120 + ((i * 47) % 90)}px;--h:${[44, 350, 330, 160, 200, 30][i % 6]};--d:${(i % 4) * 40}ms"></i>`).join("") : "";
-        const confetti = party ? Array.from({ length: 30 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--h:${[44, 350, 330, 160, 200, 30][i % 6]};--d:${(i * 131) % 900}ms;--t:${(2 + ((i * 7) % 10) / 8).toFixed(2)}s;--r:${(i % 2 ? 1 : -1) * (200 + ((i * 53) % 360))}deg"></i>`).join("") : "";
+        const burst = party ? Array.from({ length: 28 }, (_, i) => `<i style="--a:${i * (360 / 28)}deg;--r:${120 + ((i * 47) % 90)}px;--h:${hues[i % 6]};--d:${(i % 4) * 40}ms"></i>`).join("") : "";
+        const confetti = party ? Array.from({ length: 30 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--h:${hues[i % 6]};--d:${(i * 131) % 900}ms;--t:${(2 + ((i * 7) % 10) / 8).toFixed(2)}s;--r:${(i % 2 ? 1 : -1) * (200 + ((i * 53) % 360))}deg"></i>`).join("") : "";
         const msg = String(card.msg || "").trim() || txt("empty_msg", t("هدية مختارة لك بكل حب"));
-        return `<div class="gift-page" data-occ="${esc(o.id)}" style="${esc(V.giftStyle(v))}">
+        return `<div class="gift-page${gender ? ` gift-${gender}` : ""}" data-occ="${esc(o.id)}" style="${esc(V.giftStyle(v, gender))}">
             <section class="gx" id="giftStage">
                 ${stars ? `<div class="gx-stars" aria-hidden="true">${stars}</div>` : ""}
                 <p class="gx-kicker">${esc(txt("kicker", t("هدية خاصة لك")))}</p>

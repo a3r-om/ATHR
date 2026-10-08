@@ -1153,7 +1153,22 @@
     }
 
     const LOC_KEYS = ["wilaya", "gov", "address", "office"];
-    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion"];
+    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion", "gift_for"];
+
+    // اختيار الزبون: الهدية لولد (أزرق) أو لبنت (وردي)
+    function giftForField(saved) {
+        const cfg = C();
+        if (!ATHR.giftGendersOn(cfg)) return "";
+        const opt = (id) => {
+            const f = ATHR.giftFor(id, cfg);
+            return `<label class="gfor-opt gfor-${id}" style="--gf:${esc(f.colors.box)};--gf-bg:${esc(f.colors.bg)}"><input type="radio" name="gift_for" value="${id}"${saved.gift_for === id ? " checked" : ""}><span><i aria-hidden="true">${esc(f.emoji)}</i><b>${esc(L(f, "label"))}</b><em aria-hidden="true"><s></s><s></s></em></span></label>`;
+        };
+        return `<div class="field gfor-field" data-field="gift_for"><span>${esc(t("الهدية لـ"))}</span>
+            <div class="gfor" role="radiogroup" aria-label="${esc(t("الهدية لـ"))}">${opt("boy")}${opt("girl")}</div>
+            <small>${esc(t("نلوّن بطاقة الإهداء على حسب اختيارك."))}</small>
+            <span class="err" data-err="gift_for"></span>
+        </div>`;
+    }
 
     function giftSugs(occasion) {
         const o = ATHR.giftOccasion(occasion, C());
@@ -1231,6 +1246,7 @@
                         ${gift ? `<div class="panel form gift-panel">
                             <h2>${V.icon.gift}${esc(t("بيانات المُهدى إليه"))}</h2>
                             <input type="hidden" name="gift_seen" value="1">
+                            ${giftForField(saved)}
                             ${countryField}
                             ${field("gift_name", t("اسم المُهدى إليه"), `<input class="input" name="gift_name" maxlength="120" autocomplete="off" value="${esc(saved.gift_name || "")}" required>`)}
                             ${field("gift_phone", t("رقم المُهدى إليه"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="gift_phone" type="tel" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="${rule.example}" value="${esc(saved.gift_phone || "")}" required></span>`, esc(t("نتواصل معه لتنسيق التوصيل فقط.")))}
@@ -1394,6 +1410,7 @@
         if (name.length < 3) errors.name = t("اكتب اسمك الكامل (3 أحرف على الأقل).");
         if (!phone.valid) errors.phone = t("اكتب رقم {country} الصحيح: {hint}.", { country: L(ATHR.country(cfg, senderCode), "name"), hint: L(phone.rule, "hint") });
         if (gift) {
+            if (ATHR.giftGendersOn(cfg) && !ATHR.GIFT_FOR.includes(values.gift_for)) errors.gift_for = t("اختر: الهدية لولد أو لبنت.");
             if (String(values.gift_name || "").trim().length < 2) errors.gift_name = t("اكتب اسم المُهدى إليه.");
             if (!giftPhone.valid) errors.gift_phone = t("اكتب رقم المُهدى إليه الصحيح: {hint}.", { hint: L(giftPhone.rule, "hint") });
             else if (phone.valid && ATHR.storePhone(giftPhone.local, S.country, "XX") === ATHR.storePhone(phone.local, senderCode, "XX")) errors.gift_phone = t("رقم المُهدى إليه نفس رقمك. اكتب رقم الشخص الذي ستصله الهدية.");
@@ -1418,7 +1435,7 @@
         const keys = Object.keys(errors);
         $("#formErr").textContent = keys.length ? (errors.delivery || errors.payment || t("راجع الخانات المظللة بالأحمر.")) : "";
         if (keys.length) {
-            const first = form.querySelector(".field.invalid .input");
+            const first = form.querySelector(".field.invalid .input, .field.invalid input[type=radio]");
             if (first) {
                 first.focus({ preventScroll: true });
                 first.scrollIntoView({ block: "center" });
@@ -1478,6 +1495,7 @@
             gift_phone: gift ? giftPhone.stored : null,
             gift_hide_price: gift && Boolean(values.gift_hide_price),
             gift_occasion: gift ? ATHR.giftOccasion(values.gift_occasion, cfg).id : null,
+            gift_for: gift && ATHR.giftGendersOn(cfg) && ATHR.GIFT_FOR.includes(values.gift_for) ? values.gift_for : null,
             marketing_ok: Boolean(values.marketing_ok),
             delivery_name: d.name,
             delivery_type: d.type === "office" ? "office" : "home",
@@ -1556,10 +1574,11 @@
         const from = String(order.customer_name || "").trim().split(/\s+/)[0];
         const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, link: cardUrl, store: ATHR.storeName(cfg), config: cfg });
         const wa = order.gift_phone ? ATHR.waLink(ATHR.customerWhatsapp(order.gift_phone, code), text) : "";
-        return `<div class="panel gift-done">
+        const gf = ATHR.giftGendersOn(cfg) ? ATHR.giftFor(order.gift_for, cfg) : null;
+        return `<div class="panel gift-done${gf ? ` gd-${gf.id}` : ""}"${gf ? ` style="--gd:${esc(gf.colors.box)};--gd-bg:${esc(gf.colors.bg)}"` : ""}>
             <div class="gd-card">
-                <span class="gd-emoji" aria-hidden="true">${occ.emoji}</span>
-                <div><b>${esc(t("بطاقة إهداء لـ{name}", { name: order.gift_name }))}</b><small>${esc(order.gift_message || L(occ, "title"))}</small></div>
+                <span class="gd-emoji" aria-hidden="true">${gf ? gf.emoji : occ.emoji}</span>
+                <div><b>${esc(t("بطاقة إهداء لـ{name}", { name: order.gift_name }))}${gf ? ` ${gf.heart}` : ""}</b><small>${esc(order.gift_message || L(occ, "title"))}</small></div>
             </div>
             ${wa ? `<a class="btn btn-wa btn-block" href="${esc(wa)}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("أرسل البطاقة لـ{name} عبر واتساب", { name: order.gift_name }))}</a>` : ""}
             <div class="gd-row">

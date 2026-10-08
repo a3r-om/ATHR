@@ -753,3 +753,9 @@ create trigger athr_track_customer
 -- الميزة أُلغيت: لا أحد يستطيع حفظ مفتاح أو قراءة حالته، ودالة ai-image صارت متوقفة (410)
 revoke execute on function public.set_ai_key(text, text) from public, anon, authenticated;
 revoke execute on function public.ai_key_status() from public, anon, authenticated;
+
+-- =====================================================
+-- الإصدار 11: الهدية لولد أو لبنت (يحدد ألوان بطاقة الإهداء)
+-- =====================================================
+alter table public.orders
+    add column if not exists gift_for text check (gift_for is null or gift_for in ('boy', 'girl'));
