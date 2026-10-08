@@ -271,6 +271,7 @@
         count.classList.remove("bump");
         void count.offsetWidth;
         count.classList.add("bump");
+        setTimeout(() => renderCartFloat({ bump: true }), 0);
         return true;
     }
 
@@ -290,6 +291,7 @@
             if (product) el.innerHTML = V.cardAction(v(), product);
         });
         renderBars();
+        renderCartFloat();
         const name = S.route.name;
         if (name === "cart") renderCart({ keep: true });
         if (name === "checkout") updateCheckoutSummary();
@@ -669,6 +671,7 @@
         document.title = V.titles(v(), { ...route, product: route.name === "product" ? findProduct(route.slug) : null, cat: route.name === "category" ? findCategory(route.slug) : null });
         renderBars();
         renderBuyBar();
+        renderCartFloat();
         const float = $("#waFloat");
         float.classList.toggle("off", ["product", "cart", "checkout", "done", "review", "gift"].includes(route.name));
         const input = $("#searchInput");
@@ -1145,6 +1148,46 @@
             renderBuyBar();
         }, { rootMargin: "0px 0px -40px 0px" });
         buyObserver.observe(box);
+    }
+
+    // =====================================================
+    // زر السلة العائم في كل المتجر: العدد + حلقة تتقدّم نحو الشحن المجاني
+    // =====================================================
+
+    const CART_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 4h2.4l2.2 10.3a1.6 1.6 0 0 0 1.6 1.3h8.3a1.6 1.6 0 0 0 1.5-1.2L20.6 8H6"/><circle cx="9.6" cy="19.6" r="1.5"/><circle cx="17.2" cy="19.6" r="1.5"/></svg>';
+
+    function renderCartFloat({ bump = false } = {}) {
+        let el = $("#cartFloat");
+        const cfg = C();
+        const off = !S.loaded || cfg.sales.cart_float === false || ["cart", "checkout", "done", "gift"].includes(S.route.name);
+        if (off) {
+            if (el) el.hidden = true;
+            return;
+        }
+        if (!el) {
+            el = document.createElement("a");
+            el.id = "cartFloat";
+            el.className = "cart-float";
+            document.body.appendChild(el);
+        }
+        const tt = computeCart();
+        const pct = tt.freeEligible ? Math.min(100, Math.round(((Number(cfg.order.free_min) - tt.leftForFree) / Number(cfg.order.free_min)) * 100)) : (tt.count ? 100 : 0);
+        const short = (n) => ATHR.trimZeros(local(n));
+        const pill = !tt.count ? ""
+            : tt.freeShipping ? `<span class="cf-pill ok">${esc(t("شحن مجاني"))}</span>`
+            : tt.freeEligible ? `<span class="cf-pill">${esc(t("باقي {amount}", { amount: short(tt.leftForFree) }))}</span>`
+            : `<span class="cf-pill">${esc(local(tt.total !== undefined ? tt.total : tt.afterDiscount))}</span>`;
+        el.href = ATHR.url.page("cart");
+        el.hidden = false;
+        el.classList.toggle("has-items", tt.count > 0);
+        el.setAttribute("aria-label", `${t("السلة")} (${tt.count})`);
+        el.innerHTML = `<span class="cf-ring" style="--p:${Math.max(0, pct)}%"><span class="cf-in">${CART_ICON}<small>${esc(t("السلة"))}</small></span></span>
+            ${tt.count ? `<b class="cf-count">${tt.count > 99 ? "99+" : tt.count}</b>` : ""}${pill}`;
+        if (bump) {
+            el.classList.remove("bump");
+            void el.offsetWidth;
+            el.classList.add("bump");
+        }
     }
 
     function renderBuyBar() {

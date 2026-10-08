@@ -869,7 +869,7 @@
         const items = [];
         const min = Number(cfg.order.free_min) || 0;
         if (cfg.order.free_enabled && min > 0 && ATHR.freeAppliesTo(cfg, v.country)) {
-            items.push([Number(p.price) >= min ? t("الشحن مجاناً") : t("شحن مجاني فوق {amount}", { amount: local(v, min).replace(/[.٫]0+(?=\s|$)/, "") }), true]);
+            items.push([Number(p.price) >= min ? t("الشحن مجاناً") : t("شحن مجاني فوق {amount}", { amount: ATHR.trimZeros(local(v, min)) }), true]);
         }
         const pays = ATHR.paymentsFor(cfg, v.country);
         if (pays.some((x) => x.type === "cod")) items.push([t("الدفع عند الاستلام")]);

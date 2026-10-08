@@ -124,6 +124,7 @@ const ATHR_DEFAULTS = {
     sales: {
         favorites: true,
         pdp_perks: true,
+        cart_float: true,
         restock: true,
         coupons: true,
         free_bar_show: true,
@@ -740,6 +741,8 @@ ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store, config }) 
 // =====================================================
 // كود الخصم: يُحسب بعد خصومات المتجر (نفس منطق الخادم في athr_recompute_order)
 // =====================================================
+// «20.000 ر.ع» ← «20 ر.ع»، و«15.100 ر.ع» ← «15.1 ر.ع» (للمساحات الصغيرة)
+ATHR.trimZeros = (text) => String(text).replace(/([.٫]\d*?)0+(?=\s|$)/, "$1").replace(/[.٫](?=\s|$)/, "");
 ATHR.couponCode = (x) => String(x || "").trim().toUpperCase().replace(/\s+/g, "");
 ATHR.couponValid = (x) => /^[A-Z0-9_-]{3,20}$/.test(ATHR.couponCode(x));
 ATHR.couponEffect = function (coupon, afterDiscount) {

@@ -293,6 +293,8 @@
         "في المفضلة": "In favorites",
         "عرض المزيد": "Show more",
         "الشحن مجاناً": "Free shipping",
+        "شحن مجاني": "Free shipping",
+        "باقي {amount}": "{amount} to go",
         "شحن مجاني فوق {amount}": "Free shipping over {amount}",
         "تصفية حسب القسم": "Filter by category",
         "المفضلة": "Favorites",
