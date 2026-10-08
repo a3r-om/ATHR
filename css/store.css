@@ -1841,3 +1841,28 @@ html.tpl-fun .gp-go { background: #22163A; color: #fff; }
 /* على البطاقة الورقية: إطار وزخارف بلون الولد/البنت بدل الذهبي */
 .gift-boy .gcard, .gift-girl .gcard { --gold1: #FFFFFF; --gold2: color-mix(in srgb, var(--g-accent) 45%, #fff); --gold3: var(--g-accent); }
 .gift-boy .gc-occ, .gift-girl .gc-occ { background-image: linear-gradient(90deg, var(--g-accent), color-mix(in srgb, var(--g-accent) 65%, #000), var(--g-accent)); }
+
+/* =====================================================
+   v12 — العرض الخاص من رابط واتساب (اسم العميل + عدّاد تنازلي)
+===================================================== */
+.offer-banner { position: relative; overflow: hidden; display: grid; gap: 10px; margin: 12px 0 14px; padding: 14px; border-radius: var(--r); color: #fff; background: radial-gradient(circle, rgba(255, 255, 255, .12) 1.5px, transparent 2px) 0 0 / 18px 18px, linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 55%, #000)); box-shadow: var(--shadow); animation: offerIn .5s ease both; }
+.offer-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .28) 50%, transparent 65%); transform: translateX(-120%); animation: giftShine 4.5s ease-in-out 1s infinite; pointer-events: none; }
+.ob-head { display: flex; align-items: center; gap: 12px; }
+.ob-ico { width: 46px; height: 46px; flex-shrink: 0; display: grid; place-items: center; border-radius: 14px; background: rgba(255, 255, 255, .16); font-size: 26px; line-height: 1; animation: giftWiggle 3.4s ease-in-out infinite; }
+.ob-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ob-txt > b { font-family: var(--font-head); font-size: 18px; line-height: 1.35; }
+.ob-txt > span { font-size: 14px; font-weight: 600; opacity: .95; }
+.ob-pct { flex-shrink: 0; padding: 6px 10px; border-radius: 12px; background: #F2C964; color: #3B2A0A; font-size: 17px; font-weight: 800; transform: rotate(-4deg); box-shadow: 0 4px 10px rgba(0, 0, 0, .2); }
+.ob-left { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 12px; background: rgba(0, 0, 0, .22); }
+.ob-left small { font-size: 13px; font-weight: 600; opacity: .9; }
+.ob-left b { font-size: 15px; }
+.clock { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
+.clock i { min-width: 32px; padding: 3px 4px; border-radius: 7px; background: #fff; color: var(--primary); font-style: normal; font-weight: 800; font-size: 16px; text-align: center; }
+.clock em { font-style: normal; font-weight: 800; opacity: .8; }
+@keyframes offerIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.bar-offer { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 6px; background: color-mix(in srgb, #F2C964 34%, var(--surface)); color: var(--text); border-bottom: 1px solid var(--line); }
+.bar-offer a { color: var(--accent); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.bo-left { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+.bo-left b { color: var(--danger); }
+.bar-offer .clock i { min-width: 24px; padding: 1px 3px; border-radius: 5px; background: var(--danger); color: #fff; font-size: 12.5px; }
+.bar-offer .clock em { color: var(--danger); }

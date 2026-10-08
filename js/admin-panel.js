@@ -47,6 +47,7 @@
         snapchat: "سناب شات",
         facebook: "فيسبوك",
         x: "X (تويتر)",
+        offer: "عروض واتساب",
         other: "مواقع أخرى"
     };
 
@@ -1666,10 +1667,15 @@
             renderCustomers();
             return;
         }
-        if (t.id === "offerText") {
-            storage.set(OFFER_KEY, t.value);
-            const pre = $("#offerPreview");
-            if (pre) pre.textContent = offerText(t.value, (A.offer && A.offer.targets[0]) || { name: "أحمد" });
+        if (t.id === "offerText" && A.offer) {
+            A.offer.text = t.value;
+            refreshOfferPreview();
+            return;
+        }
+        if (t.id === "offerProdQ" && A.offer) {
+            A.offer.q = t.value;
+            const list = $("#opList");
+            if (list) list.innerHTML = offerProductItems(A.offer);
             return;
         }
         if (t.dataset.priceBase || t.dataset.pricePct) {
@@ -1701,6 +1707,12 @@
 
     async function onChange(e) {
         const t = e.target;
+        if (t.id === "offerSkip" && A.offer) {
+            A.offer.skipRecent = t.checked;
+            saveOfferPref(A.offer);
+            renderOffer({ keepScroll: true });
+            return;
+        }
 
         if (t.dataset.pref) {
             storage.set(t.dataset.pref, t.value);
@@ -1865,17 +1877,7 @@
             if (c) window.open(ATHR.waLink(custWa(c), ""), "_blank", "noopener");
             return;
         }
-        if (d.offerTpl !== undefined) {
-            const tpl = OFFER_TEMPLATES[Number(d.offerTpl)];
-            const box = $("#offerText");
-            if (tpl && box) {
-                box.value = tpl[1];
-                storage.set(OFFER_KEY, tpl[1]);
-                const pre = $("#offerPreview");
-                if (pre) pre.textContent = offerText(tpl[1], (A.offer && A.offer.targets[0]) || { name: "أحمد" });
-            }
-            return;
-        }
+        if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
 
         switch (d.a) {
             case "close": close(); return;
@@ -2457,7 +2459,7 @@
                 ${A.book === "customers" ? `<div class="ob-tools">
                     <input class="ai" type="search" id="custSearch" placeholder="ابحث باسم العميل أو رقمه" value="${esc(A.custFilter.q)}">
                     <div class="seg" role="group" aria-label="تصفية العملاء">
-                        ${[["all", "الكل"], ["marketing", "يقبلون العروض"], ["repeat", "رجعوا مرة ثانية"], ["away", "غائبون +60 يوم"]].map(([v, l]) => `<button type="button" data-cust-kind="${v}" aria-pressed="${A.custFilter.kind === v}">${l}</button>`).join("")}
+                        ${[["all", "الكل"], ["marketing", "يقبلون العروض"], ["vip", "💎 المميزون"], ["repeat", "رجعوا مرة ثانية"], ["away", "غائبون +60 يوم"], ["new", "🆕 الجدد"]].map(([v, l]) => `<button type="button" data-cust-kind="${v}" aria-pressed="${A.custFilter.kind === v}">${l}</button>`).join("")}
                     </div>
                 </div>` : ""}
                 <main class="adm-body" id="ordersBody"></main>
@@ -2475,17 +2477,31 @@
     }
 
     // =====================================================
-    // CUSTOMERS: قائمة العملاء من الطلبات + إرسال العروض عبر واتساب
+    // CUSTOMERS: قائمة العملاء + استوديو العروض
+    // رسالة جذابة جاهزة، ورابط خاص لكل عميل باسمه مع عدّاد تنازلي لانتهاء العرض
     // =====================================================
 
-    const OFFER_KEY = "athr_offer_tpl";
-    const OFFER_TEMPLATES = [
-        ["خصم", "هلا {name} 👋\n\nعندنا لك عرض خاص في {store} 🎁\n✨ خصم 10% على كل الكاسات لمدة 3 أيام فقط\n\nتسوّق الآن 👇\n{link}"],
-        ["منتج جديد", "هلا {name} 👋\n\nوصلت تصاميم جديدة في {store} 🔥\nشوفها قبل لا تخلص 👇\n{link}"],
-        ["عرض العيد", "عيدكم مبارك يا {name} 🌙✨\n\nبمناسبة العيد: هدية مع كل طلب من {store} 🎁\n\nاطلب الآن 👇\n{link}"],
-        ["شكراً لك", "شكراً لك يا {name} على ثقتك في {store} 🤍\n\nإذا عجبك طلبك شاركنا رأيك، ونسعد نخدمك دائماً 👇\n{link}"]
-    ];
+    const OFFER_PREF = "athr_offer_pref";
     const OPT_OUT_LINE = "(لإيقاف العروض أرسل: إيقاف)";
+    // عروض المنتج: السطر الذي فيه معلومة غير موجودة (الخصم أو المدة) يُحذف تلقائياً
+    const PRODUCT_OFFERS = [
+        ["🔥 خصم حصري", "هلا {name} 👋\n\n🔥 *عرض خاص لك من {store}*\n\n🛍️ *{product}*\n❌ بدل {old}\n✅ صار بـ *{price}* فقط\n🎉 توفّر {save} (خصم {pct}%)\n\n⏳ العرض ينتهي {ends}\n\n👇 اطلبه الآن من رابطك الخاص:\n{link}"],
+        ["⏰ آخر فرصة", "⏰ *آخر فرصة يا {name}!*\n\nخصم {pct}% على *{product}* ينتهي {ends} 😱\n💰 بـ *{price}* بدل {old}\n\nالكمية محدودة، احجز قطعتك قبل لا تخلص 👇\n{link}"],
+        ["🎁 هدية مثالية", "🎁 تدوّر هدية تفرّح فيها أحد غالي يا {name}؟\n\n*{product}* هدية أنيقة ومختلفة ✨\n💰 بـ *{price}* فقط\n🎉 خصم {pct}% بدل {old}\n\nنوصلها باسمك مع بطاقة إهداء رقمية 💌\n👇 اطلبها من هنا:\n{link}"],
+        ["💎 لعملائنا المميزين", "{name}، أنت من عملائنا المميزين 💎\n\nجهّزنا لك عرضاً خاصاً على *{product}*\n✨ *{price}* بدل {old}\n🎉 خصم {pct}%\n⏳ ينتهي {ends}\n\nرابطك الخاص 👇\n{link}"],
+        ["✨ وصل جديد", "هلا {name} 👋\n\n✨ وصل جديد في {store}:\n🛍️ *{product}*\n💰 السعر: *{price}*\n🎉 وبخصم {pct}% لفترة محدودة\n\nشوفه قبل لا يخلص 🔥\n{link}"]
+    ];
+    // رسائل عامة بدون منتج محدد
+    const OFFER_TEMPLATES = [
+        ["🎉 خصم عام", "هلا {name} 👋\n\n🎉 *عرض خاص من {store}*\n✨ خصم 10% على كل الكاسات لمدة 3 أيام فقط\n\n🛍️ تسوّق الآن 👇\n{link}"],
+        ["✨ تصاميم جديدة", "هلا {name} 👋\n\n🔥 *وصلت تصاميم جديدة في {store}*\nأندية وجامعات وشخصيات… شوفها قبل لا تخلص 👇\n{link}"],
+        ["💙 اشتقنا لك", "{name}، اشتقنا لك 💙\n\nمرّ وقت من آخر طلب لك في {store}، وجهّزنا تصاميم جديدة بتعجبك ✨\n\n👇 شوفها من هنا:\n{link}"],
+        ["🌙 عرض العيد", "عيدكم مبارك يا {name} 🌙✨\n\nبمناسبة العيد: 🎁 هدية مع كل طلب من {store}\n\nاطلب الآن 👇\n{link}"],
+        ["🤍 شكراً لك", "شكراً لك يا {name} على ثقتك في {store} 🤍\n\nإذا عجبك طلبك شاركنا رأيك، ونسعد نخدمك دائماً 👇\n{link}"]
+    ];
+    const OFFER_ENDS = [[0, "بدون مدة"], [24, "24 ساعة"], [72, "3 أيام"], [168, "أسبوع"]];
+    const OFFER_AUDIENCE = [["marketing", "الكل"], ["vip", "💎 المميزون"], ["repeat", "🔁 رجعوا للشراء"], ["away", "💤 الغائبون"], ["new", "🆕 الجدد"]];
+    const VIP_SPENT = 15;
 
     async function loadCustomers() {
         const { data, error } = await sb.from("customers").select("*").order("last_order_at", { ascending: false }).limit(5000);
@@ -2498,13 +2514,28 @@
         return ATHR.customerWhatsapp(c.phone, "XX");
     }
 
+    const daysSince = (date) => (date ? (Date.now() - new Date(date).getTime()) / 864e5 : Infinity);
+    const isVip = (c) => c.orders_count >= 3 || Number(c.total_spent) >= VIP_SPENT;
+    const isAway = (c) => daysSince(c.last_order_at) > 60;
+    const isNew = (c) => c.orders_count <= 1 && daysSince(c.first_order_at || c.last_order_at) <= 14;
+    const recentOffer = (c) => daysSince(c.last_offer_at) < 3;
+    const KIND_TEST = { marketing: (c) => c.marketing, vip: isVip, repeat: (c) => c.orders_count > 1, away: isAway, new: isNew };
+
+    // شارات العميل: مميز / عاد للشراء / جديد / غائب
+    function custTags(c) {
+        const tags = [];
+        if (isVip(c)) tags.push(["vip", "💎 مميز"]);
+        else if (c.orders_count > 1) tags.push(["back", "🔁 عاد للشراء"]);
+        else if (isNew(c)) tags.push(["new", "🆕 جديد"]);
+        if (isAway(c)) tags.push(["away", "💤 غائب"]);
+        return tags;
+    }
+
     function filteredCustomers() {
         const q = (A.custFilter.q || "").trim().toLowerCase();
-        const now = Date.now();
+        const test = KIND_TEST[A.custFilter.kind];
         return A.customers.filter((c) => {
-            if (A.custFilter.kind === "marketing" && !c.marketing) return false;
-            if (A.custFilter.kind === "repeat" && !(c.orders_count > 1)) return false;
-            if (A.custFilter.kind === "away" && !(c.last_order_at && now - new Date(c.last_order_at).getTime() > 60 * 864e5)) return false;
+            if (test && !test(c)) return false;
             if (!q) return true;
             return `${c.name || ""} ${c.phone}`.toLowerCase().includes(q);
         });
@@ -2514,6 +2545,36 @@
         if (!date) return "";
         const days = Math.floor((Date.now() - new Date(date).getTime()) / 864e5);
         return days <= 0 ? "اليوم" : days === 1 ? "أمس" : days < 30 ? `منذ ${days} يوم` : `منذ ${Math.round(days / 30)} شهر`;
+    }
+
+    // نتائج العروض آخر 30 يوم: من وصله عرض، من فتح الرابط، الطلبات والمبيعات
+    async function loadOfferVisits() {
+        A.offerVisits = 0;
+        try {
+            const since = new Date(Date.now() - 30 * 864e5 + 4 * 36e5).toISOString().slice(0, 10);
+            const { data } = await sb.from("stats_daily").select("n").eq("key", "visit:offer").gte("day", since);
+            A.offerVisits = (data || []).reduce((sum, r) => sum + Number(r.n || 0), 0);
+        } catch {
+            /* اختياري */
+        }
+        const el = $("#offerVisits");
+        if (el) el.textContent = A.offerVisits;
+    }
+
+    function offerResults() {
+        const since = Date.now() - 30 * 864e5;
+        const orders = A.orders.filter((o) => o.channel === "offer" && !o.hidden && new Date(o.ordered_at || o.created_at).getTime() > since);
+        const sent = A.customers.filter((c) => c.last_offer_at && new Date(c.last_offer_at).getTime() > since).length;
+        if (A.offerVisits === undefined) loadOfferVisits();
+        return `<section class="offer-results">
+            <div class="or-head"><b>📈 نتائج العروض</b><small class="adm-muted">آخر 30 يوم</small></div>
+            <div class="or-grid">
+                <div><small>وصلهم عرض</small><b>${sent}</b></div>
+                <div><small>فتحوا الرابط</small><b id="offerVisits">${A.offerVisits === undefined ? "…" : A.offerVisits}</b></div>
+                <div><small>طلبوا</small><b>${orders.length}</b></div>
+                <div><small>المبيعات</small><b>${money(orders.reduce((sum, o) => sum + Number(o.total || 0), 0))}</b></div>
+            </div>
+        </section>`;
     }
 
     function renderCustomers() {
@@ -2527,22 +2588,28 @@
         }
         const all = A.customers;
         const list = filteredCustomers();
-        const optedIn = list.filter((c) => c.marketing);
+        const optedIn = all.filter((c) => c.marketing);
         const flag = (code) => (ATHR_COUNTRIES.find((x) => x.code === code) || ATHR_COUNTRIES[0]).flag;
         body.innerHTML = `
-            <div class="ob-stats">
+            <div class="ob-stats cust-stats">
                 <div><small>العملاء</small><b>${all.length}</b></div>
-                <div><small>يقبلون العروض</small><b>${all.filter((c) => c.marketing).length}</b></div>
-                <div><small>طلبوا أكثر من مرة</small><b>${all.filter((c) => c.orders_count > 1).length}</b></div>
+                <div><small>يقبلون العروض</small><b>${optedIn.length}</b></div>
+                <div><small>💎 المميزون</small><b>${all.filter(isVip).length}</b></div>
+                <div><small>🔁 رجعوا للشراء</small><b>${all.filter((c) => c.orders_count > 1).length}</b></div>
             </div>
-            ${all.length ? `<div class="cust-actions">
-                <button class="ab ab-primary" type="button" data-a="offer-open"${optedIn.length ? "" : " disabled"}>📣 أرسل عرضاً (${optedIn.length})</button>
+            ${all.length ? `<div class="offer-hero">
+                <div class="oh-txt"><b>📣 استوديو العروض</b><small>اختر منتجاً، ورسالة جذابة جاهزة، ورابط خاص لكل عميل باسمه مع عدّاد لانتهاء العرض.</small></div>
+                <button class="ab ab-primary" type="button" data-a="offer-open"${optedIn.length ? "" : " disabled"}>أرسل عرضاً (${optedIn.length})</button>
+            </div>
+            ${offerResults()}
+            <div class="cust-actions">
                 <button class="ab-mini" type="button" data-a="cust-copy"${optedIn.length ? "" : " disabled"}>نسخ الأرقام</button>
                 <button class="ab-mini" type="button" data-a="cust-csv">تنزيل ملف العملاء</button>
             </div>` : ""}
             ${list.length ? `<ul class="cust-list">${list.map((c) => `<li class="cust${c.marketing ? "" : " off"}">
                 <div class="cust-main">
                     <b>${esc(c.name || "بدون اسم")}${c.country && c.country !== "OM" ? ` <span aria-hidden="true">${flag(c.country)}</span>` : ""}</b>
+                    ${custTags(c).length ? `<span class="cust-tags">${custTags(c).map(([k, l]) => `<span class="ctag ${k}">${l}</span>`).join("")}</span>` : ""}
                     <span dir="ltr" class="cust-phone">+${esc(c.phone)}</span>
                     <small class="adm-muted">${c.orders_count} ${c.orders_count === 1 ? "طلب" : c.orders_count === 2 ? "طلبان" : "طلبات"} · ${money(c.total_spent)} · آخر طلب ${esc(sinceText(c.last_order_at))}${c.last_offer_at ? ` · آخر عرض ${esc(sinceText(c.last_offer_at))}` : ""}</small>
                 </div>
@@ -2550,74 +2617,216 @@
                     <button type="button" class="vis-switch" role="switch" aria-checked="${Boolean(c.marketing)}" data-cust-mk="${esc(c.phone)}" aria-label="يستقبل العروض" title="${c.marketing ? "يستقبل العروض" : "لا يستقبل العروض"}"><span></span></button>
                     <small>العروض</small>
                 </div>
-                <button type="button" class="ab-mini wa" data-cust-wa="${esc(c.phone)}">واتساب</button>
+                <div class="cust-btns">
+                    ${c.marketing ? `<button type="button" class="ab-mini gift" data-cust-offer="${esc(c.phone)}">🎁 عرض</button>` : ""}
+                    <button type="button" class="ab-mini wa" data-cust-wa="${esc(c.phone)}">واتساب</button>
+                </div>
             </li>`).join("")}</ul>` : `<div class="adm-empty">${all.length ? "لا يوجد عملاء مطابقون." : "يظهر هنا كل زبون يطلب من المتجر: اسمه ورقمه وعدد طلباته، وتقدر ترسل لهم العروض من هنا."}</div>`}
-            <p class="adm-muted cust-note">يُحفظ العميل تلقائياً مع أول طلب. في صفحة الطلب يظهر للزبون خيار «أرسلوا لي العروض والخصومات»، ومن يطفئه أو تطفئ أنت مفتاح «العروض» عنده لا يدخل في إرسال العروض.</p>`;
+            <p class="adm-muted cust-note">يُحفظ العميل تلقائياً مع أول طلب. 💎 المميز: 3 طلبات أو أكثر أو مشتريات من ${money(VIP_SPENT)}. من يطفئ «أرسلوا لي العروض» في صفحة الطلب، أو تطفئ أنت مفتاح «العروض» عنده، لا يدخل في إرسال العروض.</p>`;
     }
 
-    function offerTemplate() {
-        return storage.get(OFFER_KEY) || OFFER_TEMPLATES[0][1];
+    // ---------- استوديو العروض ----------
+
+    function offerPref() {
+        const p = storage.get(OFFER_PREF) || {};
+        return { hours: OFFER_ENDS.some(([h]) => h === p.hours) ? p.hours : 72, skip: p.skip !== false, ptpl: Number(p.ptpl) || 0, gtpl: Number(p.gtpl) || 0 };
     }
 
-    function offerText(tpl, c) {
-        const first = String(c.name || "").trim().split(/\s+/)[0] || "";
-        const link = new URL(`${ATHR.base()}?ref=whatsapp`, location.origin).href;
-        let text = String(tpl || "").replace(/\{name\}/g, first).replace(/\{store\}/g, ATHR.storeName(cfg())).replace(/\{link\}/g, link);
-        text = text.replace(/[ \t]+\n/g, "\n").replace(/ {2,}/g, " ").replace(/^(هلا|مرحبا|أهلاً)\s+👋/m, "$1 👋");
-        if (!text.includes("إيقاف")) text += `\n\n${OPT_OUT_LINE}`;
-        return text;
+    function saveOfferPref(st) {
+        storage.set(OFFER_PREF, { hours: st.hours, skip: st.skipRecent, ...(st.product ? { ptpl: st.tpl } : { gtpl: st.tpl }), ...(st.product ? { gtpl: offerPref().gtpl } : { ptpl: offerPref().ptpl }) });
     }
 
-    function openOffer() {
-        const targets = filteredCustomers().filter((c) => c.marketing);
-        A.offer = { targets, i: 0, sent: 0, started: false };
+    // المنتجات المنشورة فقط (لأن الرابط يجب أن يعمل عند العميل)، والمخفّضة أولاً
+    function offerProducts() {
+        const visible = (A.server ? A.server.products : []).filter((p) => p.is_visible !== false);
+        const list = ATHR.assignSlugs(visible, cfg()).filter((p) => p.is_available !== false && p.image_url);
+        const pct = (p) => (Number(p.old_price) > Number(p.price) ? Math.round((1 - p.price / p.old_price) * 100) : 0);
+        return list.map((p, i) => ({ p, i, pct: pct(p) })).sort((a, b) => (b.pct > 0) - (a.pct > 0) || (b.p.is_best_seller ? 1 : 0) - (a.p.is_best_seller ? 1 : 0) || a.i - b.i).map((x) => ({ ...x.p, pct: x.pct }));
+    }
+
+    function openOffer(single = null) {
+        const pref = offerPref();
+        A.offer = { step: "pick", product: null, tpl: 0, text: "", hours: pref.hours, audience: "marketing", skipRecent: pref.skip, single, q: "", i: 0, sent: 0, targets: [], endsAt: 0 };
         renderOffer();
     }
 
-    function renderOffer() {
+    function offerChoose(productId) {
+        const st = A.offer;
+        const pref = offerPref();
+        st.product = productId ? offerProducts().find((p) => p.id === productId) || null : null;
+        st.tpl = st.product ? Math.min(pref.ptpl, PRODUCT_OFFERS.length - 1) : Math.min(pref.gtpl, OFFER_TEMPLATES.length - 1);
+        if (!st.product && st.single) {
+            const c = A.customers.find((x) => x.phone === st.single);
+            if (c && isAway(c)) st.tpl = 2;
+        }
+        st.text = (st.product ? PRODUCT_OFFERS : OFFER_TEMPLATES)[st.tpl][1];
+        st.step = "compose";
+        renderOffer();
+    }
+
+    function offerTargets(st) {
+        if (st.single) return A.customers.filter((c) => c.phone === st.single);
+        const test = KIND_TEST[st.audience] || KIND_TEST.marketing;
+        return A.customers.filter((c) => c.marketing && test(c) && !(st.skipRecent && recentOffer(c)));
+    }
+
+    function endsText(h) {
+        return h <= 24 ? "خلال 24 ساعة" : h <= 72 ? "خلال 3 أيام" : "خلال أسبوع";
+    }
+
+    function offerUrl(st, first) {
+        if (!st.product) return siteLink(`${ATHR.base()}?ref=offer`);
+        const ends = st.hours ? (st.endsAt || Date.now() + st.hours * 36e5) : 0;
+        return siteLink(ATHR.offerLink(st.product, { name: first, ends }));
+    }
+
+    function offerVars(st, c) {
+        const first = String((c && c.name) || "").trim().split(/\s+/)[0] || "";
+        const vars = { name: first, store: ATHR.storeName(cfg()), ends: st.product && st.hours ? endsText(st.hours) : "", link: offerUrl(st, first), product: "", price: "", old: "", pct: "", save: "" };
+        const p = st.product;
+        if (p) {
+            vars.product = p.name;
+            vars.price = money(p.price);
+            if (p.pct) Object.assign(vars, { old: money(p.old_price), pct: String(p.pct), save: money(p.old_price - p.price) });
+        }
+        return vars;
+    }
+
+    // تعبئة الرسالة: الاسم والمنتج والسعر والرابط، وحذف السطر الذي معلومته غير موجودة
+    function fillOffer(text, vars) {
+        let out = String(text || "")
+            .replace(/\s*يا\s*\{name\}/g, vars.name ? ` يا ${vars.name}` : "")
+            .replace(/\{name\}،\s*/g, vars.name ? `${vars.name}، ` : "");
+        out = out.split("\n").filter((line) => !["old", "pct", "save", "ends", "product", "price"].some((k) => line.includes(`{${k}}`) && !vars[k])).join("\n");
+        out = out.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
+        return out.replace(/[ \t]+\n/g, "\n").replace(/ {2,}/g, " ").replace(/\n{3,}/g, "\n\n").replace(/^(هلا|مرحبا|أهلاً)\s+👋/m, "$1 👋").trim();
+    }
+
+    function offerText(st, c, { broadcast = false } = {}) {
+        const text = fillOffer(st.text, offerVars(st, broadcast ? { name: "" } : c));
+        return broadcast || text.includes("إيقاف") ? text : `${text}\n\n${OPT_OUT_LINE}`;
+    }
+
+    // معاينة بشكل رسالة واتساب، مع بطاقة الرابط (صورة المنتج) كما تظهر عند العميل
+    function waBubble(text, st) {
+        const p = st.product;
+        const img = p ? (ATHR.thumb(p.image_url, "m") || asset(p.image_url)) : asset("images/logo2.jpeg");
+        const html = esc(text)
+            .replace(/\*([^*\n]+)\*/g, "<b>$1</b>")
+            .replace(/(https?:\/\/[^\s<]+)/g, (u) => {
+                let shown = u;
+                try { shown = esc(decodeURI(u.replace(/&amp;/g, "&"))); } catch { /* keep */ }
+                return `<span class="wa-url" dir="ltr">${shown}</span>`;
+            });
+        const now = new Date();
+        return `<div class="wa-chat"><div class="wa-bubble">
+            <div class="wa-card"><img src="${esc(img)}" alt=""><div><b>${esc(p ? p.name : ATHR.storeName(cfg()))}</b><small dir="ltr">${esc(location.host)}</small></div></div>
+            <div class="wa-text">${html}</div>
+            <span class="wa-time">${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} ✓✓</span>
+        </div></div>`;
+    }
+
+    function offerSheetHead(title) {
+        return `<div class="adm-sheet-head"><h2>${title}</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>`;
+    }
+
+    function offerProductItems(st) {
+        const q = st.q.trim().toLowerCase();
+        const list = offerProducts().filter((p) => !q || p.name.toLowerCase().includes(q));
+        return list.map((p) => `<button type="button" class="op-item" data-offer-product="${esc(p.id)}">
+            <img src="${esc(ATHR.thumb(p.image_url, "s") || asset(p.image_url))}" alt="" loading="lazy">
+            <span class="op-info"><b>${esc(p.name)}</b><small>${money(p.price)}${p.pct ? ` <s>${money(p.old_price)}</s>` : ""}</small></span>
+            ${p.pct ? `<span class="tag sale">خصم ${p.pct}%</span>` : p.is_best_seller ? `<span class="tag">🔥 الأكثر طلباً</span>` : ""}
+        </button>`).join("") || `<div class="adm-empty">لا توجد منتجات مطابقة.</div>`;
+    }
+
+    function renderOffer({ keepScroll = false } = {}) {
         const st = A.offer;
         if (!st) return;
-        const tpl = offerTemplate();
-        if (!st.started) {
-            const sample = st.targets[0] || { name: "أحمد", phone: "96890000000" };
-            openOrderSheet(`
-                <div class="adm-sheet-head"><h2>📣 أرسل عرضاً لعملائك</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>
+        const prevScroll = keepScroll ? ($("#admSheet .adm-sheet-panel") || {}).scrollTop || 0 : 0;
+        const single = st.single ? A.customers.find((c) => c.phone === st.single) : null;
+        const who = single ? ` لـ${esc(String(single.name || "العميل").split(" ")[0])}` : "";
+
+        if (st.step === "pick") {
+            const discounted = offerProducts().filter((p) => p.pct).length;
+            openOrderSheet(`${offerSheetHead(`📣 أرسل عرضاً${who}`)}
                 <div class="af-stack">
-                    <div class="pct-chips">${OFFER_TEMPLATES.map(([label], i) => `<button type="button" class="ab-mini" data-offer-tpl="${i}">${esc(label)}</button>`).join("")}</div>
-                    <label class="af"><span>نص العرض</span><textarea class="ai" id="offerText" rows="8">${esc(tpl)}</textarea>
-                        <small>{name} = اسم العميل الأول · {store} = اسم المتجر · {link} = رابط المتجر. يُضاف سطر «لإيقاف العروض» تلقائياً.</small></label>
-                    <div class="offer-preview"><small class="adm-muted">هكذا تصل الرسالة لـ${esc(sample.name || "العميل")}:</small><pre id="offerPreview">${esc(offerText(tpl, sample))}</pre></div>
-                    <p class="adm-sentence">يُرسل إلى <b>${st.targets.length}</b> عميل يقبلون العروض${A.custFilter.kind !== "all" || A.custFilter.q ? " (حسب التصفية الحالية)" : ""}. واتساب لا يسمح بالإرسال الجماعي التلقائي، لذلك تضغط «أرسل» لكل عميل، وننقلك للتالي تلقائياً.</p>
-                    <button class="ab ab-primary ab-block" type="button" data-a="offer-start"${st.targets.length ? "" : " disabled"}>ابدأ الإرسال</button>
+                    <p class="adm-sentence">اختر المنتج الذي تريد ترويجه، ونجهّز لك رسالة جذابة ورابطاً خاصاً لكل عميل.${discounted ? "" : " 💡 لا يوجد منتج عليه خصم الآن: تقدر تضيف الخصم من لوحة التحكم ← المنتجات ← «الخصم %»."}</p>
+                    <button type="button" class="op-general" data-a="offer-general"><span aria-hidden="true">📣</span><span><b>رسالة عامة بدون منتج</b><small>تصاميم جديدة، خصم عام، اشتقنا لك، عرض العيد…</small></span></button>
+                    <input class="ai" type="search" id="offerProdQ" placeholder="ابحث عن منتج" value="${esc(st.q)}">
+                    <div class="op-list" id="opList">${offerProductItems(st)}</div>
                 </div>`);
             return;
         }
+
+        if (st.step === "compose") {
+            const p = st.product;
+            const targets = offerTargets(st);
+            const sample = targets[0] || single || { name: "أحمد" };
+            const tpls = p ? PRODUCT_OFFERS : OFFER_TEMPLATES;
+            const recentSkipped = st.single ? 0 : A.customers.filter((c) => c.marketing && (KIND_TEST[st.audience] || KIND_TEST.marketing)(c) && recentOffer(c)).length;
+            openOrderSheet(`${offerSheetHead(`📣 ${p ? "عرض على منتج" : "رسالة عامة"}${who}`)}
+                <div class="af-stack offer-compose">
+                    ${p ? `<div class="op-chosen">
+                        <img src="${esc(ATHR.thumb(p.image_url, "s") || asset(p.image_url))}" alt="">
+                        <span class="op-info"><b>${esc(p.name)}</b><small>${money(p.price)}${p.pct ? ` <s>${money(p.old_price)}</s> <span class="tag sale">خصم ${p.pct}%</span>` : ""}</small></span>
+                        <button class="ab-mini" type="button" data-a="offer-back">تغيير</button>
+                    </div>
+                    ${p.pct ? "" : `<p class="adm-note">💡 هذا المنتج بدون خصم، فتُحذف أسطر الخصم من الرسالة تلقائياً. لإضافة خصم: لوحة التحكم ← المنتجات ← «الخصم %» ثم انشر.</p>`}` : `<button class="ab-mini" type="button" data-a="offer-back">← اختيار منتج بدلاً من ذلك</button>`}
+                    <div class="af"><span>أسلوب الرسالة</span><div class="pct-chips">${tpls.map(([label], i) => `<button type="button" class="ab-mini${st.tpl === i ? " on" : ""}" data-offer-tpl="${i}" aria-pressed="${st.tpl === i}">${esc(label)}</button>`).join("")}</div></div>
+                    <label class="af"><span>نص الرسالة (تقدر تعدّله)</span><textarea class="ai" id="offerText" rows="9">${esc(st.text)}</textarea>
+                        <small>{name} اسم العميل · {product} المنتج · {price} السعر · {old} السعر قبل الخصم · {pct} نسبة الخصم · {save} التوفير · {ends} انتهاء العرض · {link} الرابط الخاص. السطر الذي معلومته غير موجودة يُحذف تلقائياً، ويُضاف سطر «لإيقاف العروض».</small></label>
+                    ${p ? `<div class="af"><span>⏳ مدة العرض <small class="adm-muted">(عدّاد تنازلي يظهر للعميل في صفحة المنتج)</small></span><div class="pct-chips">${OFFER_ENDS.map(([h, l]) => `<button type="button" class="ab-mini${st.hours === h ? " on" : ""}" data-offer-ends="${h}" aria-pressed="${st.hours === h}">${l}</button>`).join("")}</div></div>` : ""}
+                    ${st.single ? (single && recentOffer(single) ? `<p class="adm-note">وصله عرض ${esc(sinceText(single.last_offer_at))}. لا تكثر عليه حتى لا ينزعج.</p>` : "") : `<div class="af"><span>👥 لمن ترسل؟</span><div class="pct-chips">${OFFER_AUDIENCE.map(([k, l]) => {
+                        const n = A.customers.filter((c) => c.marketing && KIND_TEST[k](c) && !(st.skipRecent && recentOffer(c))).length;
+                        return `<button type="button" class="ab-mini${st.audience === k ? " on" : ""}" data-offer-aud="${k}" aria-pressed="${st.audience === k}">${l} (${n})</button>`;
+                    }).join("")}</div></div>
+                    <label class="at"><input type="checkbox" id="offerSkip"${st.skipRecent ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>تخطَّ من وصله عرض خلال آخر 3 أيام</b><small>${recentSkipped ? `${recentSkipped} عميل وصلهم عرض قريباً. ` : ""}حتى لا يشعر العميل بالإزعاج ويحظر الرقم.</small></span></label>`}
+                    <div class="af"><span>👀 هكذا تصل الرسالة لـ${esc(String(sample.name || "العميل").split(" ")[0])}</span><div id="offerPreview">${waBubble(offerText(st, sample), st)}</div></div>
+                    <button class="ab ab-primary ab-block" type="button" data-a="offer-start"${targets.length ? "" : " disabled"}>${targets.length ? `ابدأ الإرسال ${targets.length === 1 ? `لـ${esc(String(targets[0].name || "العميل").split(" ")[0])}` : `(${targets.length} عميل)`}` : "لا يوجد عملاء في هذا الاختيار"}</button>
+                    <button class="ab ab-ghost ab-block" type="button" data-a="offer-copy">📋 نسخ الرسالة لحالة واتساب أو قائمة البث</button>
+                    <p class="adm-muted">واتساب لا يسمح بالإرسال الجماعي التلقائي، لذلك تضغط «أرسل» لكل عميل وننقلك للتالي تلقائياً. كل عميل يصله رابط باسمه يفتح له العرض الخاص.</p>
+                </div>`);
+            if (prevScroll) $("#admSheet .adm-sheet-panel").scrollTop = prevScroll;
+            return;
+        }
+
         const c = st.targets[st.i];
         if (!c) {
-            openOrderSheet(`
-                <div class="adm-sheet-head"><h2>تم ✅</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>
-                <div class="af-stack"><p class="adm-sentence">أرسلت العرض لـ <b>${st.sent}</b> عميل من ${st.targets.length}.</p>
-                <button class="ab ab-primary ab-block" type="button" data-a="orders-sheet-close">إغلاق</button></div>`);
+            openOrderSheet(`${offerSheetHead("تم ✅")}
+                <div class="af-stack">
+                    <div class="offer-done"><span aria-hidden="true">🎉</span><p class="adm-sentence">أرسلت العرض لـ <b>${st.sent}</b> عميل من ${st.targets.length}.</p></div>
+                    <p class="adm-muted">📈 تابع النتائج في خانة العملاء: كم شخص فتح الرابط، وكم طلب جاء من العروض.</p>
+                    <button class="ab ab-primary ab-block" type="button" data-a="orders-sheet-close">إغلاق</button>
+                </div>`);
             renderCustomers();
             return;
         }
-        openOrderSheet(`
-            <div class="adm-sheet-head"><h2>📣 إرسال العرض</h2><button class="adm-icon" type="button" data-a="orders-sheet-close" aria-label="إغلاق">×</button></div>
+        openOrderSheet(`${offerSheetHead("📣 إرسال العرض")}
             <div class="af-stack offer-run">
                 <div class="offer-progress"><span style="width:${Math.round((st.i / st.targets.length) * 100)}%"></span></div>
                 <p class="adm-muted">العميل ${st.i + 1} من ${st.targets.length} · أُرسل ${st.sent}</p>
-                <div class="offer-who"><b>${esc(c.name || "بدون اسم")}</b><span dir="ltr">+${esc(c.phone)}</span></div>
-                <pre class="offer-msg">${esc(offerText(tpl, c))}</pre>
+                <div class="offer-who"><b>${esc(c.name || "بدون اسم")}${custTags(c).map(([k, l]) => ` <span class="ctag ${k}">${l}</span>`).join("")}</b><span dir="ltr">+${esc(c.phone)}</span></div>
+                ${waBubble(offerText(st, c), st)}
                 <button class="ab ab-primary ab-block offer-send" type="button" data-a="offer-send">${ATHR.views.waIcon()}أرسل لـ${esc(String(c.name || "العميل").split(" ")[0])} في واتساب</button>
                 <div class="inline"><button class="ab-mini" type="button" data-a="offer-skip">تخطي</button><button class="ab-mini" type="button" data-a="offer-stop">إيقاف</button></div>
             </div>`);
+    }
+
+    function refreshOfferPreview() {
+        const st = A.offer;
+        const box = $("#offerPreview");
+        if (!st || !box) return;
+        const targets = offerTargets(st);
+        const single = st.single ? A.customers.find((c) => c.phone === st.single) : null;
+        box.innerHTML = waBubble(offerText(st, targets[0] || single || { name: "أحمد" }), st);
     }
 
     async function offerSend() {
         const st = A.offer;
         const c = st && st.targets[st.i];
         if (!c) return;
-        window.open(ATHR.waLink(custWa(c), offerText(offerTemplate(), c)), "_blank", "noopener");
+        window.open(ATHR.waLink(custWa(c), offerText(st, c)), "_blank", "noopener");
         st.sent++;
         st.i++;
         const at = new Date().toISOString();
@@ -2627,8 +2836,8 @@
     }
 
     function customersCsv() {
-        const rows = [["الاسم", "الرقم", "الدولة", "عدد الطلبات", "المجموع", "أول طلب", "آخر طلب", "يقبل العروض"]];
-        filteredCustomers().forEach((c) => rows.push([c.name || "", `+${c.phone}`, c.country || "", c.orders_count, Number(c.total_spent).toFixed(3), (c.first_order_at || "").slice(0, 10), (c.last_order_at || "").slice(0, 10), c.marketing ? "نعم" : "لا"]));
+        const rows = [["الاسم", "الرقم", "الدولة", "عدد الطلبات", "المجموع", "أول طلب", "آخر طلب", "يقبل العروض", "التصنيف"]];
+        filteredCustomers().forEach((c) => rows.push([c.name || "", `+${c.phone}`, c.country || "", c.orders_count, Number(c.total_spent).toFixed(3), (c.first_order_at || "").slice(0, 10), (c.last_order_at || "").slice(0, 10), c.marketing ? "نعم" : "لا", custTags(c).map((x) => x[1]).join(" ")]));
         const csv = "﻿" + rows.map((r) => r.map((x) => `"${String(x).replace(/"/g, '""')}"`).join(",")).join("\n");
         const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
         const a = document.createElement("a");
@@ -2653,20 +2862,54 @@
         } else toast(c.marketing ? "سيستقبل العروض" : "لن يستقبل العروض");
     }
 
+    // أزرار الاستوديو والاختيارات داخل الورقة
+    function offerOptionClick(d) {
+        const st = A.offer;
+        if (d.custOffer) { openOffer(d.custOffer); return true; }
+        if (!st) return false;
+        if (d.offerProduct) { offerChoose(d.offerProduct); return true; }
+        if (d.offerTpl !== undefined) {
+            const tpls = st.product ? PRODUCT_OFFERS : OFFER_TEMPLATES;
+            const tpl = tpls[Number(d.offerTpl)];
+            if (tpl) {
+                st.tpl = Number(d.offerTpl);
+                st.text = tpl[1];
+                saveOfferPref(st);
+                renderOffer({ keepScroll: true });
+            }
+            return true;
+        }
+        if (d.offerEnds !== undefined) { st.hours = Number(d.offerEnds); saveOfferPref(st); renderOffer({ keepScroll: true }); return true; }
+        if (d.offerAud) { st.audience = d.offerAud; renderOffer({ keepScroll: true }); return true; }
+        return false;
+    }
+
     async function customersClick(d) {
+        const st = A.offer;
         switch (d.a) {
             case "offer-open": openOffer(); return true;
+            case "offer-general": offerChoose(null); return true;
+            case "offer-back": st.step = "pick"; st.product = null; renderOffer(); return true;
             case "offer-start":
-                storage.set(OFFER_KEY, $("#offerText") ? $("#offerText").value : offerTemplate());
-                A.offer.started = true;
+                st.targets = offerTargets(st);
+                st.endsAt = st.product && st.hours ? Date.now() + st.hours * 36e5 : 0;
+                st.i = 0;
+                st.sent = 0;
+                st.step = "run";
+                saveOfferPref(st);
                 renderOffer();
                 return true;
+            case "offer-copy":
+                if (!st) return true;
+                st.endsAt = st.endsAt || (st.product && st.hours ? Date.now() + st.hours * 36e5 : 0);
+                ATHR.store.copyText(offerText(st, null, { broadcast: true }), "نُسخت الرسالة ✓ الصقها في حالة واتساب أو قائمة البث");
+                return true;
             case "offer-send": await offerSend(); return true;
-            case "offer-skip": A.offer.i++; renderOffer(); return true;
-            case "offer-stop": A.offer.i = A.offer.targets.length; renderOffer(); return true;
+            case "offer-skip": st.i++; renderOffer(); return true;
+            case "offer-stop": st.i = st.targets.length; renderOffer(); return true;
             case "cust-copy": {
-                const nums = filteredCustomers().filter((c) => c.marketing).map((c) => `+${c.phone}`).join("\n");
-                ATHR.store.copyText(nums, `نُسخت ${filteredCustomers().filter((c) => c.marketing).length} أرقام`);
+                const list = filteredCustomers().filter((c) => c.marketing);
+                ATHR.store.copyText(list.map((c) => `+${c.phone}`).join("\n"), `نُسخت ${list.length} أرقام`);
                 return true;
             }
             case "cust-csv": customersCsv(); return true;

@@ -759,3 +759,24 @@ revoke execute on function public.ai_key_status() from public, anon, authenticat
 -- =====================================================
 alter table public.orders
     add column if not exists gift_for text check (gift_for is null or gift_for in ('boy', 'girl'));
+
+-- =====================================================
+-- الإصدار 12: العروض الخاصة عبر واتساب (?ref=offer) تُحسب كمصدر مستقل
+-- =====================================================
+create or replace function public.track(k text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    if k is null or k !~ '^(visit|view|add|checkout|order)(:(direct|google|instagram|tiktok|whatsapp|snapchat|facebook|x|offer|other))?$' then
+        return;
+    end if;
+    insert into public.stats_daily (day, key, n)
+    values ((now() at time zone 'Asia/Muscat')::date, k, 1)
+    on conflict (day, key) do update set n = public.stats_daily.n + 1;
+end;
+$$;
+revoke execute on function public.track(text) from public;
+grant execute on function public.track(text) to anon, authenticated;

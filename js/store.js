@@ -33,7 +33,8 @@
         sort: "athr_sort",
         lang: "athr_lang",
         mode: "athr_mode",
-        giftIntent: "athr_gift_intent"
+        giftIntent: "athr_gift_intent",
+        offer: "athr_offer"
     };
 
     // أسماء ولايات عُمان (اقتراحات فقط، ويمكن للعميل كتابة غيرها)
@@ -504,6 +505,11 @@
         if (cfg.texts.announce_show && ct("texts.announce_text")) {
             parts.push(`<div class="bar bar-announce">${esc(fill(ct("texts.announce_text")))}</div>`);
         }
+        // تذكير بالعرض الخاص في كل الصفحات (ما عدا صفحة المنتج نفسه والطلب)
+        const offer = !S.preview && activeOffer();
+        if (offer && !(S.route.name === "product" && findProduct(S.route.slug) === offer.product) && !["checkout", "done", "gift"].includes(S.route.name)) {
+            parts.push(`<div class="bar bar-offer"><span aria-hidden="true">🎁</span> <span>${esc(offer.name ? t("عرضك الخاص يا {name}:", { name: offer.name }) : t("عرضك الخاص:"))}</span> <a href="${ATHR.url.product(offer.product)}">${esc(V.pname(offer.product))}</a>${offer.ends ? ` <span class="bo-left">⏳ <b data-offer-left="${offer.ends}">${offerClock(offer.ends)}</b></span>` : ""}</div>`);
+        }
         const totals = computeCart();
         const freeMin = Number(cfg.order.free_min) || 0;
         const routeName = S.route.name;
@@ -739,12 +745,80 @@
 
     let gallery = { items: [], index: 0, product: null };
 
+    // =====================================================
+    // العرض الخاص: من رابط أرسله صاحب المتجر للعميل في واتساب
+    // =====================================================
+
+    function captureOffer(p) {
+        const code = new URLSearchParams(location.search).get("o");
+        if (!code) return;
+        const o = ATHR.offerDecode(code);
+        if (!o) return;
+        if (o.ends && o.ends <= Date.now()) return;
+        storage.set(KEYS.offer, { pid: p.id, name: o.name, ends: o.ends, at: Date.now() });
+    }
+
+    function activeOffer() {
+        const o = storage.get(KEYS.offer, null);
+        if (!o || !o.pid) return null;
+        const until = o.ends || (o.at || 0) + 7 * 864e5;
+        if (Date.now() > until) {
+            storage.del(KEYS.offer);
+            return null;
+        }
+        const p = S.products.find((x) => x.id === o.pid);
+        return p && p.is_available !== false ? { ...o, product: p } : null;
+    }
+
+    // أقل من يومين: ساعة رقمية تعدّ تنازلياً (05:12:09)، وأكثر: «3 أيام و5 ساعات»
+    function offerClock(ends) {
+        const ms = Math.max(0, ends - Date.now());
+        if (ms > 48 * 36e5) return esc(ATHR.leftText(ms));
+        const sec = Math.floor(ms / 1000);
+        const parts = [Math.floor(sec / 3600), Math.floor(sec / 60) % 60, sec % 60].map((n) => String(n).padStart(2, "0"));
+        return `<span class="clock" dir="ltr">${parts.map((n) => `<i>${n}</i>`).join("<em>:</em>")}</span>`;
+    }
+
+    function offerBanner(p) {
+        const o = activeOffer();
+        if (!o || o.product.id !== p.id) return "";
+        const sale = Number(p.old_price) > Number(p.price);
+        const pct = sale ? Math.round((1 - p.price / p.old_price) * 100) : 0;
+        return `<div class="offer-banner" id="offerBanner">
+            <div class="ob-head">
+                <span class="ob-ico" aria-hidden="true">🎁</span>
+                <div class="ob-txt">
+                    <b>${esc(o.name ? t("عرض خاص لك يا {name}!", { name: o.name }) : t("عرض خاص لك!"))}</b>
+                    <span>${sale ? esc(t("خصم {pct}%: بدل {old} صار {price}", { pct, old: local(p.old_price), price: local(p.price) })) : esc(t("اخترناه لك خصيصاً"))}</span>
+                </div>
+                ${sale ? `<span class="ob-pct" dir="ltr">-${pct}%</span>` : ""}
+            </div>
+            ${o.ends ? `<div class="ob-left"><small>${esc(t("ينتهي العرض خلال"))}</small><b data-offer-left="${o.ends}">${offerClock(o.ends)}</b></div>` : ""}
+        </div>`;
+    }
+
+    function tickOffers() {
+        const els = $$("[data-offer-left]");
+        if (!els.length) return;
+        els.forEach((el) => {
+            const ends = Number(el.dataset.offerLeft);
+            if (ends - Date.now() <= 0) {
+                el.closest(".offer-banner, .bar-offer")?.remove();
+                storage.del(KEYS.offer);
+            } else el.innerHTML = offerClock(ends);
+        });
+    }
+    setInterval(tickOffers, 1000);
+
     function renderProduct(route, { changed }) {
         const p = findProduct(route.slug);
         if (!p) return renderNotFound();
         const canonical = ATHR.url.product(p);
-        if (nfc(route.slug) !== nfc(p.slug) && p.slug) history.replaceState(history.state, "", canonical + location.hash);
+        captureOffer(p);
+        if (nfc(route.slug) !== nfc(p.slug) && p.slug) history.replaceState(history.state, "", canonical + location.search + location.hash);
         $("#view").innerHTML = V.product(v(), p);
+        const banner = offerBanner(p);
+        if (banner) $("#view .pdp")?.insertAdjacentHTML("beforebegin", banner);
 
         const keepIndex = !changed && gallery.product === p.id;
         gallery = { items: p.image_url ? [{ type: "image", url: p.image_url }] : [], index: keepIndex ? gallery.index : 0, product: p.id };
@@ -1835,7 +1909,7 @@
 
     function detectChannel() {
         const params = new URLSearchParams(location.search);
-        const src = (params.get("utm_source") || params.get("ref") || params.get("src") || "").toLowerCase();
+        const src = (params.get("utm_source") || params.get("ref") || params.get("src") || (params.get("o") ? "offer" : "")).toLowerCase();
         const ref = (document.referrer || "").toLowerCase();
         const ua = (navigator.userAgent || "").toLowerCase();
         const test = (s) => {
@@ -1849,7 +1923,7 @@
             if (/(^|\.|\/)x\.com|twitter|t\.co\//.test(s)) return "x";
             return "";
         };
-        let ch = test(src) || test(ref) || test(ua);
+        let ch = (/^offer/.test(src) ? "offer" : "") || test(src) || test(ref) || test(ua);
         if (!ch && src) ch = "other";
         if (!ch && ref && !ref.includes(location.host)) ch = "other";
         return ch || "direct";
@@ -1858,7 +1932,7 @@
     function sessionChannel() {
         let ch = session.get(KEYS.channel);
         const params = new URLSearchParams(location.search);
-        const tagged = ["utm_source", "ref", "src"].some((k) => params.get(k));
+        const tagged = ["utm_source", "ref", "src", "o"].some((k) => params.get(k));
         if (!ch || (tagged && ch === "direct")) {
             ch = detectChannel();
             session.set(KEYS.channel, ch);

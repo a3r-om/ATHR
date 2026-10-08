@@ -725,6 +725,42 @@ ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store, config }) 
     return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 };
 
+// =====================================================
+// العرض الخاص: رابط منتج شخصي يرسله صاحب المتجر للعميل في واتساب
+// فيه الاسم الأول وموعد انتهاء العرض فقط (بدون رقم هاتف أو أي بيانات أخرى)
+// =====================================================
+ATHR.offerCode = (o) => athrB64url(JSON.stringify({
+    n: String((o && o.name) || "").slice(0, 40),
+    ...(o && o.ends ? { e: Math.round(o.ends / 60000) } : {})
+}));
+
+ATHR.offerDecode = function (code) {
+    try {
+        const d = JSON.parse(athrUnB64url(code || ""));
+        return { name: String(d.n || "").slice(0, 40), ends: Number(d.e) > 0 ? Number(d.e) * 60000 : 0 };
+    } catch {
+        return null;
+    }
+};
+
+// رابط المنتج الخاص (o= أو ref=offer حتى تُحسب الزيارات والطلبات القادمة من العروض)
+ATHR.offerLink = (p, o) => `${ATHR.url.product(p)}?${o && (o.name || o.ends) ? `o=${ATHR.offerCode(o)}` : "ref=offer"}`;
+
+// «يومين و5 ساعات» / «3 ساعات» / «20 دقيقة»
+ATHR.leftText = function (ms) {
+    const en = ATHR.isEn && ATHR.isEn();
+    const mins = Math.max(1, Math.round(ms / 60000));
+    const d = Math.floor(mins / 1440);
+    const h = Math.floor((mins % 1440) / 60);
+    const m = mins % 60;
+    const ar = (n, one, two, few, many) => (n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`);
+    const unit = (n, k) => (en
+        ? `${n} ${{ d: "day", h: "hour", m: "minute" }[k]}${n === 1 ? "" : "s"}`
+        : { d: ar(n, "يوم", "يومين", "أيام", "يوماً"), h: ar(n, "ساعة", "ساعتين", "ساعات", "ساعة"), m: ar(n, "دقيقة", "دقيقتين", "دقائق", "دقيقة") }[k]);
+    const parts = d ? [unit(d, "d"), h ? unit(h, "h") : ""] : h ? [unit(h, "h"), m && h < 3 ? unit(m, "m") : ""] : [unit(m, "m")];
+    return parts.filter(Boolean).join(en ? " " : " و");
+};
+
 ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
     to: order.gift_name,
     from: String(order.customer_name || "").trim().split(/\s+/)[0],
