@@ -1237,6 +1237,7 @@
                 ${fontSample()}`, "كلها خطوط مجانية من Google تدعم العربي والإنجليزي. الأولى في القائمة هي الأبسط والأوضح للقراءة.")
             + card("الواجهة الرئيسية", `
                 ${toggle("config.theme.hero_show", "إظهار الواجهة الرئيسية")}
+                ${toggle("config.theme.spacious", "تصميم بمساحات واسعة", { help: "مساحة فارغة حول كل عنصر: مسافات أوسع بين الأقسام والمنتجات، وبطاقات منتجات خفيفة بدون إطار." })}
                 ${toggle("config.theme.hero_compact", "واجهة مختصرة وصغيرة", { help: "العنوان وسطر واحد فيه: التوصيل المجاني، الدفع عند الاستلام، والتوصيل للخليج (من إعدادات التوصيل والدفع). أطفئه لترجع للواجهة الكبيرة بالنص والمزايا." })}
                 ${toggle("config.theme.hero_pattern", "زخرفة المعيّنات في الخلفية")}
                 <div class="af"><span>صورة خلفية للواجهة (اختياري)</span>${uploadButton(c.theme.hero_image ? "تغيير الصورة" : "اختيار صورة", `data-upload="config.theme.hero_image" data-kind="hero"`, { current: c.theme.hero_image, remove: c.theme.hero_image ? `data-clear="config.theme.hero_image"` : "" })}<small>تظهر خلف النص مع طبقة من لون الواجهة حتى يبقى النص واضحاً.</small></div>`);

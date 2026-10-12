@@ -2060,3 +2060,70 @@ html.tpl-luxe .hero.hero-compact h1::after { margin-top: 8px; }
 .pts-actions .btn { width: 100%; }
 .loyal-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-weight: 700; font-size: 13.5px; color: var(--accent); text-decoration: none; }
 .loyal-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* =====================================================
+   v19 — المساحة الفارغة: كل عنصر له مساحة كافية حوله
+   (يُطفأ من لوحة التحكم ← المظهر ← «تصميم بمساحات واسعة»)
+===================================================== */
+html.spacious { --gutter: 20px; }
+@media (min-width: 760px) { html.spacious { --gutter: 32px; } }
+
+/* الإعلان والواجهة المختصرة */
+html.spacious .ad { margin: 20px auto 24px; }
+html[class].spacious .hero.hero-compact:not(.has-image) .hero-inner { padding-top: 24px; padding-bottom: 22px; gap: 10px; }
+
+/* الأقسام بالصور: مسافة بين كل قسم والثاني، وبدون إطار */
+html.spacious .tiles { gap: 16px; padding-top: 30px; padding-bottom: 6px; }
+html.spacious .tile { gap: 10px; }
+html.spacious .tile-img { box-shadow: none; }
+html.spacious .tile.on .tile-img, html.spacious .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--accent); }
+
+/* بنر الهدية: لون واحد بدون نقاط، ومسافة أكبر داخله وحوله */
+html.spacious .gift-promo { margin-top: 36px; }
+html.spacious.tpl-classic .gp { padding: 22px 20px; gap: 16px; background: var(--primary); box-shadow: none; }
+html.spacious .gp-text small { line-height: 1.7; }
+
+/* العناوين والأقسام */
+html.spacious .section { padding: 40px 0; }
+html.spacious .section-head { margin-bottom: 20px; }
+html.spacious .section-head h1, html.spacious .section-head h2 { font-size: 21px; }
+html.spacious .catalog { padding-top: 40px; }
+html.spacious .cat-chips { margin-bottom: 24px; }
+html.spacious .cat-desc, html.spacious .cur-note { margin: 0 0 22px; line-height: 1.7; }
+html.spacious .more-wrap { margin-top: 36px; }
+
+/* شبكة المنتجات: فراغ أوسع بين البطاقات */
+html.spacious .grid { gap: 32px 14px; }
+@media (min-width: 640px) { html.spacious .grid, html.spacious .grid.one { gap: 44px 24px; } }
+html.spacious .rail { gap: 14px; padding-bottom: 12px; }
+
+/* بطاقة المنتج: بدون إطار، والصورة هي البطل، وزر خفيف */
+html.spacious.tpl-classic .card { border: 0; background: transparent; overflow: visible; }
+html.spacious.tpl-classic .card-img { border-radius: var(--r); overflow: hidden; }
+html.spacious .card-body { padding: 12px 2px 0; gap: 6px; }
+html.spacious .card-name { font-weight: 600; }
+html.spacious .card-action { padding: 14px 0 0; }
+html.spacious.tpl-classic .card-action .btn { min-height: 40px; background: transparent; color: var(--accent); border: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: none; }
+html.spacious.tpl-classic .card-action .btn:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+html.spacious.tpl-classic .card-action .stepper { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+html.spacious.tpl-classic #sets .card-body { padding-inline: 2px; }
+
+/* صفحة المنتج */
+html.spacious .pdp { gap: 24px; padding-top: 16px; padding-bottom: 20px; }
+html.spacious .pdp-info { gap: 20px; }
+
+/* السلة وإتمام الطلب والصفحات */
+html.spacious .panel { padding: 20px 18px; }
+html.spacious .layout-2 { gap: 20px; padding-top: 8px; padding-bottom: 40px; }
+@media (min-width: 900px) { html.spacious .layout-2 { gap: 36px; } }
+html.spacious .cart-line { padding: 18px 0; gap: 14px; }
+html.spacious .cart-actions { gap: 14px; margin-top: 20px; }
+html.spacious .form { gap: 20px; }
+html.spacious .field { gap: 8px; }
+html.spacious .thanks { padding: 36px 0 44px; gap: 20px; }
+html.spacious .points-page { padding-top: 28px; padding-bottom: 44px; gap: 20px; }
+html.spacious .empty { padding: 48px 16px; gap: 16px; }
+
+/* الفوتر */
+html.spacious .footer { margin-top: 48px; padding-top: 40px; }
+html.spacious .foot { gap: 22px; }

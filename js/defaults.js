@@ -52,6 +52,7 @@ const ATHR_DEFAULTS = {
         font_body: "IBM Plex Sans Arabic",
         hero_show: true,
         hero_compact: true,
+        spacious: true,
         hero_pattern: true,
         hero_image: "",
         visitor_mode: true,
@@ -1206,7 +1207,8 @@ ATHR.themeClasses = function (config) {
     return [
         { sharp: "r-sharp", round: "r-round" }[t.radius] || "",
         `tpl-${ATHR.template(config).id}`,
-        t.header === "light" ? "head-light" : ""
+        t.header === "light" ? "head-light" : "",
+        t.spacious === false ? "" : "spacious"
     ].filter(Boolean);
 };
 
