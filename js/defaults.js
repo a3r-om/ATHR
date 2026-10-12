@@ -207,6 +207,7 @@ const ATHR_DEFAULTS = {
         footer: "هديتك في الطريق إليك من {store} 🎁",
         empty_msg: "هدية مختارة لك بكل حب",
         font: "Aref Ruqaa",
+        custom_occasion: true,
         colors: { bg: "#4A0A14", box: "#8E1A2C", ribbon: "#F2C964", paper: "#FFF8EC", ink: "#3B2A20", accent: "#8E1A2C" },
         stars: true,
         confetti: true,
@@ -654,8 +655,15 @@ ATHR.giftOccasions = function (config, { all = true } = {}) {
     return all ? list : list.filter((o) => o.enabled);
 };
 
-ATHR.giftOccasion = (id, config) => {
+// مناسبة يكتبها الزبون بنفسه (مثل: عيد الأم، ترقية)
+ATHR.cleanOccasion = (text) => String(text || "").replace(/\s+/g, " ").trim().replace(/^(بمناسبة|مناسبة)\s+/, "").slice(0, 40);
+ATHR.giftOccasion = (id, config, text) => {
     const list = ATHR.giftOccasions(config);
+    const name = id === "custom" ? ATHR.cleanOccasion(text) : "";
+    if (name) {
+        const other = list.find((o) => o.id === "other") || {};
+        return { id: "custom", emoji: "🎉", name, title: `بمناسبة ${name}`, for: `🎉 بمناسبة ${name}`, name_en: name, title_en: name, for_en: `🎉 For ${name}`, msgs: other.msgs || [], msgs_en: other.msgs_en || [], enabled: true };
+    }
     return list.find((o) => o.id === id) || list[list.length - 1];
 };
 
@@ -712,22 +720,23 @@ ATHR.giftCode = (card) => athrB64url(JSON.stringify({
     f: String(card.from || "").slice(0, 60),
     m: String(card.msg || "").slice(0, 300),
     o: String(card.occasion || "other").slice(0, 20),
+    ...(card.occasion === "custom" && ATHR.cleanOccasion(card.occasionText) ? { x: ATHR.cleanOccasion(card.occasionText) } : {}),
     ...(card.gender === "boy" ? { g: "b" } : card.gender === "girl" ? { g: "g" } : {})
 }));
 
 ATHR.giftDecode = function (code) {
     try {
         const d = JSON.parse(athrUnB64url(code || ""));
-        return { to: String(d.t || ""), from: String(d.f || ""), msg: String(d.m || ""), occasion: String(d.o || "other"), gender: d.g === "b" ? "boy" : d.g === "g" ? "girl" : "" };
+        return { to: String(d.t || ""), from: String(d.f || ""), msg: String(d.m || ""), occasion: String(d.o || "other"), occasionText: ATHR.cleanOccasion(d.x), gender: d.g === "b" ? "boy" : d.g === "g" ? "girl" : "" };
     } catch {
         return null;
     }
 };
 
 // رسالة واتساب للمُهدى إليه: جميلة وفيها رسالة صاحب الهدية ورابط البطاقة
-ATHR.giftWhatsApp = function ({ to, from, msg, occasion, link, store, config }) {
+ATHR.giftWhatsApp = function ({ to, from, msg, occasion, occasionText, link, store, config }) {
     const tpl = (config && ATHR.ct(config, "gift.wa")) || ATHR_DEFAULTS.gift.wa;
-    const o = ATHR.giftOccasion(occasion, config);
+    const o = ATHR.giftOccasion(occasion, config, occasionText);
     const values = {
         to: to || "",
         from: from || "",
@@ -832,6 +841,7 @@ ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
     from: String(order.customer_name || "").trim().split(/\s+/)[0],
     msg: order.gift_message,
     occasion: order.gift_occasion,
+    occasionText: order.gift_occasion_text,
     gender: order.gift_for
 })}`);
 
@@ -858,13 +868,13 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
 
         block([String(first || "").trim(), `🧾 رقم الطلب: ${order.order_no}`, `🗓️ ${when.day} ${when.date} · ${when.time}`]);
 
-        const occ = ATHR.giftOccasion(order.gift_occasion, cfg);
+        const occ = ATHR.giftOccasion(order.gift_occasion, cfg, order.gift_occasion_text);
         const gfor = order.gift ? ATHR.giftFor(order.gift_for, cfg) : null;
         block([
             `👤 ${giftTo ? "من: " : ""}${order.customer_name || ""}${order.phone ? ` · ${phone(order.phone)}` : ""}`,
             giftTo ? `🎁 إلى: ${order.gift_name || ""}${order.gift_phone ? ` · ${phone(order.gift_phone)}` : ""}` : order.gift ? "🎁 الطلب هدية" : "",
             gfor ? `${gfor.emoji} الهدية لـ: ${gfor.label} ${gfor.heart}` : "",
-            order.gift && order.gift_occasion && order.gift_occasion !== "other" ? `🎉 المناسبة: ${occ.emoji} ${occ.name}` : "",
+            order.gift && order.gift_occasion && occ.id !== "other" ? `🎉 المناسبة: ${occ.emoji} ${occ.name}` : "",
             order.gift && order.gift_message ? `💬 رسالة الهدية: ${order.gift_message}` : "",
             giftTo && order.gift_hide_price ? "🤫 لا تذكر السعر للمُهدى إليه" : ""
         ]);

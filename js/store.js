@@ -1535,7 +1535,7 @@
     }
 
     const LOC_KEYS = ["wilaya", "gov", "address", "office"];
-    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion", "gift_for"];
+    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion", "gift_occasion_text", "gift_for"];
 
     // اختيار الزبون: الهدية لولد (أزرق) أو لبنت (وردي)
     function giftForField(saved) {
@@ -1634,7 +1634,9 @@
                             ${field("gift_phone", t("رقم المُهدى إليه"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="gift_phone" type="tel" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="${rule.example}" value="${esc(saved.gift_phone || "")}" required></span>`, esc(t("نتواصل معه لتنسيق التوصيل فقط.")))}
                             ${locationField(c, saved, true)}
                             <div class="field occ-field"><span>${esc(t("المناسبة"))}</span>
-                                <div class="occ-chips" role="radiogroup" aria-label="${esc(t("المناسبة"))}">${ATHR.giftOccasions(cfg, { all: false }).map((o) => `<label class="occ"><input type="radio" name="gift_occasion" value="${o.id}"${(saved.gift_occasion || "other") === o.id ? " checked" : ""}><span>${o.emoji} ${esc(L(o, "name"))}</span></label>`).join("")}</div>
+                                <div class="occ-chips" role="radiogroup" aria-label="${esc(t("المناسبة"))}">${ATHR.giftOccasions(cfg, { all: false }).map((o) => `<label class="occ"><input type="radio" name="gift_occasion" value="${o.id}"${(saved.gift_occasion || "other") === o.id ? " checked" : ""}><span>${o.emoji} ${esc(L(o, "name"))}</span></label>`).join("")}${cfg.gift.custom_occasion !== false ? `<label class="occ occ-own"><input type="radio" name="gift_occasion" value="custom"${saved.gift_occasion === "custom" ? " checked" : ""}><span>✏️ ${esc(t("مناسبة أخرى"))}</span></label>` : ""}</div>
+                                ${cfg.gift.custom_occasion !== false ? `<label class="occ-custom"${saved.gift_occasion === "custom" ? "" : " hidden"}><span>${esc(t("اكتب اسم المناسبة"))}</span><input class="input" name="gift_occasion_text" maxlength="40" autocomplete="off" placeholder="${esc(t("مثال: عيد الأم، ترقية، نجاح، ذكرى زواج"))}" value="${esc(saved.gift_occasion_text || "")}"></label>` : ""}
+                                <span class="err" data-err="gift_occasion_text"></span>
                             </div>
                             ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("اكتب رسالتك أو اختر من المقترحات"))}">${esc(saved.gift_message || "")}</textarea>`)}
                             <div class="msg-sugs" id="msgSugs">${giftSugs(saved.gift_occasion)}</div>
@@ -1808,6 +1810,7 @@
             if (String(values.gift_name || "").trim().length < 2) errors.gift_name = t("اكتب اسم المُهدى إليه.");
             if (!giftPhone.valid) errors.gift_phone = t("اكتب رقم المُهدى إليه الصحيح: {hint}.", { hint: L(giftPhone.rule, "hint") });
             else if (phone.valid && ATHR.storePhone(giftPhone.local, S.country, "XX") === ATHR.storePhone(phone.local, senderCode, "XX")) errors.gift_phone = t("رقم المُهدى إليه نفس رقمك. اكتب رقم الشخص الذي ستصله الهدية.");
+            if (values.gift_occasion === "custom" && cfg.gift.custom_occasion !== false && ATHR.cleanOccasion(values.gift_occasion_text).length < 2) errors.gift_occasion_text = t("اكتب اسم المناسبة، مثل: عيد الأم.");
         }
         if (!isOm && !String(values.gov || "").trim()) errors.gov = t("اكتب المدينة.");
         if (isOm && (gift || (cfg.order.show_wilaya && cfg.order.wilaya_required)) && !String(values.wilaya || "").trim()) errors.wilaya = gift ? t("اكتب ولاية المُهدى إليه.") : t("اكتب الولاية.");
@@ -1829,7 +1832,8 @@
         const keys = Object.keys(errors);
         $("#formErr").textContent = keys.length ? (errors.delivery || errors.payment || t("راجع الخانات المظللة بالأحمر.")) : "";
         if (keys.length) {
-            const first = form.querySelector(".field.invalid .input, .field.invalid input[type=radio]");
+            // أول خانة فيها خطأ، ونفضّل خانة الكتابة فيها (مثل اسم المناسبة) على أزرار الاختيار
+            const first = $$(".field.invalid", form).map((f) => f.querySelector(".input") || f.querySelector("input[type=radio]")).find(Boolean);
             if (first) {
                 first.focus({ preventScroll: true });
                 first.scrollIntoView({ block: "center" });
@@ -1879,6 +1883,8 @@
         const cfg = C();
         const { values, name, phone, d, p, gift, senderCode, giftPhone } = ok;
         const isOm = S.country === "OM";
+        // مناسبة يكتبها الزبون بنفسه (مثل: عيد الأم)
+        const customOcc = gift && values.gift_occasion === "custom" && cfg.gift.custom_occasion !== false ? ATHR.cleanOccasion(values.gift_occasion_text) : "";
         const tt = checkoutTotals();
         const button = $("#placeOrder");
         button.disabled = true;
@@ -1903,7 +1909,8 @@
             gift_name: gift ? String(values.gift_name || "").trim().slice(0, 120) : null,
             gift_phone: gift ? giftPhone.stored : null,
             gift_hide_price: gift && Boolean(values.gift_hide_price),
-            gift_occasion: gift ? ATHR.giftOccasion(values.gift_occasion, cfg).id : null,
+            gift_occasion: gift ? ATHR.giftOccasion(customOcc ? "custom" : values.gift_occasion === "custom" ? "other" : values.gift_occasion, cfg, customOcc).id : null,
+            gift_occasion_text: customOcc || null,
             gift_for: gift && ATHR.giftGendersOn(cfg) && ATHR.GIFT_FOR.includes(values.gift_for) ? values.gift_for : null,
             marketing_ok: Boolean(values.marketing_ok),
             delivery_name: d.name,
@@ -1987,10 +1994,10 @@
     function giftDoneHTML(order, code) {
         const cfg = C();
         if (!order.gift || !order.gift_name || cfg.sales.gift_card === false) return "";
-        const occ = ATHR.giftOccasion(order.gift_occasion, cfg);
+        const occ = ATHR.giftOccasion(order.gift_occasion, cfg, order.gift_occasion_text);
         const cardUrl = new URL(ATHR.giftCardPath(order), location.origin).href;
         const from = String(order.customer_name || "").trim().split(/\s+/)[0];
-        const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, link: cardUrl, store: ATHR.storeName(cfg), config: cfg });
+        const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, occasionText: order.gift_occasion_text, link: cardUrl, store: ATHR.storeName(cfg), config: cfg });
         const wa = order.gift_phone ? ATHR.waLink(ATHR.customerWhatsapp(order.gift_phone, code), text) : "";
         const gf = ATHR.giftGendersOn(cfg) ? ATHR.giftFor(order.gift_for, cfg) : null;
         return `<div class="panel gift-done${gf ? ` gd-${gf.id}` : ""}"${gf ? ` style="--gd:${esc(gf.colors.box)};--gd-bg:${esc(gf.colors.bg)}"` : ""}>
@@ -2733,6 +2740,12 @@
         if (el.name === "gift_occasion") {
             const box = $("#msgSugs");
             if (box) box.innerHTML = giftSugs(el.value);
+            // «مناسبة أخرى»: خانة يكتب فيها الزبون اسم المناسبة
+            const own = $(".occ-custom");
+            if (own) {
+                own.hidden = el.value !== "custom";
+                if (el.value === "custom") setTimeout(() => own.querySelector("input")?.focus(), 30);
+            }
             return;
         }
         if (el.name === "gift" && el.closest("#checkoutForm")) {

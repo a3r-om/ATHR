@@ -699,6 +699,9 @@ html.theme-dark .offer-preview pre, html.theme-dark .offer-msg { background: #1F
 .gfor-tag.girl { background: #FFE6F0; color: #A3245A; }
 html.theme-dark .gfor-tag.boy { background: #15294A; color: #9CC2FF; }
 html.theme-dark .gfor-tag.girl { background: #47162C; color: #FFB3D1; }
+.occ-tag { font-weight: 700; }
+.occ-tag.own { padding: 0 6px; border-radius: 99px; background: #FFF4D6; color: #7A5200; }
+html.theme-dark .occ-tag.own { background: #3D2E08; color: #FFD77A; }
 
 /* =====================================================
    v12 — استوديو العروض للعملاء

@@ -1004,7 +1004,9 @@
                 <div class="offer-preview"><small class="adm-muted">هكذا تصل (مثال):</small><pre id="giftWaPreview">${esc(giftWaSample())}</pre></div>
                 <button class="ab-mini" type="button" data-gift-wa-reset>الرجوع للرسالة الأصلية</button>`,
                 "{to} المُهدى إليه · {from} صاحب الهدية · {occasion} سطر المناسبة · {message} رسالة صاحب الهدية · {link} رابط البطاقة · {store} المتجر. السطر الذي قيمته فارغة يُحذف تلقائياً، والكلام بين *نجمتين* يظهر عريضاً في واتساب.")}
-            ${card("المناسبات", `<ul class="items">${occ}</ul>`, "اترك الخانة فارغة لتبقى على النص الأصلي. أطفئ أي مناسبة لا تريدها في صفحة الطلب.")}
+            ${card("المناسبات", `
+                ${toggle("config.gift.custom_occasion", "✏️ الزبون يكتب مناسبة أخرى بنفسه", { help: "يظهر زر «مناسبة أخرى» في صفحة الطلب، فيكتب الزبون اسمها (مثل: عيد الأم، ترقية، نجاح). يظهر الاسم في بطاقة الإهداء ورسالة واتساب ورسالة الطلب." })}
+                <ul class="items">${occ}</ul>`, "اترك الخانة فارغة لتبقى على النص الأصلي. أطفئ أي مناسبة لا تريدها في صفحة الطلب.")}
             ${card("البنر وزر الهدية", `
                 ${text("config.gift.banner_title", "عنوان البنر في الصفحة الرئيسية", { placeholder: D.banner_title, max: 60 })}
                 ${text("config.gift.banner_text", "النص تحت العنوان", { placeholder: D.banner_text, max: 120 })}
@@ -3455,7 +3457,7 @@
             if (o && o.gift_phone) {
                 const link = siteLink(ATHR.giftCardPath(o));
                 const from = String(o.customer_name || "").trim().split(/\s+/)[0];
-                const text = ATHR.withLang("ar", () => ATHR.giftWhatsApp({ to: o.gift_name, from, msg: o.gift_message, occasion: o.gift_occasion, link, store: ATHR.storeName(cfg()), config: cfg() }));
+                const text = ATHR.withLang("ar", () => ATHR.giftWhatsApp({ to: o.gift_name, from, msg: o.gift_message, occasion: o.gift_occasion, occasionText: o.gift_occasion_text, link, store: ATHR.storeName(cfg()), config: cfg() }));
                 window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), text), "_blank", "noopener");
             }
             return;
@@ -4579,7 +4581,7 @@
                     ${giftTo(o) ? `<small class="adm-muted">صاحب الهدية</small>` : ""}
                     <b>${esc(o.customer_name || "بدون اسم")}</b>
                     ${o.phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : ""}
-                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${ATHR.giftFor(o.gift_for, cfg()) ? ` · <span class="gfor-tag ${o.gift_for}">${esc(ATHR.giftFor(o.gift_for, cfg()).emoji)} ${esc(ATHR.giftFor(o.gift_for, cfg()).label)}</span>` : ""}${o.gift_occasion && o.gift_occasion !== "other" ? ` · ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).emoji)} ${esc(ATHR.giftOccasion(o.gift_occasion, cfg()).name)}` : ""}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
+                    ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${ATHR.giftFor(o.gift_for, cfg()) ? ` · <span class="gfor-tag ${o.gift_for}">${esc(ATHR.giftFor(o.gift_for, cfg()).emoji)} ${esc(ATHR.giftFor(o.gift_for, cfg()).label)}</span>` : ""}${giftOccTag(o)}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
                     <b>${esc(o.gift_name || "")}</b>
                     ${o.gift_phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : ""}` : ""}
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
@@ -4639,6 +4641,14 @@
 
     function giftTo(o) {
         return Boolean(o.gift && (o.gift_name || o.gift_phone));
+    }
+
+    // المناسبة في بطاقة الطلب، ومنها ما كتبه الزبون بنفسه (مثل: عيد الأم)
+    function giftOccTag(o) {
+        if (!o.gift_occasion) return "";
+        const occ = ATHR.giftOccasion(o.gift_occasion, cfg(), o.gift_occasion_text);
+        if (occ.id === "other") return "";
+        return ` · <span class="occ-tag${occ.id === "custom" ? " own" : ""}">${esc(occ.emoji)} ${esc(occ.name)}</span>`;
     }
 
     function countryLabel(code) {

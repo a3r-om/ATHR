@@ -1422,3 +1422,9 @@ begin
 end;
 $$;
 
+
+-- =====================================================
+-- الإصدار 15: الزبون يكتب اسم المناسبة بنفسه (مثل: عيد الأم، ترقية)
+-- =====================================================
+alter table public.orders
+    add column if not exists gift_occasion_text text check (gift_occasion_text is null or char_length(gift_occasion_text) <= 40);

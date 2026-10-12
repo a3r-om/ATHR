@@ -656,7 +656,7 @@
         }
         const vars = { to: card.to, from: card.from || "", store };
         const txt = (key, fallback) => ATHR.giftFill(ct(v, `gift.${key}`) || fallback, vars);
-        const o = ATHR.giftOccasion(card.occasion, cfg);
+        const o = ATHR.giftOccasion(card.occasion, cfg, card.occasionText);
         const logo = V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url);
         const gender = ATHR.giftGendersOn(cfg) && ATHR.giftFor(card.gender, cfg) ? card.gender : "";
         const hues = CONFETTI[gender];
