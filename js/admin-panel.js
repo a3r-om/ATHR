@@ -532,7 +532,7 @@
         const fam = (f) => (ATHR.FONT_PARAMS[f] ? `"${f}", system-ui` : "system-ui");
         return `<div class="font-sample">
             <b style="font-family:${esc(fam(t.font_head))}">كاسات تترك أثراً · Cups that leave a mark</b>
-            <span style="font-family:${esc(fam(t.font_body))}">كوب ريال مدريد بملمس مطفي، السعر 3.500 ر.ع · Real Madrid Cup 3.500 OMR</span>
+            <span style="font-family:${esc(fam(t.font_body))}">كوب ريال مدريد سيراميك، السعر 3.500 ر.ع · Real Madrid Cup 3.500 OMR</span>
         </div>`;
     }
 
@@ -1073,7 +1073,7 @@
                     <span class="adm-muted nowrap">${counts.get(c.id) || 0} منتج</span>
                 </div>
                 <div class="af"><span>صورة القسم</span>${uploadButton(c.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="categories.#${esc(c.id)}.image_url" data-kind="category"`, { current: c.image_url ? ATHR.thumb(c.image_url, "s") : "", remove: c.image_url ? `data-clear="categories.#${esc(c.id)}.image_url"` : "" })}<small>تظهر في أعلى المتجر وفي القائمة. الأفضل صورة عمودية بنسبة 3:4 بخلفية بيج مثل باقي الأقسام.</small></div>
-                <label class="af"><span>وصف القسم (يظهر في صفحته وفي جوجل)</span><textarea class="ai" rows="2" maxlength="300" data-bind="categories.#${esc(c.id)}.description" placeholder="مثال: أكواب سيراميك بملمس مطفي بشعارات الأندية، هدية مثالية لكل مشجع.">${esc(c.description || "")}</textarea></label>
+                <label class="af"><span>وصف القسم (يظهر في صفحته وفي جوجل)</span><textarea class="ai" rows="2" maxlength="300" data-bind="categories.#${esc(c.id)}.description" placeholder="مثال: أكواب سيراميك بشعارات الأندية، هدية مثالية لكل مشجع.">${esc(c.description || "")}</textarea></label>
                 <label class="af"><span>وصف القسم بالإنجليزي (اختياري)</span><textarea class="ai" rows="2" maxlength="600" dir="ltr" data-bind="categories.#${esc(c.id)}.description_en">${esc(c.description_en || "")}</textarea></label>
                 ${c.slug ? `<small class="adm-muted" dir="ltr">${esc(decodeURI(siteLink(ATHR.url.category(c))))}</small>` : ""}
                 ${listControls("categories", i, cats.length)}

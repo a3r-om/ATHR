@@ -457,7 +457,7 @@
         "gift.cta_title": "Send as a gift",
         "gift.cta_sub": "A digital gift card in your name — price never shown",
         "texts.hero_title": "Cups that leave a mark",
-        "texts.hero_text": "Club and character designs on matte-finish cups. Pick your design and send your order on WhatsApp.",
+        "texts.hero_text": "Club and character designs on ceramic cups. Pick your design and send your order on WhatsApp.",
         "texts.hero_features": ["Delivery to all GCC countries", "Free in Oman over {free}", "Cash on delivery in Oman & UAE"],
         "texts.about": "An Omani store for printed cups with club, university and character designs, plus mugs, wallets and gifts. We deliver across Oman and the GCC.",
         "texts.search_placeholder": "Search",
