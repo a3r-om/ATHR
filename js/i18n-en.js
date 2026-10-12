@@ -391,6 +391,8 @@
         "توصيل مجاني فوق {amount}": "Free delivery over {amount}",
         "توصيل مجاني في عُمان فوق {amount}": "Free delivery in Oman over {amount}",
         "تحويل بنكي آمن": "Secure bank transfer",
+        "توصيل للخليج": "GCC delivery",
+        "توصيل لكل عُمان": "Delivery across Oman",
         "التفاصيل كاملة": "Full details",
         "الدفع: {names}": "Payment: {names}",
         "الدفع في {countries}: {names}": "Payment in {countries}: {names}",

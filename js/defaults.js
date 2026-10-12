@@ -51,6 +51,7 @@ const ATHR_DEFAULTS = {
         font_head: "Reem Kufi",
         font_body: "IBM Plex Sans Arabic",
         hero_show: true,
+        hero_compact: true,
         hero_pattern: true,
         hero_image: "",
         visitor_mode: true,

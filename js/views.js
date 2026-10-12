@@ -507,9 +507,31 @@
         return "";
     };
 
+    // مزايا المتجر المختصرة من إعدادات التوصيل والدفع (دائماً صحيحة)
+    V.storePoints = function (v) {
+        const cfg = v.cfg;
+        const gulf = ATHR.countries(cfg).some((c) => c.enabled && c.code !== ATHR.BASE_COUNTRY);
+        const free = cfg.order.free_enabled && Number(cfg.order.free_min) > 0;
+        const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
+        return [
+            free ? [V.icon.tag, t("توصيل مجاني فوق {amount}", { amount: ATHR.trimZeros(money(v, cfg.order.free_min)) })] : null,
+            [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")],
+            [V.icon.truck, gulf ? t("توصيل للخليج") : t("توصيل لكل عُمان")]
+        ].filter(Boolean);
+    };
+
     V.hero = function (v) {
         const cfg = v.cfg;
         if (!cfg.theme.hero_show) return `<h1 class="sr-only">${esc(ATHR.storeName(cfg))}</h1>`;
+        // الواجهة المختصرة: العنوان وسطر مزايا صغير فقط
+        if (cfg.theme.hero_compact !== false && !cfg.theme.hero_image) {
+            return `<section class="hero hero-compact${cfg.theme.hero_pattern ? " pattern" : ""}">
+            <div class="wrap hero-inner">
+                <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
+                <ul class="hero-mini">${V.storePoints(v).map(([ico, label]) => `<li>${ico}<span>${esc(label)}</span></li>`).join("")}</ul>
+            </div>
+        </section>`;
+        }
         const features = (ct(v, "texts.hero_features") || []).filter(Boolean).slice(0, 4).map((f) => `<li>${ICON.check}${esc(fill(v, f))}</li>`).join("");
         const image = cfg.theme.hero_image && (ATHR.isUrl(cfg.theme.hero_image) || !cfg.theme.hero_image.includes(":")) ? cfg.theme.hero_image : "";
         const text = ct(v, "texts.hero_text");
