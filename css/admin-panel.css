@@ -829,3 +829,43 @@ html.theme-dark .cp-kind input:checked + span { color: color-mix(in srgb, var(--
 .ft-rank { width: 18px; flex-shrink: 0; text-align: center; font-weight: 800; color: var(--a-muted); }
 .ft-n { font-weight: 800; white-space: nowrap; }
 .ft-head { margin: 0; }
+
+/* =====================================================
+   v17 — المخزون، الولاء، الذكاء الاصطناعي، Excel، التقارير
+===================================================== */
+.stock-box { display: grid; gap: 8px; }
+.stock-state { margin: 0; padding: 8px 10px; border-radius: 10px; font-weight: 700; font-size: 14px; }
+.stock-state.ok { background: #E3F4EA; color: #1F7A4D; }
+.stock-state.low { background: #FFF1DC; color: #8A5300; }
+.stock-state.out { background: #FDECEA; color: #A3261E; }
+html.theme-dark .stock-state.ok { background: #173326; color: #8FD9B0; }
+html.theme-dark .stock-state.low { background: #3A2A12; color: #F3C987; }
+html.theme-dark .stock-state.out { background: #3A1715; color: #F7C6C1; }
+.tag.stock { background: #E8F0FB; color: #1F4E9E; }
+.tag.stock.low { background: #FFF1DC; color: #8A5300; }
+.tag.stock.out { background: #FDECEA; color: #A3261E; }
+html.theme-dark .tag.stock { background: #15294A; color: #9CC2FF; }
+html.theme-dark .tag.stock.low { background: #3A2A12; color: #F3C987; }
+html.theme-dark .tag.stock.out { background: #3A1715; color: #F7C6C1; }
+.warn-tile { border-color: #F1D9A7; background: #FFF8EA; }
+html.theme-dark .warn-tile { background: #2B2210; border-color: #5A4417; }
+.warn-tile .aot-ico { font-size: 24px; }
+.warn-tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-btn { justify-self: start; }
+.imp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 50vh; overflow: auto; }
+.imp-list li { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--a-bg); }
+.imp-list b { font-size: 14px; }
+.imp-list small { color: var(--a-muted); font-size: 12.5px; }
+.ctag.pts { background: #FFF4D1; color: #8A6100; }
+html.theme-dark .ctag.pts { background: #3A2F0F; color: #F7C948; }
+.ab-mini.reward { border-color: #F1D9A7; color: #8A6100; font-weight: 700; }
+html.theme-dark .ab-mini.reward { color: #F7C948; }
+.ob-stats > div.hot { border-color: #F1D9A7; background: #FFF8EA; }
+html.theme-dark .ob-stats > div.hot { background: #2B2210; border-color: #5A4417; }
+.rp-h { margin: 6px 0 0; font-size: 14px; color: var(--a-muted); }
+.rp-months { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: end; }
+.rp-m { display: grid; justify-items: center; gap: 3px; text-align: center; }
+.rp-m b { font-size: 10.5px; white-space: nowrap; }
+.rp-m small { font-size: 11px; }
+.rp-bar { display: flex; align-items: flex-end; width: 70%; height: 90px; border-radius: 8px; background: var(--a-bg); overflow: hidden; }
+.rp-bar i { display: block; width: 100%; min-height: 2px; border-radius: 8px 8px 0 0; background: var(--a-primary); }

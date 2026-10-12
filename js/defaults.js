@@ -125,6 +125,18 @@ const ATHR_DEFAULTS = {
         favorites: true,
         pdp_perks: true,
         cart_float: true,
+        // المخزون: «باقي N فقط» للزبون وتنبيه في اللوحة عند هذا الحد
+        low_stock: 3,
+        low_stock_show: true,
+        // نقاط الولاء: نقاط لكل 1 ر.ع من الطلبات المسلّمة، وكل {reward_points} نقطة = كود خصم {reward_value}
+        loyalty: {
+            enabled: true,
+            per_omr: 1,
+            reward_points: 50,
+            reward_value: 2,
+            reward_days: 30,
+            msg: "هلا {name} 🌟\n\nشكراً لأنك من عملاء {store} المميزين 💙\nجمعت *{points} نقطة*، وهذه مكافأتك:\n🎁 خصم *{value}* بالكود: *{code}*\n⏳ صالح حتى {ends}\n\nاستخدمه في طلبك القادم (يعمل برقمك فقط) 👇\n{link}"
+        },
         restock: true,
         coupons: true,
         free_bar_show: true,
@@ -957,6 +969,21 @@ ATHR.absUrl = function (config, path) {
 // =====================================================
 // ألوان التصميم الواحد: «كوب الهلال» أبيض وأسود = منتج واحد بلونين
 // =====================================================
+
+// المخزون: الكمية المتوفرة (null = بدون حد)
+ATHR.stockOf = (p) => (p && p.stock !== null && p.stock !== undefined && p.stock !== "" && Number.isFinite(Number(p.stock)) ? Math.max(0, Math.floor(Number(p.stock))) : null);
+// نقاط الولاء لمبلغ معيّن (بالريال العماني)
+ATHR.loyaltyOn = (config) => Boolean(config && config.sales && config.sales.loyalty && config.sales.loyalty.enabled && Number(config.sales.loyalty.per_omr) > 0);
+// «نقطة واحدة / نقطتان / 3 نقاط / 11 نقطة» و «1 point / 5 points»
+ATHR.pointsText = (n) => {
+    const k = Math.round(Number(n) || 0);
+    if (ATHR.isEn && ATHR.isEn()) return k === 1 ? "1 point" : `${k} points`;
+    if (k === 1) return "نقطة واحدة";
+    if (k === 2) return "نقطتان";
+    if (k >= 3 && k <= 10) return `${k} نقاط`;
+    return `${k} نقطة`;
+};
+ATHR.pointsFor = (amount, config) => (ATHR.loyaltyOn(config) ? Math.max(0, Math.floor((Number(amount) || 0) * Number(config.sales.loyalty.per_omr) + 1e-9)) : 0);
 
 ATHR.normName = (s) => String(s || "")
     .replace(/[ً-ْـ]/g, "")

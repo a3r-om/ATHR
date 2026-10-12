@@ -220,6 +220,17 @@
     };
 
     V.maxQty = (v) => Math.max(1, Math.min(99, Number(v.cfg.order.max_qty) || 10));
+    // أقصى كمية لمنتج: حد الطلب، أو الكمية المتوفرة في المخزون إن كانت أقل
+    V.maxFor = (v, p) => {
+        const stock = ATHR.stockOf(p);
+        return stock === null ? V.maxQty(v) : Math.min(V.maxQty(v), stock);
+    };
+    // «باقي N فقط»: حقيقي من المخزون
+    V.lowStock = (v, p) => {
+        const stock = ATHR.stockOf(p);
+        const limit = Number(v.cfg.sales.low_stock) || 0;
+        return v.cfg.sales.low_stock_show !== false && stock !== null && stock > 0 && limit > 0 && stock <= limit && p.is_available !== false ? stock : 0;
+    };
 
     V.cardAction = function (v, p) {
         if (p.is_available === false) {
@@ -230,7 +241,7 @@
         const qty = v.cartQty(p.id);
         if (qty > 0) {
             return `<div class="stepper" role="group" aria-label="${esc(t("الكمية في السلة"))}">
-                <button type="button" data-inc="${esc(p.id)}" aria-label="${esc(t("زيادة"))}"${qty >= V.maxQty(v) ? " disabled" : ""}>+</button>
+                <button type="button" data-inc="${esc(p.id)}" aria-label="${esc(t("زيادة"))}"${qty >= V.maxFor(v, p) ? " disabled" : ""}>+</button>
                 <output aria-live="polite">${qty}</output>
                 <button type="button" data-dec="${esc(p.id)}" aria-label="${esc(t("إنقاص"))}">−</button>
             </div>`;
@@ -260,6 +271,7 @@
                 ${stats ? `<span class="card-rate">${V.stars(stats.avg, "sm")}<small>(${stats.count})</small></span>` : ""}
                 ${V.cardSwatches(v, p)}
                 ${V.priceHTML(v, p)}
+                ${V.lowStock(v, p) ? `<span class="card-low">🔥 ${esc(t("باقي {n} فقط", { n: V.lowStock(v, p) }))}</span>` : ""}
             </div>
             <div class="card-action" data-action-for="${esc(p.id)}">${V.cardAction(v, p)}</div>
         </article>`;
@@ -780,20 +792,104 @@
             </section>`;
     };
 
-    V.searchResults = function (v, q) {
-        const term = ATHR.normName(q);
-        if (!term) return [];
-        const words = term.split(" ").filter(Boolean);
-        return V.listings(v, v.products.filter((p) => {
-            const cat = V.catOf(v, p);
-            const color = V.colorOf(v, p);
-            const hay = ATHR.normName([p.name, p.name_en, p.description, p.description_en, cat && cat.name, cat && cat.name_en, color && color.name, color && color.name_en].filter(Boolean).join(" "));
-            return words.every((w) => hay.includes(w));
-        }));
+    // =====================================================
+    // البحث الذكي: يفهم العربي والإنجليزي، والكلمات المتقاربة، والأخطاء الإملائية البسيطة
+    // =====================================================
+
+    const SEARCH_SYN = [
+        ["ريال", "real", "madrid", "مدريد", "الريال"], ["برشلونه", "barcelona", "barca", "برشا", "بارسا"], ["هلال", "hilal", "alhilal"],
+        ["نصر", "nassr", "nasr", "alnassr"], ["اتحاد", "ittihad", "itihad"], ["اهلي", "ahli", "alahli"], ["يوفنتوس", "juventus", "juve", "يوفي"],
+        ["بايرن", "bayern", "munich", "ميونخ", "ميونيخ"], ["رونالدو", "ronaldo", "cr7", "كريستيانو"], ["ستيتش", "stitch", "ستتش"],
+        ["انجل", "angel", "انجيل"], ["هيلوكيتي", "هيلو", "كيتي", "هيلوكاتي", "hello", "kitty", "hellokitty"], ["فيونكا", "bow", "فيونكه"],
+        ["محفظه", "محافظ", "wallet", "wallets", "بوك"], ["كوب", "اكواب", "كاسه", "كاسات", "كأس", "كاس", "فنجان", "cup", "cups"],
+        ["مج", "مجات", "mug", "mugs", "تمبلر", "tumbler"], ["حراري", "حراريه", "thermal", "thermos", "ثيرمو"], ["ريدبول", "redbull", "ردبول", "مضيئ", "مضيء", "مضيئه", "glow"],
+        ["جامعه", "جامعات", "كليه", "كليات", "university", "college"], ["هديه", "هدايا", "gift", "gifts"], ["قهوه", "coffee", "قهوة"],
+        ["مكياج", "makeup", "حقيبه", "شنطه", "bag"], ["بنات", "girls", "girl", "بناتي"], ["اندية", "انديه", "نادي", "club", "clubs", "فريق"],
+        ["عبارات", "عباره", "اشعار", "شعر", "quotes"], ["اسود", "black", "سوداء"], ["ابيض", "white", "بيضاء"], ["وردي", "pink", "زهري"], ["ازرق", "blue", "زرقاء"]
+    ];
+    const synMap = (() => {
+        const m = new Map();
+        SEARCH_SYN.forEach((group) => {
+            const g = group.map((w) => ATHR.normName(w));
+            g.forEach((w) => m.set(w, g));
+        });
+        return m;
+    })();
+    const stripAl = (w) => (w.length > 4 && w.startsWith("ال") ? w.slice(2) : w);
+    // مسافة التحرير (لأخطاء الكتابة البسيطة)
+    const editDistance = (a, b, max) => {
+        if (Math.abs(a.length - b.length) > max) return max + 1;
+        let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+        for (let i = 1; i <= a.length; i++) {
+            const cur = [i];
+            let best = cur[0];
+            for (let j = 1; j <= b.length; j++) {
+                cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+                if (cur[j] < best) best = cur[j];
+            }
+            if (best > max) return max + 1;
+            prev = cur;
+        }
+        return prev[b.length];
     };
 
+    // درجة تطابق كلمة واحدة مع نص المنتج (0 = لا تطابق)
+    function wordScore(w, hay, tokens) {
+        if (hay.includes(w)) return 3;
+        const base = stripAl(w);
+        if (base !== w && hay.includes(base)) return 3;
+        const syn = synMap.get(base) || synMap.get(w);
+        if (syn && syn.some((x) => hay.includes(x))) return 2.5;
+        if (base.length >= 4) {
+            const max = base.length >= 7 ? 2 : 1;
+            if (tokens.some((tk) => tk.length >= 3 && editDistance(base, stripAl(tk), max) <= max)) return 1.5;
+            if (tokens.some((tk) => tk.length > base.length && tk.startsWith(base.slice(0, -1)))) return 1.2;
+        }
+        return 0;
+    }
+
+    V.searchIndex = function (v) {
+        if (v._searchIndex) return v._searchIndex;
+        v._searchIndex = v.products.map((p, i) => {
+            const cat = V.catOf(v, p);
+            const color = V.colorOf(v, p);
+            const name = ATHR.normName([p.name, p.name_en].filter(Boolean).join(" "));
+            const hay = ATHR.normName([p.name, p.name_en, p.description, p.description_en, cat && cat.name, cat && cat.name_en, color && color.name, color && color.name_en].filter(Boolean).join(" "));
+            return { p, i, name, hay, tokens: hay.split(" ").filter(Boolean) };
+        });
+        return v._searchIndex;
+    };
+
+    // النتائج مرتبة من الأقرب. إن لم تتطابق كل الكلمات نعرض الأقرب لأي كلمة
+    V.searchScored = function (v, q) {
+        const term = ATHR.normName(q);
+        if (!term) return { list: [], loose: false };
+        const words = term.split(" ").filter(Boolean);
+        const scoreOf = (row, all) => {
+            let total = 0;
+            for (const w of words) {
+                const s = wordScore(w, row.hay, row.tokens);
+                if (!s && all) return 0;
+                total += s + (s && row.name.includes(stripAl(w)) ? 1 : 0);
+            }
+            return total;
+        };
+        const index = V.searchIndex(v);
+        let rows = index.map((row) => ({ row, s: scoreOf(row, true) })).filter((x) => x.s > 0);
+        let loose = false;
+        if (!rows.length && words.length > 1) {
+            rows = index.map((row) => ({ row, s: scoreOf(row, false) })).filter((x) => x.s > 0);
+            loose = rows.length > 0;
+        }
+        rows.sort((a, b) => b.s - a.s || (b.row.p.is_available !== false) - (a.row.p.is_available !== false) || a.row.i - b.row.i);
+        return { list: V.listings(v, rows.map((x) => x.row.p)), loose };
+    };
+
+    V.searchResults = (v, q) => V.searchScored(v, q).list;
+
     V.search = function (v, q, { sort = "default" } = {}) {
-        const list = V.sortList(V.searchResults(v, q), sort);
+        const found = V.searchScored(v, q);
+        const list = V.sortList(found.list, sort);
         const has = String(q || "").trim();
         return `<section class="catalog section" id="catalog">
             <div class="wrap">
@@ -802,6 +898,8 @@
                     ${list.length ? V.sortSelect(v, sort) : ""}
                 </div>
                 ${V.curNote(v)}
+                ${found.loose ? `<p class="search-loose">${esc(t("ما لقينا كل الكلمات، هذه أقرب النتائج:"))}</p>` : ""}
+                ${!has ? `<div class="cat-chips search-chips">${v.categories.filter((c) => v.counts.get(c.id)).slice(0, 10).map((c) => `<a class="chip" href="${ATHR.url.category(c)}">${esc(V.cname(c))}</a>`).join("")}</div>` : ""}
                 <div id="gridBox">${list.length ? V.grid(v, list) : `<div class="empty"><p>${esc(has ? t("لا توجد نتائج. جرّب اسم فريق أو شخصية أو قسم.") : t("اكتب اسم فريق أو شخصية أو جامعة في خانة البحث بالأعلى."))}</p></div>`}</div>
             </div>
         </section>
@@ -893,7 +991,11 @@
             chips.push(`<span class="pchip off">${esc(t("خصم {pct}%", { pct }))}</span>`);
             chips.push(`<span class="pchip save">${esc(t("وفّر {amount}", { amount: local(v, Math.round((p.old_price - p.price) * 1000) / 1000) }))}</span>`);
         }
-        if (p.is_best_seller && p.is_available !== false) chips.push(`<span class="pchip hot">🔥 ${esc(ATHR.isEn() ? "Best seller" : ct(v, "sales.best_title") || t("الأكثر طلباً"))}</span>`);
+        const low = V.lowStock(v, p);
+        if (low) chips.push(`<span class="pchip hot">⏳ ${esc(t("باقي {n} فقط", { n: low }))}</span>`);
+        else if (p.is_best_seller && p.is_available !== false) chips.push(`<span class="pchip hot">🔥 ${esc(ATHR.isEn() ? "Best seller" : ct(v, "sales.best_title") || t("الأكثر طلباً"))}</span>`);
+        const pts = p.is_available === false ? 0 : ATHR.pointsFor(p.price, v.cfg);
+        if (pts > 0) chips.push(`<span class="pchip pts">⭐ ${esc(t("تكسب {pts}", { pts: ATHR.pointsText(pts) }))}</span>`);
         return `<div class="pdp-price">
             <div class="pp-row">${sale ? `<s class="pp-was">${local(v, p.old_price)}</s>` : ""}<b class="pp-now">${local(v, p.price)}</b></div>
             ${isBase(v) ? "" : `<small class="base-price">${money(v, p.price)}</small>`}

@@ -233,10 +233,20 @@
         return Math.max(1, Math.min(99, Number(C().order.max_qty) || 10));
     }
 
+    // أقصى كمية لهذا المنتج: حد الطلب أو المتوفر في المخزون
+    function maxFor(id) {
+        const stock = ATHR.stockOf(productById(id));
+        return stock === null ? maxQty() : Math.min(maxQty(), stock);
+    }
+    function limitText(id) {
+        const stock = ATHR.stockOf(productById(id));
+        return stock !== null && stock < maxQty() ? t("المتوفر من هذا المنتج {n} فقط", { n: stock }) : t("أقصى كمية من المنتج الواحد {n}", { n: maxQty() });
+    }
+
     function setQty(id, qty, { silent = false } = {}) {
         const product = productById(id);
         const items = getCart().items.filter((i) => i.id !== id || qty > 0);
-        const limit = maxQty();
+        const limit = maxFor(id);
         const clamped = Math.min(qty, limit);
         const existing = items.find((i) => i.id === id);
         if (clamped > 0) {
@@ -248,7 +258,7 @@
             else items.push({ id, qty: clamped });
         }
         saveCart(items);
-        if (!silent && qty > limit) toast(t("أقصى كمية من المنتج الواحد {n}", { n: limit }));
+        if (!silent && qty > limit) toast(limitText(id));
         return true;
     }
 
@@ -260,8 +270,8 @@
             return false;
         }
         const current = cartQty(id);
-        if (current >= maxQty()) {
-            toast(t("أقصى كمية من المنتج الواحد {n}", { n: maxQty() }));
+        if (current >= maxFor(id)) {
+            toast(limitText(id));
             return false;
         }
         setQty(id, current + qty, { silent: true });
@@ -370,7 +380,7 @@
     }
 
     async function fetchData() {
-        const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,created_at";
+        const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at";
         const [settings, categories, products, reviews] = await Promise.all([
             rest("store_settings?select=config&id=eq.1"),
             rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
@@ -929,7 +939,7 @@
         try {
             const data = await rest("rpc/check_coupon", { method: "POST", body: { c: code } });
             if (!data || !data.code) return { error: t("الكود غير صحيح أو انتهت صلاحيته.") };
-            S.coupon = { code: data.code, kind: data.kind, value: Number(data.value), min_total: Number(data.min_total) || 0 };
+            S.coupon = { code: data.code, kind: data.kind, value: Number(data.value), min_total: Number(data.min_total) || 0, phone_bound: Boolean(data.phone_bound) };
             session.set(KEYS.coupon, JSON.stringify(S.coupon));
             if (!quiet) toast(t("تم تفعيل الكود {code} ✓", { code: data.code }));
             return { ok: true };
@@ -973,7 +983,7 @@
             const tt = checkoutTotals();
             box.innerHTML = `<div class="coupon-on">
                 <span class="cp-ico" aria-hidden="true">🎟️</span>
-                <span class="cp-txt"><b dir="ltr">${esc(c.code)}</b><small>${esc(couponDesc(c))}${tt.couponShort > 0 ? ` · ${esc(t("أضف {amount} لتفعيله", { amount: money(tt.couponShort) }))}` : ""}</small></span>
+                <span class="cp-txt"><b dir="ltr">${esc(c.code)}</b><small>${esc(couponDesc(c))}${tt.couponShort > 0 ? ` · ${esc(t("أضف {amount} لتفعيله", { amount: money(tt.couponShort) }))}` : ""}${c.phone_bound ? ` · 🔒 ${esc(t("يعمل برقم صاحب الكود فقط"))}` : ""}</small></span>
                 <button class="link-btn" type="button" data-coupon-remove>${esc(t("إزالة"))}</button>
             </div>`;
             return;
@@ -1409,7 +1419,7 @@
                                         <div class="muted small">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</div>
                                         <div class="cart-line-foot">
                                             <div class="stepper" role="group" aria-label="${esc(t("الكمية"))}">
-                                                <button type="button" data-inc="${esc(l.product.id)}" aria-label="${esc(t("زيادة"))}"${l.qty >= maxQty() ? " disabled" : ""}>+</button>
+                                                <button type="button" data-inc="${esc(l.product.id)}" aria-label="${esc(t("زيادة"))}"${l.qty >= maxFor(l.product.id) ? " disabled" : ""}>+</button>
                                                 <output>${l.qty}</output>
                                                 <button type="button" data-dec="${esc(l.product.id)}" aria-label="${esc(t("إنقاص"))}">−</button>
                                             </div>
@@ -1766,6 +1776,7 @@
             <div class="row"><span>${esc(tt.kg ? t("التوصيل ({kg} كيلو تقريبًا)", { kg: tt.kg }) : t("التوصيل"))}</span><span>${tt.ship > 0 ? money(tt.ship) : esc(t("مجاني"))}</span></div>
             <div class="row total"><span>${esc(t("الإجمالي"))}</span><span>${money(tt.total)}</span></div>
             ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(tt.total)}</span></div>`}
+            ${ATHR.pointsFor(tt.total - tt.ship, C()) > 0 ? `<div class="row pts"><span>⭐ ${esc(t("نقاط الولاء من هذا الطلب"))}</span><span>+${ATHR.pointsFor(tt.total - tt.ship, C())}</span></div>` : ""}
             ${tt.kg ? `<p class="muted small" style="margin:4px 0 0">${esc(t("سعر التوصيل حسب الوزن التقريبي، ونؤكد لك الوزن النهائي قبل الشحن."))}</p>` : ""}
         </div>`;
         box.innerHTML = html;
@@ -1837,12 +1848,27 @@
         try {
             await submitOrder(ok);
         } catch (error) {
-            console.error("Order failed:", error);
             const button = $("#placeOrder");
             if (button) {
                 button.disabled = false;
                 button.textContent = t("تأكيد الطلب");
             }
+            if (error && error.stock) {
+                const msg = error.stock.left > 0
+                    ? t("«{name}» المتوفر منه {n} فقط الآن، عدّلنا الكمية في سلتك.", { name: error.stock.name, n: error.stock.left })
+                    : t("«{name}» نفد من المخزون للتو، حذفناه من سلتك.", { name: error.stock.name });
+                const err = $("#formErr");
+                if (err) err.textContent = msg;
+                toast(msg);
+                // نحدّث المنتجات والسلة حسب المخزون الجديد
+                ATHR.store.reload().then(() => {
+                    getCart().items.forEach((i) => { if (i.qty > maxFor(i.id) || productById(i.id)?.is_available === false) setQty(i.id, productById(i.id)?.is_available === false ? 0 : maxFor(i.id), { silent: true }); });
+                    updateCartUI();
+                    if (S.route.name === "checkout") updateCheckoutSummary();
+                }).catch(() => {});
+                return;
+            }
+            console.error("Order failed:", error);
             toast(t("تعذر إرسال الطلب. حاول مرة أخرى."));
         } finally {
             placing = false;
@@ -1909,7 +1935,13 @@
                 saved = true;
             } catch (error) {
                 if (String(error.code) === "23505" || error.status === 409) order.order_no = ATHR.newOrderNo();
-                else {
+                else if (/^athr: stock\|/.test(String(error.message || ""))) {
+                    // الكمية نفدت أثناء الطلب: نوقف ونخبر الزبون بدل إرسال طلب لا يمكن تجهيزه
+                    const [, name, left] = String(error.message).split("|");
+                    const stockError = new Error("stock");
+                    stockError.stock = { name, left: Number(left) || 0 };
+                    throw stockError;
+                } else {
                     console.warn("Order save failed:", error);
                     break;
                 }
@@ -1975,6 +2007,15 @@
         </div>`;
     }
 
+    // ⭐ نقاط الولاء بعد الطلب
+    function loyaltyDoneHTML(order) {
+        const cfg = C();
+        const pts = ATHR.pointsFor(Number(order.total) - Number(order.delivery_price || 0), cfg);
+        if (!pts) return "";
+        const ly = cfg.sales.loyalty;
+        return `<div class="loyal-note"><span aria-hidden="true">⭐</span><div><b>${esc(t("تكسب {pts} من هذا الطلب", { pts: ATHR.pointsText(pts) }))}</b><small>${esc(t("تُضاف بعد استلام طلبك. كل {points} نقطة = خصم {value}، ونرسل لك الكود على واتساب.", { points: Number(ly.reward_points) || 50, value: money(Number(ly.reward_value) || 0) }))}</small></div></div>`;
+    }
+
     function renderDone(no) {
         const cfg = C();
         const last = storage.get(KEYS.lastOrder, null);
@@ -2001,6 +2042,7 @@
                     ${payment && payment.type === "bank" ? `<div><p class="muted" style="font-weight:500">${esc(t("حوّل {amount}:", { amount: `${money(order.total)}${code === "OM" ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, code)})`}` }))}</p>${bankRows(payment)}</div>` : ""}
                 </div>
                 ${giftDoneHTML(order, code)}
+                ${loyaltyDoneHTML(order)}
                 <div class="panel">
                     <h2>${esc(t("ملخص الطلب"))}</h2>
                     <div class="rows">
@@ -2009,6 +2051,7 @@
                             return `<div class="row"><span>${esc(p ? V.label(v(), p) : it.label)} × ${it.qty}</span><span>${money(it.total)}</span></div>`;
                         }).join("")}
                         ${order.discount > 0 ? `<div class="row ok"><span>${esc(discountText(order.discount_label))}</span><span>-${money(order.discount)}</span></div>` : ""}
+                        ${Number(order.coupon_discount) > 0 ? `<div class="row ok"><span>🎟️ ${esc(t("كود {code}", { code: order.coupon }))}</span><span>-${money(order.coupon_discount)}</span></div>` : ""}
                         <div class="row"><span>${esc(t("التوصيل ({name})", { name: deliveryName(order.delivery_name) }))}</span><span>${order.delivery_price > 0 ? money(order.delivery_price) : esc(t("مجاني"))}</span></div>
                         <div class="row total"><span>${esc(t("الإجمالي"))}</span><span>${money(order.total)}</span></div>
                         ${code === "OM" ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${ATHR.moneyIn(order.total, cfg, code)}</span></div>`}
@@ -2583,7 +2626,13 @@
         }
         if (d.pdpStep) {
             const out = $("#pdpQty");
-            if (out) out.textContent = Math.max(1, Math.min(maxQty(), Number(out.textContent) + Number(d.pdpStep)));
+            const pid = S.route.name === "product" && $("#buyBox [data-pdp-add]") ? $("#buyBox [data-pdp-add]").dataset.pdpAdd : "";
+            const cap = pid ? Math.max(1, maxFor(pid) - cartQty(pid)) : maxQty();
+            if (out) {
+                const next = Number(out.textContent) + Number(d.pdpStep);
+                if (next > cap && Number(d.pdpStep) > 0) toast(limitText(pid));
+                out.textContent = Math.max(1, Math.min(cap, next));
+            }
             return;
         }
         if (d.pdpAdd) {
@@ -2591,8 +2640,8 @@
             afterReady(() => {
                 const qty = Number($("#pdpQty")?.textContent) || 1;
                 const current = cartQty(id);
-                if (current + qty > maxQty()) toast(t("أقصى كمية من المنتج الواحد {n}", { n: maxQty() }));
-                if (current >= maxQty()) return;
+                if (current + qty > maxFor(id)) toast(limitText(id));
+                if (current >= maxFor(id)) return;
                 if (setQty(id, current + qty, { silent: true })) {
                     track("add");
                     pixelAdd(id, qty);

@@ -38,7 +38,12 @@
         offer: null,
         promo: null,
         restockRun: null,
-        couponEdit: null
+        couponEdit: null,
+        productLow: false,
+        ai: null,
+        aiEditing: false,
+        importPending: null,
+        reward: null
     };
 
     const CHANNELS = {
@@ -230,7 +235,7 @@
         const [s, c, p, m] = await Promise.all([
             sb.from("store_settings").select("config,updated_at").eq("id", 1).maybeSingle(),
             sb.from("categories").select("id,name,name_en,slug,sort_order,description,description_en,image_url").order("sort_order", { ascending: true }),
-            sb.from("products").select("id,name,name_en,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,created_at").order("sort_order", { ascending: true }),
+            sb.from("products").select("id,name,name_en,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at").order("sort_order", { ascending: true }),
             sb.from("product_media").select("product_id,media_type,media_url,sort_order").order("sort_order", { ascending: true })
         ]);
         const failed = [s, c, p, m].find((r) => r.error);
@@ -264,6 +269,7 @@
                 color_id: x.color_id || "",
                 video_url: x.video_url || "",
                 weight_g: x.weight_g === null || x.weight_g === undefined ? null : Number(x.weight_g),
+                stock: x.stock === null || x.stock === undefined ? null : Number(x.stock),
                 media: media.get(x.id) || []
             }))
         };
@@ -281,6 +287,10 @@
         if (saved && saved.data && saved.data.config) {
             A.draft = saved.data;
             A.draft.config = ATHR.fullConfig(A.draft.config);
+            // مسودة قديمة قبل المخزون: نأخذ الكمية من النسخة المنشورة
+            (A.draft.products || []).forEach((p) => {
+                if (!("stock" in p)) p.stock = (A.server.products.find((x) => x.id === p.id) || {}).stock ?? null;
+            });
         } else {
             A.draft = ATHR.clone(A.server);
         }
@@ -438,6 +448,11 @@
                 <span class="aot-txt"><b>العملاء والعروض</b><small>أسماء وأرقام زبائنك، وأرسل لهم الخصومات</small></span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
+            ${lowStockProducts().length ? `<button class="adm-orders-tile warn-tile" type="button" data-a="products-low-open">
+                <span class="aot-ico">📦</span>
+                <span class="aot-txt"><b>${lowStockProducts().length === 1 ? "منتج واحد قرب يخلص" : `${lowStockProducts().length} منتجات قربت تخلص`}</b><small>${esc(lowStockProducts().slice(0, 3).map((p) => `${p.name} (${ATHR.stockOf(p)})`).join("، "))}</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>` : ""}
             <div class="adm-quick">${quick.map(([attr, a, ic, label]) => `<button class="aq" type="button" ${attr}="${a}">${icon(ic)}<span>${label}</span></button>`).join("")}</div>
             <h2 class="adm-sec">أقسام المتجر</h2>
             <div class="adm-grid">${TABS.map(([id, label, ic, hint]) => `<button class="ag" type="button" data-tab="${id}">
@@ -550,7 +565,13 @@
         promoMaybeLoad();
         const q = A.productFilter.trim().toLowerCase();
         const catName = (id) => (A.draft.categories.find((c) => c.id === id) || {}).name || "بدون قسم";
-        const list = products.map((p, i) => ({ p, i })).filter(({ p }) => !q || p.name.toLowerCase().includes(q) || catName(p.category_id).toLowerCase().includes(q));
+        const lowLimit = Number(cfg().sales.low_stock) || 0;
+        const isLow = (p) => ATHR.stockOf(p) !== null && ATHR.stockOf(p) <= lowLimit;
+        const lowCount = products.filter((p) => p.is_visible && isLow(p)).length;
+        const list = products.map((p, i) => ({ p, i }))
+            .filter(({ p }) => !A.productLow || isLow(p))
+            .filter(({ p }) => !q || p.name.toLowerCase().includes(q) || catName(p.category_id).toLowerCase().includes(q));
+        const noDesc = products.filter((p) => !String(p.description || "").trim()).length;
 
         return `
             <section class="adm-card">
@@ -559,6 +580,7 @@
                     <button class="ab ab-primary ab-sm" type="button" data-a="add-product">+ إضافة منتج</button>
                 </div>
                 <input class="ai" type="search" id="productFilter" placeholder="ابحث باسم المنتج أو القسم" value="${esc(A.productFilter)}">
+                ${lowCount || A.productLow ? `<div class="pct-chips"><button type="button" class="ab-mini${A.productLow ? " on" : ""}" data-a="products-low" aria-pressed="${Boolean(A.productLow)}">📦 قربت تخلص (${lowCount})</button></div>` : ""}
                 <ul class="plist">
                     ${list.map(({ p, i }) => `
                         <li class="prow${p.is_visible ? "" : " is-hidden"}${A.rowMenu === p.id ? " open" : ""}">
@@ -567,7 +589,7 @@
                                 <span class="prow-info">
                                     <b>${esc(p.name || "منتج بدون اسم")}</b>
                                     <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}</span>
-                                    ${p.is_visible && p.is_available && !pctOf(p) && !promoFavs(p.id) && !promoWaiting(p.id) ? "" : `<span class="prow-tags">${pctOf(p) ? `<span class="tag sale">خصم ${pctOf(p)}%</span>` : ""}${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}${promoFavs(p.id) ? `<span class="tag fav" title="أضافه زبائن للمفضلة">❤️ ${promoFavs(p.id)}</span>` : ""}${promoWaiting(p.id) ? `<span class="tag bell" title="ينتظرون توفره">🔔 ${promoWaiting(p.id)}</span>` : ""}</span>`}
+                                    ${p.is_visible && p.is_available && !pctOf(p) && !promoFavs(p.id) && !promoWaiting(p.id) && ATHR.stockOf(p) === null ? "" : `<span class="prow-tags">${pctOf(p) ? `<span class="tag sale">خصم ${pctOf(p)}%</span>` : ""}${p.is_visible ? "" : `<span class="tag">مخفي</span>`}${p.is_available ? "" : `<span class="tag warn">نفد</span>`}${promoFavs(p.id) ? `<span class="tag fav" title="أضافه زبائن للمفضلة">❤️ ${promoFavs(p.id)}</span>` : ""}${promoWaiting(p.id) ? `<span class="tag bell" title="ينتظرون توفره">🔔 ${promoWaiting(p.id)}</span>` : ""}${ATHR.stockOf(p) !== null ? `<span class="tag stock${ATHR.stockOf(p) === 0 ? " out" : isLow(p) ? " low" : ""}" title="الكمية في المخزون">📦 ${ATHR.stockOf(p)}</span>` : ""}</span>`}
                                 </span>
                             </button>
                             <button type="button" class="vis-switch" role="switch" aria-checked="${p.is_visible}" data-toggle-visible="${esc(p.id)}" title="${p.is_visible ? "ظاهر في المتجر — اضغط للإخفاء" : "مخفي — اضغط للإظهار"}" aria-label="ظاهر في المتجر"><span></span></button>
@@ -586,7 +608,17 @@
                 <div class="inline">
                     <input class="ai" type="number" inputmode="decimal" step="0.001" min="0" id="unifiedPrice" placeholder="اكتب سعراً لتطبيقه على كل المنتجات">
                     <button class="ab ab-ghost" type="button" data-a="unified-price">تطبيق على الكل</button>
-                </div>`, "يغيّر سعر كل المنتجات دفعة واحدة. يمكنك التراجع بـ«تجاهل التعديلات» قبل النشر.")}`;
+                </div>`, "يغيّر سعر كل المنتجات دفعة واحدة. يمكنك التراجع بـ«تجاهل التعديلات» قبل النشر.")}
+            ${card("✨ وصف المنتجات بالذكاء الاصطناعي", `
+                <p class="adm-sentence">${noDesc ? `${noDesc} منتج بدون وصف خاص (يظهر لها وصف القسم).` : "كل المنتجات لها وصف خاص ✓"}</p>
+                ${noDesc ? `<button class="ab ab-primary ab-sm" type="button" data-a="ai-bulk">✨ اكتب وصفاً لـ ${noDesc} منتج</button>` : ""}
+                <small class="adm-muted">يكتب وصفاً قصيراً بالعربي والإنجليزي من اسم المنتج وقسمه ولونه، ويضعه في المسودة لتراجعه ثم تنشر. يحتاج مفتاح الذكاء الاصطناعي من تبويب «النصوص».</small>`)}
+            ${card("📥 Excel: تنزيل ورفع المنتجات", `
+                <div class="inline">
+                    <button class="ab ab-soft ab-sm" type="button" data-a="xlsx-products">⬇️ تنزيل المنتجات (Excel)</button>
+                    <label class="ab ab-ghost ab-sm">⬆️ رفع ملف معدّل<input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-import-products hidden></label>
+                </div>
+                <small class="adm-muted">نزّل الملف، وعدّل فيه السعر أو الخصم أو الكمية أو الإظهار من تطبيق Excel أو Google Sheets، ثم ارفعه هنا. نعرض لك التغييرات قبل تطبيقها، وتُحفظ في المسودة حتى تنشر.</small>`)}`;
     }
 
     function productEditor(id) {
@@ -623,13 +655,20 @@
                     ${select(`${base}.category_id`, "القسم", cats)}
                     ${select(`${base}.color_id`, "لون الكاسة", colors)}
                 </div>
-                ${area(`${base}.description`, "الوصف", { rows: 3 })}
+                ${area(`${base}.description`, "الوصف", { rows: 3, placeholder: (A.draft.categories.find((c) => c.id === p.category_id) || {}).description ? `إذا تركته فارغاً يظهر وصف القسم: ${(A.draft.categories.find((c) => c.id === p.category_id) || {}).description}` : "" })}
+                <button class="ab ab-soft ab-sm ai-btn" type="button" data-ai-desc="${esc(p.id)}">✨ اكتب الوصف بالذكاء الاصطناعي</button>
                 ${area(`${base}.description_en`, "الوصف بالإنجليزي (اختياري)", { rows: 2 })}
                 ${cfg().order.delivery.some((d) => d.enabled && d.pricing === "per_kg") ? number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب التوصيل بالكيلو." }) : ""}
                 ${toggle(`${base}.is_visible`, "ظاهر في المتجر")}
                 ${toggle(`${base}.is_best_seller`, "من «الأكثر طلباً»", { help: "يظهر في قسم الأكثر طلباً أعلى الصفحة الرئيسية مع شارة على صورته (يحتاج منتجين على الأقل)." })}
                 ${toggle(`${base}.is_new_arrival`, "من «وصل حديثاً»")}
-                <label class="at"><input type="checkbox" data-sold-out="${esc(p.id)}"${p.is_available ? "" : " checked"}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>نفد من المخزون</b><small>يبقى ظاهرًا مع شارة «نفد المخزون» ولا يمكن طلبه.</small></span></label>
+                <div class="adm-card flat stock-box">
+                    <label class="af"><span>📦 الكمية في المخزون</span><input class="ai" type="number" inputmode="numeric" step="1" min="0" data-stock="${esc(p.id)}" value="${ATHR.stockOf(p) === null ? "" : ATHR.stockOf(p)}" placeholder="بدون حد (لا أتابع الكمية)">
+                        <small>تنقص تلقائياً مع كل طلب، وعند الصفر يصير المنتج «نفد» وحده. اتركها فارغة إذا ما تتابع الكمية.</small></label>
+                    ${ATHR.stockOf(p) === null
+                        ? `<label class="at"><input type="checkbox" data-sold-out="${esc(p.id)}"${p.is_available ? "" : " checked"}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>نفد من المخزون</b><small>يبقى ظاهرًا مع شارة «نفد المخزون» ولا يمكن طلبه.</small></span></label>`
+                        : `<p class="stock-state ${ATHR.stockOf(p) > 0 ? (ATHR.stockOf(p) <= (Number(cfg().sales.low_stock) || 0) ? "low" : "ok") : "out"}">${ATHR.stockOf(p) > 0 ? `متوفر: ${ATHR.stockOf(p)} قطعة${ATHR.stockOf(p) <= (Number(cfg().sales.low_stock) || 0) ? " · قربت تخلص" : ""}` : "نفد من المخزون (0)"}</p>`}
+                </div>
 
                 <div class="adm-card flat">
                     <h3>صور وفيديو إضافية</h3>
@@ -778,6 +817,16 @@
         saveDraft();
     }
 
+    // الكمية في المخزون: فارغ = بدون حد، والرقم يحدد «متوفر/نفد» تلقائياً
+    function setStock(id, raw) {
+        const p = A.draft.products.find((x) => x.id === id);
+        if (!p) return;
+        const txt = String(ATHR.digits(raw ?? "")).trim();
+        p.stock = txt === "" ? null : Math.max(0, Math.floor(Number(txt) || 0));
+        if (p.stock !== null) p.is_available = p.stock > 0;
+        saveDraft();
+    }
+
     function newProduct() {
         return {
             id: crypto.randomUUID(),
@@ -795,6 +844,7 @@
             color_id: cfg().colors[0]?.id || "",
             video_url: "",
             weight_g: Number(cfg().order.default_weight_g) || 400,
+            stock: null,
             media: []
         };
     }
@@ -1197,7 +1247,7 @@
         const t = cfg().texts;
         const d = ATHR_DEFAULTS.texts;
         const tip = `<p class="adm-tokens">يمكنك كتابة هذه الرموز فتتحدّث تلقائياً: <code>{free}</code> حد التوصيل المجاني، <code>{ship}</code> سعر التوصيل، <code>{name}</code> اسم المتجر، <code>{phone}</code> رقم الواتساب.</p>`;
-        return tip
+        return aiCard() + tip
             + card("شريط الإعلان أعلى الصفحة", `
                 ${toggle("config.texts.announce_show", "إظهار شريط الإعلان")}
                 ${text("config.texts.announce_text", "نص الإعلان", { placeholder: "مثال: خصم 20% على أكواب الأندية حتى نهاية الأسبوع", max: 140 })}`)
@@ -1382,7 +1432,7 @@
         const volText = ATHR.volumeTiers(cfg()).map((t) => `${ATHR.piecesText(t.min)} خصم ${t.pct}%`).join("، ");
 
         promoMaybeLoad();
-        return couponsCard() + restockCard() + favCard()
+        return couponsCard() + loyaltyCard() + stockCard() + restockCard() + favCard()
             + card("خصم الكمية (يرفع قيمة الطلب)", `
                 ${toggle("config.sales.volume.enabled", "تفعيل خصم الكمية", { rerender: true })}
                 <ul class="lst">${tiers}</ul>
@@ -1526,7 +1576,8 @@
 
     function couponsCard() {
         const st = A.promo || {};
-        const list = st.coupons || [];
+        const rewards = (st.coupons || []).filter((k) => k.phone);
+        const list = (st.coupons || []).filter((k) => !k.phone);
         const uses = st.uses || {};
         const sum = list.reduce((a, k) => {
             const u = uses[k.code];
@@ -1556,6 +1607,7 @@
             ${off ? `<p class="adm-note">الخانة متوقفة، فلن تعمل الأكواد عند الزبائن حتى تفعّلها وتنشر.</p>` : ""}
             ${promoState(`${list.length ? `<div class="ob-stats cp-sum"><div><small>طلبات بالأكواد</small><b>${sum.orders}</b></div><div><small>مبيعاتها</small><b>${money(sum.sales)}</b></div></div>
                 <ul class="cp-list">${rows}</ul>` : `<p class="adm-muted cp-empty">لا توجد أكواد بعد. أنشئ أول كود لمؤثر، مثل SARA10.</p>`}
+                ${rewards.length ? `<p class="adm-muted">⭐ أكواد مكافآت الولاء: ${rewards.length} (استُخدم منها ${rewards.filter((k) => ((st.uses || {})[k.code] || {}).orders).length}). تُنشأ من «العملاء» وتعمل لرقم صاحبها فقط.</p>` : ""}
                 <button class="ab ab-primary ab-sm" type="button" data-a="coupon-new">+ كود جديد</button>`)}`,
             "أعطِ كل مؤثر كوداً باسمه (مثل SARA10) ورابطاً يفعّل الكود تلقائياً، وتعرف كم طلب ومبيعات جاب كل واحد. الخصم يُحسب بعد خصومات المتجر، والخادم يتحقق منه فلا يمكن التلاعب به. الأكواد تُحفظ فوراً بدون «نشر».");
     }
@@ -1906,6 +1958,11 @@
         if (d.restockClear) { clearRestock(d.restockClear); return; }
         if (d.restockAvail) {
             const p = A.draft.products.find((x) => x.id === d.restockAvail);
+            if (p && ATHR.stockOf(p) !== null) {
+                editProduct(p.id);
+                toast("اكتب الكمية الجديدة في «الكمية في المخزون» ثم «نشر التغييرات».");
+                return;
+            }
             if (p) {
                 p.is_available = true;
                 afterChange();
@@ -1914,6 +1971,717 @@
             return;
         }
         if (d.favOffer) offerFor(d.favOffer);
+    }
+
+    // =====================================================
+    // Excel: كتابة وقراءة ملفات xlsx بدون مكتبات خارجية (و CSV)
+    // =====================================================
+
+    const XL = (() => {
+        const enc = new TextEncoder();
+        const dec = new TextDecoder();
+        const table = (() => {
+            const t = new Uint32Array(256);
+            for (let n = 0; n < 256; n++) {
+                let c = n;
+                for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+                t[n] = c >>> 0;
+            }
+            return t;
+        })();
+        const crc32 = (u8) => {
+            let c = 0xFFFFFFFF;
+            for (let i = 0; i < u8.length; i++) c = table[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+            return (c ^ 0xFFFFFFFF) >>> 0;
+        };
+        const xesc = (v) => String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        const colName = (i) => {
+            let s = "";
+            for (let n = i + 1; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+            return s;
+        };
+        const colIndex = (letters) => letters.split("").reduce((n, ch) => n * 26 + (ch.charCodeAt(0) - 64), 0) - 1;
+
+        function zip(files) {
+            const parts = [];
+            const central = [];
+            let offset = 0;
+            files.forEach((f) => {
+                const name = enc.encode(f.name);
+                const data = f.data;
+                const crc = crc32(data);
+                const lh = new DataView(new ArrayBuffer(30));
+                lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+                lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true);
+                lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+                parts.push(new Uint8Array(lh.buffer), name, data);
+                const ch = new DataView(new ArrayBuffer(46));
+                ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+                ch.setUint16(12, 0, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+                ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+                central.push(new Uint8Array(ch.buffer), name);
+                offset += 30 + name.length + data.length;
+            });
+            const size = central.reduce((n, c) => n + c.length, 0);
+            const end = new DataView(new ArrayBuffer(22));
+            end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+            end.setUint32(12, size, true); end.setUint32(16, offset, true);
+            return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        }
+
+        function sheetXml(rows, widths) {
+            const body = rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+                if (v === null || v === undefined || v === "") return "";
+                const ref = colName(ci) + (ri + 1);
+                const st = ri === 0 ? ' s="1"' : "";
+                if (typeof v === "number" && Number.isFinite(v)) return `<c r="${ref}"${st}><v>${v}</v></c>`;
+                return `<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+            }).join("")}</row>`).join("");
+            const cols = widths && widths.length ? `<cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join("")}</cols>` : "";
+            return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${cols}<sheetData>${body}</sheetData></worksheet>`;
+        }
+
+        // sheets: [{ name, rows: [[...]], widths: [..] }]
+        function workbook(sheets) {
+            const files = [];
+            const add = (name, text) => files.push({ name, data: enc.encode(text) });
+            const safe = (n, i) => String(n || `Sheet${i + 1}`).replace(/[\[\]:*?/\\]/g, " ").slice(0, 31);
+            add("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`);
+            add("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+            add("xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${xesc(safe(s.name, i))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>`);
+            add("xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+            add("xl/styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+            sheets.forEach((s, i) => add(`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s.rows, s.widths)));
+            return zip(files);
+        }
+
+        async function unzip(buf) {
+            const u8 = new Uint8Array(buf);
+            const dv = new DataView(buf);
+            let eocd = -1;
+            for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+                if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+            }
+            if (eocd < 0) throw new Error("not-zip");
+            const count = dv.getUint16(eocd + 10, true);
+            let p = dv.getUint32(eocd + 16, true);
+            const entries = new Map();
+            for (let n = 0; n < count && dv.getUint32(p, true) === 0x02014b50; n++) {
+                const method = dv.getUint16(p + 10, true);
+                const csize = dv.getUint32(p + 20, true);
+                const nlen = dv.getUint16(p + 28, true);
+                const xlen = dv.getUint16(p + 30, true);
+                const clen = dv.getUint16(p + 32, true);
+                const off = dv.getUint32(p + 42, true);
+                const name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
+                const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
+                entries.set(name, { method, raw: u8.subarray(start, start + csize) });
+                p += 46 + nlen + xlen + clen;
+            }
+            return async (name) => {
+                const e = entries.get(name);
+                if (!e) return null;
+                if (e.method === 0) return dec.decode(e.raw);
+                if (e.method !== 8 || typeof DecompressionStream === "undefined") throw new Error("zip-method");
+                const out = await new Response(new Blob([e.raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer();
+                return dec.decode(out);
+            };
+        }
+
+        async function readXlsx(buf) {
+            const read = await unzip(buf);
+            const parse = (t) => new DOMParser().parseFromString(t, "application/xml");
+            const shared = [];
+            const ss = await read("xl/sharedStrings.xml");
+            if (ss) parse(ss).querySelectorAll("si").forEach((si) => shared.push(Array.from(si.querySelectorAll("t")).map((x) => x.textContent).join("")));
+            let path = "xl/worksheets/sheet1.xml";
+            const wb = await read("xl/workbook.xml");
+            const rels = await read("xl/_rels/workbook.xml.rels");
+            if (wb && rels) {
+                const first = parse(wb).querySelector("sheet");
+                const rid = first && (first.getAttribute("r:id") || first.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+                const rel = rid && Array.from(parse(rels).querySelectorAll("Relationship")).find((r) => r.getAttribute("Id") === rid);
+                if (rel) {
+                    const target = rel.getAttribute("Target") || "";
+                    path = target.startsWith("/") ? target.slice(1) : `xl/${target.replace(/^\.\//, "")}`;
+                }
+            }
+            const sx = await read(path);
+            if (!sx) throw new Error("no-sheet");
+            const rows = [];
+            parse(sx).querySelectorAll("sheetData row").forEach((row) => {
+                const r = [];
+                row.querySelectorAll("c").forEach((c) => {
+                    const ref = (c.getAttribute("r") || "").replace(/\d+/g, "");
+                    const t = c.getAttribute("t");
+                    const v = c.querySelector("v");
+                    let val = "";
+                    if (t === "s") val = shared[Number(v && v.textContent)] ?? "";
+                    else if (t === "inlineStr") val = Array.from(c.querySelectorAll("t")).map((x) => x.textContent).join("");
+                    else val = v ? v.textContent : "";
+                    r[ref ? colIndex(ref) : r.length] = val;
+                });
+                const idx = Number(row.getAttribute("r")) - 1;
+                rows[idx >= 0 ? idx : rows.length] = Array.from(r, (x) => (x === undefined ? "" : x));
+            });
+            return Array.from(rows, (x) => x || []);
+        }
+
+        function readCsv(text) {
+            const src = String(text).replace(/^﻿/, "");
+            const first = src.split(/\r?\n/)[0] || "";
+            const delim = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ";" : (first.includes("\t") && !first.includes(",") ? "\t" : ",");
+            const rows = [];
+            let row = [];
+            let cur = "";
+            let q = false;
+            for (let i = 0; i < src.length; i++) {
+                const ch = src[i];
+                if (q) {
+                    if (ch === '"') {
+                        if (src[i + 1] === '"') { cur += '"'; i++; } else q = false;
+                    } else cur += ch;
+                } else if (ch === '"') q = true;
+                else if (ch === delim) { row.push(cur); cur = ""; }
+                else if (ch === "\n" || ch === "\r") {
+                    if (ch === "\r" && src[i + 1] === "\n") i++;
+                    row.push(cur); rows.push(row); row = []; cur = "";
+                } else cur += ch;
+            }
+            if (cur || row.length) { row.push(cur); rows.push(row); }
+            return rows;
+        }
+
+        async function readFile(file) {
+            const buf = await file.arrayBuffer();
+            const head = new Uint8Array(buf.slice(0, 4));
+            if (head[0] === 0x50 && head[1] === 0x4b) return readXlsx(buf);
+            return readCsv(new TextDecoder().decode(buf));
+        }
+
+        function download(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+        }
+
+        return { workbook, readFile, download };
+    })();
+
+    const today = () => new Date(Date.now() + 4 * 36e5).toISOString().slice(0, 10);
+    const numOf = (v) => {
+        const txt = ATHR.digits(String(v ?? "")).replace(/[٫,]/g, ".").replace(/[^\d.\-]/g, "").trim();
+        return txt === "" ? null : Number(txt);
+    };
+    const yesNo = (v) => {
+        const s = String(v ?? "").trim().toLowerCase();
+        if (/^(نعم|ايوه|اي|yes|y|true|1|ظاهر)$/.test(s)) return true;
+        if (/^(لا|no|n|false|0|مخفي)$/.test(s)) return false;
+        return null;
+    };
+
+    // ---------- تنزيل ورفع المنتجات ----------
+    const PRODUCT_HEAD = ["المعرّف (لا تغيّره)", "الاسم", "القسم", "اللون", "السعر الأصلي", "الخصم %", "السعر بعد الخصم", "الكمية في المخزون (فارغ = بدون حد)", "ظاهر في المتجر (نعم/لا)", "رابط المنتج"];
+
+    function productsWorkbook() {
+        const c = cfg();
+        const catName = (id) => (A.draft.categories.find((x) => x.id === id) || {}).name || "";
+        const colorName = (id) => (c.colors.find((x) => x.id === id) || {}).name || "";
+        const live = new Set((A.server ? A.server.products : []).map((p) => p.id));
+        const rows = [PRODUCT_HEAD, ...A.draft.products.map((p) => [
+            p.id, p.name || "", catName(p.category_id), colorName(p.color_id),
+            Number(basePrice(p)) || 0, pctOf(p) || 0, Number(p.price) || 0,
+            ATHR.stockOf(p) === null ? "" : ATHR.stockOf(p),
+            p.is_visible !== false ? "نعم" : "لا",
+            live.has(p.id) && p.slug ? siteLink(ATHR.url.product(p)) : ""
+        ])];
+        return XL.workbook([{ name: "المنتجات", rows, widths: [38, 30, 18, 10, 13, 10, 15, 24, 18, 60] }]);
+    }
+
+    async function importProducts(file) {
+        let rows;
+        try {
+            rows = await XL.readFile(file);
+        } catch (error) {
+            console.warn("Import failed:", error);
+            toast("تعذر قراءة الملف. ارفع ملف Excel (.xlsx) أو CSV.");
+            return;
+        }
+        const head = (rows[0] || []).map((h) => String(h || "").trim());
+        const col = (re) => head.findIndex((h) => re.test(h));
+        const ix = { id: col(/المعر|^id$/i), name: col(/^الاسم|^name$/i), base: col(/السعر الأصلي|base|original/i), pct: col(/الخصم|discount/i), stock: col(/الكمية|المخزون|stock/i), visible: col(/ظاهر|visible/i) };
+        if (ix.id < 0) {
+            toast("الملف لا يحتوي عمود «المعرّف». نزّل ملف المنتجات من هنا ثم عدّله.");
+            return;
+        }
+        const changes = [];
+        let unknown = 0;
+        const fmt = (v) => (v === null || v === undefined ? "بدون حد" : String(v));
+        rows.slice(1).forEach((r) => {
+            const id = String(r[ix.id] || "").trim();
+            if (!id) return;
+            const p = A.draft.products.find((x) => x.id === id);
+            if (!p) { unknown++; return; }
+            const ch = { p, set: {}, text: [] };
+            if (ix.name >= 0) {
+                const name = String(r[ix.name] || "").trim();
+                if (name && name !== p.name) { ch.set.name = name.slice(0, 120); ch.text.push(`الاسم: ${name}`); }
+            }
+            if (ix.base >= 0 || ix.pct >= 0) {
+                const base = ix.base >= 0 ? numOf(r[ix.base]) : Number(basePrice(p));
+                const pct = ix.pct >= 0 ? (numOf(r[ix.pct]) || 0) : pctOf(p);
+                // نفس القيم التي نزّلناها = لا تغيير (حتى لا تتغير الأسعار بسبب تقريب النسبة)
+                const same = base !== null && Math.abs(base - Number(basePrice(p) || 0)) < 0.0005 && Math.abs(pct - (pctOf(p) || 0)) < 0.05;
+                if (!same && base !== null && base >= 0 && pct >= 0 && pct <= 90) {
+                    const tmp = { ...p };
+                    applyDiscount(tmp, base, pct);
+                    if (tmp.price !== p.price || (tmp.old_price ?? null) !== (p.old_price ?? null)) {
+                        ch.set.price = tmp.price;
+                        ch.set.old_price = tmp.old_price;
+                        ch.text.push(`السعر: ${money(p.price)} ← ${money(tmp.price)}${pct ? ` (خصم ${pct}%)` : ""}`);
+                    }
+                }
+            }
+            if (ix.stock >= 0) {
+                const raw = String(r[ix.stock] ?? "").trim();
+                const stock = raw === "" ? null : Math.max(0, Math.floor(numOf(raw) || 0));
+                if (stock !== ATHR.stockOf(p)) { ch.set.stock = stock; ch.text.push(`الكمية: ${fmt(ATHR.stockOf(p))} ← ${fmt(stock)}`); }
+            }
+            if (ix.visible >= 0) {
+                const vis = yesNo(r[ix.visible]);
+                if (vis !== null && vis !== (p.is_visible !== false)) { ch.set.is_visible = vis; ch.text.push(vis ? "يظهر في المتجر" : "يُخفى من المتجر"); }
+            }
+            if (ch.text.length) changes.push(ch);
+        });
+        A.importPending = changes;
+        openSheet(`
+            <div class="adm-sheet-head"><h2>📥 التغييرات من الملف</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>
+            <div class="af-stack">
+                <p class="adm-sentence">${changes.length ? `سيتغيّر ${changes.length} منتج` : "لا توجد تغييرات في الملف"}${unknown ? ` · ${unknown} صف لم نجد منتجه (تُتجاهل)` : ""}</p>
+                ${changes.length ? `<ul class="imp-list">${changes.slice(0, 60).map((c) => `<li><b>${esc(c.p.name)}</b><small>${c.text.map(esc).join(" · ")}</small></li>`).join("")}</ul>
+                ${changes.length > 60 ? `<p class="adm-muted">و${changes.length - 60} منتج آخر…</p>` : ""}
+                <button class="ab ab-primary ab-block" type="button" data-a="import-apply">تطبيق التغييرات (${changes.length})</button>` : ""}
+                <p class="adm-muted">تُحفظ التغييرات في المسودة، وتظهر للزبائن بعد «نشر التغييرات».</p>
+            </div>`);
+    }
+
+    function applyImport() {
+        const changes = A.importPending || [];
+        changes.forEach(({ p, set }) => {
+            Object.assign(p, set);
+            if ("stock" in set && set.stock !== null) p.is_available = set.stock > 0;
+        });
+        A.importPending = null;
+        closeSheet();
+        afterChange();
+        toast(`طُبّقت التغييرات على ${changes.length} منتج ✓ راجعها ثم «نشر التغييرات»`);
+    }
+
+    // ---------- تنزيل الطلبات ----------
+    function ordersRows(list) {
+        const status = { new: "جديد", delivered: "تم التسليم" };
+        const pay = { bank: "تحويل بنكي", cod: "عند الاستلام", online: "دفع إلكتروني", other: "أخرى" };
+        return [
+            ["رقم الطلب", "التاريخ", "الوقت", "العميل", "الهاتف", "الدولة", "المحافظة", "الولاية", "المنتجات", "القطع", "المجموع", "الخصم", "كود الخصم", "خصم الكود", "التوصيل", "الإجمالي", "الدفع", "الحالة", "المصدر", "هدية"],
+            ...list.map((o) => {
+                const when = ATHR.muscatParts(o.ordered_at);
+                const items = (o.items || []).map((it) => `${it.label || it.name} × ${it.qty}`).join("، ") || String(o.items_text || "").replace(/\n/g, "، ");
+                return [o.order_no, when.date, when.time, o.customer_name || "", o.phone ? `+${ATHR.customerWhatsapp(o.phone, o.country || "OM")}` : "", countryLabel(o.country).replace(/^\S+\s/, ""),
+                    o.governorate || "", o.wilaya || "", items, (o.items || []).reduce((n, it) => n + (Number(it.qty) || 0), 0),
+                    Number(o.subtotal) || 0, Number(o.discount) || 0, o.coupon || "", Number(o.coupon_discount) || 0, Number(o.delivery_price) || 0, Number(o.total) || 0,
+                    pay[o.payment_type] || o.payment_name || "", status[o.status] || o.status || "", o.source === "web" ? (CHANNELS[o.channel] || "المتجر") : o.source === "paste" ? "واتساب" : "يدوي", o.gift ? "نعم" : ""];
+            })
+        ];
+    }
+
+    function downloadOrders() {
+        const list = filteredOrders();
+        XL.download(XL.workbook([{ name: "الطلبات", rows: ordersRows(list), widths: [12, 12, 10, 22, 16, 12, 14, 14, 50, 8, 10, 9, 12, 10, 9, 10, 14, 12, 14, 7] }]), `athr-orders-${today()}.xlsx`);
+        toast(`نُزّل ملف ${list.length} طلب`);
+    }
+
+    // ---------- تقرير المبيعات ----------
+    function salesReport(orders) {
+        const byProduct = new Map();
+        const byCat = new Map();
+        const catOf = (id) => {
+            const p = A.draft.products.find((x) => x.id === id);
+            return (p && (A.draft.categories.find((c) => c.id === p.category_id) || {}).name) || "غير محدد";
+        };
+        orders.forEach((o) => (o.items || []).forEach((it) => {
+            const key = it.label || it.name;
+            if (!key) return;
+            const qty = Number(it.qty) || 0;
+            const total = Number(it.total) || 0;
+            const a = byProduct.get(key) || { qty: 0, total: 0, orders: 0 };
+            a.qty += qty; a.total += total; a.orders++;
+            byProduct.set(key, a);
+            const cn = catOf(it.id);
+            const b = byCat.get(cn) || { qty: 0, total: 0 };
+            b.qty += qty; b.total += total;
+            byCat.set(cn, b);
+        }));
+        return {
+            products: Array.from(byProduct.entries()).sort((a, b) => b[1].total - a[1].total),
+            cats: Array.from(byCat.entries()).sort((a, b) => b[1].total - a[1].total)
+        };
+    }
+
+    function monthlySales() {
+        const months = [];
+        const now = new Date(Date.now() + 4 * 36e5);
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+            months.push({ key: d.toISOString().slice(0, 7), label: new Intl.DateTimeFormat("ar-OM", { month: "long", timeZone: "UTC" }).format(d), orders: 0, total: 0 });
+        }
+        A.orders.filter((o) => !o.hidden).forEach((o) => {
+            const key = new Date(new Date(o.ordered_at).getTime() + 4 * 36e5).toISOString().slice(0, 7);
+            const m = months.find((x) => x.key === key);
+            if (m) { m.orders++; m.total += Number(o.total) || 0; }
+        });
+        return months;
+    }
+
+    function downloadReport() {
+        const days = A.statsDays;
+        const since = new Date(`${new Date(Date.now() - (days - 1) * 864e5 + 4 * 36e5).toISOString().slice(0, 10)}T00:00:00+04:00`).getTime();
+        const inRange = A.orders.filter((o) => !o.hidden && new Date(o.ordered_at).getTime() >= since);
+        const rep = salesReport(inRange);
+        const months = monthlySales();
+        XL.download(XL.workbook([
+            { name: "المنتجات", rows: [["المنتج", "القطع المباعة", "عدد الطلبات", "المبيعات (ر.ع)"], ...rep.products.map(([n, c]) => [n, c.qty, c.orders, Math.round(c.total * 1000) / 1000])], widths: [36, 14, 12, 16] },
+            { name: "الأقسام", rows: [["القسم", "القطع المباعة", "المبيعات (ر.ع)"], ...rep.cats.map(([n, c]) => [n, c.qty, Math.round(c.total * 1000) / 1000])], widths: [26, 14, 16] },
+            { name: "الأشهر", rows: [["الشهر", "عدد الطلبات", "المبيعات (ر.ع)"], ...months.map((m) => [`${m.label} ${m.key.slice(0, 4)}`, m.orders, Math.round(m.total * 1000) / 1000])], widths: [20, 12, 16] },
+            { name: "الطلبات", rows: ordersRows(inRange), widths: [12, 12, 10, 22, 16, 12, 14, 14, 50, 8, 10, 9, 12, 10, 9, 10, 14, 12, 14, 7] }
+        ]), `athr-report-${days}d-${today()}.xlsx`);
+        toast("نُزّل تقرير المبيعات");
+    }
+
+    function reportSections(inRange) {
+        const rep = salesReport(inRange);
+        const months = monthlySales();
+        const max = Math.max(1, ...months.map((m) => m.total));
+        return `
+            <section class="adm-card">
+                <div class="adm-row-between"><h2>📊 تقرير المبيعات</h2><button class="ab ab-soft ab-sm" type="button" data-a="xlsx-report">⬇️ Excel</button></div>
+                <h3 class="rp-h">آخر 6 أشهر</h3>
+                <div class="rp-months">${months.map((m) => `<div class="rp-m"><b>${m.total ? money(m.total) : "—"}</b><span class="rp-bar"><i style="height:${Math.round((m.total / max) * 100)}%"></i></span><small>${esc(m.label)}</small><small class="adm-muted">${m.orders} طلب</small></div>`).join("")}</div>
+                <h3 class="rp-h">حسب القسم (هذه المدة)</h3>
+                ${rep.cats.length ? `<table class="adm-table"><thead><tr><th>القسم</th><th>القطع</th><th>المبيعات</th></tr></thead><tbody>${rep.cats.map(([n, c]) => `<tr><td>${esc(n)}</td><td>${c.qty}</td><td>${money(c.total)}</td></tr>`).join("")}</tbody></table>` : `<p class="adm-muted">لا توجد مبيعات في هذه المدة.</p>`}
+                <p class="adm-muted">ملف Excel فيه: مبيعات كل منتج، والأقسام، والأشهر، وكل طلبات المدة.</p>
+            </section>`;
+    }
+
+    // =====================================================
+    // 📦 المخزون: تنبيه الكميات القليلة
+    // =====================================================
+
+    function lowStockProducts() {
+        const limit = Number(cfg().sales.low_stock) || 0;
+        return A.draft.products.filter((p) => p.is_visible !== false && ATHR.stockOf(p) !== null && ATHR.stockOf(p) <= limit);
+    }
+
+    function stockCard() {
+        const tracked = A.draft.products.filter((p) => ATHR.stockOf(p) !== null).length;
+        const low = lowStockProducts();
+        return card("📦 المخزون", `
+            ${number("config.sales.low_stock", "التنبيه عندما تصير الكمية (أو أقل)", { step: "1", min: "0", help: "يظهر في اللوحة «قربت تخلص»، وللزبون «باقي 3 فقط»." })}
+            ${toggle("config.sales.low_stock_show", "إظهار «باقي N فقط» للزبون", { help: "رسالة حقيقية من المخزون تشجّع الزبون يطلب قبل لا يخلص المنتج." })}
+            <p class="adm-sentence">${tracked ? `تتابع كمية ${tracked} منتج${low.length ? ` · ⚠️ ${low.length} قربت تخلص` : ""}` : "لا تتابع كمية أي منتج الآن. اكتب الكمية من تعديل المنتج، أو دفعة واحدة من ملف Excel في «المنتجات»."}</p>
+            ${low.length ? `<button class="ab ab-soft ab-sm" type="button" data-a="products-low-open">عرض المنتجات التي قربت تخلص</button>` : ""}`,
+            "كل طلب يُنقص الكمية تلقائياً من الخادم، ولا يقدر الزبون يطلب أكثر من المتوفر. عند الصفر يصير المنتج «نفد»، ويقدر الزبون يضغط «أخبرني عند التوفر».");
+    }
+
+    // =====================================================
+    // ⭐ نقاط الولاء
+    // =====================================================
+
+    const loyalty = () => cfg().sales.loyalty || {};
+
+    // النقاط المكتسبة من الطلبات المسلّمة لكل رقم (بدون التوصيل)
+    function earnedPoints() {
+        const map = new Map();
+        if (!ATHR.loyaltyOn(cfg())) return map;
+        A.orders.forEach((o) => {
+            if (o.hidden || o.status !== "delivered" || !o.phone) return;
+            const phone = ATHR.customerWhatsapp(o.phone, o.country || "OM");
+            map.set(phone, (map.get(phone) || 0) + Math.max(0, Number(o.total || 0) - Number(o.delivery_price || 0)));
+        });
+        map.forEach((amount, phone) => map.set(phone, ATHR.pointsFor(amount, cfg())));
+        return map;
+    }
+
+    function custPoints(c, earned) {
+        const total = (earned || earnedPoints()).get(c.phone) || 0;
+        return Math.max(0, total - (Number(c.points_used) || 0));
+    }
+
+    const rewardReady = (c, earned) => ATHR.loyaltyOn(cfg()) && custPoints(c, earned) >= (Number(loyalty().reward_points) || 50);
+
+    function loyaltyCard() {
+        const ly = loyalty();
+        return card("⭐ نقاط الولاء", `
+            ${toggle("config.sales.loyalty.enabled", "تفعيل نقاط الولاء", { rerender: true, help: "الزبون يكسب نقاطاً من كل طلب يُسلَّم له، ويرى كم نقطة يكسب في صفحة الطلب." })}
+            ${ly.enabled ? `<div class="two">
+                ${number("config.sales.loyalty.per_omr", "نقاط لكل 1 ر.ع", { step: "1", min: "1" })}
+                ${number("config.sales.loyalty.reward_points", "النقاط المطلوبة للمكافأة", { step: "1", min: "5" })}
+                ${number("config.sales.loyalty.reward_value", "قيمة المكافأة (ر.ع)", { step: "0.5", min: "0.5" })}
+                ${number("config.sales.loyalty.reward_days", "صلاحية كود المكافأة (أيام)", { step: "1", min: "1" })}
+            </div>
+            <p class="adm-sentence">كل 1 ر.ع = ${Number(ly.per_omr) || 1} نقطة، وكل ${Number(ly.reward_points) || 50} نقطة = خصم ${money(Number(ly.reward_value) || 0)}${Number(ly.per_omr) && Number(ly.reward_points) ? ` (تعادل ${Math.round(((Number(ly.reward_value) || 0) / ((Number(ly.reward_points) || 50) / (Number(ly.per_omr) || 1))) * 1000) / 10}% من المشتريات)` : ""}.</p>
+            ${area("config.sales.loyalty.msg", "رسالة المكافأة في واتساب", { rows: 6, help: "{name} الاسم · {points} النقاط · {code} الكود · {value} قيمة الخصم · {ends} آخر يوم · {link} رابط المتجر · {store} اسم المتجر." })}
+            <button class="ab ab-soft ab-sm" type="button" data-a="open-customers">🎁 فتح العملاء وإرسال المكافآت</button>` : ""}`,
+            "النقاط تُحسب من الطلبات «تم التسليم» فقط. عندما يجمع العميل نقاطاً كافية يظهر له زر «🎁 مكافأة» في قائمة العملاء: نجهّز كوداً خاصاً برقمه (لا يعمل لغيره) ونرسله له في واتساب بضغطة.");
+    }
+
+    function rewardCode() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const rnd = crypto.getRandomValues(new Uint8Array(6));
+        return `VIP${Array.from(rnd, (b) => chars[b % chars.length]).join("")}`;
+    }
+
+    // تجهيز المكافأة: كود مربوط برقم العميل، ثم رسالة جاهزة للإرسال
+    async function prepareReward(phone) {
+        const c = A.customers.find((x) => x.phone === phone);
+        if (!c) return;
+        const ly = loyalty();
+        const need = Number(ly.reward_points) || 50;
+        if (custPoints(c) < need) { toast("نقاط العميل لا تكفي للمكافأة بعد."); return; }
+        const value = Math.max(0.5, Number(ly.reward_value) || 2);
+        const days = Math.max(1, Math.round(Number(ly.reward_days) || 30));
+        const ends = new Date(Date.now() + days * 864e5);
+        const endsDate = new Date(ends.getTime() + 4 * 36e5).toISOString().slice(0, 10);
+        let code = "";
+        for (let i = 0; i < 4 && !code; i++) {
+            const tryCode = rewardCode();
+            const { error } = await sb.from("coupons").insert({
+                code: tryCode, owner: `⭐ مكافأة ولاء: ${String(c.name || "").slice(0, 50)}`, kind: "fixed", value, min_total: 0,
+                ends_at: `${endsDate}T23:59:59+04:00`, max_uses: 1, enabled: true, phone: c.phone
+            });
+            if (!error) code = tryCode;
+            else if (error.code !== "23505") { console.warn("Reward failed:", error); break; }
+        }
+        if (!code) { toast("تعذر تجهيز المكافأة. تأكد من الإنترنت."); return; }
+        const used = (Number(c.points_used) || 0) + need;
+        const { error } = await sb.from("customers").update({ points_used: used }).eq("phone", c.phone);
+        if (error) console.warn("Points update failed:", error);
+        else c.points_used = used;
+        const first = String(c.name || "").trim().split(/\s+/)[0] || "";
+        const text = fillOffer(ly.msg || ATHR_DEFAULTS.sales.loyalty.msg, {
+            name: first, store: ATHR.storeName(cfg()), points: String(need), code, value: money(value),
+            ends: `${endsDate.split("-").reverse().join("/")}`, link: `${siteLink(ATHR.base())}?code=${code}`,
+            product: "x", price: "x", old: "x", pct: "x", save: "x"
+        });
+        A.reward = { phone: c.phone, text, code };
+        openOrderSheet(`${offerSheetHead("🎁 مكافأة الولاء جاهزة")}
+            <div class="af-stack">
+                <div class="offer-who"><b>${esc(c.name || "العميل")}</b><span dir="ltr">+${esc(c.phone)}</span></div>
+                <p class="adm-sentence">كود <b dir="ltr">${esc(code)}</b> · خصم ${money(value)} · لرقمه فقط · صالح ${days} يوم</p>
+                ${waBubble(text, { product: null })}
+                <button class="ab ab-primary ab-block offer-send" type="button" data-a="reward-send">${ATHR.views.waIcon()}أرسل له في واتساب</button>
+                <p class="adm-muted">خُصمت ${ATHR.pointsText(need)} من رصيده، وبقي له ${ATHR.pointsText(custPoints(c))}.</p>
+            </div>`);
+        renderCustomers();
+    }
+
+    // =====================================================
+    // ✨ الذكاء الاصطناعي: وصف المنتجات ورسائل العروض
+    // =====================================================
+
+    const AI_ERRORS = {
+        no_key: "أضف مفتاح الذكاء الاصطناعي أولاً من تبويب «النصوص».",
+        bad_key: "مفتاح الذكاء الاصطناعي غير صحيح أو انتهى. غيّره من تبويب «النصوص».",
+        rate_limit: "وصلت حد الاستخدام المؤقت. انتظر دقيقة ثم حاول مرة أخرى.",
+        not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى."
+    };
+    const aiError = (e) => AI_ERRORS[e && e.code] || "تعذر الاتصال بالذكاء الاصطناعي. حاول مرة أخرى.";
+
+    async function aiCall(body) {
+        const { data } = await sb.auth.getSession();
+        const token = data && data.session && data.session.access_token;
+        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/ai-text`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
+            body: JSON.stringify({ store: ATHR.storeName(cfg()), ...body })
+        });
+        let out = {};
+        try { out = await res.json(); } catch { /* رد غير متوقع */ }
+        if (!res.ok || out.error) {
+            const error = new Error(out.error || `http_${res.status}`);
+            error.code = out.error;
+            throw error;
+        }
+        return out;
+    }
+
+    async function loadAiStatus() {
+        A.ai = { loading: true };
+        try {
+            const { data, error } = await sb.rpc("ai_key_status");
+            A.ai = { status: error ? {} : (data || {}) };
+        } catch {
+            A.ai = { status: {} };
+        }
+        if (A.view === "admin" && A.tab === "texts") renderTab({ keepScroll: true });
+    }
+
+    function aiCard() {
+        if (!A.ai) loadAiStatus();
+        const st = (A.ai && A.ai.status) || {};
+        const active = st.gemini ? ["Gemini", st.gemini.last4] : st.openai ? ["OpenAI", st.openai.last4] : null;
+        return card("✨ الذكاء الاصطناعي", `
+            ${A.ai && A.ai.loading ? `<p class="adm-muted">جاري التحقق...</p>` : active
+                ? `<p class="adm-sentence">✅ مفعّل · ${esc(active[0])} <span dir="ltr">(…${esc(active[1])})</span></p>
+                   <div class="inline"><button class="ab ab-ghost ab-sm" type="button" data-a="ai-change">تغيير المفتاح</button><button class="ab-mini danger" type="button" data-a="ai-remove">حذف المفتاح</button></div>`
+                : ""}
+            ${!active || A.aiEditing ? `
+                <label class="af"><span>الخدمة</span><select class="ai" id="aiProvider"><option value="gemini">Google Gemini (فيه استخدام مجاني محدود)</option><option value="openai">OpenAI (ChatGPT)</option></select></label>
+                <label class="af"><span>المفتاح (API Key)</span><input class="ai" id="aiKey" type="password" dir="ltr" autocomplete="off" spellcheck="false" placeholder="الصق المفتاح هنا"><small>يُحفظ في الخادم فقط ولا يظهر لأحد بعد الحفظ، ولا يصل للزوار.</small></label>
+                <button class="ab ab-primary ab-sm" type="button" data-a="ai-save">حفظ المفتاح</button>
+                <details class="howto"><summary>كيف أحصل على مفتاح Gemini؟ (من الجوال)</summary><ol>
+                    <li>افتح <b dir="ltr">aistudio.google.com</b> وسجّل دخول بحساب Google.</li>
+                    <li>اضغط <b>Get API key</b> ثم <b>Create API key</b>.</li>
+                    <li>انسخ المفتاح (يبدأ بـ <span dir="ltr">AIza</span>) والصقه هنا، ثم «حفظ المفتاح».</li>
+                </ol></details>` : ""}
+            <ul class="px-events">
+                <li>📝 <b>وصف المنتجات</b> <small>زر «✨ اكتب الوصف» داخل كل منتج، أو للكل من «المنتجات»</small></li>
+                <li>📣 <b>رسائل العروض</b> <small>زر «✨ اكتب رسالة» في استوديو العروض</small></li>
+            </ul>`, "يكتب لك النصوص في ثوانٍ، وتراجعها وتعدّلها قبل النشر أو الإرسال.");
+    }
+
+    async function saveAiKey() {
+        const provider = ($("#aiProvider") || {}).value || "gemini";
+        const key = String(($("#aiKey") || {}).value || "").trim();
+        if (key.length < 20 || /\s/.test(key)) { toast("المفتاح غير مكتمل. انسخه كاملاً والصقه."); return; }
+        const { error } = await sb.rpc("set_ai_key", { provider, key });
+        if (error) { toast("تعذر حفظ المفتاح. تأكد منه وحاول مرة أخرى."); return; }
+        A.aiEditing = false;
+        toast("حُفظ المفتاح ✓ جرّب «✨ اكتب الوصف» في أي منتج");
+        loadAiStatus();
+    }
+
+    async function removeAiKey() {
+        const st = (A.ai && A.ai.status) || {};
+        if (!confirm("حذف مفتاح الذكاء الاصطناعي؟ تتوقف كتابة الوصف والرسائل.")) return;
+        for (const provider of Object.keys(st)) await sb.rpc("set_ai_key", { provider, key: "" });
+        toast("حُذف المفتاح");
+        loadAiStatus();
+    }
+
+    const aiItem = (p) => {
+        const cat = A.draft.categories.find((c) => c.id === p.category_id) || {};
+        const color = cfg().colors.find((c) => c.id === p.color_id) || {};
+        return { id: p.id, name: p.name, name_en: p.name_en || "", category: cat.name || "", category_desc: cat.description || "", color: color.name || "" };
+    };
+
+    async function aiDescribe(id) {
+        const p = A.draft.products.find((x) => x.id === id);
+        if (!p || !p.name) { toast("اكتب اسم المنتج أولاً."); return; }
+        const btn = $(`[data-ai-desc="${CSS.escape(id)}"]`);
+        if (btn) { btn.disabled = true; btn.textContent = "✨ جاري الكتابة..."; }
+        try {
+            const out = await aiCall({ task: "describe", items: [aiItem(p)] });
+            const it = (out.items || [])[0];
+            if (it) {
+                p.description = it.ar;
+                if (it.en) p.description_en = it.en;
+                saveDraft();
+                refreshSheet();
+                toast("كُتب الوصف ✓ راجعه وعدّله إن أردت");
+            }
+        } catch (error) {
+            toast(aiError(error));
+            if (btn) { btn.disabled = false; btn.textContent = "✨ اكتب الوصف بالذكاء الاصطناعي"; }
+        }
+    }
+
+    async function aiBulk() {
+        const list = A.draft.products.filter((p) => p.name && !String(p.description || "").trim());
+        if (!list.length) return;
+        let done = 0;
+        await withBusy(`✨ جاري كتابة الوصف 0 من ${list.length}...`, async () => {
+            try {
+            for (let i = 0; i < list.length; i += 5) {
+                const batch = list.slice(i, i + 5);
+                let out = null;
+                for (let attempt = 0; attempt < 3 && !out; attempt++) {
+                    try {
+                        out = await aiCall({ task: "describe", items: batch.map(aiItem) });
+                    } catch (error) {
+                        if (error.code === "rate_limit" && attempt < 2) { busyMessage("⏳ انتظار حد الاستخدام..."); await new Promise((r) => setTimeout(r, 20000)); continue; }
+                        throw error;
+                    }
+                }
+                (out.items || []).forEach((it) => {
+                    const p = A.draft.products.find((x) => x.id === it.id);
+                    if (p && !String(p.description || "").trim()) {
+                        p.description = it.ar;
+                        if (it.en && !p.description_en) p.description_en = it.en;
+                        done++;
+                    }
+                });
+                saveDraft();
+                busyMessage(`✨ جاري كتابة الوصف ${Math.min(i + 5, list.length)} من ${list.length}...`);
+            }
+            } catch (error) {
+                saveDraft();
+                throw new Error(done ? `${aiError(error)} (كُتب ${done} قبل التوقف)` : aiError(error));
+            }
+        });
+        renderTab({ keepScroll: true });
+        if (done) toast(`كُتب وصف ${done} منتج ✓ راجعه ثم «نشر التغييرات»`);
+    }
+
+    async function aiOffer() {
+        const st = A.offer;
+        if (!st) return;
+        const btn = $('[data-a="offer-ai"]');
+        if (btn) { btn.disabled = true; btn.textContent = "✨ جاري الكتابة..."; }
+        const tpls = st.product ? PRODUCT_OFFERS : OFFER_TEMPLATES;
+        try {
+            const out = await aiCall({ task: "offer", style: (tpls[st.tpl] || [])[0] || "", product: st.product ? { name: st.product.name, pct: st.product.pct || 0 } : null, ends: Boolean(st.product && st.hours) });
+            if (out.text) {
+                st.text = out.text;
+                renderOffer({ keepScroll: true });
+                toast("كُتبت رسالة جديدة ✓ تقدر تعدّلها");
+                return;
+            }
+        } catch (error) {
+            toast(aiError(error));
+        }
+        if (btn) { btn.disabled = false; btn.textContent = "✨ اكتب رسالة بالذكاء الاصطناعي"; }
+    }
+
+    // أزرار هذه المميزات
+    async function v17Click(d) {
+        switch (d.a) {
+            case "xlsx-products": XL.download(productsWorkbook(), `athr-products-${today()}.xlsx`); toast("نُزّل ملف المنتجات"); return true;
+            case "xlsx-orders": downloadOrders(); return true;
+            case "xlsx-report": downloadReport(); return true;
+            case "import-apply": applyImport(); return true;
+            case "products-low": A.productLow = !A.productLow; renderTab({ keepScroll: true }); return true;
+            case "products-low-open": A.productLow = true; A.tab = "products"; renderPanel(); return true;
+            case "ai-save": await saveAiKey(); return true;
+            case "ai-change": A.aiEditing = true; renderTab({ keepScroll: true }); return true;
+            case "ai-remove": await removeAiKey(); return true;
+            case "ai-bulk": await aiBulk(); return true;
+            case "offer-ai": await aiOffer(); return true;
+            case "reward-send": {
+                const r = A.reward;
+                if (r) window.open(ATHR.waLink(r.phone, r.text), "_blank", "noopener");
+                closeOrderSheet();
+                return true;
+            }
+            default: break;
+        }
+        if (d.aiDesc) { await aiDescribe(d.aiDesc); return true; }
+        if (d.custReward) { await prepareReward(d.custReward); return true; }
+        return false;
     }
 
     // =====================================================
@@ -2299,6 +3067,10 @@
             priceFromSheet(t.dataset.priceBase || t.dataset.pricePct);
             return;
         }
+        if (t.dataset.stock) {
+            setStock(t.dataset.stock, t.value);
+            return;
+        }
         if (t.dataset.bind && t.type !== "checkbox" && t.tagName !== "SELECT") {
             bindValue(t);
             if (t.type === "color") {
@@ -2365,6 +3137,12 @@
             saveDraft();
             return;
         }
+        if (t.dataset.stock) {
+            setStock(t.dataset.stock, t.value);
+            refreshSheet();
+            renderTab({ keepScroll: true });
+            return;
+        }
         if (t.dataset.soldOut) {
             const p = A.draft.products.find((x) => x.id === t.dataset.soldOut);
             if (p) p.is_available = !t.checked;
@@ -2389,6 +3167,10 @@
 
     async function handleFiles(input, files) {
         const d = input.dataset;
+        if (d.importProducts !== undefined) {
+            await importProducts(files[0]);
+            return;
+        }
 
         if (d.upload) {
             const kind = d.kind || "product";
@@ -2503,6 +3285,7 @@
             return;
         }
         if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
+        if (((d.a && /^(xlsx-|import-|products-low|ai-|offer-ai$|reward-)/.test(d.a)) || d.aiDesc || d.custReward) && await v17Click(d)) return;
         if ((d.a && /^(coupon|restock|promo)-/.test(d.a)) || d.cpToggle || d.cpEdit || d.cpLink || d.cpMsg || d.restockSend || d.restockClear || d.restockAvail || d.favOffer) {
             await promoClick(d);
             return;
@@ -2972,6 +3755,21 @@
                 p.slug = ATHR.uniqueSlug(ATHR.productSlugBase(p, draft.config) || `p-${p.id.slice(0, 8)}`, slugTaken);
                 slugTaken.add(p.slug);
             });
+            // المخزون يتغيّر مع كل طلب: نأخذ آخر كمية من الخادم إلا إذا عدّلتها أنت في المسودة
+            let freshStock = new Map();
+            try {
+                const fr = await sb.from("products").select("id,stock,is_available");
+                if (!fr.error) freshStock = new Map((fr.data || []).map((x) => [x.id, x]));
+            } catch { /* نكمل بالمسودة */ }
+            draft.products.forEach((p) => {
+                const before = server.products.find((x) => x.id === p.id);
+                const now = freshStock.get(p.id);
+                if (!before || !now) return;
+                const mineStock = ATHR.stockOf(p);
+                if (mineStock === ATHR.stockOf(before)) p.stock = now.stock === null ? null : Number(now.stock);
+                if (ATHR.stockOf(p) !== null) p.is_available = ATHR.stockOf(p) > 0;
+                else if ((p.is_available !== false) === (before.is_available !== false)) p.is_available = now.is_available !== false;
+            });
             const prodRows = draft.products.map((p, i) => ({
                 id: p.id,
                 name: p.name.trim(),
@@ -2990,6 +3788,7 @@
                 color_id: p.color_id || null,
                 video_url: p.video_url || null,
                 weight_g: Number(p.weight_g) > 0 ? Math.round(Number(p.weight_g)) : null,
+                stock: ATHR.stockOf(p),
                 sort_order: i + 1
             }));
             for (let i = 0; i < prodRows.length; i += 100) {
@@ -3092,7 +3891,7 @@
                 ${A.book === "customers" ? `<div class="ob-tools">
                     <input class="ai" type="search" id="custSearch" placeholder="ابحث باسم العميل أو رقمه" value="${esc(A.custFilter.q)}">
                     <div class="seg" role="group" aria-label="تصفية العملاء">
-                        ${[["all", "الكل"], ["marketing", "يقبلون العروض"], ["vip", "💎 المميزون"], ["repeat", "رجعوا مرة ثانية"], ["away", "غائبون +60 يوم"], ["new", "🆕 الجدد"]].map(([v, l]) => `<button type="button" data-cust-kind="${v}" aria-pressed="${A.custFilter.kind === v}">${l}</button>`).join("")}
+                        ${[["all", "الكل"], ["marketing", "يقبلون العروض"], ["vip", "💎 المميزون"], ["repeat", "رجعوا مرة ثانية"], ["away", "غائبون +60 يوم"], ["new", "🆕 الجدد"], ...(ATHR.loyaltyOn(cfg()) ? [["reward", "🎁 مكافأة جاهزة"]] : [])].map(([v, l]) => `<button type="button" data-cust-kind="${v}" aria-pressed="${A.custFilter.kind === v}">${l}</button>`).join("")}
                     </div>
                 </div>` : ""}
                 <main class="adm-body" id="ordersBody"></main>
@@ -3152,7 +3951,7 @@
     const isAway = (c) => daysSince(c.last_order_at) > 60;
     const isNew = (c) => c.orders_count <= 1 && daysSince(c.first_order_at || c.last_order_at) <= 14;
     const recentOffer = (c) => daysSince(c.last_offer_at) < 3;
-    const KIND_TEST = { marketing: (c) => c.marketing, vip: isVip, repeat: (c) => c.orders_count > 1, away: isAway, new: isNew };
+    const KIND_TEST = { marketing: (c) => c.marketing, vip: isVip, repeat: (c) => c.orders_count > 1, away: isAway, new: isNew, reward: (c) => rewardReady(c) };
 
     // شارات العميل: مميز / عاد للشراء / جديد / غائب
     function custTags(c) {
@@ -3222,6 +4021,9 @@
         const all = A.customers;
         const list = filteredCustomers();
         const optedIn = all.filter((c) => c.marketing);
+        const earned = earnedPoints();
+        const lyOn = ATHR.loyaltyOn(cfg());
+        const ready = lyOn ? all.filter((c) => rewardReady(c, earned)).length : 0;
         const flag = (code) => (ATHR_COUNTRIES.find((x) => x.code === code) || ATHR_COUNTRIES[0]).flag;
         body.innerHTML = `
             <div class="ob-stats cust-stats">
@@ -3229,6 +4031,7 @@
                 <div><small>يقبلون العروض</small><b>${optedIn.length}</b></div>
                 <div><small>💎 المميزون</small><b>${all.filter(isVip).length}</b></div>
                 <div><small>🔁 رجعوا للشراء</small><b>${all.filter((c) => c.orders_count > 1).length}</b></div>
+                ${lyOn ? `<div class="${ready ? "hot" : ""}"><small>🎁 مكافآت جاهزة</small><b>${ready}</b></div>` : ""}
             </div>
             ${all.length ? `<div class="offer-hero">
                 <div class="oh-txt"><b>📣 استوديو العروض</b><small>اختر منتجاً، ورسالة جذابة جاهزة، ورابط خاص لكل عميل باسمه مع عدّاد لانتهاء العرض.</small></div>
@@ -3242,7 +4045,7 @@
             ${list.length ? `<ul class="cust-list">${list.map((c) => `<li class="cust${c.marketing ? "" : " off"}">
                 <div class="cust-main">
                     <b>${esc(c.name || "بدون اسم")}${c.country && c.country !== "OM" ? ` <span aria-hidden="true">${flag(c.country)}</span>` : ""}</b>
-                    ${custTags(c).length ? `<span class="cust-tags">${custTags(c).map(([k, l]) => `<span class="ctag ${k}">${l}</span>`).join("")}</span>` : ""}
+                    ${custTags(c).length || (lyOn && custPoints(c, earned)) ? `<span class="cust-tags">${custTags(c).map(([k, l]) => `<span class="ctag ${k}">${l}</span>`).join("")}${lyOn && custPoints(c, earned) ? `<span class="ctag pts">⭐ ${ATHR.pointsText(custPoints(c, earned))}</span>` : ""}</span>` : ""}
                     <span dir="ltr" class="cust-phone">+${esc(c.phone)}</span>
                     <small class="adm-muted">${c.orders_count} ${c.orders_count === 1 ? "طلب" : c.orders_count === 2 ? "طلبان" : "طلبات"} · ${money(c.total_spent)} · آخر طلب ${esc(sinceText(c.last_order_at))}${c.last_offer_at ? ` · آخر عرض ${esc(sinceText(c.last_offer_at))}` : ""}</small>
                 </div>
@@ -3251,6 +4054,7 @@
                     <small>العروض</small>
                 </div>
                 <div class="cust-btns">
+                    ${lyOn && rewardReady(c, earned) ? `<button type="button" class="ab-mini reward" data-cust-reward="${esc(c.phone)}">⭐ مكافأة</button>` : ""}
                     ${c.marketing ? `<button type="button" class="ab-mini gift" data-cust-offer="${esc(c.phone)}">🎁 عرض</button>` : ""}
                     <button type="button" class="ab-mini wa" data-cust-wa="${esc(c.phone)}">واتساب</button>
                 </div>
@@ -3407,6 +4211,7 @@
                     </div>
                     ${p.pct ? "" : `<p class="adm-note">💡 هذا المنتج بدون خصم، فتُحذف أسطر الخصم من الرسالة تلقائياً. لإضافة خصم: لوحة التحكم ← المنتجات ← «الخصم %» ثم انشر.</p>`}` : `<button class="ab-mini" type="button" data-a="offer-back">← اختيار منتج بدلاً من ذلك</button>`}
                     <div class="af"><span>أسلوب الرسالة</span><div class="pct-chips">${tpls.map(([label], i) => `<button type="button" class="ab-mini${st.tpl === i ? " on" : ""}" data-offer-tpl="${i}" aria-pressed="${st.tpl === i}">${esc(label)}</button>`).join("")}</div></div>
+                    <button class="ab ab-soft ab-sm ai-btn" type="button" data-a="offer-ai">✨ اكتب رسالة بالذكاء الاصطناعي</button>
                     <label class="af"><span>نص الرسالة (تقدر تعدّله)</span><textarea class="ai" id="offerText" rows="9">${esc(st.text)}</textarea>
                         <small>{name} اسم العميل · {product} المنتج · {price} السعر · {old} السعر قبل الخصم · {pct} نسبة الخصم · {save} التوفير · {ends} انتهاء العرض · {link} الرابط الخاص. السطر الذي معلومته غير موجودة يُحذف تلقائياً، ويُضاف سطر «لإيقاف العروض».</small></label>
                     ${p ? `<div class="af"><span>⏳ مدة العرض <small class="adm-muted">(عدّاد تنازلي يظهر للعميل في صفحة المنتج)</small></span><div class="pct-chips">${OFFER_ENDS.map(([h, l]) => `<button type="button" class="ab-mini${st.hours === h ? " on" : ""}" data-offer-ends="${h}" aria-pressed="${st.hours === h}">${l}</button>`).join("")}</div></div>` : ""}
@@ -3700,6 +4505,7 @@
                 </tbody></table>` : `<p class="adm-muted">لا توجد زيارات مسجّلة في هذه المدة بعد.</p>`}
                 <p class="adm-muted">لتعرف أثر كل منصة بدقة، أضف في آخر رابط المتجر أو المنتج الذي تنشره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</p>
             </section>
+            ${reportSections(inRange)}
             <section class="adm-card">
                 <h2>الأكثر مبيعاً</h2>
                 ${top.length ? `<table class="adm-table"><thead><tr><th>المنتج</th><th>القطع</th><th>المبلغ</th></tr></thead><tbody>
@@ -3761,7 +4567,7 @@
             return;
         }
 
-        body.innerHTML = stats + list.map((o) => {
+        body.innerHTML = stats + `<div class="cust-actions"><button class="ab-mini" type="button" data-a="xlsx-orders">⬇️ تنزيل الطلبات Excel (${list.length})</button></div>` + list.map((o) => {
             const when = ATHR.muscatParts(o.ordered_at);
             return `<article class="oc${o.status === "delivered" ? " delivered" : ""}${o.hidden ? " is-hidden" : ""}">
                 <header class="oc-head">

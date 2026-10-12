@@ -1984,3 +1984,20 @@ html[data-mode="dark"] .cf-pill.ok { color: #0D2418; }
 .cart-float.bump .cf-ring { animation: cf-bump .5s ease; }
 @keyframes cf-bump { 0% { transform: scale(1); } 30% { transform: scale(1.18); } 60% { transform: scale(.94); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .cart-float.bump .cf-ring { animation: none; } }
+
+/* =====================================================
+   v17 — المخزون («باقي N فقط»)، نقاط الولاء، والبحث الذكي
+===================================================== */
+.card-low { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 800; color: var(--deal); }
+.pchip.pts { color: #9A6B00; background: color-mix(in srgb, #F5B301 14%, transparent); border-color: transparent; }
+html[data-mode="dark"] .pchip.pts { color: #F7C948; }
+@media (prefers-color-scheme: dark) { html[data-mode="auto"] .pchip.pts { color: #F7C948; } }
+.row.pts { color: #9A6B00; font-weight: 700; }
+html[data-mode="dark"] .row.pts { color: #F7C948; }
+.loyal-note { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--r); background: color-mix(in srgb, #F5B301 12%, var(--surface)); border: 1px solid color-mix(in srgb, #F5B301 35%, var(--line)); }
+.loyal-note > span { font-size: 24px; line-height: 1; }
+.loyal-note b { display: block; font-size: 15px; }
+.loyal-note small { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.search-loose { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+.search-chips { margin-bottom: 14px; }
+.search-chips .chip { text-decoration: none; }
