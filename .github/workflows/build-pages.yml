@@ -6,6 +6,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
+      - "marketing/**"
       - "p/**"
       - "c/**"
       - "index.html"

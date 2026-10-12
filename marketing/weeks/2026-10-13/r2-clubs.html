@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ريلز: أي فريق تشجع؟</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<script src="../../kit/anim.js"></script>
+<style>
+.reel .logo { top: 110px; }
+#intro { position: absolute; inset: 0; }
+#intro img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
+#intro h1 { position: absolute; top: 300px; right: 80px; left: 80px; margin: 0; text-align: center; font-size: 132px; font-weight: 700; color: var(--wine); line-height: 1.15; }
+.club { position: absolute; inset: 0; background: var(--sand); }
+.club .frame { position: absolute; top: 330px; right: 90px; left: 90px; height: 900px; box-shadow: 0 30px 60px rgba(74, 13, 18, .14); }
+.club .frame img { object-position: 50% 64%; }
+.club h2 { position: absolute; top: 1290px; right: 80px; left: 80px; margin: 0; text-align: center; font-size: 124px; font-weight: 700; color: var(--wine); line-height: 1.1; }
+.club p { position: absolute; top: 1450px; right: 80px; left: 80px; margin: 0; text-align: center; font-size: 50px; font-weight: 600; color: var(--deep); }
+.club p s { color: var(--muted); font-weight: 400; margin-right: 14px; }
+.tag { position: absolute; top: 230px; right: 0; left: 0; text-align: center; font-size: 40px; font-weight: 600; color: var(--muted); }
+#end { position: absolute; inset: 0; background: var(--deep); color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 160px; }
+#end img { width: 280px; height: auto; }
+#end h2 { margin: 70px 0 0; font-size: 116px; font-weight: 700; }
+#end p { margin: 16px 0 0; font-size: 50px; font-weight: 500; color: #E4D3BF; }
+#end .chip { margin-top: 54px; font-size: 46px; padding: 14px 44px 18px; background: var(--gold); color: var(--deep); }
+#end .k { margin-top: 40px; font-size: 42px; color: #E4D3BF; }
+</style>
+</head>
+<body>
+<div class="reel">
+    <div id="intro">
+        <img src="../../../images/categories/clubs.jpg" alt="">
+        <h1 id="h1">أي فريق<br>تشجع؟</h1>
+    </div>
+    <div class="club" id="c1"><div class="tag">1/5</div><div class="frame"><img src="../../../images/t/za1xge3mhw-m.webp" alt=""></div><h2>ريال مدريد</h2><p>2.800 ر.ع<s>3.500</s></p></div>
+    <div class="club" id="c2"><div class="tag">2/5</div><div class="frame"><img src="../../../images/t/28gbozy4u59-m.webp" alt=""></div><h2>برشلونة</h2><p>2.800 ر.ع<s>3.500</s></p></div>
+    <div class="club" id="c3"><div class="tag">3/5</div><div class="frame"><img src="../../../images/t/7hb9e2vzqo-m.webp" alt=""></div><h2>الهلال</h2><p>2.800 ر.ع<s>3.500</s></p></div>
+    <div class="club" id="c4"><div class="tag">4/5</div><div class="frame"><img src="../../../images/t/1vvdkxcqgp-m.webp" alt=""></div><h2>النصر</h2><p>2.800 ر.ع<s>3.500</s></p></div>
+    <div class="club" id="c5"><div class="tag">5/5</div><div class="frame"><img src="../../../images/t/1ke69lhn2e6-m.webp" alt=""></div><h2>الاتحاد</h2><p>2.800 ر.ع<s>3.500</s></p></div>
+    <img class="logo" id="lg" src="../../kit/logo_burgundy.png" alt="أثر">
+    <div id="end">
+        <img src="../../kit/logo_white.png" alt="أثر">
+        <h2 id="e1">اختار فريقك</h2>
+        <p id="e2">الكوب بـ 2.800 ر.ع بدل 3.500</p>
+        <span class="chip" id="e3">4 أكواب = التوصيل مجاني</span>
+        <p class="k" id="e4">الرابط في البايو</p>
+    </div>
+</div>
+<script>
+window.DURATION = 10.5;
+window.COVER_T = 0.9;
+const START = 1.7, EACH = 1.2;
+window.render = (t) => {
+    // المقدمة
+    const z = 1 + 0.06 * A.p(t, 0, 1.9);
+    A.set("#intro img", { s: z });
+    A.pop("#h1", t, 0.15, 0.5);
+    A.set("#intro", { o: 1 - A.p(t, START, START + 0.15) });
+    // الأندية
+    for (let i = 0; i < 5; i++) {
+        const a = START + i * EACH, b = a + EACH;
+        const el = A.$(`#c${i + 1}`);
+        if (t < a || t >= b + 0.12) { A.set(el, { o: 0 }); continue; }
+        A.set(el, { o: Math.min(A.p(t, a, a + 0.12), 1 - A.p(t, b, b + 0.12)) });
+        const k = A.out(A.p(t, a, a + 0.4));
+        A.set(el.querySelector(".frame"), { x: (1 - k) * -140, s: 0.94 + 0.06 * k + 0.02 * A.p(t, a, b) });
+        A.pop(el.querySelector("h2"), t, a + 0.12, 0.4);
+        A.rise(el.querySelector("p"), t, a + 0.25, 0.35, 30);
+    }
+    // الخاتمة
+    const endAt = START + 5 * EACH;
+    const e = A.inout(A.p(t, endAt, endAt + 0.3));
+    A.set("#end", { o: e });
+    A.set("#lg", { o: 1 - e });
+    A.rise("#e1", t, endAt + 0.25, 0.5);
+    A.rise("#e2", t, endAt + 0.5, 0.5);
+    A.pop("#e3", t, endAt + 0.85, 0.5);
+    A.rise("#e4", t, endAt + 1.15, 0.5);
+};
+window.render(0);
+</script>
+</body>
+</html>

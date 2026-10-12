@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ريلز: خصم من 20% إلى 40%</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<script src="../../kit/anim.js"></script>
+<style>
+.reel .logo { top: 110px; z-index: 9; }
+#intro { position: absolute; inset: 0; background: var(--deep); color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 140px; text-align: center; }
+#intro .big { font-size: 230px; font-weight: 700; line-height: 1; }
+#intro .rng { margin-top: 26px; font-size: 104px; font-weight: 700; color: var(--gold); }
+#intro .rng bdi { direction: ltr; }
+#intro .sm { margin-top: 26px; font-size: 48px; font-weight: 500; color: #E4D3BF; }
+.deal { position: absolute; inset: 0; background: var(--sand); }
+.deal .lbl { position: absolute; top: 240px; right: 0; left: 0; text-align: center; font-size: 76px; font-weight: 700; color: var(--wine); }
+.deal .frame { position: absolute; top: 380px; right: 110px; left: 110px; height: 900px; box-shadow: 0 30px 60px rgba(74, 13, 18, .14); }
+.deal .frame img { object-position: 50% 64%; }
+.deal .badge { position: absolute; top: 330px; left: 70px; width: 230px; height: 230px; border-radius: 50%; background: var(--wine); color: var(--cream); display: grid; place-items: center; font-size: 76px; font-weight: 700; direction: ltr; z-index: 3; box-shadow: 0 16px 34px rgba(74, 13, 18, .3); }
+.deal .badge.hot { background: var(--gold); color: var(--deep); }
+.deal .old { position: absolute; top: 1330px; right: 0; left: 0; text-align: center; font-size: 90px; font-weight: 600; color: var(--muted); }
+.deal .old span { position: relative; display: inline-block; }
+.deal .old i { position: absolute; top: 52%; right: -10px; height: 8px; background: var(--wine); border-radius: 4px; width: 0; }
+.deal .new { position: absolute; top: 1450px; right: 0; left: 0; text-align: center; font-size: 150px; font-weight: 700; color: var(--wine); line-height: 1; }
+.deal .new small { font-size: 64px; }
+#end { position: absolute; inset: 0; background: var(--deep); color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 160px; }
+#end img { width: 280px; height: auto; }
+#end h2 { margin: 70px 0 0; font-size: 100px; font-weight: 700; line-height: 1.2; }
+#end p { margin: 18px 0 0; font-size: 48px; font-weight: 500; color: #E4D3BF; }
+#end .chip { margin-top: 54px; font-size: 46px; padding: 14px 44px 18px; background: var(--gold); color: var(--deep); }
+</style>
+</head>
+<body>
+<div class="reel">
+    <div class="deal" id="d1">
+        <div class="lbl">الأكواب</div>
+        <div class="frame"><img src="../../../images/categories/quotes.jpg" alt=""></div>
+        <div class="badge">-20%</div>
+        <div class="old"><span>3.500 ر.ع<i></i></span></div>
+        <div class="new">2.800 <small>ر.ع</small></div>
+    </div>
+    <div class="deal" id="d2">
+        <div class="lbl">المحافظ</div>
+        <div class="frame"><img src="../../../images/categories/wallets.jpg" alt=""></div>
+        <div class="badge hot">-40%</div>
+        <div class="old"><span>1.500 ر.ع<i></i></span></div>
+        <div class="new">0.900 <small>ر.ع</small></div>
+    </div>
+    <div id="intro">
+        <div class="big" id="i1">خصم</div>
+        <div class="rng" id="i2">من <bdi>20%</bdi> إلى <bdi>40%</bdi></div>
+        <div class="sm" id="i3">في متجر أثر</div>
+    </div>
+    <img class="logo" id="lg" src="../../kit/logo_burgundy.png" alt="أثر">
+    <div id="end">
+        <img src="../../kit/logo_white.png" alt="أثر">
+        <h2 id="e1">خصم من <bdi dir="ltr">20%</bdi> إلى <bdi dir="ltr">40%</bdi></h2>
+        <p id="e2">على الأكواب والمجات والمحافظ</p>
+        <span class="chip" id="e3">اطلب من الرابط في البايو</span>
+    </div>
+</div>
+<script>
+window.DURATION = 10;
+window.COVER_T = 1.4;
+function deal(id, t, a, b) {
+    const el = A.$(id);
+    if (t < a - 0.01 || t > b + 0.2) { A.set(el, { o: 0 }); return; }
+    A.set(el, { o: Math.min(A.p(t, a, a + 0.2), 1 - A.p(t, b, b + 0.2)) });
+    A.pop(el.querySelector(".lbl"), t, a + 0.05, 0.4);
+    const k = A.out(A.p(t, a, a + 0.5));
+    A.set(el.querySelector(".frame"), { y: (1 - k) * 80, s: 0.96 + 0.04 * k + 0.02 * A.p(t, a, b) });
+    A.rise(el.querySelector(".old"), t, a + 0.35, 0.35, 30);
+    el.querySelector(".old i").style.width = `${A.out(A.p(t, a + 0.85, a + 1.2)) * 105}%`;
+    A.pop(el.querySelector(".new"), t, a + 1.25, 0.5);
+    A.pop(el.querySelector(".badge"), t, a + 1.55, 0.5, { r: -8 });
+}
+window.render = (t) => {
+    A.pop("#i1", t, 0.1, 0.5);
+    A.rise("#i2", t, 0.45, 0.5, 50);
+    A.rise("#i3", t, 0.8, 0.5, 40);
+    A.set("#intro", { o: 1 - A.p(t, 1.9, 2.15) });
+    A.set("#lg", { o: t < 2.0 ? 0 : 1 - A.p(t, 8.0, 8.3) });
+    deal("#d1", t, 2.0, 5.0);
+    deal("#d2", t, 5.0, 8.0);
+    const e = A.inout(A.p(t, 8.0, 8.3));
+    A.set("#end", { o: e });
+    A.rise("#e1", t, 8.2, 0.5);
+    A.rise("#e2", t, 8.45, 0.5);
+    A.pop("#e3", t, 8.8, 0.5);
+};
+window.render(0);
+</script>
+</body>
+</html>
