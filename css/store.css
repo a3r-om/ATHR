@@ -326,7 +326,7 @@ main { flex: 1; outline: none; }
 
 /* ---------- Ad ---------- */
 
-.ad { margin: 14px auto 0; }
+.ad { margin: 14px auto 16px; }
 .ad-media { display: block; border-radius: var(--r); overflow: hidden; background: var(--line); text-decoration: none; }
 .ad-media img, .ad-media video { width: 100%; height: auto; max-height: 520px; object-fit: cover; }
 .ad-text { border-radius: var(--r); padding: 22px 20px; color: #fff; display: grid; gap: 8px; justify-items: start; }
