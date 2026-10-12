@@ -1428,3 +1428,93 @@ $$;
 -- =====================================================
 alter table public.orders
     add column if not exists gift_occasion_text text check (gift_occasion_text is null or char_length(gift_occasion_text) <= 40);
+-- =====================================================
+-- الإصدار 16: صفحة «نقاطي» — الزبون يشوف نقاط الولاء برقمه ورقم أحد طلباته
+-- =====================================================
+create or replace function private.athr_cust_key(p text, c text)
+returns text language sql immutable set search_path = public as $$
+    select case
+        when coalesce(nullif(c, ''), 'OM') = 'OM' and length(regexp_replace(coalesce(p, ''), '\D', '', 'g')) = 8
+            then '968' || regexp_replace(coalesce(p, ''), '\D', '', 'g')
+        else regexp_replace(coalesce(p, ''), '\D', '', 'g')
+    end;
+$$;
+
+create or replace function public.loyalty_status(ph text, ono text)
+returns jsonb
+language plpgsql
+stable security definer
+set search_path = public
+as $$
+declare
+    ly jsonb;
+    per numeric;
+    need int;
+    val numeric;
+    k text;
+    spent numeric;
+    pend numeric;
+    earned int;
+    used int;
+    bal int;
+    nm text;
+    cp jsonb;
+begin
+    -- نفس القيم الافتراضية في المتجر إذا لم تُحفظ الإعدادات بعد
+    select coalesce(config->'sales'->'loyalty', '{}'::jsonb) into ly from public.store_settings limit 1;
+    ly := coalesce(ly, '{}'::jsonb);
+    per := coalesce((ly->>'per_omr')::numeric, 1);
+    if coalesce((ly->>'enabled')::boolean, true) = false or per <= 0 then
+        return jsonb_build_object('enabled', false);
+    end if;
+    need := greatest(1, coalesce((ly->>'reward_points')::int, 50));
+    val := greatest(0.5, coalesce((ly->>'reward_value')::numeric, 2));
+
+    k := regexp_replace(coalesce(ph, ''), '\D', '', 'g');
+    if length(k) = 8 then k := '968' || k; end if;
+    if length(k) < 8 or length(k) > 15 or coalesce(trim(ono), '') !~* '^[A-Z]{1,4}-[0-9A-Z]{3,10}$' then
+        return jsonb_build_object('enabled', true, 'ok', false);
+    end if;
+
+    -- رقم الطلب لازم يكون لنفس الرقم (حتى لا يشوف أحد نقاط غيره)
+    if not exists (
+        select 1 from public.orders o
+        where upper(o.order_no) = upper(trim(ono)) and not coalesce(o.hidden, false)
+          and private.athr_cust_key(o.phone, o.country) = k
+    ) then
+        return jsonb_build_object('enabled', true, 'ok', false);
+    end if;
+
+    select coalesce(sum(greatest(0, coalesce(o.total, 0) - coalesce(o.delivery_price, 0))) filter (where o.status = 'delivered'), 0),
+           coalesce(sum(greatest(0, coalesce(o.total, 0) - coalesce(o.delivery_price, 0))) filter (where o.status <> 'delivered'), 0)
+      into spent, pend
+      from public.orders o
+     where not coalesce(o.hidden, false) and private.athr_cust_key(o.phone, o.country) = k;
+
+    earned := floor(spent * per + 1e-9)::int;
+    select coalesce(points_used, 0), name into used, nm from public.customers where phone = k;
+    bal := greatest(0, earned - coalesce(used, 0));
+
+    select jsonb_build_object('code', c.code, 'value', c.value, 'ends_at', c.ends_at)
+      into cp
+      from public.coupons c
+     where c.phone = k and c.code like 'VIP%' and (private.athr_coupon(c.code)).code is not null
+     order by c.created_at desc
+     limit 1;
+
+    return jsonb_build_object(
+        'enabled', true, 'ok', true,
+        'name', split_part(trim(coalesce(nm, '')), ' ', 1),
+        'points', bal,
+        'pending', floor(pend * per + 1e-9)::int,
+        'need', need,
+        'value', val,
+        'per_omr', per,
+        'coupon', cp
+    );
+end;
+$$;
+
+revoke all on function public.loyalty_status(text, text) from public;
+grant execute on function public.loyalty_status(text, text) to anon, authenticated;
+revoke all on function private.athr_cust_key(text, text) from public;

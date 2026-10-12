@@ -2429,7 +2429,7 @@
     function loyaltyCard() {
         const ly = loyalty();
         return card("⭐ نقاط الولاء", `
-            ${toggle("config.sales.loyalty.enabled", "تفعيل نقاط الولاء", { rerender: true, help: "الزبون يكسب نقاطاً من كل طلب يُسلَّم له، ويرى كم نقطة يكسب في صفحة الطلب." })}
+            ${toggle("config.sales.loyalty.enabled", "تفعيل نقاط الولاء", { rerender: true, help: "الزبون يكسب نقاطاً من كل طلب يُسلَّم له، ويشوف رصيده وكم باقي على الخصم من «نقاطي» في قائمة المتجر (برقم جواله ورقم أحد طلباته)." })}
             ${ly.enabled ? `<div class="two">
                 ${number("config.sales.loyalty.per_omr", "نقاط لكل 1 ر.ع", { step: "1", min: "1" })}
                 ${number("config.sales.loyalty.reward_points", "النقاط المطلوبة للمكافأة", { step: "1", min: "5" })}

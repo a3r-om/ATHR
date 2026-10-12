@@ -2023,3 +2023,40 @@ html.tpl-luxe .hero.hero-compact h1::after { margin-top: 8px; }
 @media (min-width: 760px) {
     html[class] .hero.hero-compact:not(.has-image) .hero-inner { padding-top: 20px; padding-bottom: 18px; gap: 9px; }
 }
+
+/* =====================================================
+   v18 — نقاطي: رصيد نقاط الولاء وكم باقي على الخصم
+===================================================== */
+.points-page { max-width: 560px; padding-top: 18px; padding-bottom: 28px; display: grid; gap: 14px; }
+.pts-head { display: flex; align-items: center; gap: 10px; }
+.pts-head h1 { font-size: 24px; margin: 0; }
+.pts-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: color-mix(in srgb, #F5B301 16%, var(--surface)); }
+.pts-ico svg, .mi.star svg { fill: #F5B301; stroke: #C98F00; stroke-width: 1.2; stroke-linejoin: round; }
+.pts-ico svg { width: 24px; height: 24px; }
+.points-page.empty .pts-head, .page .pts-head { justify-content: center; }
+.pts-intro { margin: 0; color: var(--muted); line-height: 1.6; }
+.pts-form { display: grid; gap: 12px; }
+.pts-err:empty { display: none; }
+.pts-card { display: grid; gap: 10px; text-align: center; padding: 22px 18px; }
+.pts-loading { color: var(--muted); padding: 34px 18px; }
+.pts-hi { margin: 0; color: var(--muted); font-weight: 600; }
+.pts-big { display: grid; gap: 4px; }
+.pts-big b { font-size: 58px; line-height: 1; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.pts-big span { color: var(--muted); font-size: 14px; }
+.pts-bar { height: 12px; margin-top: 8px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--text) 8%, var(--surface)); }
+.pts-bar i { display: block; height: 100%; min-width: 6px; border-radius: inherit; background: #F5B301; }
+.pts-scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.pts-goal { margin: 4px 0 0; font-size: 16.5px; font-weight: 700; line-height: 1.5; }
+.pts-goal.ready { color: var(--ok); }
+.pts-pending { margin: 0; font-size: 13.5px; color: var(--muted); }
+.pts-coupon { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; padding: 12px 14px; border: 1.5px dashed var(--accent); border-radius: var(--r); text-align: start; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.pts-coupon > div { display: grid; gap: 2px; min-width: 0; }
+.pts-coupon b { font-size: 20px; letter-spacing: 1px; }
+.pts-coupon small { color: var(--muted); font-size: 12.5px; }
+.pts-note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.pts-how h2 { font-size: 16px; margin: 0 0 8px; }
+.pts-how ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 6px; font-size: 14px; line-height: 1.6; }
+.pts-actions { display: grid; justify-items: center; gap: 10px; }
+.pts-actions .btn { width: 100%; }
+.loyal-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-weight: 700; font-size: 13.5px; color: var(--accent); text-decoration: none; }
+.loyal-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }

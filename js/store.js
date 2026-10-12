@@ -37,7 +37,8 @@
         offer: "athr_offer",
         favs: "athr_favs",
         restock: "athr_restock",
-        coupon: "athr_coupon"
+        coupon: "athr_coupon",
+        points: "athr_points"
     };
 
     // أسماء ولايات عُمان (اقتراحات فقط، ويمكن للعميل كتابة غيرها)
@@ -597,6 +598,7 @@
             case "review": return { name: "review", p: params.get("p") || "", o: params.get("o") || "" };
             case "search": return { name: "search", q: params.get("q") || "" };
             case "fav": return { name: "fav" };
+            case "points": return { name: "points" };
             case "gift": return { name: "gift", c: params.get("c") || "" };
             default: return { name: "notfound" };
         }
@@ -668,6 +670,7 @@
             case "product": renderProduct(route, { changed }); break;
             case "search": renderSearch(route); break;
             case "fav": renderFav(); break;
+            case "points": renderPoints(); break;
             case "shipping": view.innerHTML = V.shipping(v()); break;
             case "cart": renderCart(); break;
             case "checkout": renderCheckout(); break;
@@ -1969,6 +1972,11 @@
         locStash.self = null;
         locStash.gift = null;
         giftEnd();
+        // نقاطي: نحفظ الرقم ورقم الطلب على الجهاز حتى تظهر النقاط مباشرة
+        if (saved && ATHR.loyaltyOn(cfg)) {
+            storage.set(KEYS.points, { ph: ATHR.customerWhatsapp(order.phone, order.country || "OM"), no: order.order_no, local: phone.local });
+            PTS.data = null;
+        }
 
         track("order");
         pixelSend("Purchase", tt.lines, { value: order.total, eventId: order.order_no });
@@ -2020,7 +2028,166 @@
         const pts = ATHR.pointsFor(Number(order.total) - Number(order.delivery_price || 0), cfg);
         if (!pts) return "";
         const ly = cfg.sales.loyalty;
-        return `<div class="loyal-note"><span aria-hidden="true">⭐</span><div><b>${esc(t("تكسب {pts} من هذا الطلب", { pts: ATHR.pointsText(pts) }))}</b><small>${esc(t("تُضاف بعد استلام طلبك. كل {points} نقطة = خصم {value}، ونرسل لك الكود على واتساب.", { points: Number(ly.reward_points) || 50, value: money(Number(ly.reward_value) || 0) }))}</small></div></div>`;
+        return `<div class="loyal-note"><span aria-hidden="true">⭐</span><div><b>${esc(t("تكسب {pts} من هذا الطلب", { pts: ATHR.pointsText(pts) }))}</b><small>${esc(t("تُضاف بعد استلام طلبك. كل {points} نقطة = خصم {value}، ونرسل لك الكود على واتساب.", { points: Number(ly.reward_points) || 50, value: money(Number(ly.reward_value) || 0) }))}</small><a class="loyal-link" href="${BASE}points/">${esc(t("شوف نقاطك"))} ${V.icon.side}</a></div></div>`;
+    }
+
+    // =====================================================
+    // نقاطي: الزبون يشوف رصيد نقاطه وكم باقي على الخصم
+    // (برقم جواله ورقم أحد طلباته حتى لا يشوف أحد نقاط غيره)
+    // =====================================================
+    const PTS = { data: null, key: "", editing: false, error: "", busy: false };
+
+    function pointsCreds() {
+        const saved = storage.get(KEYS.points, null);
+        if (saved && saved.ph && saved.no) return saved;
+        const last = storage.get(KEYS.lastOrder, null);
+        if (last && last.saved && last.order && last.order.phone && last.order.order_no) {
+            return { ph: ATHR.customerWhatsapp(last.order.phone, last.order.country || "OM"), no: last.order.order_no, auto: true };
+        }
+        return null;
+    }
+
+    function pointsHow(d) {
+        const cfg = C();
+        const ly = cfg.sales.loyalty || {};
+        const per = Number((d && d.per_omr) || ly.per_omr) || 1;
+        const need = Number((d && d.need) || ly.reward_points) || 50;
+        const value = ATHR.trimZeros(money(Number((d && d.value) || ly.reward_value) || 0));
+        return `<div class="panel pts-how">
+            <h2>${esc(t("كيف تكسب النقاط؟"))}</h2>
+            <ul>
+                <li>${esc(t("كل 1 {cur} تشتري فيه = {pts} (بدون التوصيل)", { cur: ATHR.lang === "en" ? "OMR" : (cfg.order.currency || "ر.ع"), pts: ATHR.pointsText(per) }))}</li>
+                <li>${esc(t("تنضاف النقاط بعد استلام طلبك"))}</li>
+                <li>${esc(t("كل {need} نقطة = خصم {value}، نرسل لك الكود على واتساب", { need, value }))}</li>
+            </ul>
+        </div>`;
+    }
+
+    function pointsHead() {
+        return `<div class="pts-head"><span class="pts-ico" aria-hidden="true">${V.icon.star}</span><h1>${esc(t("نقاطي"))}</h1></div>`;
+    }
+
+    function pointsFormHTML() {
+        const cfg = C();
+        const c = CC();
+        const rule = ATHR.PHONE_RULES[c.code] || ATHR.PHONE_RULES.OM;
+        const saved = storage.get(KEYS.points, null) || {};
+        const cust = storage.get(KEYS.customer, null) || {};
+        const local = saved.local || (cust.country === c.code ? cust.phoneLocal || "" : "");
+        const last = storage.get(KEYS.lastOrder, null);
+        const no = saved.no || (last && last.order ? last.order.order_no : "");
+        return `<div class="wrap points-page">
+            ${pointsHead()}
+            <p class="pts-intro">${esc(t("اكتب رقم جوالك ورقم أي طلب سابق لك، ونعرض لك نقاطك."))}</p>
+            <form class="panel pts-form" id="pointsForm" novalidate>
+                ${field("ph", t("رقم الجوال"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="ph" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${rule.example}" value="${esc(local)}" required></span>`)}
+                ${field("no", t("رقم الطلب"), `<input class="input" name="no" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AT-12345" value="${esc(no)}" required>`, esc(t("تلقاه في رسالة طلبك على واتساب.")))}
+                <p class="err pts-err" id="ptsErr" role="alert">${esc(PTS.error)}</p>
+                <button class="btn btn-primary btn-block" type="submit"${PTS.busy ? " disabled" : ""}>${esc(PTS.busy ? t("جاري البحث...") : t("اعرض نقاطي"))}</button>
+            </form>
+            ${pointsHow(null)}
+        </div>`;
+    }
+
+    function pointsResultHTML(d) {
+        const need = Math.max(1, Number(d.need) || 50);
+        const pts = Math.max(0, Number(d.points) || 0);
+        const value = ATHR.trimZeros(money(Number(d.value) || 0));
+        const ready = pts >= need;
+        const pct = Math.min(100, Math.round((pts / need) * 100));
+        const left = Math.max(0, need - pts);
+        const cp = d.coupon && d.coupon.code ? d.coupon : null;
+        const ends = cp && cp.ends_at ? new Date(cp.ends_at).toLocaleDateString(ATHR.lang === "en" ? "en-GB" : "ar-OM-u-nu-latn", { day: "numeric", month: "long", timeZone: "Asia/Muscat" }) : "";
+        return `<div class="wrap points-page">
+            ${pointsHead()}
+            <div class="panel pts-card">
+                ${d.name ? `<p class="pts-hi">${esc(t("هلا {name}", { name: d.name }))}</p>` : ""}
+                <div class="pts-big"><b>${pts}</b><span>${esc(t("رصيد نقاطك"))}</span></div>
+                <div class="pts-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${need}" aria-valuenow="${Math.min(pts, need)}" aria-label="${esc(t("التقدم نحو الخصم"))}"><i style="width:${pct}%"></i></div>
+                <div class="pts-scale"><span>0</span><span>${need}</span></div>
+                <p class="pts-goal${ready || cp ? " ready" : ""}">${cp
+                    ? esc(t("مكافأتك جاهزة! استخدم الكوبون تحت."))
+                    : ready
+                        ? esc(t("وصلت {need} نقطة! نرسل لك كوبون خصم {value} على واتساب.", { need, value }))
+                        : esc(t("باقي {left} وتحصل على خصم {value}", { left: ATHR.pointsText(left), value }))}</p>
+                ${Number(d.pending) > 0 ? `<p class="pts-pending">${esc(t("{pts} تنضاف لك بعد استلام طلبك الحالي", { pts: ATHR.pointsText(d.pending) }))}</p>` : ""}
+                ${cp ? `<div class="pts-coupon">
+                    <div><small>${esc(t("كوبونك جاهز"))}</small><b dir="ltr">${esc(cp.code)}</b><small>${esc(t("خصم {value}", { value: ATHR.trimZeros(money(Number(cp.value) || 0)) }))}${ends ? ` · ${esc(t("صالح حتى {date}", { date: ends }))}` : ""}</small></div>
+                    <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(cp.code)}">${esc(t("نسخ"))}</button>
+                </div><p class="pts-note">${esc(t("اكتبه في السلة عند طلبك القادم. يعمل برقمك فقط."))}</p>` : ""}
+            </div>
+            ${pointsHow(d)}
+            <div class="pts-actions">
+                <a class="btn btn-primary" href="${BASE}">${esc(t("تسوّق واكسب نقاط"))}</a>
+                <button class="link-btn" type="button" data-points-change>${esc(t("مو رقمك؟ غيّره"))}</button>
+            </div>
+        </div>`;
+    }
+
+    function pointsOffHTML() {
+        return `<div class="wrap empty page">${pointsHead()}<p>${esc(t("برنامج النقاط غير مفعّل حالياً."))}</p><a class="btn btn-primary" href="${BASE}">${esc(t("العودة للمتجر"))}</a></div>`;
+    }
+
+    function renderPoints() {
+        const view = $("#view");
+        if (!ATHR.loyaltyOn(C())) { view.innerHTML = pointsOffHTML(); return; }
+        const creds = PTS.editing ? null : pointsCreds();
+        const key = creds ? `${creds.ph}|${String(creds.no).toUpperCase()}` : "";
+        if (creds && PTS.data && PTS.key === key) { view.innerHTML = pointsResultHTML(PTS.data); return; }
+        if (creds && !PTS.busy) { lookupPoints(creds); return; }
+        view.innerHTML = pointsFormHTML();
+    }
+
+    async function lookupPoints(creds, fromForm = false) {
+        PTS.busy = true;
+        PTS.error = "";
+        if (!fromForm) $("#view").innerHTML = `<div class="wrap points-page">${pointsHead()}<div class="panel pts-card pts-loading">${esc(t("جاري تحميل نقاطك..."))}</div></div>`;
+        else renderPointsForm();
+        let data = null;
+        try {
+            data = await rest("rpc/loyalty_status", { method: "POST", body: { ph: creds.ph, ono: String(creds.no).trim().toUpperCase() }, timeout: 8000 });
+        } catch (error) {
+            console.warn("points:", error);
+            PTS.busy = false;
+            PTS.error = t("تعذّر الاتصال. حاول مرة ثانية.");
+            if (S.route.name === "points") renderPointsForm();
+            return;
+        }
+        PTS.busy = false;
+        if (S.route.name !== "points") return;
+        if (!data || data.enabled === false) { $("#view").innerHTML = pointsOffHTML(); return; }
+        if (!data.ok) {
+            if (creds.auto) storage.set(KEYS.points, null);
+            PTS.editing = true;
+            PTS.error = fromForm || !creds.auto ? t("ما لقينا طلب بهذا الرقم. تأكد من رقم الجوال ورقم الطلب.") : "";
+            renderPointsForm();
+            return;
+        }
+        storage.set(KEYS.points, { ph: creds.ph, no: String(creds.no).trim().toUpperCase(), local: creds.local || "" });
+        PTS.data = data;
+        PTS.key = `${creds.ph}|${String(creds.no).trim().toUpperCase()}`;
+        PTS.editing = false;
+        $("#view").innerHTML = pointsResultHTML(data);
+    }
+
+    function renderPointsForm() {
+        $("#view").innerHTML = pointsFormHTML();
+    }
+
+    function submitPoints(form) {
+        if (PTS.busy) return;
+        const values = Object.fromEntries(new FormData(form).entries());
+        const c = CC();
+        const phone = ATHR.parsePhone(values.ph, c.code);
+        const no = String(values.no || "").trim().toUpperCase().replace(/\s+/g, "");
+        $$("[data-err]", form).forEach((el) => { el.textContent = ""; });
+        $$(".field.invalid", form).forEach((el) => el.classList.remove("invalid"));
+        const bad = (k, msg) => { const el = form.querySelector(`[data-err="${k}"]`); if (el) { el.textContent = msg; el.closest(".field").classList.add("invalid"); } };
+        let ok = true;
+        if (!phone.valid) { bad("ph", t("اكتب رقم {country} الصحيح: {hint}.", { country: L(c, "name"), hint: L(phone.rule, "hint") })); ok = false; }
+        if (!/^[A-Z]{1,4}-[0-9A-Z]{3,10}$/.test(no)) { bad("no", t("اكتب رقم الطلب كما في رسالتك، مثل AT-12345.")); ok = false; }
+        if (!ok) return;
+        lookupPoints({ ph: c.dial + phone.local, no, local: phone.local }, true);
     }
 
     function renderDone(no) {
@@ -2181,6 +2348,7 @@
             const main = [];
             if (cfg.contact.menu_home !== false) main.push(row(`${ico(V.icon.home)}<span class="ml">${esc(t("الصفحة الرئيسية"))}</span>`, { href: BASE }));
             if (cfg.sales.favorites !== false) main.push(row(`${ico(V.icon.heart, " fav")}<span class="ml">${esc(t("المفضلة"))}</span>${favIds().length ? `<small class="mval">${favIds().length}</small>` : ""}`, { href: `${BASE}fav/` }));
+            if (ATHR.loyaltyOn(cfg)) main.push(row(`${ico(V.icon.star, " star")}<span class="ml">${esc(t("نقاطي"))}<small>${esc(t("رصيدك وكم باقي على الخصم"))}</small></span>${PTS.data ? `<small class="mval">${Number(PTS.data.points) || 0}</small>` : ""}`, { href: `${BASE}points/` }));
             if (cats.length) {
                 main.push(`<button class="mrow" type="button" data-menu-cats aria-expanded="${menuCatsOpen}" aria-controls="menuCats">${ico(V.icon.grid)}<span class="ml">${esc(t("تسوّق حسب القسم"))}</span><small class="mval">${cats.length}</small><span class="mchev down">${V.icon.chevron}</span></button>
                     <div class="menu-cats" id="menuCats"${menuCatsOpen ? "" : " hidden"}>${cats.map((c) => {
@@ -2693,6 +2861,13 @@
         }
         if (d.waCart !== undefined) { quickOrder(computeCart().lines); return; }
         if (d.copy) { copyText(d.copy); return; }
+        if (d.pointsChange !== undefined) {
+            PTS.editing = true;
+            PTS.data = null;
+            PTS.error = "";
+            renderPointsForm();
+            return;
+        }
         if (d.forgetMe !== undefined) {
             storage.del(KEYS.customer);
             toast(t("مُسحت بياناتك من هذا الجهاز"));
@@ -2807,6 +2982,11 @@
         if (f.id === "notifyForm") {
             e.preventDefault();
             submitNotify(f);
+            return;
+        }
+        if (f.id === "pointsForm") {
+            e.preventDefault();
+            afterReady(() => submitPoints(f));
             return;
         }
         if (f.id === "checkoutForm") {
