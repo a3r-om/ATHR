@@ -1259,8 +1259,10 @@
         const cfg = C();
         const vv = v();
         S.lastAdded = ids;
+        // بدون نافذة: يُضاف المنتج بهدوء، مع رسالة صغيرة ونبضة في زر السلة
         if (!cfg.sales.upsell_show) {
-            toast(t("أُضيف إلى السلة"));
+            if (!refresh) toast(`${ids.length > 1 ? t("أُضيف الطقم إلى سلتك") : t("أُضيف إلى السلة")} ✓`, { href: `${BASE}cart/`, text: t("عرض السلة") });
+            renderCartFloat({ bump: true });
             return;
         }
         const added = ids.map(productById).filter(Boolean);

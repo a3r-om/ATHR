@@ -143,6 +143,7 @@
         "إغلاق": "Close",
         "قد يعجبك أيضاً": "You may also like",
         "عرض السلة ({n})": "View cart ({n})",
+        "عرض السلة": "View cart",
         "مواصلة التسوق": "Continue shopping",
         "أضف {amount} واحصل على توصيل مجاني": "Add {amount} more for free delivery",
         "أضف {pieces} ووفّر {pct}%": "Add {pieces} more and save {pct}%",
