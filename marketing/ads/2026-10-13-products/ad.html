@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعلان منتجات أثر</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<style>
+:root { --dark: #4A0D12; --cream: #F7F1E8; --acc: #F2A516; --tan: #DDBA9A; }
+.reel { background: var(--cream); font-family: "Plex", sans-serif; }
+.abs { position: absolute; }
+.layer { position: absolute; inset: 0; }
+.txt { position: absolute; white-space: nowrap; line-height: 1.05; }
+.caret { display: inline-block; width: 8px; height: 0.9em; background: var(--acc); vertical-align: -0.08em; margin-inline-start: 8px; border-radius: 2px; }
+.mark { color: var(--acc); }
+.scene { position: absolute; inset: 0; overflow: hidden; display: none; }
+.scene img.full { position: absolute; left: 50%; top: 50%; width: 1461px; height: 1920px; object-fit: cover; margin: -960px 0 0 -730px; }
+.half { position: absolute; left: 0; width: 1080px; height: 954px; overflow: hidden; background: #E9E6E1; }
+.half img { position: absolute; left: 0; top: -63px; width: 1080px; height: 1080px; object-fit: cover; }
+.lab { position: absolute; right: 80px; top: 250px; font-size: 104px; font-weight: 700; color: var(--dark); white-space: nowrap; line-height: 1.1; }
+.lab.box { background: var(--cream); padding: 10px 34px 22px; border-radius: 14px 14px 44px 14px; font-size: 84px; }
+.idx { position: absolute; left: 80px; top: 270px; font-size: 30px; font-weight: 600; color: rgba(74, 13, 18, .55); direction: ltr; letter-spacing: 2px; }
+.chip { position: absolute; right: 80px; top: 1420px; padding: 14px 34px 22px; background: var(--acc); color: var(--dark); font-size: 58px; font-weight: 700; border-radius: 12px 12px 40px 12px; white-space: nowrap; box-shadow: 0 14px 30px rgba(60, 20, 10, .18); }
+.chip small { font-size: 34px; font-weight: 600; margin-inline-start: 8px; }
+.band { position: absolute; left: 0; top: 0; width: 360px; height: 3200px; background: var(--dark); transform-origin: 0 0; }
+.thumb { position: absolute; width: 400px; height: 400px; border-radius: 22px 22px 70px 22px; overflow: hidden; box-shadow: 0 20px 40px rgba(60, 20, 10, .2); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.card { position: absolute; left: 110px; top: 330px; width: 860px; height: 1260px; background: #FFFFFF; border-radius: 26px 26px 90px 26px; overflow: hidden; box-shadow: 0 30px 70px rgba(60, 20, 10, .22); }
+.card .ph { position: absolute; left: 0; top: 0; width: 860px; height: 860px; overflow: hidden; background: #ECE8E2; }
+.card .ph img { width: 100%; height: 100%; object-fit: cover; }
+.card .nm { position: absolute; right: 56px; top: 900px; font-size: 54px; font-weight: 600; color: var(--dark); white-space: nowrap; }
+.card .pr { position: absolute; right: 56px; top: 990px; display: flex; align-items: baseline; gap: 26px; white-space: nowrap; }
+.card .now { font-size: 130px; font-weight: 700; color: var(--dark); line-height: 1; }
+.card .now small { font-size: 54px; margin-inline-start: 10px; }
+.card .was { position: relative; font-size: 60px; color: rgba(74, 13, 18, .5); line-height: 1; }
+.card .was i { position: absolute; right: -6px; top: 52%; height: 6px; background: var(--acc); border-radius: 3px; }
+.card .off { position: absolute; left: 44px; top: 44px; background: var(--dark); color: var(--cream); font-size: 50px; font-weight: 700; padding: 10px 26px 18px; border-radius: 12px 12px 34px 12px; direction: ltr; }
+.trust { position: absolute; right: 120px; display: flex; align-items: center; gap: 26px; font-size: 64px; font-weight: 600; color: var(--dark); white-space: nowrap; }
+.trust b { width: 74px; height: 74px; border-radius: 50%; background: var(--acc); display: grid; place-items: center; flex-shrink: 0; }
+.trust svg { width: 42px; height: 42px; fill: none; stroke: var(--dark); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<div class="reel" id="reel">
+    <div class="layer" id="bg"></div>
+
+    <!-- S1: «عندك ذوق؟» -->
+    <div class="txt" id="q1" style="font-size:150px;font-weight:700;color:var(--cream)"></div>
+
+    <!-- S2: «عندنا كوبه.» + 4 صور -->
+    <div class="txt" id="w1" style="font-size:200px;font-weight:700;color:var(--dark)">عندنا</div>
+    <div class="txt" id="w2" style="font-size:200px;font-weight:700;color:var(--dark)">كوبه<span class="mark">.</span></div>
+    <div class="thumb" id="t0" style="left:120px;top:620px"><img src="../../../images/t/1fsciku6q8w-m.webp" alt=""></div>
+    <div class="thumb" id="t1" style="left:560px;top:620px"><img src="../../../images/t/f0pgihkbym-m.webp" alt=""></div>
+    <div class="thumb" id="t2" style="left:120px;top:1060px"><img src="../../../images/t/2aokbiqd9wv-m.webp" alt=""></div>
+    <div class="thumb" id="t3" style="left:560px;top:1060px"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div>
+
+    <!-- S3: جولة المنتجات (8 مشاهد على الإيقاع) -->
+    <div class="scene" id="p0"><img class="full" src="../../../images/categories/quotes.jpg" alt=""><div class="idx">01 / 08</div><div class="lab"></div><div class="chip">2.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p1"><img class="full" src="../../../images/categories/girls.jpg" alt=""><div class="idx">02 / 08</div><div class="lab"></div><div class="chip">2.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p2"><div class="half" style="top:0"><img src="../../../images/t/z56pmmhapz-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/1w1dpwvjdvv-m.webp" alt=""></div><div class="idx" style="color:rgba(74,13,18,.7)">03 / 08</div><div class="lab box"></div></div>
+    <div class="scene" id="p3"><img class="full" src="../../../images/categories/mugs.jpg" alt=""><div class="idx">04 / 08</div><div class="lab"></div><div class="chip">4.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p4"><div class="half" style="top:0"><img src="../../../images/t/2aokbiqd9wv-m.webp" alt="" style="top:-40px"></div><div class="half" style="top:966px"><img src="../../../images/t/1t091cfjk2s-m.webp" alt="" style="top:-40px"></div><div class="idx" style="color:rgba(74,13,18,.7)">05 / 08</div><div class="lab box"></div><div class="chip" style="top:1560px">4.900<small>ر.ع</small></div></div>
+    <div class="scene" id="p5"><img class="full" src="../../../images/categories/makeup-bags.jpg" alt=""><div class="idx">06 / 08</div><div class="lab"></div><div class="chip">1.000<small>ر.ع</small></div></div>
+    <div class="scene" id="p6"><div class="half" style="top:0"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/bihbemafg-m.webp" alt=""></div><div class="idx" style="color:rgba(74,13,18,.7)">07 / 08</div><div class="lab box"></div><div class="chip" style="top:1560px">2.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p7" style="background:var(--dark)">
+        <div class="idx" style="color:rgba(247,241,232,.55)">08 / 08</div>
+        <div class="txt" id="more" style="font-size:64px;font-weight:600;color:rgba(247,241,232,.8)">وعندنا بعد</div>
+        <div class="txt" id="cyc" style="font-size:190px;font-weight:700;color:var(--cream)"></div>
+        <div class="abs" id="cycLine" style="height:12px;background:var(--acc);border-radius:6px"></div>
+    </div>
+    <div class="band" id="band"></div>
+
+    <!-- S4: الأسعار -->
+    <div class="txt" id="q2" style="font-size:130px;color:var(--dark)"></div>
+    <div class="card" id="c0"><div class="ph"><img src="../../../images/t/1fsciku6q8w-m.webp" alt=""></div><div class="off">-20%</div><div class="nm">كوب «نتقهوى عيونك»</div><div class="pr"><span class="now">2.800<small>ر.ع</small></span><span class="was">3.500<i></i></span></div></div>
+    <div class="card" id="c1"><div class="ph"><img src="../../../images/categories/mugs.jpg" alt="" style="object-position:50% 42%"></div><div class="off">-20%</div><div class="nm">مج بغطاء</div><div class="pr"><span class="now">4.800<small>ر.ع</small></span><span class="was">6.000<i></i></span></div></div>
+    <div class="card" id="c2"><div class="ph"><img src="../../../images/t/1t091cfjk2s-m.webp" alt=""></div><div class="off">-25%</div><div class="nm">كوب حراري 750 مل</div><div class="pr"><span class="now">4.900<small>ر.ع</small></span><span class="was">6.500<i></i></span></div></div>
+    <div class="txt" id="upto" style="font-size:150px;font-weight:700;color:var(--dark);text-align:center;line-height:1.2">خصومات<br>حتى <span class="mark" dir="ltr" style="unicode-bidi:isolate">40%</span></div>
+
+    <!-- S5: العرض -->
+    <div class="txt" id="four" style="font-size:150px;font-weight:700;color:var(--cream)">4 أكواب</div>
+    <svg class="layer" id="cups" viewBox="0 0 1080 1920" aria-hidden="true"></svg>
+    <div class="txt" id="eq" style="font-size:120px;font-weight:700;color:var(--acc)">= التوصيل مجاني</div>
+    <div class="txt" id="eqs" style="font-size:48px;color:rgba(247,241,232,.75)">للطلبات من 10 ر.ع داخل عُمان</div>
+    <div class="trust" id="tr0" style="top:720px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>الدفع عند الاستلام</div>
+    <div class="trust" id="tr1" style="top:900px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>توصيل لكل عُمان والخليج</div>
+    <div class="trust" id="tr2" style="top:1080px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>بطاقة إهداء باسم من تحب</div>
+
+    <!-- S6: الدعوة + الشعار -->
+    <div class="txt" id="cta" style="font-size:150px;font-weight:700;color:var(--dark)">اطلب الحين</div>
+    <svg id="hand" viewBox="0 0 13 16" style="position:absolute;width:117px;height:144px" shape-rendering="crispEdges" aria-hidden="true"><g id="handPix"></g></svg>
+    <svg id="ripple" viewBox="-60 -60 120 120" style="position:absolute;width:120px;height:120px" aria-hidden="true"><circle id="rippleC" r="20" fill="none" stroke="#F2A516" stroke-width="6"/></svg>
+    <div id="tile" style="position:absolute;left:380px;top:700px;width:320px;height:320px;border-radius:74px;background:#621520;box-shadow:inset 0 0 0 2px rgba(247,241,232,.08)">
+        <svg viewBox="0 0 482 374" style="position:absolute;left:56px;top:74px;width:208px;height:161px" aria-hidden="true"><path fill="#F7F1E8" d="M0 226L73 153V226H316.5L390.5 152.5V226A74 74 0 0 1 316.5 300H74L0 374ZM408 150.5L481.5 77V300H408ZM408 37H426.5A36.5 36.5 0 0 1 463 0.5V37H481.5V73.5H408Z"/><path fill="#F2A516" d="M269.8 68.7L305.8 104.7L269.8 140.7L233.8 104.7ZM232 121.7L268 157.7L232 193.7L196 157.7ZM307.6 121.6L343.6 157.6L307.6 193.6L271.6 157.6Z"/></svg>
+    </div>
+    <div class="txt" id="tag" style="font-size:76px;font-weight:700;color:var(--cream)">أكواب تترك أثراً</div>
+    <div class="txt" id="bio" style="font-size:46px;color:rgba(247,241,232,.72)">الرابط في البايو</div>
+</div>
+
+<script src="../../kit/anim.js"></script>
+<script>
+window.DURATION = 26;
+window.COVER_T = 4.62;
+const C = { dark: "#4A0D12", cream: "#F7F1E8", acc: "#F2A516" };
+const $ = (s) => document.querySelector(s);
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+const p = A.p, back = A.back;
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const easeIn = (x) => x * x * x;
+function typed(full, t, start, cps) {
+    const chars = Array.from(full);
+    const n = t < start ? 0 : Math.min(chars.length, Math.floor((t - start) * cps) + 1);
+    return { text: chars.slice(0, n).join(""), done: n >= chars.length };
+}
+const blink = (t, from) => (t < from ? true : Math.floor((t - from) / 0.27) % 2 === 0);
+const caret = (on) => `<span class="caret" style="opacity:${on ? 1 : 0}"></span>`;
+function center(el, y, x = 540) {
+    el.style.left = "0px"; el.style.top = "0px";
+    const w = el.offsetWidth, h = el.offsetHeight;
+    el.style.left = `${x - w / 2}px`; el.style.top = `${y - h / 2}px`;
+    return { w, h };
+}
+function set(el, { o = 1, x = 0, y = 0, s = 1, r = 0 } = {}) {
+    el.style.opacity = String(o);
+    el.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${r}deg)`;
+}
+
+// ---------- المشاهد ----------
+const SCENES = [
+    { id: "p0", label: "أكواب العبارات" },
+    { id: "p1", label: "أكواب البنات" },
+    { id: "p2", label: "أبيض أو أسود" },
+    { id: "p3", label: "المجات" },
+    { id: "p4", label: "أكواب حرارية 750 مل" },
+    { id: "p5", label: "حقائب مكياج" },
+    { id: "p6", label: "تصاميم تشبهك" },
+    { id: "p7", label: "" }
+];
+const RUN0 = 4.0;            // بداية الجولة، مشهد كل ثانية
+const CYCLE = ["أندية", "جامعات", "شخصيات"];
+
+// ---------- أكواب العرض (نفس شكل كوب الإعلان الأول) ----------
+const CUP = "M34 46C120 30 480 30 566 46C574 48 576 56 574 64L556 150C530 360 486 500 452 590L444 612C442 620 436 624 428 624L428 640C428 652 420 660 408 660L192 660C180 660 172 652 172 640L172 624C164 624 158 620 156 612L148 590C114 500 70 360 44 150L26 64C24 56 26 48 34 46Z";
+$("#cups").innerHTML = [0, 1, 2, 3].map((i) => `<g id="cup${i}"><path d="${CUP}" fill="#F7F1E8"/><path d="M269.8 288.7L305.8 324.7L269.8 360.7L233.8 324.7ZM232 341.7L268 377.7L232 413.7L196 377.7ZM307.6 341.6L343.6 377.6L307.6 413.6L271.6 377.6Z" fill="#F2A516"/></g>`).join("");
+
+// ---------- يد بكسل ----------
+(function () {
+    const HAND = ["....XX.......", "...XXXX......", "...XXXX......", "...XXXX......", "...XXXXXX....", "...XXXXXXXX..", ".XXXXXXXXXXX.", "XXXXXXXXXXXXX", "XXXXXXXXXXXXX", ".XXXXXXXXXXXX", "..XXXXXXXXXXX", "..XXXXXXXXXX.", "...XXXXXXXXX.", "...XXXXXXXX..", "....XXXXXXX..", "....XXXXXXX.."];
+    const on = (x, y) => y >= 0 && y < HAND.length && x >= 0 && x < 13 && HAND[y][x] === "X";
+    let fill = "", line = "";
+    HAND.forEach((row, y) => Array.from(row).forEach((c, x) => {
+        if (c !== "X") return;
+        const r = `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+        if (!on(x - 1, y) || !on(x + 1, y) || !on(x, y - 1) || !on(x, y + 1)) line += r; else fill += r;
+    }));
+    const seams = [[6, 5], [6, 6], [8, 6], [8, 7], [10, 7], [10, 8]].map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join("");
+    $("#handPix").innerHTML = `<g fill="#F7F1E8">${fill}</g><g fill="#4A0D12">${line}${seams}</g>`;
+})();
+
+window.render = function (t) {
+    const bg = $("#bg");
+    const dark = t < 2.0 || (t >= 18.0 && t < 20.9) || t >= 23.5;
+    bg.style.background = dark ? C.dark : C.cream;
+
+    // ---- S1: «عندك ذوق؟» ----
+    const q1 = $("#q1");
+    if (t < 2.0) {
+        show(q1, true);
+        const ty = typed("عندك ذوق؟", t, 0.35, 14);
+        const a = Array.from(ty.text);
+        const q = a[a.length - 1] === "؟";
+        q1.innerHTML = (q ? a.slice(0, -1).join("") + '<span class="mark">؟</span>' : a.join("")) + caret(blink(t, 1.0));
+        center(q1, 960);
+        q1.style.transform = `scale(${1 + 0.06 * easeIn(p(t, 1.5, 2.0))})`;
+    } else show(q1, false);
+
+    // ---- S2: «عندنا كوبه.» + 4 صور ----
+    const w1 = $("#w1"), w2 = $("#w2");
+    const s2 = t >= 2.0 && t < 4.0;
+    show(w1, s2); show(w2, s2);
+    for (let i = 0; i < 4; i++) show($(`#t${i}`), s2 && t >= 3.0);
+    if (s2) {
+        const up = easeExpo(p(t, 2.95, 3.25));
+        center(w1, 880 - up * 560);
+        center(w2, 1100 - up * 520);
+        const k1 = back(p(t, 2.0, 2.25)), k2 = back(p(t, 2.5, 2.75));
+        w1.style.transform = `scale(${0.8 + 0.2 * k1})`; w1.style.opacity = String(Math.min(1, p(t, 2.0, 2.08) * 2));
+        w2.style.transform = `scale(${0.8 + 0.2 * k2})`; w2.style.opacity = String(t < 2.5 ? 0 : Math.min(1, p(t, 2.5, 2.58) * 2));
+        const sz = 1 - 0.38 * up;
+        w1.style.fontSize = w2.style.fontSize = `${200 * sz}px`;
+        for (let i = 0; i < 4; i++) {
+            const at = 3.0 + i * 0.25;
+            const k = back(p(t, at, at + 0.22));
+            set($(`#t${i}`), { o: Math.min(1, p(t, at, at + 0.08) * 2), s: 0.6 + 0.4 * k, r: (1 - k) * (i % 2 ? 8 : -8), y: 160 });
+        }
+        // تكبير قبل الجولة
+        if (t > 3.75) {
+            const z = easeIn(p(t, 3.75, 4.0));
+            for (let i = 0; i < 4; i++) $(`#t${i}`).style.transform += ` scale(${1 + z * 0.25})`;
+        }
+    }
+
+    // ---- S3: جولة المنتجات ----
+    const band = $("#band");
+    let bandOn = false;
+    SCENES.forEach((sc, i) => {
+        const el = document.getElementById(sc.id);
+        const T = RUN0 + i;
+        const on = t >= T && t < T + 1.0 + (i === 7 ? 0 : 0.25) && t < 12.0;
+        el.style.display = on ? "block" : "none";
+        if (!on) return;
+        el.style.zIndex = String(10 + i);
+        // كشف بزاوية 45° (من شعار أثر)
+        const k = easeOut(p(t, T, T + 0.24));
+        const m = `linear-gradient(225deg, #000 ${k * 100}%, transparent ${k * 100 + 0.01}%)`;
+        el.style.webkitMaskImage = el.style.maskImage = k < 1 ? m : "none";
+        // حركة كاميرا بطيئة
+        const kb = p(t, T, T + 1.25);
+        el.querySelectorAll("img.full").forEach((img) => { img.style.transform = `scale(${1.14 - 0.12 * kb}) translateY(${(i % 2 ? -1 : 1) * 14 * kb}px)`; });
+        el.querySelectorAll(".half img").forEach((img, j) => { img.style.transform = `scale(${1.08 - 0.07 * kb}) translateX(${(j ? -1 : 1) * 18 * kb}px)`; });
+        // العنوان ينكتب
+        const lab = el.querySelector(".lab");
+        if (lab && sc.label) {
+            const ty = typed(sc.label, t, T + 0.12, 32);
+            lab.innerHTML = ty.text + caret(!ty.done || blink(t, T + 0.6));
+        }
+        const chip = el.querySelector(".chip");
+        if (chip) {
+            const ck = back(p(t, T + 0.3, T + 0.5));
+            set(chip, { o: Math.min(1, p(t, T + 0.3, T + 0.36) * 2), s: 0.7 + 0.3 * ck, y: (1 - ck) * 30 });
+        }
+        if (k < 1 && i > 0) bandOn = true;
+        if (i === 7) {
+            const more = $("#more"), cyc = $("#cyc"), line = $("#cycLine");
+            center(more, 760);
+            set(more, { o: easeOut(p(t, T + 0.05, T + 0.2)), y: 0 });
+            more.style.transform = "none";
+            let j = 0;
+            [0, 0.33, 0.66].forEach((d, n) => { if (t >= T + d) j = n; });
+            cyc.textContent = CYCLE[j];
+            const r = center(cyc, 960);
+            const ck = back(p(t, T + [0, 0.33, 0.66][j], T + [0, 0.33, 0.66][j] + 0.18));
+            cyc.style.transform = `scale(${0.85 + 0.15 * ck})`;
+            line.style.left = `${540 - r.w / 2}px`; line.style.top = "1080px";
+            line.style.width = `${r.w * easeOut(p(t, T + [0, 0.33, 0.66][j], T + [0, 0.33, 0.66][j] + 0.2))}px`;
+        }
+    });
+    // شريط عنابي مائل يمسح بين المشاهد
+    show(band, false);
+    for (let i = 1; i < 8; i++) {
+        const T = RUN0 + i;
+        if (t >= T - 0.06 && t < T + 0.24) {
+            const k = p(t, T - 0.06, T + 0.24);
+            show(band, true);
+            band.style.zIndex = "40";
+            const x = 1500 - k * 2700;
+            band.style.transform = `translate(${x}px, -900px) rotate(45deg)`;
+            band.style.background = i === 7 ? C.acc : C.dark;
+        }
+    }
+
+    // ---- S4: الأسعار ----
+    const q2 = $("#q2");
+    if (t >= 12.0 && t < 13.0) {
+        show(q2, true);
+        const ty = typed("والأسعار؟", t, 12.08, 22);
+        const a = Array.from(ty.text);
+        const q = a[a.length - 1] === "؟";
+        q2.innerHTML = (q ? a.slice(0, -1).join("") + '<span class="mark">؟</span>' : a.join("")) + caret(blink(t, 12.5));
+        center(q2, 960);
+        const out = easeIn(p(t, 12.8, 13.0));
+        q2.style.transform = `translateY(${-out * 300}px)`; q2.style.opacity = String(1 - out);
+    } else show(q2, false);
+    const CARDS = [13.0, 14.5, 16.0];
+    CARDS.forEach((T, i) => {
+        const el = document.getElementById(`c${i}`);
+        const end = i < 2 ? CARDS[i + 1] + 0.3 : 17.5;
+        const on = t >= T && t < end;
+        show(el, on);
+        if (!on) return;
+        const kin = easeExpo(p(t, T, T + 0.35));
+        const kout = easeIn(p(t, end - 0.3, end));
+        const x = (1 - kin) * 1100 - kout * 1150;
+        const r = (1 - kin) * 10 - kout * 8;
+        set(el, { o: 1, x, r, s: 1 });
+        el.style.zIndex = String(20 + i);
+        const ph = el.querySelector(".ph img");
+        ph.style.transform = `scale(${1.1 - 0.08 * p(t, T, T + 1.5)})`;
+        const strike = el.querySelector(".was i");
+        const was = el.querySelector(".was");
+        strike.style.width = `${(was.offsetWidth + 12) * easeOut(p(t, T + 0.55, T + 0.8))}px`;
+        const off = el.querySelector(".off");
+        const ok = back(p(t, T + 0.8, T + 1.0));
+        set(off, { o: Math.min(1, p(t, T + 0.8, T + 0.86) * 2), s: 0.5 + 0.5 * ok, r: (1 - ok) * -20 });
+    });
+    const upto = $("#upto");
+    if (t >= 17.5 && t < 18.0) {
+        show(upto, true);
+        center(upto, 960);
+        const k = back(p(t, 17.5, 17.72));
+        upto.style.transform = `scale(${0.75 + 0.25 * k})`;
+        upto.style.opacity = String(Math.min(1, p(t, 17.5, 17.56) * 2));
+    } else show(upto, false);
+
+    // ---- S5: 4 أكواب = التوصيل مجاني ----
+    const s5 = t >= 18.0 && t < 20.9;
+    show($("#four"), s5); show($("#cups"), s5); show($("#eq"), s5); show($("#eqs"), s5);
+    if (s5) {
+        const four = $("#four");
+        center(four, 640);
+        set(four, { o: Math.min(1, p(t, 18.0, 18.08) * 2), s: 0.85 + 0.15 * back(p(t, 18.0, 18.22)) });
+        for (let i = 0; i < 4; i++) {
+            const at = 18.0 + i * 0.5;
+            const k = back(p(t, at, at + 0.25));
+            const g = document.getElementById(`cup${i}`);
+            const S = 0.36;
+            const cx = 540 + (1.5 - i) * 236;        // من اليمين لليسار
+            const yy = 820 + (1 - Math.min(1, k)) * 120;
+            g.setAttribute("transform", `translate(${cx - 300 * S * k} ${yy}) scale(${S * Math.max(0.001, k)})`);
+            g.setAttribute("opacity", t >= at ? "1" : "0");
+        }
+        const eq = $("#eq");
+        center(eq, 1220);
+        const ek = back(p(t, 20.0, 20.25));
+        set(eq, { o: t >= 20.0 ? Math.min(1, p(t, 20.0, 20.06) * 2) : 0, s: 0.7 + 0.3 * ek });
+        const eqs = $("#eqs");
+        center(eqs, 1350);
+        eqs.style.opacity = String(easeOut(p(t, 20.3, 20.55)));
+    }
+    // الثقة
+    const s5b = t >= 20.9 && t < 22.0;
+    for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`tr${i}`);
+        show(el, s5b);
+        if (s5b) {
+            const at = 20.9 + i * 0.22;
+            const k = easeExpo(p(t, at, at + 0.3));
+            set(el, { o: k, x: (1 - k) * -80 });
+        }
+    }
+
+    // ---- S6: «اطلب الحين» ----
+    const cta = $("#cta"), hand = $("#hand"), rip = $("#ripple");
+    const s6 = t >= 22.0 && t < 23.5;
+    show(cta, s6); show(hand, s6); show(rip, s6);
+    if (s6) {
+        const k = back(p(t, 22.0, 22.25));
+        const r = center(cta, 980);
+        cta.style.transform = `scale(${0.85 + 0.15 * k})`;
+        cta.style.opacity = String(Math.min(1, p(t, 22.0, 22.08) * 2));
+        const hk = easeOut(p(t, 22.1, 22.35));
+        const tap = (a) => Math.sin(Math.PI * p(t, a, a + 0.16));
+        const press = Math.max(tap(22.5), tap(22.9));
+        const hx = 540 - r.w / 2 - 70, hy = 980 - 270 + (1 - hk) * -120 + press * 22;
+        hand.style.left = `${hx}px`; hand.style.top = `${hy}px`; hand.style.opacity = String(hk);
+        const rk = t < 22.8 ? p(t, 22.56, 22.78) : p(t, 22.96, 23.18);
+        rip.style.left = `${hx - 32}px`; rip.style.top = `${hy - 52}px`;
+        $("#rippleC").setAttribute("r", String(10 + 44 * rk));
+        rip.style.opacity = String(rk > 0 && rk < 1 ? 1 - rk : 0);
+    }
+
+    // ---- النهاية ----
+    const tile = $("#tile"), tag = $("#tag"), bio = $("#bio");
+    const s7 = t >= 23.5;
+    show(tile, s7); show(tag, s7); show(bio, s7);
+    if (s7) {
+        const k = back(p(t, 23.5, 23.8));
+        tile.style.transform = `scale(${0.8 + 0.2 * k})`;
+        tile.style.opacity = String(Math.min(1, p(t, 23.5, 23.58) * 2));
+        const tk = easeOut(p(t, 23.95, 24.3));
+        center(tag, 1150 + (1 - tk) * 24); tag.style.opacity = String(tk);
+        const bk = easeOut(p(t, 24.4, 24.75));
+        center(bio, 1260 + (1 - bk) * 20); bio.style.opacity = String(bk);
+    }
+};
+document.fonts.ready.then(() => window.render(0));
+</script>
+</body>
+</html>
