@@ -195,14 +195,14 @@ def hit(amp=1.0):
 
 
 def neon_on(d=0.9):
-    """أزيز نيون يشتغل: طنين 100 هرتز مع وميض"""
+    """صوت تشغيل ناعم (بدون تشويش): نغمة تطلع أوكتاف وتثبت مع ارتعاش خفيف"""
     t = tt(d)
-    hum = saw(100, t) * 0.5 + np.sin(2 * np.pi * 200 * t) * 0.3
-    hum = filt(hum, "band", [90, 1800])
-    crackle = filt(noise(d), "band", [2500, 9000]) * (rng.random(len(t)) > 0.985) * 3
-    flick = 0.55 + 0.45 * np.sign(np.sin(2 * np.pi * 13 * t + np.sin(2 * np.pi * 3.1 * t) * 2))
-    env = np.clip(t / 0.05, 0, 1) * np.clip((d - t) / 0.25, 0, 1)
-    return (hum * flick * 0.55 + filt(crackle, "high", 2000) * 0.5) * env
+    f = 220 * 2 ** np.clip(t / 0.16, 0, 1)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    x = np.sin(ph) + 0.3 * np.sin(2 * ph) + 0.12 * np.sin(3 * ph)
+    trem = 0.85 + 0.15 * np.sin(2 * np.pi * 6 * t)
+    env = np.clip(t / 0.03, 0, 1) * np.exp(-t / (d * 0.45)) * np.clip((d - t) / 0.08, 0, 1)
+    return filt(x, "low", 2200) * trem * env * 0.45
 
 
 def blip(f0=900, f1=1800, d=0.12):
@@ -356,9 +356,9 @@ for i, at in enumerate(T["items"]):
     sfx.add(at + 0.1, hit(0.5), 0.25)
 
 # الزووم داخل الأيقونة
-a, b2 = whoosh(0.7, 200, 9000, peak=0.92, width=0.6)
-sfx.add(T["zoom"] - 0.62, a, 0.5, other=b2)
-sfx.add(T["zoom"] - 0.5, suction(0.5), 0.25)
+a, b2 = whoosh(0.7, 200, 6000, peak=0.92, width=0.6)
+sfx.add(T["zoom"] - 0.62, a, 0.36, other=b2)
+sfx.add(T["zoom"] - 0.5, filt(suction(0.5), "low", 6000), 0.1)
 sfx.add(T["t3a"], hit(0.7), 0.4)
 a, b2 = whoosh(0.45, 150, 3000, peak=0.95, width=0.6)
 sfx.add(T["logo"] - 0.45, a, 0.35, other=b2)
