@@ -8,13 +8,13 @@
    "link": "",
    "show": true,
    "text": "",
-   "type": "image",
+   "type": "video",
    "title": "",
    "button": "",
    "image_alt": "",
    "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791825978282-1f6c6830605c4ea7.jpg",
    "video_alt": "",
-   "video_url": ""
+   "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791924581580-5707daf11ba34fbc.mp4"
   },
   "ai": {
    "model": "",
@@ -1157,7 +1157,7 @@
    "category_id": "df88951c-793d-4241-9cdd-0006153c9e76",
    "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791346702306-05cc0ed1008340c6b931549b5ca75717.jpg",
    "thumb_url": null,
-   "is_available": true,
+   "is_available": false,
    "is_visible": true,
    "is_best_seller": false,
    "is_new_arrival": false,
@@ -1167,7 +1167,7 @@
    "sort_order": 47,
    "video_url": null,
    "weight_g": 400,
-   "stock": 1,
+   "stock": null,
    "created_at": "2026-09-12T18:07:16.598714+00:00"
   },
   {
