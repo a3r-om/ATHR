@@ -2131,3 +2131,44 @@ body.has-buybar .proof-pop { bottom: calc(84px + env(safe-area-inset-bottom)); }
 .proof-pop small svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .proof-pop .pp-x { align-self: flex-start; width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border: 0; background: none; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; border-radius: 8px; }
 .proof-pop .pp-x:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+
+/* =====================================================
+   v19 — صفحة السلة: أقسام أصغر وأبسط
+===================================================== */
+.cart-info { display: grid; gap: 8px; padding: 10px 12px; }
+.cart-info .progress { gap: 5px; font-size: 12.5px; }
+.cart-info .meter { height: 4px; }
+.cart-info .vol-hint, .panel.cart-info .progress + .vol-hint { margin: 0; padding: 0; background: none; font-size: 12.5px; gap: 6px; align-items: center; }
+.cart-info .vol-hint svg { width: 15px; height: 15px; flex-shrink: 0; }
+.cart-info .save-line { font-size: 12.5px; }
+.cart-info .save-line + .hint, .cart-info .save-line + .save-line, .cart-info .hint + .hint { margin-top: 0; }
+.cart-info .hint { padding: 6px 6px 6px 10px; font-size: 12.5px; }
+.cart-info .hint .btn-sm { min-height: 30px; padding: 3px 12px; font-size: 12.5px; }
+
+.cart-sug { padding: 12px; }
+.cart-sug h2 { font-size: 14px; margin-bottom: 10px; line-height: 1.5; }
+.csug-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.csug { position: relative; display: grid; align-content: start; gap: 3px; min-width: 0; }
+.csug-img { display: block; }
+.csug-img img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 10px; background: var(--img-bg); }
+.csug-add { position: absolute; top: 5px; inset-inline-end: 5px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: var(--btn-bg, var(--primary)); color: var(--btn-ink, var(--on-primary)); font-size: 18px; font-weight: 700; line-height: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, .22); cursor: pointer; touch-action: manipulation; }
+.csug-add:active { transform: scale(.92); }
+.csug-name { color: var(--text); font-size: 11.5px; font-weight: 600; line-height: 1.35; text-decoration: none; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.csug-price { color: var(--accent); font-size: 12px; }
+
+.cart-sum { padding: 12px 14px; }
+.cart-sum h2 { font-size: 15px; margin-bottom: 8px; }
+.cart-sum .rows { gap: 6px; }
+.cart-sum .row { font-size: 13.5px; }
+.cart-sum .row.total { font-size: 16px; padding-top: 8px; margin-top: 2px; }
+.cart-sum .ship-list { font-size: 12.5px; }
+.cart-sum .cart-actions { gap: 8px; margin-top: 12px; }
+.cart-sum .btn { min-height: 44px; padding-block: 8px; font-size: 14.5px; }
+.cart-sum .gift-cta { gap: 10px; padding: 7px 10px; }
+.cart-sum .gcta-ico { width: 32px; height: 32px; border-radius: 10px; }
+.cart-sum .gcta-ico svg { width: 18px; height: 18px; }
+.cart-sum .gcta-txt b { font-size: 14px; }
+.cart-sum .link-btn { font-size: 13px; padding-block: 2px; }
+.cart-sum .trust { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.cart-sum .trust li { gap: 5px; padding: 4px 9px; border-radius: 99px; background: var(--soft); font-size: 11.5px; line-height: 1.45; }
+.cart-sum .trust svg { width: 13px; height: 13px; stroke-width: 2.6; }

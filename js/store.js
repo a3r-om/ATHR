@@ -1637,15 +1637,21 @@
                                     </div>
                                 </div>`).join("")}
                         </div>
-                        ${progressHTML(totals) ? `<div class="panel">${progressHTML(totals)}</div>` : ""}
-                        ${totals.savings.length || totals.hints.length ? `<div class="panel">
+                        ${progressHTML(totals) || totals.savings.length || totals.hints.length ? `<div class="panel cart-info">
+                            ${progressHTML(totals)}
                             ${totals.savings.map((s) => `<div class="save-line"><span>${esc(t("وفر الطقم: {name} بخصم {pct}%", { name: V.pname(s.b), pct: s.pct }))}${s.pairs > 1 ? ` × ${s.pairs}` : ""}</span><span>-${money(s.amount)}</span></div>`).join("")}
                             ${totals.hints.map((h) => `<div class="hint"><span>${esc(t("أكمل الطقم ووفّر: «{name}» بخصم {pct}%", { name: V.label(v(), h.b), pct: h.pct }))}</span><button class="btn btn-primary btn-sm" type="button" data-add-quiet="${esc(h.b.id)}">${esc(t("أضف"))}</button></div>`).join("")}
                         </div>` : ""}
-                        ${sug.items.length ? `<div class="panel"><h2>${esc(sug.title)}</h2><div class="added-list">${sug.items.map((p) => miniItem(p).replace("data-add-mini", "data-add-quiet")).join("")}</div></div>` : ""}
+                        ${sug.items.length ? `<div class="panel cart-sug"><h2>${esc(sug.title)}</h2><div class="csug-row">${sug.items.map((p) => `
+                            <div class="csug">
+                                <a class="csug-img" href="${ATHR.url.product(p)}">${V.img(p) ? `<img src="${esc(V.img(p))}" alt="" width="96" height="96" loading="lazy">` : ""}</a>
+                                <button class="csug-add" type="button" data-add-quiet="${esc(p.id)}" aria-label="${esc(t("أضف {name}", { name: V.pname(p) }))}">+</button>
+                                <a class="csug-name" href="${ATHR.url.product(p)}">${esc(V.label(v(), p))}</a>
+                                <b class="csug-price">${local(p.price)}</b>
+                            </div>`).join("")}</div></div>` : ""}
                     </div>
                     <aside>
-                        <div class="panel">
+                        <div class="panel cart-sum">
                             <h2>${esc(t("ملخص الطلب"))}</h2>
                             <div class="rows">
                                 <div class="row"><span>${esc(t("المنتجات ({n})", { n: totals.count }))}</span><span>${money(totals.subtotal)}</span></div>
@@ -1657,7 +1663,7 @@
                             </div>
                             <div class="cart-actions">
                                 <a class="btn btn-primary btn-block" href="${BASE}checkout/">${esc(t("متابعة الطلب"))}</a>
-                                ${cfg.sales.gift_enabled && cfg.sales.gift_button ? V.giftCta(v(), { href: `${BASE}checkout/?gift=1`, attrs: "data-gift-start", title: t("أرسل الطلب هدية") }) : ""}
+                                ${cfg.sales.gift_enabled && cfg.sales.gift_button ? V.giftCta(v(), { href: `${BASE}checkout/?gift=1`, attrs: "data-gift-start", title: t("أرسل الطلب هدية"), sub: "" }) : ""}
                                 ${cfg.sales.wa_quick && wa ? `<button class="btn btn-wa btn-block" type="button" data-wa-cart>${V.waIcon()}${esc(t("اطلب عبر واتساب"))}</button>` : ""}
                                 <a class="link-btn center" href="${BASE}">${esc(t("مواصلة التسوق"))}</a>
                             </div>
