@@ -1,0 +1,334 @@
+"""موسيقى ومؤثرات أصلية لإعلان «مدريدي ولا برشلوني؟» (36 ثانية، 90 نبضة/دقيقة) على نفس توقيت ad.html.
+
+python3 marketing/ads/2026-10-13-clasico/music.py <out.wav>
+"""
+import sys
+import numpy as np
+import scipy.io.wavfile as wf
+import scipy.signal as ss
+
+SR = 44100
+DUR = 36.0
+N = int(SR * DUR)
+rng = np.random.default_rng(44)
+L = np.zeros(N)
+R = np.zeros(N)
+BEAT = 0.5
+
+
+def add(t0, sig, gain=1.0, pan=0.0, other=None):
+    i = int(round(t0 * SR))
+    if i >= N or i < 0:
+        return
+    sig = sig[: N - i] * gain
+    gl, gr = np.sqrt((1 - pan) / 2) * np.sqrt(2), np.sqrt((1 + pan) / 2) * np.sqrt(2)
+    L[i:i + len(sig)] += sig * gl
+    o = sig if other is None else other[: len(sig)] * gain
+    R[i:i + len(o)] += o * gr
+
+
+def tt(d):
+    return np.arange(int(d * SR)) / SR
+
+
+def filt(x, kind, f, order=2):
+    b, a = ss.butter(order, np.array(f) / (SR / 2), kind)
+    return ss.lfilter(b, a, x)
+
+
+def noise(d):
+    return rng.standard_normal(int(d * SR))
+
+
+# ---------- الأصوات ----------
+def kick(f0=150, f1=48, d=0.38, tau=0.11):
+    t = tt(d)
+    f = f1 + (f0 - f1) * np.exp(-t / 0.03)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / tau)
+    click = filt(noise(d), "high", 2000) * np.exp(-t / 0.003) * 0.3
+    return body + click
+
+
+def clap(d=0.25):
+    t = tt(d)
+    env = np.zeros_like(t)
+    for k, off in enumerate([0, 0.011, 0.022]):
+        env += np.where(t >= off, np.exp(-(t - off) / (0.006 if k < 2 else 0.07)), 0)
+    return filt(noise(d), "band", [900, 3500]) * env * 0.8
+
+
+def hat(d=0.06, open_=False):
+    t = tt(0.25 if open_ else d)
+    return filt(noise(len(t) / SR), "high", 7000) * np.exp(-t / (0.08 if open_ else 0.012)) * 0.5
+
+
+def bass(f, d=0.22):
+    t = tt(d)
+    x = sum(np.sin(2 * np.pi * f * n * t) / n for n in range(1, 9))
+    x = filt(x, "low", 900)
+    env = np.clip(t / 0.005, 0, 1) * np.exp(-t / 0.12)
+    sub = np.sin(2 * np.pi * f * t) * np.exp(-t / 0.18)
+    return (x * 0.55 + sub * 0.7) * env
+
+
+def pad(freqs, d):
+    t = tt(d)
+    x = sum(np.sin(2 * np.pi * f * t + rng.uniform(0, 6.28)) + 0.3 * np.sin(2 * np.pi * 2.003 * f * t) for f in freqs)
+    env = np.clip(t / 0.35, 0, 1) * np.clip((d - t) / 0.3, 0, 1)
+    return filt(x, "low", 2200) * env / len(freqs)
+
+
+def pluck(f, d=0.6, tau=0.25):
+    t = tt(d)
+    env = np.clip(t / 0.003, 0, 1) * np.exp(-t / tau)
+    return env * (np.sin(2 * np.pi * f * t) + 0.5 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t / 0.12))
+
+
+def stab(freqs, d=0.3):
+    return sum(pluck(f, d, 0.09) for f in freqs) / len(freqs)
+
+
+def key(amp=1.0):
+    t = tt(0.03)
+    return amp * (filt(noise(0.03), "band", [1800, 6000]) * np.exp(-t / 0.004) + np.sin(2 * np.pi * 190 * t) * np.exp(-t / 0.008) * 0.6)
+
+
+def whoosh(d, f_lo=400, f_hi=5000, peak=0.75):
+    n = int(d * SR)
+    outs = []
+    for _ in range(2):
+        f, tm, Z = ss.stft(rng.standard_normal(n), SR, nperseg=1024)
+        prog = np.clip(tm / d, 0, 1)
+        c = f_lo * (f_hi / f_lo) ** prog
+        mask = np.exp(-0.5 * (np.log((f[:, None] + 1) / c[None, :]) / 0.55) ** 2)
+        _, x = ss.istft(Z * mask, SR, nperseg=1024)
+        x = x[:n]
+        u = np.arange(len(x)) / SR / d
+        env = np.where(u < peak, (u / peak) ** 2.2, np.clip(1 - (u - peak) / (1 - peak), 0, 1) ** 1.5)
+        outs.append(x / (np.abs(x).max() + 1e-9) * env)
+    return outs
+
+
+def riser(d):
+    a, b = whoosh(d, 300, 7000, peak=0.97)
+    return a, b
+
+
+def boom(d=1.6, f=48, tail=0.2):
+    t = tt(d)
+    fr = f + 26 * np.exp(-t / 0.06)
+    body = np.sin(2 * np.pi * np.cumsum(fr) / SR) * np.exp(-t / 0.55)
+    burst = filt(noise(d), "low", 7000) * np.exp(-t / 0.035) * 0.6
+    room = [filt(noise(d), "low", 900) * np.exp(-t / 0.35) * tail for _ in range(2)]
+    return body + burst + room[0], body + burst + room[1]
+
+
+def bloop(f0=600, f1=1300, d=0.18):
+    t = tt(d)
+    f = f0 * (f1 / f0) ** np.clip(t / 0.12, 0, 1)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    return np.clip(t / 0.003, 0, 1) * np.exp(-t / 0.06) * (np.sin(ph) + 0.2 * np.sin(2 * ph))
+
+
+def zip_(d=0.16):
+    t = tt(d)
+    return filt(noise(d), "band", [2500, 9000]) * np.sin(np.pi * np.clip(t / d, 0, 1)) * 0.6
+
+
+
+
+def ceramic(amp=1.0):
+    """نقرة كوب سيراميك"""
+    t = tt(0.6)
+    parts = [(2140, 0.18), (3420, 0.1), (5260, 0.06), (1210, 0.22)]
+    x = sum(a * np.sin(2 * np.pi * f * t) * np.exp(-t / d) for f, d in [(f, dd) for f, dd in parts] for a in [1.0])
+    tap = filt(noise(0.6), "band", [2000, 8000]) * np.exp(-t / 0.003) * 0.6
+    return amp * (x / 3 + tap)
+
+
+
+def whistle(d=0.55, f=3050, amp=1.0):
+    """صافرة حكم (صافرة بكرة: نغمة عالية مع رعشة سريعة)"""
+    t = tt(d)
+    trill = np.sin(2 * np.pi * 38 * t)
+    fr = f + 120 * trill + 40 * np.sin(2 * np.pi * 5 * t)
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    am = 0.75 + 0.25 * trill
+    env = np.clip(t / 0.02, 0, 1) * np.clip((d - t) / 0.06, 0, 1)
+    tone = np.sin(ph) + 0.18 * np.sin(2 * ph)
+    breath = filt(noise(d), "band", [2200, 5200]) * 0.25
+    return amp * env * (tone * am + breath)
+
+
+def crowd(d):
+    """همهمة جمهور بعيدة (أصوات كثيرة مرشّحة)"""
+    n = int(d * SR)
+    outs = []
+    for _ in range(2):
+        x = np.zeros(n)
+        u = np.arange(n) / SR
+        for k in range(36):
+            fc = rng.uniform(280, 1300)
+            v = filt(rng.standard_normal(n), "band", [fc * 0.82, fc * 1.22])
+            lfo = 0.55 + 0.45 * np.sin(2 * np.pi * rng.uniform(0.3, 1.8) * u + rng.uniform(0, 6.28))
+            x += v * lfo
+        x = filt(x, "low", 2600)
+        outs.append(x / (np.abs(x).max() + 1e-9))
+    return outs
+
+
+def keys_for(text_len, start, cps, gain=0.12):
+    for i in range(text_len):
+        add(start + i / cps + rng.uniform(-0.004, 0.004), key(rng.uniform(0.7, 1.0)), gain, pan=rng.uniform(-0.3, 0.3))
+
+
+# ---------- التوزيع (90 نبضة/دقيقة) ----------
+BEAT = 60 / 90
+BAR = BEAT * 4
+TL = dict(a1=0.5, a2=1.5, b=4.0, b2=4.67, pill=5.33, c=8.0, cswap=10.67, d=13.33, dswap=16.0,
+          e=18.67, tiles=[19.0, 19.33, 19.67, 20.0], gchip=20.67, f=22.67, price=24.0, facts=[24.67, 25.33, 26.0],
+          w=27.33, words=[27.33, 28.0, 28.67], g=30.0, h=32.67)
+AM = [220.0, 261.63, 329.63]
+FM = [174.61, 220.0, 261.63]
+CM = [261.63, 329.63, 392.0]
+GM = [196.0, 246.94, 293.66]
+PROG = [(AM, 110.0), (FM, 87.31), (CM, 130.81), (GM, 98.0)]
+
+
+def chord_at(t):
+    return PROG[int(max(0, t) // BAR) % 4]
+
+
+# باد دافئ حتى الشعار، ثم وتر أخير طويل
+for bar_t in np.arange(0.0, TL["g"], BAR):
+    ch, root = chord_at(bar_t + 0.01)
+    gain = 0.1 if bar_t < TL["b"] else 0.15
+    add(bar_t, pad(ch if bar_t >= TL["b"] else [f / 2 for f in ch], min(BAR + 0.15, TL["g"] - bar_t + 0.1)), gain)
+add(TL["g"], pad(AM, 6.0), 0.16)
+add(TL["g"], pad([f / 2 for f in AM], 6.0), 0.12)
+
+# صافرة البداية + نبض مثل دقات القلب
+add(0.05, whistle(0.6), 0.16)
+for t0 in (0.0, 1.33, 2.67):
+    add(t0, kick(90, 40, 0.5, 0.16), 0.32)
+keys_for(6, TL["a1"], 9, 0.15)                       # «مدريدي»
+keys_for(12, TL["a2"], 10, 0.15)                     # «ولا برشلوني؟»
+add(TL["a1"], pluck(440.0, 1.2, 0.5), 0.14)
+add(TL["a2"], pluck(523.25, 1.2, 0.5), 0.14)
+add(TL["a2"] + 1.2, pluck(659.25, 1.4, 0.55), 0.16)  # علامة الاستفهام
+ra, rb = riser(1.0)
+add(TL["b"] - 1.0, ra, 0.2, other=rb)
+
+# النصفين: ريال مدريد ثم برشلونة
+ba, bb = boom(1.0, 52, 0.1)
+add(TL["b"], ba, 0.5, other=bb)
+wa, wb = whoosh(0.55, 500, 6000, peak=0.6)
+add(TL["b"] - 0.05, wa, 0.22, pan=0.3, other=wb)
+add(TL["b2"], kick(130, 44, 0.45, 0.13), 0.5)
+wa, wb = whoosh(0.55, 500, 6000, peak=0.6)
+add(TL["b2"] - 0.05, wa, 0.22, pan=-0.3, other=wb)
+add(TL["b"] + 0.45, bloop(620, 1300, 0.2), 0.1)
+add(TL["b2"] + 0.45, bloop(620, 1300, 0.2), 0.1)
+ca, cb = crowd(4.6)                                   # جمهور بعيد يعلو مع النصفين
+env = np.clip(tt(4.6) / 1.2, 0, 1) * np.clip((4.6 - tt(4.6)) / 0.8, 0, 1)
+add(TL["b"], ca * env, 0.07, other=cb * env)
+add(TL["pill"], bloop(700, 1500, 0.2), 0.16)          # «اختار فريقك»
+keys_for(11, TL["pill"] + 0.2, 12, 0.12)
+for t0 in (6.67, 7.33):
+    add(t0, kick(110, 42, 0.45, 0.14), 0.42)
+ra, rb = riser(0.67)
+add(TL["c"] - 0.67, ra, 0.26, other=rb)
+
+# الإيقاع من مشهد ريال مدريد حتى الشعار
+k = 0
+while True:
+    t = TL["c"] + k * BEAT
+    k += 1
+    if t >= TL["g"] - 1e-6:
+        break
+    beat_in_bar = (k - 1) % 4
+    build = t >= TL["w"]
+    if beat_in_bar in (0, 2) or build:
+        add(t, kick(135, 45, 0.45, 0.13), 0.55 if not build else 0.62)
+    if beat_in_bar in (1, 3):
+        add(t, clap(0.3), 0.3, pan=0.05)
+    add(t + BEAT / 2, hat(), 0.18, pan=-0.2)
+    if t >= TL["e"]:
+        add(t + BEAT / 4, hat(), 0.08, pan=0.2)
+        add(t + 3 * BEAT / 4, hat(), 0.08, pan=0.2)
+    ch, root = chord_at(t)
+    add(t, bass(root, 0.32), 0.38)
+    add(t + BEAT / 2, bass(root, 0.22), 0.26)
+
+# مشهدا الناديين
+for T, SW, n, mot in ((TL["c"], TL["cswap"], 12, [659.25, 783.99]), (TL["d"], TL["dswap"], 13, [587.33, 739.99])):
+    ba, bb = boom(0.9, 50, 0.12)
+    add(T, ba, 0.6, other=bb)
+    if T != TL["c"]:
+        wa, wb = whoosh(0.7, 400, 5000, peak=0.5)
+        add(T - 0.2, wa, 0.22, other=wb)
+    add(T, pluck(mot[0], 1.0, 0.4), 0.26)
+    add(T + BEAT, pluck(mot[1], 0.8, 0.35), 0.16)
+    keys_for(n, T + 0.35, 12, 0.06)
+    add(T + 1.2, bloop(650, 1350, 0.2), 0.1)          # السعر
+    wa, wb = whoosh(0.6, 600, 6500, peak=0.55)        # أبيض ← أسود
+    add(SW - 0.05, wa, 0.18, pan=-0.2, other=wb)
+    add(SW + 0.3, ceramic(0.8), 0.32)
+    add(SW + 0.4, bloop(700, 1500, 0.2), 0.12)
+    add(SW + 0.4, pluck(mot[1] * 1.5, 0.6, 0.25), 0.14)
+
+# هدية لكل مشجّع
+wa, wb = whoosh(0.7, 400, 5000, peak=0.5)
+add(TL["e"] - 0.2, wa, 0.22, other=wb)
+add(TL["e"], pluck(523.25, 1.0, 0.4), 0.24)
+keys_for(14, TL["e"] + 0.3, 13, 0.06)
+for i, T in enumerate(TL["tiles"]):
+    add(T, bloop(600 + i * 120, 1300 + i * 160, 0.18), 0.12)
+    add(T, pluck([659.25, 783.99, 880.0, 1046.5][i], 0.5, 0.2), 0.12)
+add(TL["gchip"], bloop(760, 1600, 0.2), 0.16)
+add(TL["gchip"], pluck(783.99, 0.9, 0.35), 0.16)
+
+# السعر والحقائق
+ba, bb = boom(0.9, 52, 0.1)
+add(TL["f"], ba, 0.55, other=bb)
+add(TL["price"], ceramic(0.9), 0.36)
+add(TL["price"], pluck(880.0, 0.8, 0.3), 0.18)
+add(TL["price"] + 0.35, zip_(0.3), 0.16)              # خط على السعر القديم
+for i, T in enumerate(TL["facts"]):
+    add(T, bloop(760 + i * 140, 1500 + i * 200, 0.2), 0.14 if i < 2 else 0.2)
+    add(T, pluck([523.25, 587.33, 880.0][i], 0.5, 0.2), 0.14 if i < 2 else 0.22)
+
+# البناء: «اختار / فريقك / واترك أثر»
+ra, rb = riser(TL["g"] - TL["w"])
+add(TL["w"], ra, 0.3, other=rb)
+for i, T in enumerate(TL["words"]):
+    ch = [AM, FM, CM][i]
+    add(T, stab([f * 2 for f in ch], 0.5), 0.3)
+n_roll = int((TL["g"] - 0.67 - TL["words"][1]) / (BEAT / 4))
+for j in range(n_roll):
+    add(TL["words"][1] + 0.67 + j * BEAT / 4, clap(0.12), 0.08 + 0.2 * j / max(1, n_roll))
+
+# الشعار
+ba, bb = boom(3.2, 44, 0.25)
+add(TL["g"], ba, 1.0, other=bb)
+add(TL["g"], kick(170, 44), 0.6)
+ca, cb = crowd(3.0)                                    # هتاف قصير مع الشعار
+env = np.clip(tt(3.0) / 0.15, 0, 1) * np.exp(-tt(3.0) / 1.1)
+add(TL["g"], ca * env, 0.09, other=cb * env)
+for i, f in enumerate([659.25, 783.99, 880.0]):
+    add(TL["g"] + 0.95 + i * 0.22, pluck(f * 2, 0.6, 0.2), 0.22)
+keys_for(16, TL["g"] + 1.75, 14, 0.1)
+add(TL["h"], kick(150, 45, 0.5, 0.15), 0.45)          # «اطلب الحين»
+add(TL["h"], pluck(440.0, 2.6, 0.9), 0.2)
+add(TL["h"], pluck(659.25, 2.6, 0.9), 0.14)
+add(TL["h"] + 0.05, ceramic(0.8), 0.3)
+for t0, d in ((34.15, 0.22), (34.5, 0.22), (34.85, 0.75)):   # صافرة النهاية
+    add(t0, whistle(d), 0.1)
+
+mix = np.stack([L, R], axis=1)
+mix = np.tanh(mix * 1.1) / np.tanh(1.1)
+mix = mix / np.abs(mix).max() * 0.89
+fade = int(0.35 * SR)
+mix[-fade:] *= np.linspace(1, 0, fade)[:, None]
+wf.write(sys.argv[1], SR, (mix * 32767).astype(np.int16))
+print(sys.argv[1], DUR, "s")
