@@ -2,19 +2,19 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>إعلان أثر — أسلوب النيون بألوان الهوية</title>
+<title>إعلان أثر — أسلوب النيون بألوان الهوية (بيج)</title>
 <link rel="stylesheet" href="../../kit/brand.css">
 <style>
 @font-face { font-family: "Lalezar"; src: url("../../kit/fonts/Lalezar-Regular.ttf"); }
-/* هوية أثر: عنابي غامق + ذهبي + كريمي */
-:root { --gl: #F5B301; --gl-core: #FFE3A3; --gl-deep: #C77F00; --cream: #F7F1E8; --sand: #EADAC6; --deep: #4A0D12; }
-.reel { background: radial-gradient(ellipse 950px 1450px at 50% 46%, #5E111B 0%, #450C13 42%, #250609 100%); color: var(--cream); font-family: "Lalezar", "Plex", sans-serif; }
+/* هوية أثر: خلفية بيج + خطوط عنابي + لمسة ذهبية */
+:root { --wine: #7D1420; --deep: #4A0D12; --gold: #E9A72E; --cream: #F7F1E8; --muted: #6E5A55; }
+.reel { background: radial-gradient(ellipse 950px 1450px at 50% 46%, #F4E9DA 0%, #EADAC6 48%, #D9C2A5 100%); color: var(--deep); font-family: "Lalezar", "Plex", sans-serif; }
 #cam, #stage, #world { position: absolute; inset: 0; }
 #stage { perspective: 1500px; perspective-origin: 540px 960px; }
 #world { transform-style: preserve-3d; transform-origin: 540px 960px; }
 #grid {
     position: absolute; left: -1460px; top: -2040px; width: 4000px; height: 6000px;
-    background-image: linear-gradient(rgba(234,218,198,.17) 2px, transparent 2px), linear-gradient(90deg, rgba(234,218,198,.17) 2px, transparent 2px);
+    background-image: linear-gradient(rgba(125,20,32,.1) 2px, transparent 2px), linear-gradient(90deg, rgba(125,20,32,.1) 2px, transparent 2px);
     background-size: 120px 120px;
     -webkit-mask-image: radial-gradient(ellipse 1250px 1800px at 50% 50%, #000 35%, transparent 72%);
 }
@@ -22,25 +22,25 @@
 .t, .ic, .card, .box, .img { position: absolute; transform-origin: 50% 50%; }
 .card { left: 0; top: 0; }
 .t { white-space: nowrap; line-height: 1.35; width: max-content; }
-.w { color: var(--cream); text-shadow: 0 0 10px rgba(247,241,232,.5), 0 0 28px rgba(247,241,232,.16); }
-.n { color: var(--gl-core); text-shadow: 0 0 6px var(--gl), 0 0 18px var(--gl), 0 0 44px var(--gl-deep), 0 0 80px rgba(199,127,0,.5); }
+.w { color: var(--deep); text-shadow: 0 6px 18px rgba(74,13,18,.14); }
+.n { color: var(--wine); text-shadow: 0 0 22px rgba(233,167,46,.55), 0 6px 18px rgba(74,13,18,.16); }
 .plex { font-family: "Plex", sans-serif; font-weight: 700; }
-.ic { overflow: visible; filter: drop-shadow(0 0 5px rgba(245,179,1,.95)) drop-shadow(0 0 20px rgba(199,127,0,.75)); }
-.ic .d { fill: none; stroke: var(--gl-core); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
-.ic .f { fill: var(--gl-core); stroke: none; }
+.ic { overflow: visible; filter: drop-shadow(0 0 10px rgba(233,167,46,.55)) drop-shadow(0 8px 14px rgba(74,13,18,.18)); }
+.ic .d { fill: none; stroke: var(--wine); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
+.ic .f { fill: var(--wine); stroke: none; }
 .trail { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: visible; pointer-events: none; }
-.trail .tg { fill: none; stroke: var(--gl); stroke-width: 26; stroke-linecap: round; opacity: .55; filter: url(#tglow); }
-.trail .tc { fill: none; stroke: #FFF1CF; stroke-width: 6; stroke-linecap: round; }
-.card { width: 560px; height: 560px; border-radius: 34px; overflow: hidden; border: 4px solid var(--gl-core);
-        box-shadow: 0 0 14px var(--gl), 0 0 46px rgba(199,127,0,.6); backface-visibility: hidden; background: #2A080C; }
+.trail .tg { fill: none; stroke: var(--gold); stroke-width: 24; stroke-linecap: round; opacity: .5; filter: url(#tglow); }
+.trail .tc { fill: none; stroke: var(--wine); stroke-width: 6; stroke-linecap: round; }
+.card { width: 560px; height: 560px; border-radius: 34px; overflow: hidden; border: 5px solid var(--wine);
+        box-shadow: 0 0 22px rgba(233,167,46,.45), 0 24px 50px rgba(74,13,18,.28); backface-visibility: hidden; background: #E9E6E1; }
 .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.box { padding: 6px 46px 22px; background: var(--gl); border-radius: 10px; box-shadow: 0 0 26px rgba(245,179,1,.6), 0 0 70px rgba(245,179,1,.25); }
-.box.w { color: var(--deep); text-shadow: none; }
+.box { padding: 6px 46px 22px; background: var(--wine); border-radius: 10px; box-shadow: 0 0 26px rgba(233,167,46,.4), 0 16px 34px rgba(74,13,18,.3); }
+.box.w { color: var(--cream); text-shadow: none; }
 .dots { position: absolute; display: flex; gap: 26px; direction: ltr; }
-.dots i { width: 18px; height: 18px; border-radius: 50%; background: rgba(247,241,232,.25); display: block; }
-.dots i.on { background: var(--gl-core); box-shadow: 0 0 10px var(--gl), 0 0 26px var(--gl); }
-#flash { position: absolute; inset: 0; background: #FFF3DC; opacity: 0; pointer-events: none; }
-#vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 760px 1180px at 50% 48%, transparent 55%, rgba(18,3,6,.8) 100%); }
+.dots i { width: 18px; height: 18px; border-radius: 50%; background: rgba(74,13,18,.2); display: block; }
+.dots i.on { background: var(--wine); box-shadow: 0 0 12px rgba(233,167,46,.8); }
+#flash { position: absolute; inset: 0; background: #FFF8EC; opacity: 0; pointer-events: none; }
+#vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 760px 1180px at 50% 48%, transparent 58%, rgba(120,72,40,.28) 100%); }
 </style>
 </head>
 <body>
@@ -125,7 +125,7 @@
     <div class="sc" id="s3">
         <div class="t w" id="t3a" style="left:540px;top:440px;font-size:150px">كلها في</div>
         <svg class="trail" id="tr3a" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
-        <img class="img" id="logo3" src="../../kit/logo_white.png" alt="" style="left:540px;top:900px;width:700px;height:542px;filter:drop-shadow(0 0 8px rgba(247,241,232,.6)) drop-shadow(0 0 34px rgba(245,179,1,.6))">
+        <img class="img" id="logo3" src="../../kit/logo_burgundy.png" alt="" style="left:540px;top:900px;width:700px;height:542px;filter:drop-shadow(0 0 26px rgba(233,167,46,.5)) drop-shadow(0 18px 26px rgba(74,13,18,.22))">
         <svg class="trail" id="tr3b" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
         <div class="box t w" id="box3" style="left:540px;top:1390px;font-size:128px">أكواب سيراميك</div>
     </div>
@@ -156,13 +156,13 @@
     </div>
     <div class="sc" id="f2">
         <svg class="ic" id="icRing" viewBox="0 0 200 200" width="540" height="540" style="left:540px;top:700px">
-            <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,227,163,.18)" stroke-width="7"/>
+            <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(125,20,32,.13)" stroke-width="7"/>
             <circle class="d" id="ringArc" pathLength="1" cx="100" cy="100" r="86" transform="rotate(-90 100 100)"/>
         </svg>
-        <div class="t n" id="f2num" style="left:540px;top:680px;font-size:280px;direction:ltr">10</div>
+        <div class="t n" id="f2num" style="left:540px;top:680px;font-size:280px;direction:ltr">11</div>
         <div class="t w plex" id="f2cur" style="left:540px;top:840px;font-size:64px">ر.ع</div>
         <div class="t n" id="f2a" style="left:540px;top:1170px;font-size:180px">التوصيل مجاني</div>
-        <div class="t w" id="f2b" style="left:540px;top:1350px;font-size:80px">داخل عُمان للطلبات فوق 10 ر.ع</div>
+        <div class="t w" id="f2b" style="left:540px;top:1350px;font-size:90px">داخل عُمان من 11 ر.ع وأكثر</div>
     </div>
     <div class="sc" id="f3">
         <svg class="ic" viewBox="0 0 200 200" width="520" height="520" style="left:540px;top:700px">
@@ -194,18 +194,18 @@
 
     <!-- 7) اطلب الحين -->
     <div class="sc" id="s7">
-        <img class="img" id="logo7" src="../../kit/logo_white.png" alt="" style="left:540px;top:420px;width:360px;height:279px;filter:drop-shadow(0 0 6px rgba(247,241,232,.6)) drop-shadow(0 0 26px rgba(245,179,1,.55))">
+        <img class="img" id="logo7" src="../../kit/logo_burgundy.png" alt="" style="left:540px;top:420px;width:360px;height:279px;filter:drop-shadow(0 0 20px rgba(233,167,46,.5)) drop-shadow(0 12px 20px rgba(74,13,18,.2))">
         <div class="t w" id="t7a" style="left:540px;top:770px;font-size:215px">اطلب الحين</div>
         <svg class="trail" id="tr7" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
         <div class="t" id="t7b" style="left:540px;top:1030px;display:flex;align-items:center;gap:30px;direction:ltr">
-            <svg class="ic" viewBox="0 0 24 24" width="124" height="124" style="position:static;filter:drop-shadow(0 0 4px rgba(245,179,1,.95)) drop-shadow(0 0 14px rgba(199,127,0,.75))">
-                <path d="M12 2.6a9.3 9.3 0 0 0-8 14.1L2.7 21.4l4.8-1.3A9.3 9.3 0 1 0 12 2.6Z" fill="none" stroke="#FFE3A3" stroke-width="1.5" stroke-linejoin="round"/>
-                <path d="M8.4 7.6c.2-.4.4-.4.7-.4h.6c.2 0 .4.1.5.4l.8 1.8c.1.3.1.5-.1.7l-.7.8c.7 1.3 1.7 2.3 3 3l.8-.7c.2-.2.4-.2.7-.1l1.8.8c.3.1.4.3.4.5v.6c0 .3-.1.5-.4.7-.4.3-1 .5-1.6.5-1.4 0-3.2-.8-4.7-2.3S8 9.9 8 8.5c0-.4.1-.7.4-.9Z" fill="#FFE3A3"/>
+            <svg class="ic" viewBox="0 0 24 24" width="124" height="124" style="position:static;filter:drop-shadow(0 0 8px rgba(233,167,46,.6))">
+                <path d="M12 2.6a9.3 9.3 0 0 0-8 14.1L2.7 21.4l4.8-1.3A9.3 9.3 0 1 0 12 2.6Z" fill="none" stroke="#7D1420" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M8.4 7.6c.2-.4.4-.4.7-.4h.6c.2 0 .4.1.5.4l.8 1.8c.1.3.1.5-.1.7l-.7.8c.7 1.3 1.7 2.3 3 3l.8-.7c.2-.2.4-.2.7-.1l1.8.8c.3.1.4.3.4.5v.6c0 .3-.1.5-.4.7-.4.3-1 .5-1.6.5-1.4 0-3.2-.8-4.7-2.3S8 9.9 8 8.5c0-.4.1-.7.4-.9Z" fill="#7D1420"/>
             </svg>
             <span class="plex n" style="font-size:92px;letter-spacing:1px">+968 7733 6242</span>
         </div>
         <div class="t w" id="t7c" style="left:540px;top:1230px;font-size:140px">الرابط في البايو</div>
-        <div class="t plex" id="t7d" style="left:540px;top:1375px;font-size:66px;color:#EADAC6;direction:ltr">@a3r_om</div>
+        <div class="t plex" id="t7d" style="left:540px;top:1375px;font-size:66px;color:#6E5A55;direction:ltr">@a3r_om</div>
     </div>
 </div></div></div>
 <div id="vig"></div>
@@ -464,7 +464,7 @@ window.render = function (t) {
         const kr = p(t, a + 0.15, a + 1.15);
         $("#ringArc").style.strokeDashoffset = String(1 - eo(kr));
         put("#icRing", { o: p(t, a, a + 0.2) * 2, s: lerp(0.8, 1, eo(p(t, a, a + 0.4))) });
-        $("#f2num").textContent = String(Math.round(10 * eo(kr)));
+        $("#f2num").textContent = String(Math.round(11 * eo(kr)));
         put("#f2num", { o: p(t, a + 0.1, a + 0.3) * 2, s: 1 + 0.06 * Math.sin(Math.PI * p(t, a + 1.1, a + 1.4)) });
         put("#f2cur", { o: p(t, a + 0.3, a + 0.5) });
         slam("#f2a", t, a + 0.55);

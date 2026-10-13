@@ -395,10 +395,9 @@ for i, a0 in enumerate(T["f"]):
 t_ = tt(1.2)
 motor = filt(saw(46, t_) + 0.3 * noise(1.2), "low", 500) * np.clip(t_ / 0.2, 0, 1) * np.clip((1.2 - t_) / 0.4, 0, 1)
 sfx.add(T["f"][0], motor, 0.12)
-# العداد 0 ← 10
 a0 = T["f"][1]
-for m in range(1, 11):
-    k = 1 - (1 - (m - 0.5) / 10) ** (1 / 3)
+for m in range(1, 12):                               # العداد 0 ← 11
+    k = 1 - (1 - (m - 0.5) / 11) ** (1 / 3)
     sfx.add(a0 + 0.15 + k * 1.0, tick(0.8 + 0.02 * m), 0.2)
 sfx.add(a0 + 1.15, bell(hz(86), 1.4), 0.16)
 sfx.add(a0 + 1.15, bell(hz(81), 1.4), 0.1)
