@@ -61,6 +61,7 @@
         categories: [],
         products: [],
         reviews: [],
+        proof: null,
         loaded: false,
         preview: false,
         isAdmin: false,
@@ -125,6 +126,7 @@
                 products: S.products,
                 categories: S.categories,
                 reviews: S.reviews,
+                proof: S.proof,
                 country: S.country,
                 cartQty,
                 isFav: (id) => favSet().has(id)
@@ -371,6 +373,7 @@
             .slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         S.products = ATHR.assignSlugs(sorted, S.config);
         S.reviews = data.reviews || [];
+        S.proof = data.proof && data.proof.p ? data.proof : null;
         S.loaded = true;
         S.ctx = null;
         if (!ATHR.countries(S.config).some((c) => c.code === S.country && c.enabled)) S.country = ATHR.BASE_COUNTRY;
@@ -382,17 +385,22 @@
 
     async function fetchData() {
         const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at";
-        const [settings, categories, products, reviews] = await Promise.all([
+        const [settings, categories, products, reviews, proof] = await Promise.all([
             rest("store_settings?select=config&id=eq.1"),
             rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
             rest(`products?select=${productCols}&is_visible=eq.true&order=sort_order.asc`),
-            rest("reviews?select=id,product_id,name,rating,text,created_at&status=eq.approved&order=created_at.desc&limit=300").catch(() => [])
+            rest("reviews?select=id,product_id,name,rating,text,created_at,verified&status=eq.approved&order=created_at.desc&limit=300")
+                .catch(() => rest("reviews?select=id,product_id,name,rating,text,created_at&status=eq.approved&order=created_at.desc&limit=300"))
+                .catch(() => []),
+            // الإثبات الاجتماعي (اختياري): لو تعذر، يعمل المتجر بدونه
+            rest("rpc/social_proof", { method: "POST", body: {}, timeout: 8000 }).catch(() => null)
         ]);
         return {
             config: (settings && settings[0] && settings[0].config) || {},
             categories: categories || [],
             products: products || [],
-            reviews: reviews || []
+            reviews: reviews || [],
+            proof: proof && proof.p ? { ...proof, recv: Date.now() } : null
         };
     }
 
@@ -705,7 +713,119 @@
         if (route.name === "product") track("view");
         if (route.name === "checkout" && computeCart().count) track("checkout");
         pixelRoute(route);
+        proofRoute(route.name);
     }
+
+    // =====================================================
+    // الإثبات الاجتماعي: إشعار صغير «أحد العملاء من السيب طلب …»
+    // من آخر الطلبات الحقيقية فقط (المنتج + الولاية + الوقت، بدون اسم أو رقم)،
+    // 3 مرات كحد أقصى في الزيارة، ولا يظهر في السلة وصفحات الطلب.
+    // =====================================================
+    const PROOF_ROUTES = new Set(["home", "category", "product", "search", "fav"]);
+    const PROOF_KEY = "athr_proof_pop";
+    const PROOF_MAX = 3;
+    let proofTimer = null;
+    let proofHideTimer = null;
+
+    function proofState() {
+        try { return JSON.parse(sessionStorage.getItem(PROOF_KEY)) || { n: 0 }; } catch { return { n: 0 }; }
+    }
+
+    function proofSave(st) {
+        try { sessionStorage.setItem(PROOF_KEY, JSON.stringify(st)); } catch { /* اختياري */ }
+    }
+
+    function proofPlace(r) {
+        if (r.c && r.c !== ATHR.BASE_COUNTRY) {
+            const c = ATHR.COUNTRIES.find((x) => x.code === r.c);
+            return c ? (ATHR.isEn() ? c.name_en : c.name) : "";
+        }
+        return ATHR.isEn() ? "" : String(r.w || "").trim();
+    }
+
+    function proofFeed() {
+        const pr = S.proof;
+        const pc = C().proof || {};
+        if (!pr || S.preview || pc.popup === false || !Array.isArray(pr.recent)) return [];
+        const vv = v();
+        const maxAge = Math.max(1, Number(pc.recent_days) || 7) * 864e5;
+        const serverNow = (Number(new Date(pr.at)) || Date.now()) + Math.max(0, Date.now() - (Number(pr.recv) || Date.now()));
+        return pr.recent.map((r) => {
+            const p = vv.byId.get(r.p);
+            const ago = serverNow - (Number(new Date(r.t)) || 0);
+            if (!p || p.is_available === false || !(ago >= 0) || ago > maxAge) return null;
+            return { p, ago, place: proofPlace(r) };
+        }).filter(Boolean);
+    }
+
+    function proofEl() {
+        let el = document.getElementById("proofPop");
+        if (!el) {
+            el = document.createElement("aside");
+            el.id = "proofPop";
+            el.className = "proof-pop";
+            el.setAttribute("aria-live", "polite");
+            el.hidden = true;
+            document.body.appendChild(el);
+        }
+        return el;
+    }
+
+    function hideProof() {
+        clearTimeout(proofHideTimer);
+        const el = document.getElementById("proofPop");
+        if (!el || el.hidden) return;
+        el.classList.remove("show");
+        proofHideTimer = setTimeout(() => { el.hidden = true; }, 260);
+    }
+
+    function proofRoute(name) {
+        clearTimeout(proofTimer);
+        hideProof();
+        if (!PROOF_ROUTES.has(name)) return;
+        const st = proofState();
+        if (st.off || st.n >= PROOF_MAX || !proofFeed().length) return;
+        proofTimer = setTimeout(showProof, st.n ? 25000 : 9000);
+    }
+
+    function showProof() {
+        const feed = proofFeed();
+        const st = proofState();
+        if (!feed.length || st.off || st.n >= PROOF_MAX || !PROOF_ROUTES.has(S.route.name)) return;
+        const sheet = document.getElementById("sheet");
+        if (sheet && !sheet.hidden) { proofTimer = setTimeout(showProof, 8000); return; }
+        const item = feed[st.n % feed.length];
+        const vv = v();
+        const name = V.label(vv, item.p);
+        const who = ATHR.isEn()
+            ? (item.place ? `A customer from ${item.place}` : "A customer")
+            : (item.place ? `أحد العملاء من ${item.place}` : "أحد العملاء");
+        const src = V.img(item.p);
+        const el = proofEl();
+        el.innerHTML = `<a class="pp-link" href="${ATHR.url.product(item.p)}">
+                ${src ? `<img src="${esc(src)}" alt="" width="56" height="56">` : ""}
+                <span class="pp-txt"><b>${esc(who)}</b><span>${esc(ATHR.isEn() ? `ordered “${name}”` : `طلب «${name}»`)}</span><small>${V.icon.clock}${esc(V.ago(item.ago))}</small></span>
+            </a>
+            <button class="pp-x" type="button" data-proof-close aria-label="${esc(t("إغلاق"))}">×</button>`;
+        el.hidden = false;
+        requestAnimationFrame(() => el.classList.add("show"));
+        proofSave({ ...st, n: st.n + 1 });
+        clearTimeout(proofHideTimer);
+        proofHideTimer = setTimeout(() => {
+            hideProof();
+            if (st.n + 1 < PROOF_MAX) proofTimer = setTimeout(showProof, 25000);
+        }, 6500);
+    }
+
+    document.addEventListener("click", (e) => {
+        if (e.target.closest("[data-proof-close]")) {
+            proofSave({ ...proofState(), off: true });
+            clearTimeout(proofTimer);
+            hideProof();
+        } else if (e.target.closest("#proofPop .pp-link")) {
+            hideProof();
+        }
+    });
 
     window.addEventListener("popstate", () => {
         closeSheet();
@@ -3104,7 +3224,7 @@
                 if (Array.isArray(p.media)) S.media.set(p.id, p.media.map((m, i) => ({ media_type: m.type, media_url: m.url, sort_order: i })));
             });
             history.replaceState(null, "", path || BASE);
-            applyData({ ...data, reviews: S.reviews });
+            applyData({ ...data, reviews: S.reviews, proof: S.proof });
             window.scrollTo(0, 0);
         },
         exitPreview(reopen) {

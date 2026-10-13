@@ -124,7 +124,9 @@ async function fetchData() {
         rest("store_settings?select=config&id=eq.1"),
         rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
         rest(`products?select=${productCols}&is_visible=eq.true&order=sort_order.asc`),
-        rest("reviews?select=id,product_id,name,rating,text,created_at&status=eq.approved&order=created_at.desc&limit=500").catch(() => []),
+        rest("reviews?select=id,product_id,name,rating,text,created_at,verified&status=eq.approved&order=created_at.desc&limit=500")
+            .catch(() => rest("reviews?select=id,product_id,name,rating,text,created_at&status=eq.approved&order=created_at.desc&limit=500"))
+            .catch(() => []),
         rest("product_media?select=product_id,media_type,media_url,sort_order&order=sort_order.asc").catch(() => [])
     ]);
     return {

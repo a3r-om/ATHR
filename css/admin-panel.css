@@ -873,3 +873,4 @@ html.theme-dark .ob-stats > div.hot { background: #2B2210; border-color: #5A4417
 .rp-m small { font-size: 11px; }
 .rp-bar { display: flex; align-items: flex-end; width: 70%; height: 90px; border-radius: 8px; background: var(--a-bg); overflow: hidden; }
 .rp-bar i { display: block; width: 100%; min-height: 2px; border-radius: 8px 8px 0 0; background: var(--a-primary); }
+.rv-ok { color: #1F7A4D; font-weight: 700; }

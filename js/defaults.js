@@ -170,6 +170,20 @@ const ATHR_DEFAULTS = {
         review_request_msg: "السلام عليكم {client}، نتمنى أن طلبك من متجر {name} وصلك بخير 🤍 يسعدنا تقييمك في دقيقة من هنا: {link}"
     },
 
+    // الإثبات الاجتماعي: كل الأرقام من الطلبات والتقييمات الحقيقية (social_proof في قاعدة البيانات)، ولا يظهر رقم قبل حدّه الأدنى
+    proof: {
+        counts: true,
+        min_buyers: 3,
+        last: true,
+        favs: true,
+        min_favs: 5,
+        popup: true,
+        recent_days: 7,
+        total: true,
+        min_total: 20,
+        verified: true
+    },
+
     seo: {
         google_verification: "",
         home_title: "",

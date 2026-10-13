@@ -48,11 +48,37 @@
                 reviewsByProduct.get(k).push(r);
             });
         });
+        // الإثبات الاجتماعي (أرقام حقيقية من social_proof): أرقام كل ألوان التصميم الواحد معاً
+        const proof = o.proof && o.proof.p ? o.proof : null;
+        const proofById = new Map();
+        if (proof) {
+            const serverNow = (Number(new Date(proof.at)) || Date.now()) + Math.max(0, Date.now() - (Number(proof.recv) || Date.now()));
+            const designKey = (p) => `${p.category_id || ""}|${String(p.name || "").trim()}`;
+            products.forEach((p) => {
+                const g = groups.get(p.id) || [p];
+                let nMax = 0;
+                let f = 0;
+                let last = 0;
+                g.forEach((x) => {
+                    const r = proof.p[x.id];
+                    if (!r) return;
+                    nMax = Math.max(nMax, Number(r.n) || 0);
+                    f += Number(r.f) || 0;
+                    const at = r.last ? Number(new Date(r.last)) || 0 : 0;
+                    if (at > last) last = at;
+                });
+                const keys = new Set(g.map(designKey));
+                const n = g.length > 1 && keys.size === 1 && proof.g && proof.g[[...keys][0]] ? Number(proof.g[[...keys][0]]) : nMax;
+                if (n || f || last) proofById.set(p.id, { n, f, ago: last ? Math.max(0, serverNow - last) : null });
+            });
+        }
         return {
             cfg,
             products,
             categories,
             reviews,
+            proof,
+            proofById,
             country: o.country || ATHR.BASE_COUNTRY,
             cartQty: o.cartQty || (() => 0),
             isFav: o.isFav || (() => false),
@@ -94,6 +120,9 @@
         moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10Z"/></svg>',
         auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16a8 8 0 0 0 0-16Z" class="fill"/></svg>',
         user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>',
+        users: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5c.9-3.3 3.2-4.9 6-4.9s5.1 1.6 6 4.9"/><path d="M15.2 5.6a3.2 3.2 0 0 1 0 6M17.3 14.9c1.8.6 3 2.1 3.7 4.6"/></svg>',
+        clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+        verified: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 1.6 2.7-.2.9 2.6 2.2 1.6-.9 2.6.9 2.6-2.2 1.6-.9 2.6-2.7-.2L12 21l-2.2-1.6-2.7.2-.9-2.6-2.2-1.6.9-2.6-.9-2.6 2.2-1.6.9-2.6 2.7.2Z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg>',
         grid: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',
         globe: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5Z"/></svg>',
         side: '<svg class="side" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>',
@@ -176,6 +205,79 @@
         const r = Math.max(0, Math.min(5, Number(rating) || 0));
         const full = Math.round(r);
         return `<span class="stars ${cls}" role="img" aria-label="${esc(t("{r} من 5", { r }))}">${"★".repeat(full)}<span class="off">${"★".repeat(5 - full)}</span></span>`;
+    };
+
+    // =====================================================
+    // الإثبات الاجتماعي: أرقام حقيقية فقط، ولا يظهر رقم قبل حدّه الأدنى (من لوحة التحكم)
+    // =====================================================
+
+    V.proofOf = function (v, p) {
+        const pc = v.cfg.proof || {};
+        const r = v.proofById && v.proofById.get(p.id);
+        if (!r) return null;
+        const dayMs = 864e5;
+        const out = {
+            n: pc.counts !== false && r.n >= Math.max(1, Number(pc.min_buyers) || 3) ? r.n : 0,
+            f: pc.favs !== false && v.cfg.sales.favorites !== false && r.f >= Math.max(1, Number(pc.min_favs) || 5) ? r.f : 0,
+            ago: pc.last !== false && r.ago !== null && r.ago <= Math.max(1, Number(pc.recent_days) || 7) * dayMs ? r.ago : null
+        };
+        return out.n || out.f || out.ago !== null ? out : null;
+    };
+
+    // «قبل 3 ساعات»
+    V.ago = function (ms) {
+        const h = Math.floor(ms / 36e5);
+        const d = Math.floor(ms / 864e5);
+        if (ATHR.isEn()) {
+            if (h < 1) return "less than an hour ago";
+            if (d < 1) return h === 1 ? "1 hour ago" : `${h} hours ago`;
+            return d === 1 ? "yesterday" : `${d} days ago`;
+        }
+        if (h < 1) return "قبل أقل من ساعة";
+        if (d < 1) return h === 1 ? "قبل ساعة" : h === 2 ? "قبل ساعتين" : h <= 10 ? `قبل ${h} ساعات` : `قبل ${h} ساعة`;
+        return d === 1 ? "أمس" : d === 2 ? "قبل يومين" : d <= 10 ? `قبل ${d} أيام` : `قبل ${d} يوماً`;
+    };
+
+    // «12 عميلاً طلبوه»
+    V.buyersText = function (n) {
+        if (ATHR.isEn()) return n === 1 ? "1 customer ordered this" : `${n} customers ordered this`;
+        if (n === 1) return "عميل واحد طلبه";
+        if (n === 2) return "عميلان طلباه";
+        return n <= 10 ? `${n} عملاء طلبوه` : `${n} عميلاً طلبوه`;
+    };
+
+    // «أضافه 5 أشخاص للمفضلة»
+    V.favsText = function (n) {
+        if (ATHR.isEn()) return n === 1 ? "Saved by 1 person" : `Saved by ${n} people`;
+        const who = n === 1 ? "شخص واحد" : n === 2 ? "شخصان" : n <= 10 ? `${n} أشخاص` : `${n} شخصاً`;
+        return `أضافه ${who} للمفضلة`;
+    };
+
+    // «25 عميلاً طلبوا من أثر» (أعلى الصفحة الرئيسية)
+    V.storeTotal = function (v) {
+        const pc = v.cfg.proof || {};
+        const n = v.proof && Number(v.proof.total);
+        if (pc.total === false || !n || n < Math.max(1, Number(pc.min_total) || 20)) return "";
+        const name = ATHR.storeName(v.cfg);
+        if (ATHR.isEn()) return `${n} customers ordered from ${name}`;
+        if (n === 1) return `عميل واحد طلب من ${name}`;
+        if (n === 2) return `عميلان طلبا من ${name}`;
+        return n <= 10 ? `${n} عملاء طلبوا من ${name}` : `${n} عميلاً طلبوا من ${name}`;
+    };
+
+    V.cardProof = function (v, p) {
+        const pr = V.proofOf(v, p);
+        return pr && pr.n ? `<span class="card-proof">${ICON.users}<span>${esc(V.buyersText(pr.n))}</span></span>` : "";
+    };
+
+    V.pdpProof = function (v, p) {
+        const pr = V.proofOf(v, p);
+        if (!pr) return "";
+        const items = [];
+        if (pr.n) items.push(`<li>${ICON.users}<span>${esc(V.buyersText(pr.n))}</span></li>`);
+        if (pr.ago !== null) items.push(`<li>${ICON.clock}<span>${esc(ATHR.isEn() ? `Last ordered ${V.ago(pr.ago)}` : `آخر طلب ${V.ago(pr.ago)}`)}</span></li>`);
+        if (pr.f) items.push(`<li>${ICON.heart}<span>${esc(V.favsText(pr.f))}</span></li>`);
+        return items.length ? `<ul class="pdp-proof">${items.join("")}</ul>` : "";
     };
 
     V.reviewCount = (n) => (ATHR.isEn()
@@ -270,6 +372,7 @@
             <div class="card-body">
                 <a class="card-name" href="${url}">${esc(V.pname(p))}</a>
                 ${stats ? `<span class="card-rate">${V.stars(stats.avg, "sm")}<small>(${stats.count})</small></span>` : ""}
+                ${V.cardProof(v, p)}
                 ${V.cardSwatches(v, p)}
                 ${V.priceHTML(v, p)}
                 ${V.lowStock(v, p) ? `<span class="card-low">🔥 ${esc(t("باقي {n} فقط", { n: V.lowStock(v, p) }))}</span>` : ""}
@@ -530,6 +633,7 @@
             <div class="wrap hero-inner">
                 <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
                 <ul class="hero-mini">${V.storePoints(v).map(([ico, label]) => `<li>${ico}<span>${esc(label)}</span></li>`).join("")}</ul>
+                ${V.storeTotal(v) ? `<p class="hero-proof">${ICON.users}<span>${esc(V.storeTotal(v))}</span></p>` : ""}
             </div>
         </section>`;
         }
@@ -542,6 +646,7 @@
                 <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
                 ${text ? `<p>${esc(fill(v, text))}</p>` : ""}
                 ${features ? `<ul class="hero-features">${features}</ul>` : ""}
+                ${V.storeTotal(v) ? `<p class="hero-proof">${ICON.users}<span>${esc(V.storeTotal(v))}</span></p>` : ""}
                 ${image ? "" : V.heroShots(v)}
             </div>
         </section>`;
@@ -630,7 +735,7 @@
                 ${(r.images || []).slice(0, 3).map((src) => `<img src="${esc(src)}" alt="${esc(t("صورة من العميل"))}" loading="lazy">`).join("")}
                 ${r.video ? `<video src="${esc(r.video)}" controls playsinline preload="metadata"></video>` : ""}
             </div>` : ""}
-            <figcaption>${r.name ? esc(r.name) : esc(t("عميل"))}${product ? ` · <a href="${ATHR.url.product(product)}">${esc(V.pname(product))}</a>` : ""}</figcaption>
+            <figcaption>${r.name ? esc(r.name) : esc(t("عميل"))}${r.verified && v.cfg.proof && v.cfg.proof.verified !== false ? ` <span class="rv-verified">${ICON.verified}${esc(ATHR.isEn() ? "Verified buyer" : "مشتري موثّق")}</span>` : ""}${product ? ` · <a href="${ATHR.url.product(product)}">${esc(V.pname(product))}</a>` : ""}</figcaption>
         </figure>`;
     };
 
@@ -1090,6 +1195,7 @@
                         ${desc ? `<p class="pdp-desc">${esc(desc)}</p>` : ""}
                         ${stats ? `<a class="pdp-rate" href="#reviews">${V.stars(stats.avg)}<span>${stats.avg.toFixed(1)} · ${esc(V.reviewCount(stats.count))}</span></a>` : ""}
                         ${V.pdpPrice(v, p)}
+                        ${V.pdpProof(v, p)}
                         ${v.groups.get(p.id) ? V.variantPicker(v, p) : (V.colorOf(v, p) ? `<div class="pdp-color">${esc(t("اللون:"))} ${V.colorTag(v, p)}</div>` : "")}
                         ${V.buyBox(v, p)}
                         ${p.is_available === false ? "" : V.volumeTeaser(v)}

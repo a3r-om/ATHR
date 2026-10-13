@@ -1445,6 +1445,19 @@
             + card("بعد الإضافة للسلة", `
                 ${toggle("config.sales.cart_float", "زر السلة العائم في كل صفحات المتجر", { help: "دائرة السلة مع عدد القطع، وحلقة خضراء تمتلئ كلما اقترب الزبون من الشحن المجاني، ثم «شحن مجاني» عند الوصول." })}
                 ${toggle("config.sales.upsell_show", "نافذة «أُضيف إلى سلتك» بعد الضغط على «أضف للسلة»", { help: "مفعّلة: تظهر نافذة فيها اقتراحات وإكمال الطقم وكم بقي للتوصيل المجاني. متوقفة: يُضاف المنتج للسلة بهدوء مع رسالة صغيرة «أُضيف إلى السلة ✓» ونبضة في زر السلة، والزبون يكمل تسوقه بدون مقاطعة." })}`)
+            + card("👥 الإثبات الاجتماعي", `
+                <p class="adm-sentence">كل الأرقام تُحسب تلقائياً من طلباتك وتقييماتك الحقيقية، ولا يظهر أي رقم قبل أن يوصل للحد الأدنى اللي تحدده هنا.</p>
+                ${toggle("config.proof.counts", "«5 عملاء طلبوه» على بطاقة المنتج وفي صفحته", { help: "العميل يُحسب مرة واحدة حتى لو طلب أكثر من لون من نفس التصميم." })}
+                ${number("config.proof.min_buyers", "أقل عدد عملاء لإظهار الرقم", { step: "1", min: "1", placeholder: "3" })}
+                ${toggle("config.proof.last", "«آخر طلب قبل 3 ساعات» في صفحة المنتج")}
+                ${toggle("config.proof.favs", "«أضافه 8 أشخاص للمفضلة» في صفحة المنتج")}
+                ${number("config.proof.min_favs", "أقل عدد لإظهار رقم المفضلة", { step: "1", min: "1", placeholder: "5" })}
+                ${toggle("config.proof.popup", "إشعار صغير: «أحد العملاء من السيب طلب كوب …»", { help: "من آخر الطلبات الحقيقية فقط: الولاية ووقت الطلب، بدون اسم أو رقم. يظهر 3 مرات كحد أقصى في الزيارة، ولا يظهر في السلة وصفحة إتمام الطلب، والزائر يقدر يقفله." })}
+                ${number("config.proof.recent_days", "أقدم طلب يظهر في الإشعار و«آخر طلب» (بالأيام)", { step: "1", min: "1", placeholder: "7" })}
+                ${toggle("config.proof.total", "«25 عميلاً طلبوا من أثر» أعلى الصفحة الرئيسية")}
+                ${number("config.proof.min_total", "أقل عدد عملاء لإظهار هذا السطر", { step: "1", min: "1", placeholder: "20" })}
+                ${toggle("config.proof.verified", "شارة «مشتري موثّق» على التقييمات", { help: "تظهر تلقائياً إذا أرسل العميل التقييم من رابط «اطلب تقييم» في بطاقة طلبه (فيه رقم طلبه) وكان المنتج ضمن طلبه." })}`,
+                "الطلبات التجريبية: أخفها من دفتر الطلبات حتى لا تدخل في الأرقام. أسرع طريقة تجمع تقييمات: بعد التسليم اضغط «اطلب تقييم» في بطاقة الطلب.")
             + card("👥 العملاء والعروض", `
                 ${toggle("config.sales.marketing_default", "خيار «أرسلوا لي العروض والخصومات» مفعّل تلقائياً للزبون", { help: "يظهر للزبون في صفحة الطلب، ويقدر يطفئه. من يطفئه لا يدخل في إرسال العروض." })}
                 <button class="ab ab-soft ab-sm" type="button" data-a="open-customers">فتح قائمة العملاء</button>`,
@@ -4389,7 +4402,7 @@
                     <span class="tag">${label[r.status] || r.status}</span>
                 </header>
                 <p class="rv-text">${esc(r.text)}</p>
-                <p class="adm-muted oc-when">${r.product_id ? `${esc(productName(r.product_id) || "منتج محذوف")} · ` : "تقييم عام للمتجر · "}${r.order_no ? `طلب ${esc(r.order_no)} · ` : ""}${esc(ATHR.muscatParts(r.created_at).date)}</p>
+                <p class="adm-muted oc-when">${r.verified ? `<b class="rv-ok">✓ مشتري موثّق</b> · ` : ""}${r.product_id ? `${esc(productName(r.product_id) || "منتج محذوف")} · ` : "تقييم عام للمتجر · "}${r.order_no ? `طلب ${esc(r.order_no)} · ` : ""}${esc(ATHR.muscatParts(r.created_at).date)}</p>
                 <div class="oc-actions">
                     ${r.status !== "approved" ? `<button type="button" class="ab-mini ok" data-review-set="${esc(r.id)}" data-value="approved">إظهار في المتجر</button>` : ""}
                     ${r.status !== "rejected" ? `<button type="button" class="ab-mini" data-review-set="${esc(r.id)}" data-value="rejected">إخفاء</button>` : ""}

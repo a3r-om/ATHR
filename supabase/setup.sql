@@ -1518,3 +1518,118 @@ $$;
 revoke all on function public.loyalty_status(text, text) from public;
 grant execute on function public.loyalty_status(text, text) to anon, authenticated;
 revoke all on function private.athr_cust_key(text, text) from public;
+
+-- =====================================================
+-- الإصدار 17: الإثبات الاجتماعي من بيانات حقيقية فقط
+-- 1) social_proof(): لكل منتج ظاهر: عدد العملاء الذين طلبوه، وقت آخر طلب، وعدد مرات إضافته للمفضلة،
+--    وآخر الطلبات (المنتج + الولاية + الوقت، بدون اسم أو رقم) لإشعار «أحد العملاء من … طلب …».
+--    و g: عدد العملاء لكل تصميم (القسم + الاسم) حتى لا يُحسب من طلب لونين مرتين.
+--    الطلبات المخفية من دفتر الطلبات لا تُحسب. الحد الأدنى لإظهار الأرقام يطبّقه المتجر بعد تجميع ألوان التصميم الواحد.
+-- 2) شارة «مشتري موثّق»: تُحسب تلقائياً عند إرسال التقييم إذا كان رقم الطلب يحتوي هذا المنتج (لا يقدر الزائر يكتبها بنفسه).
+-- 3) رقم الطلب في التقييمات لم يعد يُقرأ من خارج اللوحة.
+-- =====================================================
+alter table public.reviews add column if not exists verified boolean not null default false;
+
+create or replace function private.athr_review_verify()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    new.verified := new.order_no is not null and new.product_id is not null and exists (
+        select 1 from public.orders o
+        where upper(o.order_no) = upper(new.order_no) and not coalesce(o.hidden, false)
+          and exists (select 1 from jsonb_array_elements(o.items) e where e ->> 'id' = new.product_id::text)
+    );
+    return new;
+end;
+$$;
+revoke all on function private.athr_review_verify() from public;
+drop trigger if exists athr_review_verify on public.reviews;
+create trigger athr_review_verify before insert or update of order_no, product_id on public.reviews
+    for each row execute function private.athr_review_verify();
+
+revoke select on public.reviews from anon;
+grant select (id, created_at, product_id, name, rating, text, status, verified) on public.reviews to anon;
+
+create or replace function public.social_proof()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+    c jsonb := coalesce((select config -> 'proof' from public.store_settings where id = 1), '{}'::jsonb);
+    d_age int := least(30, greatest(1, coalesce(floor(nullif(c ->> 'recent_days', '')::numeric)::int, 7)));
+    show_n boolean := coalesce((c ->> 'counts')::boolean, true);
+    show_last boolean := coalesce((c ->> 'last')::boolean, true);
+    show_f boolean := coalesce((c ->> 'favs')::boolean, true);
+    show_pop boolean := coalesce((c ->> 'popup')::boolean, true);
+    show_total boolean := coalesce((c ->> 'total')::boolean, true);
+    per jsonb;
+    grp jsonb := '{}'::jsonb;
+    recent jsonb := '[]'::jsonb;
+    total int;
+begin
+    with it as (
+        select coalesce(private.athr_cust_key(o.phone, o.country), o.order_no) as who, o.ordered_at, e ->> 'id' as pid
+        from public.orders o cross join lateral jsonb_array_elements(o.items) e
+        where not coalesce(o.hidden, false) and e ? 'id'
+    ), agg as (
+        select pid, count(distinct who)::int as n, max(ordered_at) as last from it group by pid
+    )
+    select coalesce(jsonb_object_agg(p.id::text, jsonb_strip_nulls(jsonb_build_object(
+            'n', case when show_n then a.n end,
+            'last', case when show_last and a.last > now() - make_interval(days => d_age) then a.last end,
+            'f', case when show_f and s.favs > 0 then s.favs end))), '{}'::jsonb)
+      into per
+      from public.products p
+      left join agg a on a.pid = p.id::text
+      left join public.product_stats s on s.product_id = p.id
+     where p.is_visible and (a.n is not null or s.favs > 0);
+
+    -- عدد العملاء لكل تصميم (كل ألوانه معاً، العميل الواحد يُحسب مرة واحدة)
+    if show_n then
+        with it as (
+            select coalesce(private.athr_cust_key(o.phone, o.country), o.order_no) as who, e ->> 'id' as pid
+            from public.orders o cross join lateral jsonb_array_elements(o.items) e
+            where not coalesce(o.hidden, false) and e ? 'id'
+        )
+        select coalesce(jsonb_object_agg(k, n), '{}'::jsonb) into grp
+          from (
+            select coalesce(p.category_id::text, '') || '|' || btrim(p.name) as k, count(distinct it.who)::int as n
+              from it join public.products p on p.id::text = it.pid and p.is_visible
+             group by 1
+          ) z;
+    end if;
+
+    if show_pop then
+        select coalesce(jsonb_agg(q.x order by q.t desc), '[]'::jsonb) into recent
+          from (
+            select * from (
+                select distinct on (o.id) o.ordered_at as t, jsonb_build_object(
+                    'p', e ->> 'id',
+                    'w', coalesce(nullif(o.wilaya, ''), nullif(o.governorate, '')),
+                    'c', o.country,
+                    't', o.ordered_at) as x
+                  from public.orders o
+                  cross join lateral jsonb_array_elements(o.items) e
+                  join public.products p on p.id::text = e ->> 'id' and p.is_visible
+                 where not coalesce(o.hidden, false) and o.ordered_at > now() - make_interval(days => d_age)
+                 order by o.id, e ->> 'id'
+            ) z order by z.t desc limit 10
+          ) q;
+    end if;
+
+    if show_total then
+        select count(distinct coalesce(private.athr_cust_key(phone, country), order_no))::int into total
+          from public.orders where not coalesce(hidden, false);
+    end if;
+
+    return jsonb_build_object('p', per, 'g', grp, 'recent', recent, 'total', total, 'at', now());
+end;
+$$;
+revoke all on function public.social_proof() from public;
+grant execute on function public.social_proof() to anon, authenticated;
