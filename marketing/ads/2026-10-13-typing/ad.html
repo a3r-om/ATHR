@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعلان أثر — أسلوب الكتابة الحركية</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<style>
+:root { --dark: #4A0D12; --cream: #F7F1E8; --ink: #4A0D12; --acc: #F2A516; --tile: #621520; }
+.reel { background: var(--cream); font-family: "Plex", sans-serif; }
+.layer { position: absolute; inset: 0; }
+.bg { position: absolute; inset: 0; }
+.guides line { stroke-width: 2; }
+.txt { position: absolute; white-space: nowrap; line-height: 1; }
+.caret { display: inline-block; width: 7px; height: 0.92em; background: var(--acc); vertical-align: -0.08em; margin-inline-start: 6px; border-radius: 2px; }
+.sel { position: absolute; background: var(--acc); opacity: 0; border-radius: 4px; }
+.mark { color: var(--acc); }
+.lbl { position: absolute; font-family: "Plex"; font-size: 20px; color: rgba(74, 13, 18, .45); direction: ltr; }
+svg { overflow: visible; }
+.strip { position: absolute; overflow: hidden; }
+</style>
+</head>
+<body>
+<div class="reel" id="reel">
+    <div class="bg" id="bg"></div>
+
+    <!-- S0/S1: خطوط القياس -->
+    <svg class="layer" id="guides" viewBox="0 0 1080 1920" aria-hidden="true">
+        <g id="gDark" stroke="#F7F1E8" stroke-opacity=".09">
+            <line x1="0" y1="960" x2="1080" y2="960"/><line x1="540" y1="0" x2="540" y2="1920"/>
+            <line x1="0" y1="880" x2="1080" y2="880"/><line x1="0" y1="1040" x2="1080" y2="1040"/>
+        </g>
+        <g id="gLight" stroke="#4A0D12" stroke-opacity=".14" stroke-dasharray="6 8">
+            <line x1="0" y1="872" x2="1080" y2="872"/><line x1="0" y1="1050" x2="1080" y2="1050"/>
+            <line x1="372" y1="0" x2="372" y2="1920"/><line x1="708" y1="0" x2="708" y2="1920"/>
+        </g>
+    </svg>
+    <div class="lbl" id="lblW" style="left:505px;top:836px">336px</div>
+    <div class="lbl" id="lblH" style="left:720px;top:948px;transform:rotate(90deg);transform-origin:left top">178px</div>
+
+    <!-- S0/S1: «هلا» -->
+    <div class="txt" id="hala" style="font-size:170px;font-weight:700;color:var(--ink)"></div>
+
+    <!-- S2..S5: الكوب الكبير -->
+    <div class="layer" id="cupWrap">
+        <svg id="cupSvg" viewBox="0 0 600 700" style="position:absolute;left:0;top:0;width:600px;height:700px;transform-origin:0 0" aria-hidden="true">
+            <path id="cupPath" fill="#4A0D12" d="M34 46C120 30 480 30 566 46C574 48 576 56 574 64L556 150C530 360 486 500 452 590L444 612C442 620 436 624 428 624L428 640C428 652 420 660 408 660L192 660C180 660 172 652 172 640L172 624C164 624 158 620 156 612L148 590C114 500 70 360 44 150L26 64C24 56 26 48 34 46Z"/>
+        </svg>
+    </div>
+    <div class="sel" id="sel"></div>
+    <div class="txt" id="ehna" style="font-size:150px;font-weight:700;color:var(--cream)"></div>
+    <div class="txt" id="name" style="font-size:86px;color:var(--ink)"></div>
+    <div id="nTba3" class="layer"></div>
+
+    <!-- S6: فم الكوب = العين -->
+    <svg class="layer" id="eye" viewBox="-540 -840 1080 1920" aria-hidden="true">
+        <defs><clipPath id="almondClip"><path id="almondClipPath" d=""/></clipPath></defs>
+        <path id="almond" fill="#F7F1E8" d=""/>
+        <g clip-path="url(#almondClip)">
+            <g id="irisTrail"></g>
+            <g id="iris">
+                <circle r="150" fill="#F2A516"/>
+                <circle r="118" fill="#3A1A10"/>
+                <circle id="pupilC" r="52" fill="#160806"/>
+                <path id="pupilD" d="M0 -66L46 0L0 66L-46 0Z" fill="#160806" opacity="0"/>
+                <circle cx="52" cy="-58" r="20" fill="#FFFFFF" opacity=".95"/>
+            </g>
+        </g>
+        <path id="almondEdge" fill="none" stroke="#000" stroke-opacity=".12" stroke-width="6" d=""/>
+    </svg>
+    <div class="txt" id="thoq" style="font-size:118px;color:var(--cream)">ذوقك</div>
+
+    <!-- S7: تبديل الأفعال -->
+    <div id="verbs" class="layer"></div>
+    <div class="txt" id="bkoob" style="font-size:128px;color:var(--ink)">بكوب</div>
+    <svg id="squig" viewBox="0 0 300 30" style="position:absolute;width:300px;height:30px" aria-hidden="true">
+        <path id="squigPath" d="M4 15 Q 16 2 28 15 T 52 15 T 76 15 T 100 15 T 124 15 T 148 15 T 172 15 T 196 15 T 220 15 T 244 15 T 268 15 T 292 15" fill="none" stroke="#F2A516" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <svg id="icons" viewBox="0 0 120 120" style="position:absolute;width:120px;height:120px" aria-hidden="true">
+        <!-- فقاعة كلام (العبارات) -->
+        <g id="ic0"><path d="M14 22h92a10 10 0 0 1 10 10v44a10 10 0 0 1-10 10H54l-22 18v-18H14A10 10 0 0 1 4 76V32a10 10 0 0 1 10-10Z" fill="#F2A516" stroke="#4A0D12" stroke-width="5" stroke-linejoin="round"/><path d="M40 48c-6 2-8 6-8 12h10v10H30M72 48c-6 2-8 6-8 12h10v10H62" fill="none" stroke="#4A0D12" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <!-- كرة (الأندية) -->
+        <g id="ic1"><circle cx="60" cy="60" r="48" fill="#F2A516" stroke="#4A0D12" stroke-width="5"/><path d="M60 40l17 12-6 20H49l-6-20Z" fill="#4A0D12"/><path d="M60 40V14M77 52l22-8M71 72l14 20M49 72L35 92M43 52l-22-8" stroke="#4A0D12" stroke-width="5" stroke-linecap="round"/></g>
+        <!-- هدية (الإهداء) -->
+        <g id="ic2"><rect x="14" y="48" width="92" height="60" rx="6" fill="#F2A516" stroke="#4A0D12" stroke-width="5"/><rect x="8" y="34" width="104" height="22" rx="5" fill="#F2A516" stroke="#4A0D12" stroke-width="5"/><path d="M60 34v74" stroke="#4A0D12" stroke-width="8"/><path d="M60 34C50 12 28 14 34 28c3 6 26 6 26 6ZM60 34c10-22 32-20 26-6-3 6-26 6-26 6Z" fill="#F2A516" stroke="#4A0D12" stroke-width="5" stroke-linejoin="round"/></g>
+        <!-- قبعة التخرج (الجامعات) -->
+        <g id="ic3"><path d="M60 18l54 24-54 24L6 42Z" fill="#F2A516" stroke="#4A0D12" stroke-width="5" stroke-linejoin="round"/><path d="M28 54v26c0 10 64 10 64 0V54L60 68Z" fill="#4A0D12"/><path d="M104 46v34" stroke="#4A0D12" stroke-width="5" stroke-linecap="round"/><circle cx="104" cy="86" r="7" fill="#F2A516" stroke="#4A0D12" stroke-width="4"/></g>
+        <!-- فيونكة (البنات) -->
+        <g id="ic4"><path d="M60 58C42 30 8 34 10 52c2 20 34 18 50 6ZM60 58c18-28 52-24 50-6-2 20-34 18-50 6Z" fill="#F2A516" stroke="#4A0D12" stroke-width="5" stroke-linejoin="round"/><path d="M54 62l-14 40 12-4 6 10 4-42M66 62l14 40-12-4-6 10-4-42" fill="#F2A516" stroke="#4A0D12" stroke-width="5" stroke-linejoin="round"/><rect x="50" y="48" width="20" height="20" rx="6" fill="#4A0D12"/></g>
+    </svg>
+
+    <!-- S8: «وش تنتظر؟» -->
+    <div class="txt" id="wait" style="font-size:104px;color:var(--ink)"></div>
+
+    <!-- S9: «اطلب الحين» -->
+    <div class="txt" id="cta" style="font-size:140px;font-weight:700;color:var(--ink)">اطلب الحين</div>
+    <svg id="hand" viewBox="0 0 13 16" style="position:absolute;width:117px;height:144px" shape-rendering="crispEdges" aria-hidden="true"><g id="handPix" fill="#4A0D12"></g></svg>
+    <svg id="ripple" viewBox="-60 -60 120 120" style="position:absolute;width:120px;height:120px" aria-hidden="true"><circle id="rippleC" r="20" fill="none" stroke="#F2A516" stroke-width="6"/></svg>
+
+    <!-- S10: الشعار -->
+    <div id="tile" style="position:absolute;left:390px;top:780px;width:300px;height:300px;border-radius:70px;background:var(--tile);box-shadow:inset 0 0 0 2px rgba(247,241,232,.08)">
+        <svg viewBox="0 0 482 374" style="position:absolute;left:52px;top:68px;width:196px;height:152px" aria-hidden="true"><path fill="#F7F1E8" d="M0 226L73 153V226H316.5L390.5 152.5V226A74 74 0 0 1 316.5 300H74L0 374ZM408 150.5L481.5 77V300H408ZM408 37H426.5A36.5 36.5 0 0 1 463 0.5V37H481.5V73.5H408Z"/><path fill="#F2A516" d="M269.8 68.7L305.8 104.7L269.8 140.7L233.8 104.7ZM232 121.7L268 157.7L232 193.7L196 157.7ZM307.6 121.6L343.6 157.6L307.6 193.6L271.6 157.6Z"/></svg>
+    </div>
+    <div class="txt" id="bio" style="font-size:46px;color:rgba(247,241,232,.72)">الرابط في البايو</div>
+</div>
+
+<script src="../../kit/anim.js"></script>
+<script>
+window.DURATION = 16;
+window.COVER_T = 9.35;
+const C = { dark: "#4A0D12", cream: "#F7F1E8", acc: "#F2A516" };
+const $ = (s) => document.querySelector(s);
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const back = A.back;
+const p = A.p;
+
+// يكتب النص حرفاً حرفاً (حسب الوقت)، والمؤشر يومض بعد الانتهاء
+function typed(full, t, start, cps) {
+    const chars = Array.from(full);
+    const n = Math.max(0, Math.min(chars.length, Math.floor((t - start) * cps) + 1));
+    return { text: chars.slice(0, t < start ? 0 : n).join(""), done: n >= chars.length };
+}
+const blink = (t, from) => (t < from ? true : Math.floor((t - from) / 0.27) % 2 === 0);
+function caret(on) { return `<span class="caret" style="opacity:${on ? 1 : 0}"></span>`; }
+
+// يضع النص في المنتصف أفقياً عند y
+function center(el, y, x = 540) {
+    el.style.left = "0px"; el.style.top = "0px";
+    const w = el.offsetWidth, h = el.offsetHeight;
+    el.style.left = `${x - w / 2}px`; el.style.top = `${y - h / 2}px`;
+    return { w, h };
+}
+
+// ---------- «نطبع لك»: 3 شرائح من نفس الكلمة تتجمع ----------
+const nT = $("#nTba3");
+const NT_TEXT = "نطبع لك";
+const NT = { x: 560, y: 470, size: 132 };
+for (let i = 0; i < 3; i++) {
+    const s = document.createElement("div");
+    s.className = "strip";
+    s.innerHTML = `<div class="txt" style="font-size:${NT.size}px;font-weight:700;color:${C.dark};position:absolute;top:0">${NT_TEXT}</div>`;
+    nT.appendChild(s);
+}
+let ntW = 0, ntH = 0;
+function layoutNT() {
+    const probe = nT.querySelector(".txt");
+    ntW = probe.offsetWidth; ntH = Math.round(NT.size * 1.5);
+    nT.querySelectorAll(".strip").forEach((s, i) => {
+        s.style.width = `${ntW / 3 + 1}px`; s.style.height = `${ntH}px`;
+        s.firstChild.style.left = `${-i * ntW / 3}px`; s.firstChild.style.top = `${NT.size * 0.18}px`;
+    });
+}
+
+// ---------- الأفعال ----------
+const VERBS = ["قُلها", "شجّع", "فاجئه", "تخرّج", "دلّعها"];
+const SWAPS = [9.07, 9.57, 10.07, 10.60, 11.15];
+const verbsEl = $("#verbs");
+VERBS.forEach((v) => {
+    const d = document.createElement("div");
+    d.className = "txt"; d.textContent = v;
+    d.style.cssText = `font-size:128px;font-weight:700;color:${C.dark}`;
+    verbsEl.appendChild(d);
+});
+
+// ---------- يد بكسل (مؤشر يضغط) ----------
+const HAND = [
+    "....XX.......",
+    "...XXXX......",
+    "...XXXX......",
+    "...XXXX......",
+    "...XXXXXX....",
+    "...XXXXXXXX..",
+    ".XXXXXXXXXXX.",
+    "XXXXXXXXXXXXX",
+    "XXXXXXXXXXXXX",
+    ".XXXXXXXXXXXX",
+    "..XXXXXXXXXXX",
+    "..XXXXXXXXXX.",
+    "...XXXXXXXXX.",
+    "...XXXXXXXX..",
+    "....XXXXXXX..",
+    "....XXXXXXX.."
+];
+(function () {
+    const on = (x, y) => y >= 0 && y < HAND.length && x >= 0 && x < 13 && HAND[y][x] === "X";
+    let fill = "", line = "";
+    HAND.forEach((row, y) => Array.from(row).forEach((c, x) => {
+        if (c !== "X") return;
+        const edge = !on(x - 1, y) || !on(x + 1, y) || !on(x, y - 1) || !on(x, y + 1);
+        const rect = `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+        if (edge) line += rect; else fill += rect;
+    }));
+    // فواصل الأصابع
+    const seams = [[6, 5], [6, 6], [8, 6], [8, 7], [10, 7], [10, 8]].map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join("");
+    document.getElementById("handPix").innerHTML = `<g fill="#F7F1E8">${fill}</g><g fill="#4A0D12">${line}${seams}</g>`;
+})();
+
+// ---------- العين ----------
+function almondD(h) {
+    // فم الكوب من زاوية: شكل لوزي عرضه 940
+    const w = 470;
+    return `M${-w} 0 Q 0 ${-h} ${w} 0 Q 0 ${h} ${-w} 0 Z`;
+}
+
+let laid = false;
+window.render = function (t) {
+    if (!laid) { layoutNT(); laid = true; }
+    const bg = $("#bg");
+    // المشاهد (قطع حاد بين الغامق والكريمي)
+    const dark = t < 0.5 || (t >= 6.19 && t < 8.56) || t >= 14.4;
+    bg.style.background = dark ? C.dark : C.cream;
+
+    // ---- S0: مؤشر في الظلام ----
+    const s0 = t < 0.5;
+    show($("#gDark"), s0);
+    // ---- S1: «هلا» ----
+    const hala = $("#hala");
+    if (t < 1.58) {
+        show(hala, true);
+        if (s0) {
+            hala.innerHTML = caret(blink(t, 0));
+            hala.style.color = C.cream;
+        } else {
+            const ty = typed("هلا", t, 0.5, 11);
+            hala.innerHTML = ty.text + caret(blink(t, 0.78));
+            hala.style.color = C.dark;
+        }
+        center(hala, 960);
+    } else show(hala, false);
+    const g = p(t, 0.55, 0.8) * (1 - p(t, 1.5, 1.58));
+    $("#gLight").style.opacity = String(t >= 0.5 && t < 1.58 ? g : 0);
+    $("#lblW").style.opacity = $("#lblH").style.opacity = String(t >= 0.5 && t < 1.58 ? g : 0);
+
+    // ---- S2..S5: الكوب ----
+    const cupWrap = $("#cupWrap"), cupSvg = $("#cupSvg");
+    const cupOn = t >= 1.58 && t < 6.19;
+    show(cupWrap, cupOn);
+    let cupX = 0, cupY = 0, cupS = 1, blurAmt = 0;
+    if (cupOn) {
+        // يدخل بقوة من الأسفل
+        const k = p(t, 1.58, 1.9);
+        const S_IN = 1.62;                 // الكوب في الوسط: عرض 972
+        const sIn = S_IN * (1.18 - 0.18 * back(k));
+        const xIn = 540 - 300 * sIn, yIn = 1040 - 360 * sIn + (1 - easeOut(k)) * 520;
+        // بعد الزووم: كوب ضخم على اليسار مقصوص
+        const S_OUT = 2.95;
+        const xOut = 470 - 600 * S_OUT * 0.93, yOut = 120;
+        const z = easeExpo(p(t, 2.42, 2.78));
+        cupS = sIn + (S_OUT - sIn) * z;
+        cupX = xIn + (xOut - xIn) * z;
+        cupY = yIn + (yOut - yIn) * z;
+        blurAmt = Math.sin(Math.PI * p(t, 2.42, 2.78)) * 22;
+        cupSvg.style.transform = `translate(${cupX}px, ${cupY}px) scale(${cupS})`;
+        cupSvg.style.filter = blurAmt > 0.5 ? `blur(${blurAmt}px)` : "none";
+    }
+    // «إحنا» داخل الكوب + تحديد النص
+    const ehna = $("#ehna"), sel = $("#sel");
+    if (t >= 1.6 && t < 2.42) {
+        show(ehna, true);
+        ehna.innerHTML = "إحنا" + caret(blink(t, 1.6));
+        const rideY = 900 + (1 - easeOut(p(t, 1.58, 1.9))) * 520;   // تطلع مع الكوب
+        const r = center(ehna, rideY);
+        const sk = p(t, 2.15, 2.22);
+        show(sel, sk > 0);
+        sel.style.opacity = String(0.55 * sk);
+        sel.style.left = `${540 - r.w / 2 + 8}px`; sel.style.top = `${900 - 92}px`;
+        sel.style.width = `${(r.w - 26) * sk}px`; sel.style.height = "176px";
+        sel.style.background = C.acc;
+    } else { show(ehna, false); show(sel, false); }
+
+    // «متجر أثر» تنكتب جنب الكوب
+    const nameEl = $("#name");
+    if (t >= 2.8 && t < 4.6) {
+        show(nameEl, true);
+        const full = "متجر أثر";
+        const ty = typed(full, t, 2.8, 10);
+        const a = Array.from(ty.text);
+        const reg = a.slice(0, 5).join(""), bold = a.slice(5).join("");
+        const out = p(t, 4.42, 4.6);
+        nameEl.innerHTML = `<span>${reg}</span><b style="font-weight:700">${bold}</b>` + caret(out ? false : blink(t, 3.62));
+        nameEl.style.left = "560px"; nameEl.style.top = "520px";
+        nameEl.style.opacity = String(1 - out);
+        nameEl.style.letterSpacing = `${out * 40}px`;
+        nameEl.style.filter = out ? `blur(${out * 10}px)` : "none";
+    } else show(nameEl, false);
+
+    // «نطبع لك» تتجمع من 3 شرائح
+    const ntOn = t >= 4.79 && t < 6.19;
+    show(nT, ntOn);
+    if (ntOn) {
+        const strips = nT.querySelectorAll(".strip");
+        const offs = [[-220, -140], [0, 260], [240, -220]];
+        strips.forEach((s, i) => {
+            const k = back(p(t, 4.79 + i * 0.04, 5.12 + i * 0.04));
+            const [dx, dy] = offs[i];
+            const x0 = NT.x + (ntW / 3) * (2 - i) ;
+            s.style.left = `${NT.x + (ntW / 3) * i + dx * (1 - k)}px`;
+            s.style.top = `${NT.y + dy * (1 - k)}px`;
+            s.style.opacity = String(Math.min(1, p(t, 4.79 + i * 0.04, 4.95 + i * 0.04)));
+        });
+        // تلاشي قبل الضربة مع نقطة بلون مميز
+        const fade = p(t, 5.95, 6.15);
+        nT.style.opacity = String(1 - fade * 0.75);
+    }
+
+    // ---- S6: العين (فم الكوب) ----
+    const eye = $("#eye");
+    const eyeOn = t >= 6.19 && t < 8.56;
+    show(eye, eyeOn);
+    if (eyeOn) {
+        const open = easeOut(p(t, 6.19, 6.55));
+        const wide = easeOut(p(t, 6.95, 7.2));
+        const h = 120 + 330 * open + 150 * wide;
+        const d = almondD(h);
+        $("#almond").setAttribute("d", d);
+        $("#almondClipPath").setAttribute("d", d);
+        $("#almondEdge").setAttribute("d", d);
+        // القزحية: تلتفت من اليمين لليسار مع أثر حركة
+        const look = easeExpo(p(t, 7.28, 7.5));
+        const ix = 120 + (-70 - 120) * look, iy = 10 - 6 * look;
+        const iris = $("#iris");
+        iris.setAttribute("transform", `translate(${ix} ${iy}) scale(${0.9 + 0.1 * open})`);
+        const pd = p(t, 6.95, 7.12);
+        $("#pupilC").setAttribute("opacity", String(1 - pd));
+        $("#pupilD").setAttribute("opacity", String(pd));
+        $("#pupilD").setAttribute("transform", `scale(${0.6 + 0.4 * pd})`);
+        // أثر الحركة
+        const trail = $("#irisTrail");
+        const moving = t >= 7.28 && t < 7.62;
+        if (moving) {
+            let html = "";
+            for (let i = 1; i <= 4; i++) {
+                const lk = easeExpo(p(t - i * 0.025, 7.28, 7.5));
+                const tx = 120 + (-70 - 120) * lk;
+                html += `<g transform="translate(${tx} ${iy})" opacity="${0.22 - i * 0.04}"><circle r="150" fill="#F2A516"/><circle r="118" fill="#3A1A10"/></g>`;
+            }
+            trail.innerHTML = html;
+        } else trail.innerHTML = "";
+    }
+    const thoq = $("#thoq");
+    if (t >= 7.38 && t < 9.07) {
+        show(thoq, true);
+        const k = p(t, 7.38, 7.62);
+        const onCream = t >= 8.56;
+        thoq.style.color = onCream ? C.dark : C.cream;
+        const blurIn = (1 - k) * 16, blurOut = onCream ? 14 * (1 - p(t, 8.56, 8.95)) : 0;
+        thoq.style.opacity = String(onCream ? 0.5 + 0.5 * p(t, 8.56, 8.8) : k);
+        thoq.style.filter = `blur(${Math.max(blurIn, blurOut)}px)`;
+        center(thoq, onCream ? 960 : 1360);
+    } else show(thoq, false);
+
+    // ---- S7: تبديل الأفعال ----
+    const s7 = t >= 9.07 && t < 12.25;
+    show(verbsEl, s7); show($("#bkoob"), s7); show($("#squig"), s7); show($("#icons"), s7);
+    if (s7) {
+        const Y = 960;
+        const bk = $("#bkoob");
+        bk.style.left = "0px"; bk.style.top = "0px";
+        const bw = bk.offsetWidth;
+        const OBJ_R = 470;                 // الحافة اليمنى لكلمة «بكوب»
+        bk.style.left = `${OBJ_R - bw}px`; bk.style.top = `${Y - bk.offsetHeight / 2}px`;
+        const VX = OBJ_R + 34;             // بداية الأفعال (يسارها)
+        let cur = 0;
+        SWAPS.forEach((s, i) => { if (t >= s) cur = i; });
+        verbsEl.querySelectorAll(".txt").forEach((el, i) => {
+            el.style.left = `${VX}px`;
+            const h = el.offsetHeight;
+            let o = 0, y = 0;
+            if (i === cur) {
+                const k = p(t, SWAPS[i], SWAPS[i] + 0.16);
+                o = Math.min(1, k * 1.6); y = (1 - back(k)) * 46;
+            } else if (i === cur - 1) {
+                const k = p(t, SWAPS[cur], SWAPS[cur] + 0.1);
+                o = 1 - k; y = -k * 40;
+            }
+            el.style.opacity = String(o);
+            el.style.top = `${Y - h / 2 + y}px`;
+        });
+        // الخط المتعرج تحت «بكوب»
+        const sq = $("#squig");
+        sq.style.left = `${OBJ_R - bw + (bw - 300) / 2}px`; sq.style.top = `${Y + 64}px`;
+        const sp = $("#squigPath");
+        const len = 340;
+        sp.style.strokeDasharray = `${len}`;
+        sp.style.strokeDashoffset = `${len * (1 - easeOut(p(t, 9.12, 9.5)))}`;
+        sp.setAttribute("stroke", t >= 10.6 ? C.dark : C.acc);
+        // الأيقونة فوق الفعل تتبدل
+        const ic = $("#icons");
+        ic.style.left = `${VX - 18}px`; ic.style.top = `${Y - 200}px`;
+        for (let i = 0; i < 5; i++) {
+            const gI = document.getElementById(`ic${i}`);
+            let s = 0;
+            if (i === cur) s = back(p(t, SWAPS[i] + 0.02, SWAPS[i] + 0.22));
+            else if (i === cur - 1) s = 1 - p(t, SWAPS[cur], SWAPS[cur] + 0.06);
+            gI.setAttribute("transform", `translate(60 60) scale(${Math.max(0, s)}) rotate(${(1 - Math.min(1, s)) * -25}) translate(-60 -60)`);
+            gI.setAttribute("opacity", s > 0.01 ? "1" : "0");
+        }
+    }
+
+    // ---- S8: «وش تنتظر؟» ----
+    const wait = $("#wait");
+    if (t >= 12.3 && t < 13.32) {
+        show(wait, true);
+        const ty = typed("وش تنتظر؟", t, 12.32, 20);
+        const a = Array.from(ty.text);
+        const last = a[a.length - 1] === "؟" ? `<span class="mark">؟</span>` : "";
+        wait.innerHTML = (last ? a.slice(0, -1).join("") : a.join("")) + last + caret(blink(t, 12.8));
+        center(wait, 960);
+    } else show(wait, false);
+
+    // ---- S9: «اطلب الحين» + يد بكسل ----
+    const cta = $("#cta"), hand = $("#hand"), rip = $("#ripple");
+    const s9 = t >= 13.32 && t < 14.4;
+    show(cta, s9); show(hand, s9); show(rip, s9);
+    if (s9) {
+        const k = back(p(t, 13.32, 13.55));
+        const r = center(cta, 980);
+        cta.style.transform = `scale(${0.9 + 0.1 * k})`;
+        cta.style.opacity = String(Math.min(1, p(t, 13.32, 13.42) * 1.5));
+        // اليد: تنزل وتضغط مرتين
+        const hk = easeOut(p(t, 13.4, 13.65));
+        const tap = (a) => Math.sin(Math.PI * p(t, a, a + 0.16));
+        const press = Math.max(tap(13.72), tap(14.02));
+        const hx = 540 - r.w / 2 - 60, hy = 980 - 260 + (1 - hk) * -120 + press * 22;
+        hand.style.left = `${hx}px`; hand.style.top = `${hy}px`;
+        hand.style.opacity = String(hk);
+        const rk = Math.max(p(t, 13.78, 14.0) * (t < 14.0 ? 1 : 0), p(t, 14.08, 14.3));
+        rip.style.left = `${hx - 32}px`; rip.style.top = `${hy - 52}px`;
+        $("#rippleC").setAttribute("r", String(10 + 44 * rk));
+        rip.style.opacity = String(rk > 0 && rk < 1 ? 1 - rk : 0);
+    }
+
+    // ---- S10: الشعار ----
+    const tile = $("#tile"), bio = $("#bio");
+    const s10 = t >= 14.4;
+    show(tile, s10); show(bio, s10);
+    if (s10) {
+        const k = back(p(t, 14.41, 14.7));
+        tile.style.transform = `scale(${0.82 + 0.18 * k})`;
+        tile.style.opacity = String(Math.min(1, p(t, 14.41, 14.5) * 2));
+        const bk2 = p(t, 15.0, 15.35);
+        bio.style.opacity = String(bk2);
+        center(bio, 1180 + (1 - easeOut(bk2)) * 20);
+    }
+};
+document.fonts.ready.then(() => window.render(0));
+</script>
+</body>
+</html>
