@@ -1095,12 +1095,14 @@ select.input { appearance: auto; }
     bottom: calc(86px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translate(-50%, 20px);
-    background: var(--text);
-    color: var(--bg);
-    padding: 10px 18px;
+    background: var(--primary);
+    color: #F3E6D3;
+    padding: 8px 15px;
     border-radius: var(--r-pill);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 8px 22px rgba(40, 6, 10, .28);
     opacity: 0;
     pointer-events: none;
     transition: opacity .2s, transform .2s;
@@ -1939,7 +1941,7 @@ html.tpl-fun .gp-go { background: #22163A; color: #fff; }
 .cp-txt small { color: var(--muted); font-size: 12.5px; }
 .bar-coupon { background: color-mix(in srgb, var(--ok) 14%, var(--surface)); color: var(--text); border-bottom: 1px solid var(--line); }
 /* إشعار برابط */
-.toast.has-link { pointer-events: auto; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.toast.has-link { pointer-events: auto; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .toast a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 /* القالب البسيط: زر «+» أسفل الصورة لأن القلب في الأعلى */
 html.tpl-minimal .card { container-type: inline-size; }

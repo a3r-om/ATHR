@@ -851,9 +851,17 @@ html.theme-dark .stock-state.out { background: #3A1715; color: #F7C6C1; }
 html.theme-dark .tag.stock { background: #15294A; color: #9CC2FF; }
 html.theme-dark .tag.stock.low { background: #3A2A12; color: #F3C987; }
 html.theme-dark .tag.stock.out { background: #3A1715; color: #F7C6C1; }
-.warn-tile { border-color: #F1D9A7; background: #FFF8EA; }
-html.theme-dark .warn-tile { background: #2B2210; border-color: #5A4417; }
-.warn-tile .aot-ico { font-size: 24px; }
+/* تنبيه المخزون: خلفية فاتحة بخط داكن واضح (كان الخط أبيض على خلفية فاتحة) */
+.warn-tile { border: 1.5px solid #E7C277; background: #FFF3D6; color: #4A3306; box-shadow: none; }
+.warn-tile .aot-txt b { color: #4A3306; }
+.warn-tile .aot-txt small { opacity: 1; color: #7A5410; font-weight: 600; }
+.warn-tile .aot-ico { font-size: 24px; background: #FBE2AA; }
+.warn-tile .aot-go svg { stroke: #8A5E12; }
+html.theme-dark .warn-tile { background: #2B2210; border-color: #6B5220; color: #F7DCA0; }
+html.theme-dark .warn-tile .aot-txt b { color: #F7DCA0; }
+html.theme-dark .warn-tile .aot-txt small { color: #E3C27E; }
+html.theme-dark .warn-tile .aot-ico { background: #43341A; }
+html.theme-dark .warn-tile .aot-go svg { stroke: #E3C27E; }
 .warn-tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-btn { justify-self: start; }
 .imp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 50vh; overflow: auto; }
