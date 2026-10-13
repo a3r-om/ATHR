@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعلان أثر — المعيّن الذهبي (كتابة حركية)</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<style>
+@font-face { font-family: "Lalezar"; src: url("../../kit/fonts/Lalezar-Regular.ttf"); }
+:root { --ink: #120507; --cream: #EFE4D3; --deep: #2A0A0E; --wine: #7D1420; --gold: #E9A72E; }
+.reel { background: var(--ink); font-family: "Lalezar", "Plex", sans-serif; }
+#bg { position: absolute; inset: 0; background: var(--ink); }
+#cv { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+.L { position: absolute; inset: 0; }
+.t { position: absolute; left: 540px; white-space: nowrap; line-height: 1.25; width: max-content; transform-origin: 50% 50%; }
+.photo { position: absolute; inset: 0; overflow: hidden; display: none; }
+.photo img { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1920px; object-fit: cover; margin: -960px 0 0 -960px; }
+.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18,5,7,.55) 0%, rgba(18,5,7,.05) 45%, rgba(18,5,7,.0) 70%, rgba(18,5,7,.35) 100%); }
+#logoM { position: absolute; left: 540px; top: 900px; width: 620px; height: 480px; margin: -240px 0 0 -310px; display: none; }
+#logoM img { width: 100%; height: 100%; display: block; }
+#logoM { position: absolute; }
+#wm { position: absolute; left: 56px; top: 58px; font-family: "Plex", sans-serif; font-weight: 600; font-size: 28px; direction: ltr; opacity: .6; }
+#gem, .ghost { position: absolute; left: 0; top: 0; width: 120px; height: 120px; overflow: visible; transform-origin: 50% 50%; }
+#str { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: visible; }
+#wipe { position: absolute; inset: 0; background: var(--ink); clip-path: polygon(100% 0, 100% 0, 100% 0); }
+#lit { position: absolute; inset: 0; }
+#lit .t { color: var(--deep); }
+#end .t { color: var(--cream); }
+</style>
+</head>
+<body>
+<div class="reel" id="reel">
+    <div id="bg"></div>
+    <canvas id="cv" width="1080" height="1920"></canvas>
+
+    <!-- صور المنتجات في المونتاج -->
+    <div class="photo" id="ph0"><img src="../../../images/t/1sxsif1txeh-m.webp" alt=""></div>
+    <div class="photo" id="ph1"><img src="../../../images/t/1hc1b33jp27-m.webp" alt=""></div>
+    <div class="photo" id="ph2"><img src="../../../images/t/1t091cfjk2s-m.webp" alt=""></div>
+    <div class="photo" id="ph3"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div>
+
+    <!-- كلام الجزء الأول (كلمة كلمة) -->
+    <div class="L" id="A">
+        <div class="t" id="a0" style="top:820px;font-size:250px;color:var(--cream)">إنت</div>
+        <div class="t" id="a1" style="top:800px;font-size:280px;color:var(--cream)">تختار.</div>
+        <div class="t" id="a2" style="top:820px;font-size:250px;color:var(--deep)">وإحنا</div>
+        <div class="t" id="a3" style="top:800px;font-size:280px;color:var(--wine)">نوصّل.</div>
+        <div class="t" id="a4" style="top:800px;font-size:280px;color:var(--cream)">لبابك.</div>
+    </div>
+
+    <!-- كلام البندول: سطرين -->
+    <div class="L" id="B">
+        <div class="t" id="b1" style="top:370px;font-size:190px;color:var(--deep)"></div>
+        <div class="t" id="b2" style="top:540px;font-size:190px;color:var(--deep)"></div>
+    </div>
+
+    <!-- المعيّن والخيط -->
+    <svg id="str" viewBox="0 0 1080 1920"><line id="strL" x1="0" y1="0" x2="0" y2="0" stroke="#120507" stroke-width="5" stroke-linecap="round"/></svg>
+    <div id="ghosts"></div>
+    <svg id="gem" viewBox="-60 -60 120 120">
+        <defs>
+            <radialGradient id="gglow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="scale(60)"><stop offset="0" stop-color="#FFE6A8" stop-opacity=".9"/><stop offset="1" stop-color="#E9A72E" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle id="halo" r="60" fill="url(#gglow)" opacity="0" transform="scale(3.4)"/>
+        <path d="M0 -56 L-56 0 L0 0 Z" fill="#FFE08A"/>
+        <path d="M0 -56 L56 0 L0 0 Z" fill="#F4B740"/>
+        <path d="M-56 0 L0 56 L0 0 Z" fill="#D99520"/>
+        <path d="M56 0 L0 56 L0 0 Z" fill="#A8650C"/>
+        <path d="M0 -56 L56 0 L0 56 L-56 0 Z" fill="none" stroke="#8A4D06" stroke-width="2"/>
+        <ellipse cx="-18" cy="-24" rx="14" ry="6" fill="#FFFFFF" opacity=".75" transform="rotate(-45 -18 -24)"/>
+    </svg>
+
+    <!-- الستارة السوداء قبل مشهد الضوء -->
+    <div id="wipe"></div>
+
+    <!-- مشهد الضوء: الكلام يبان بس داخل شعاع النور -->
+    <div class="L" id="lit">
+        <div class="t" id="c1" style="top:760px;font-size:200px">كل كوب</div>
+        <div class="t" id="c2" style="top:960px;font-size:200px">يترك</div>
+        <div class="t" id="c3" style="top:1150px;font-size:290px;color:var(--wine)">أثر.</div>
+        <div class="t plex" id="c4" style="top:1560px;font-size:44px;font-family:Plex;font-weight:700;display:flex;gap:14px;align-items:center"><span style="width:20px;height:20px;border-radius:50%;background:var(--gold);display:inline-block"></span>أكواب سيراميك</div>
+    </div>
+
+    <!-- الشعار في المونتاج -->
+    <div id="logoM"><img id="logoW" src="../../kit/logo_white.png" alt=""><img id="logoB" src="../../kit/logo_burgundy.png" alt="" style="position:absolute;inset:0"></div>
+
+    <!-- النهاية -->
+    <div class="L" id="end">
+        <img id="endLogo" src="../../kit/logo_white.png" alt="" style="position:absolute;left:540px;top:1000px;width:520px;height:403px;margin:-201px 0 0 -260px">
+        <div class="t" id="e1" style="top:1250px;font-size:110px;color:var(--gold)">أكواب سيراميك</div>
+        <div class="t" id="e2" style="top:1420px;font-size:56px;font-family:Plex;font-weight:600;direction:ltr;opacity:.75">@a3r_om</div>
+        <div class="t" id="e3" style="top:1500px;font-size:56px;font-family:Plex;font-weight:600;opacity:.75">الرابط في البايو</div>
+    </div>
+
+    <div id="wm">@a3r_om</div>
+</div>
+
+<script src="mosaic.js"></script>
+<script>
+window.DURATION = 19.6;
+window.COVER_T = 10.9;
+const $ = (s) => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const ei = (x) => x * x * x;
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.8; return x <= 0 ? 0 : 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const frac = (x) => x - Math.floor(x);
+function rnd(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+const C = { ink: "#120507", cream: "#EFE4D3", deep: "#2A0A0E", wine: "#7D1420", gold: "#E9A72E", sand: "#DCC4A4" };
+
+// ---------- التوقيت (75 نبضة/دقيقة: الضربة 0.8 ث) ----------
+const T = {
+    A: 0, words: [0.4, 0.8, 1.6, 2.0, 2.4], bounces: [0.4, 0.8, 1.2, 1.6, 2.0, 2.4, 2.8],
+    B: 3.2, swings: [3.2, 4.0, 4.8, 5.6, 6.4, 7.2], wipe: 7.65,
+    Cs: 8.0, glow: 8.4, sweep: 8.8, open: 9.6, full: 10.4, rise: 11.2,
+    D: 12.0, cut: 0.4, E: 15.6, F: 17.2, end: 19.6
+};
+window.TIMELINE = T;
+const PAIRS = [["كوب", "عادي؟", 0], ["كوب", "يشبهك.", 1], ["عبارات.", "أندية.", 0], ["جامعات.", "ومحافظ.", 0], ["هدية", "لمن تحب.", 1], ["وأكواب", "تضوي.", 1]];
+
+const cv = $("#cv"), g = cv.getContext("2d");
+const gem = $("#gem");
+const ghosts = [];
+for (let i = 0; i < 6; i++) {
+    const c = gem.cloneNode(true);
+    c.removeAttribute("id"); c.setAttribute("class", "ghost");
+    c.querySelector("#halo") && c.querySelector("#halo").remove();
+    $("#ghosts").appendChild(c); ghosts.push(c);
+}
+function placeGem(el, x, y, s = 1, r = 0, sx = 1, sy = 1, o = 1) {
+    el.style.opacity = String(o);
+    el.style.transform = `translate(${(x - 60).toFixed(1)}px,${(y - 60).toFixed(1)}px) rotate(${r.toFixed(1)}deg) scale(${(s * sx).toFixed(3)},${(s * sy).toFixed(3)})`;
+}
+function put(el, { o = 1, x = 0, y = 0, s = 1, r = 0, b = 0 } = {}) {
+    if (typeof el === "string") el = $(el);
+    el.style.opacity = String(clamp(o));
+    el.style.transform = `translate(-50%,0) translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;
+    el.style.filter = b > 0.4 ? `blur(${b.toFixed(1)}px)` : "none";
+}
+function show(id, on) { $(id).style.display = on ? "block" : "none"; }
+function popWord(el, t, at, until) {
+    if (t < at || t >= until) { el.style.opacity = "0"; return; }
+    const k = p(t, at, at + 0.16);
+    put(el, { o: 1, s: lerp(1.35, 1, eo(k)), r: lerp(-6, 0, eo(k)), b: (1 - k) * 8 });
+}
+
+// ---------- المعيّن ينطّ ----------
+const BX = [300, 780, 420, 660, 360, 720, 540, 540];
+const FLOOR = 1500;
+function bounce(t) {
+    const B = T.bounces;
+    if (t < B[0]) { const k = t / B[0]; return { x: lerp(200, BX[0], k), y: lerp(-150, FLOOR, k * k), sx: 1, sy: 1, r: 120 * (1 - k) }; }
+    let i = 0;
+    while (i < B.length - 1 && t >= B[i + 1]) i++;
+    const a = B[i], b = i < B.length - 1 ? B[i + 1] : B[i] + 0.4;
+    const u = clamp((t - a) / (b - a));
+    const H = 230 - i * 12;
+    const x = lerp(BX[i], BX[i + 1], u), y = FLOOR - H * 4 * u * (1 - u);
+    const dc = Math.min(Math.abs(t - a), Math.abs(t - b));
+    const sq = dc < 0.05 ? 1 - dc / 0.05 : 0;
+    return { x, y, sx: 1 + 0.28 * sq, sy: 1 - 0.32 * sq, r: (BX[i + 1] - BX[i]) * 0.08 * Math.sin(Math.PI * u) };
+}
+
+// ---------- البندول ----------
+const PIV = { x: 540, y: -200 }, LEN = 1110, AMP = 26 * Math.PI / 180;
+function pend(t) {
+    // يبدأ من اليمين، كل نصف دورة 0.8 ث
+    const th = AMP * Math.cos(Math.PI * (t - T.B) / 0.8) * (t > T.wipe - 0.1 ? 1 + 2.2 * ei(p(t, T.wipe - 0.1, T.Cs)) : 1);
+    return { th, x: PIV.x + LEN * Math.sin(th), y: PIV.y + LEN * Math.cos(th) };
+}
+
+// ---------- مشهد الضوء ----------
+function lightState(t) {
+    let D = { x: 360, y: lerp(-100, 820, eo(p(t, T.Cs, T.glow))) };
+    let phi = 90, w = lerp(0, 6, eo(p(t, T.glow + 0.1, T.sweep)));
+    if (t >= T.sweep) {
+        const k = eio(p(t, T.sweep, T.open));
+        D = { x: lerp(360, 950, k), y: lerp(820, 880, k) };
+        phi = lerp(100, 188, k); w = lerp(6, 11, k);
+    }
+    if (t >= T.open) {
+        const k = eio(p(t, T.open, T.full));
+        D = { x: lerp(950, 540, k), y: lerp(880, 330, k) };
+        phi = lerp(188, 90, k); w = lerp(11, 40, k);
+    }
+    return { D, phi: phi * Math.PI / 180, w: w * Math.PI / 180 };
+}
+function conePts(D, phi, w, R = 3200) {
+    return [[D.x, D.y], [D.x + R * Math.cos(phi - w), D.y + R * Math.sin(phi - w)], [D.x + R * Math.cos(phi + w), D.y + R * Math.sin(phi + w)]];
+}
+
+// ---------- المونتاج ----------
+const MONT = ["blocks", "ph0", "rings", "ph1", "halftone", "ph2", "shapes", "blob", "ph3"];
+const SHAPES = (() => { const r = rnd(9); return Array.from({ length: 26 }, () => ({ x: r() * 1080, y: r() * 1920, s: 30 + r() * 90, k: Math.floor(r() * 3), vx: (r() - 0.5) * 300, vy: (r() - 0.5) * 300, rot: r() * 360, vr: (r() - 0.5) * 300 })); })();
+function diamond(x, y, s, col, rot = 0) {
+    g.save(); g.translate(x, y); g.rotate(rot); g.beginPath(); g.moveTo(0, -s); g.lineTo(s, 0); g.lineTo(0, s); g.lineTo(-s, 0); g.closePath(); g.fillStyle = col; g.fill(); g.restore();
+}
+function gemFacet(x, y, s, rot = 0, a = 1) {
+    g.save(); g.globalAlpha = a; g.translate(x, y); g.rotate(rot);
+    const f = [["#FFE08A", [0, -1, -1, 0]], ["#F4B740", [0, -1, 1, 0]], ["#D99520", [-1, 0, 0, 1]], ["#A8650C", [1, 0, 0, 1]]];
+    for (const [c, [x1, y1, x2, y2]] of f) { g.beginPath(); g.moveTo(x1 * s, y1 * s); g.lineTo(x2 * s, y2 * s); g.lineTo(0, 0); g.closePath(); g.fillStyle = c; g.fill(); }
+    g.restore();
+}
+function drawMont(name, u, t) {
+    const W = 1080, H = 1920;
+    if (name === "blocks") {
+        g.fillStyle = C.wine; g.fillRect(0, 0, W, H);
+        const k = eo(clamp(u * 2));
+        g.fillStyle = C.cream; g.fillRect(lerp(W, 540, k), 1120, 540, 800);
+        g.fillStyle = C.ink; g.fillRect(0, lerp(H, 1120, k), 540, 380);
+        g.fillStyle = C.gold; g.fillRect(0, lerp(H, 1500, k), 540, 420);
+        g.fillStyle = "#5A0E17"; g.fillRect(0, 0, W, lerp(0, 420, k));
+    } else if (name === "rings") {
+        g.fillStyle = C.cream; g.fillRect(0, 0, W, H);
+        const cols = [C.wine, C.cream, C.gold, C.ink, C.cream];
+        for (let i = 26; i >= 0; i--) {
+            const r = i * 70 + (u * 140) % 70;
+            g.beginPath(); g.arc(540, 900, Math.max(1, r), 0, Math.PI * 2); g.fillStyle = cols[i % cols.length]; g.fill();
+        }
+    } else if (name === "halftone") {
+        g.fillStyle = C.cream; g.fillRect(0, 0, W, H);
+        const cx = lerp(620, 520, u), cy = lerp(980, 900, u), R = 520;
+        g.fillStyle = C.wine;
+        for (let y = 0; y < H; y += 26) for (let x = 0; x < W; x += 26) {
+            const d = Math.hypot(x - cx, y - cy) / R;
+            const lx = (x - cx + 180) / R, ly = (y - cy + 220) / R;
+            let r = d < 1 ? 11 * (0.25 + 0.75 * clamp(Math.hypot(lx, ly) * 0.9)) : 2.2;
+            g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        }
+    } else if (name === "shapes") {
+        g.fillStyle = "#3A0B11"; g.fillRect(0, 0, W, H);
+        for (const s of SHAPES) {
+            const x = s.x + s.vx * u, y = s.y + s.vy * u, rot = (s.rot + s.vr * u) * Math.PI / 180;
+            if (s.k === 0) gemFacet(x, y, s.s * 0.8, rot);
+            else if (s.k === 1) { g.beginPath(); g.arc(x, y, s.s * 0.45, 0, Math.PI * 2); g.fillStyle = C.cream; g.fill(); }
+            else { g.save(); g.translate(x, y); g.rotate(rot); g.fillStyle = C.gold; g.fillRect(-s.s * 0.35, -s.s * 0.35, s.s * 0.7, s.s * 0.7); g.restore(); }
+        }
+    } else if (name === "blob") {
+        const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#F2A7BB"); gr.addColorStop(1, C.wine);
+        g.fillStyle = gr; g.fillRect(0, 0, W, H);
+        for (const [bx, by, br, col] of [[300 + 120 * u, 700, 520, "rgba(233,167,46,.85)"], [820 - 140 * u, 1200, 600, "rgba(125,20,32,.85)"], [540, 980 + 80 * u, 380, "rgba(255,240,220,.6)"]]) {
+            const rg = g.createRadialGradient(bx - br * 0.3, by - br * 0.3, br * 0.05, bx, by, br);
+            rg.addColorStop(0, "rgba(255,255,255,.9)"); rg.addColorStop(0.25, col); rg.addColorStop(1, "rgba(0,0,0,0)");
+            g.fillStyle = rg; g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2); g.fill();
+        }
+    }
+}
+const MLOGO = { blocks: "white", rings: "white", halftone: "burgundy", shapes: "white", blob: "white", ph0: "white", ph1: "white", ph2: "white", ph3: "white" };
+
+// ---------- الفسيفساء ----------
+const PTS = window.MOSAIC || [];
+const PR = (() => { const r = rnd(77); return PTS.map(() => ({ a: r() * Math.PI * 2, d: 200 + r() * 900, dl: r() * 0.35, tw: r() * 6.28, s: 0.8 + r() * 0.4 })); })();
+
+// ---------- الرسم ----------
+window.render = function (t) {
+    g.clearRect(0, 0, 1080, 1920);
+    let bg = C.ink, wmCol = C.cream;
+    const inA = t < T.B, inB = t >= T.B && t < T.Cs, inC = t >= T.Cs && t < T.D, inD = t >= T.D && t < T.E, inE = t >= T.E && t < T.F, inF = t >= T.F;
+
+    // الخلفية
+    if (inA) bg = t >= 1.6 && t < 2.4 ? C.cream : C.ink;
+    if (inB) bg = C.cream;
+    $("#bg").style.background = bg;
+    wmCol = bg === C.cream ? C.deep : C.cream;
+
+    // 1) كلمة كلمة + المعيّن ينطّ
+    show("#A", inA);
+    if (inA) {
+        const W = T.words;
+        ["#a0", "#a1", "#a2", "#a3", "#a4"].forEach((id, i) => popWord($(id), t, W[i], i < 4 ? W[i + 1] : T.B));
+    }
+    // 2) البندول
+    show("#B", inB);
+    $("#str").style.display = inB ? "block" : "none";
+    $("#ghosts").style.display = inB || inA ? "block" : "none";
+    if (inB) {
+        const i = Math.min(PAIRS.length - 1, Math.floor((t - T.B) / 0.8));
+        const at = T.B + i * 0.8;
+        const [l1, l2, acc] = PAIRS[i];
+        const k = p(t, at, at + 0.14);
+        const b1 = $("#b1"), b2 = $("#b2");
+        b1.textContent = l1; b2.textContent = l2;
+        b2.style.color = acc ? C.wine : C.deep;
+        const prev = i > 0 ? PAIRS[i - 1] : null;
+        const same1 = prev && prev[0] === l1;
+        const dir = i % 2 ? -1 : 1;
+        put(b1, { o: 1, x: same1 ? 0 : dir * 60 * (1 - eo(k)), s: same1 ? 1 : lerp(1.15, 1, eo(k)), b: same1 ? 0 : (1 - k) * 6 });
+        put(b2, { o: 1, x: dir * 70 * (1 - eo(k)), s: lerp(1.2, 1, eo(k)), b: (1 - k) * 8 });
+        const wipeK = p(t, T.wipe, T.Cs);
+        if (wipeK > 0) { b1.style.opacity = String(1 - wipeK); b2.style.opacity = String(1 - wipeK); }
+    }
+    // الستارة
+    const wk = eio(p(t, T.wipe, T.Cs));
+    $("#wipe").style.display = inB && wk > 0 ? "block" : "none";
+    $("#wipe").style.clipPath = `polygon(100% 0, ${lerp(100, -120, wk)}% 0, 100% ${lerp(0, 220, wk)}%)`;
+
+    // المعيّن
+    let gemOn = false;
+    if (inA) {
+        const b = bounce(t);
+        placeGem(gem, b.x, b.y - 60 * b.sy, 1.05, b.r, b.sx, b.sy);
+        ghosts.forEach((gh, j) => { const q = bounce(t - (j + 1) * 0.025); placeGem(gh, q.x, q.y - 60, 1.05 * (1 - j * 0.08), q.r, 1, 1, 0.22 * (1 - j / 6)); });
+        gemOn = true;
+    } else if (inB) {
+        const q = pend(t);
+        placeGem(gem, q.x, q.y, 1.15, -q.th * 180 / Math.PI);
+        $("#strL").setAttribute("x1", PIV.x); $("#strL").setAttribute("y1", PIV.y);
+        $("#strL").setAttribute("x2", q.x.toFixed(1)); $("#strL").setAttribute("y2", (q.y - 64).toFixed(1));
+        ghosts.forEach((gh, j) => { const r = pend(t - (j + 1) * 0.022); placeGem(gh, r.x, r.y, 1.15 * (1 - j * 0.07), -r.th * 180 / Math.PI, 1, 1, 0.28 * (1 - j / 6)); });
+        gemOn = true;
+    }
+
+    // 3) الضوء
+    show("#lit", inC);
+    if (inC) {
+        g.fillStyle = C.ink; g.fillRect(0, 0, 1080, 1920);
+        const L = lightState(t);
+        const on = t >= T.glow ? (t < T.glow + 0.22 ? (Math.sin((t - T.glow) * 80) > 0 ? 1 : 0.2) : 1) : 0;
+        if (on && L.w > 0.001) {
+            // حافة ناعمة ثم الشعاع
+            const soft = conePts(L.D, L.phi, L.w + 0.05);
+            g.fillStyle = "rgba(120,90,80,.35)"; g.beginPath(); soft.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill();
+            const cone = conePts(L.D, L.phi, L.w);
+            g.fillStyle = C.cream; g.beginPath(); cone.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill();
+            const poly = cone.map(([x, y]) => `${x.toFixed(1)}px ${y.toFixed(1)}px`).join(",");
+            $("#lit").style.clipPath = `polygon(${poly})`;
+        } else $("#lit").style.clipPath = "polygon(0 0,0 0,0 0)";
+        // توهج حول المعيّن
+        if (on) {
+            const rg = g.createRadialGradient(L.D.x, L.D.y, 10, L.D.x, L.D.y, 260);
+            rg.addColorStop(0, "rgba(255,214,140,.75)"); rg.addColorStop(1, "rgba(233,167,46,0)");
+            g.fillStyle = rg; g.beginPath(); g.arc(L.D.x, L.D.y, 260, 0, Math.PI * 2); g.fill();
+        }
+        placeGem(gem, L.D.x, L.D.y, 0.95, 0);
+        $("#halo").setAttribute("opacity", String(0.9 * on * (0.85 + 0.15 * Math.sin(t * 7))));
+        gemOn = true;
+        const kt = p(t, T.full - 0.3, T.full + 0.3);
+        put("#c4", { o: kt, y: (1 - eo(kt)) * 30 });
+        ["#c1", "#c2", "#c3"].forEach((id, i) => put(id, { o: 1, s: 1 + 0.02 * Math.sin(t * 2 + i) }));
+        wmCol = C.cream;
+    } else $("#halo").setAttribute("opacity", "0");
+
+    // 4) المونتاج السريع
+    ["#ph0", "#ph1", "#ph2", "#ph3"].forEach((id) => show(id, false));
+    show("#logoM", inD);
+    if (inD) {
+        const idx = Math.min(MONT.length - 1, Math.floor((t - T.D) / T.cut));
+        const u = (t - T.D - idx * T.cut) / T.cut;
+        const name = MONT[idx];
+        if (name.startsWith("ph")) {
+            show("#" + name, true);
+            $(`#${name} img`).style.transform = `scale(${(1.02 + 0.08 * u).toFixed(3)})`;
+            $("#logoM").style.top = "560px";
+            $("#logoM").style.transform = `scale(${0.62 * (1 + 0.04 * u)})`;
+        } else {
+            drawMont(name, u, t);
+            $("#logoM").style.top = "900px";
+            $("#logoM").style.transform = `scale(${(0.92 + 0.12 * u).toFixed(3)}) rotate(${idx % 2 ? -2 : 2}deg)`;
+        }
+        $("#logoW").style.visibility = MLOGO[name] === "white" ? "visible" : "hidden";
+        $("#logoB").style.visibility = MLOGO[name] === "white" ? "hidden" : "visible";
+        $("#logoM").style.filter = MLOGO[name] === "white" ? "drop-shadow(0 10px 30px rgba(0,0,0,.45))" : "drop-shadow(0 10px 24px rgba(255,255,255,.4))";
+        wmCol = ["rings", "halftone"].includes(name) ? C.deep : C.cream;
+    }
+
+    // 5) الفسيفساء: معيّنات صغيرة تتفجر ثم تركّب الشعار
+    if (inE) {
+        g.fillStyle = "#4A0D12"; g.fillRect(0, 0, 1080, 1920);
+        const rg = g.createRadialGradient(540, 900, 50, 540, 900, 900);
+        rg.addColorStop(0, "rgba(125,20,32,.9)"); rg.addColorStop(1, "rgba(30,6,9,0)");
+        g.fillStyle = rg; g.fillRect(0, 0, 1080, 1920);
+        const tb = t - T.E;
+        PTS.forEach(([px, py], i) => {
+            const q = PR[i];
+            const ex = 540 + Math.cos(q.a) * q.d, ey = 900 + Math.sin(q.a) * q.d * 1.4;
+            const kb = eo(p(tb, 0, 0.3));                                 // انفجار
+            const ka = eio(p(tb, 0.3 + q.dl, 0.95 + q.dl));              // تجميع
+            const x = lerp(lerp(540, ex, kb), px, ka), y = lerp(lerp(900, ey, kb), py, ka);
+            const tw = tb > 1.0 ? 0.75 + 0.25 * Math.sin(t * 9 + q.tw) : 1;
+            gemFacet(x, y, 11 * q.s * (1 - 0.3 * (1 - ka) * kb) * tw, (1 - ka) * q.a * 3);
+        });
+        // لمعة تمر على الشعار
+        const ks = p(tb, 1.15, 1.55);
+        if (ks > 0 && ks < 1) {
+            const sx = lerp(100, 980, ks);
+            const lg = g.createLinearGradient(sx - 120, 0, sx + 120, 0);
+            lg.addColorStop(0, "rgba(255,240,210,0)"); lg.addColorStop(0.5, "rgba(255,240,210,.35)"); lg.addColorStop(1, "rgba(255,240,210,0)");
+            g.fillStyle = lg; g.fillRect(sx - 120, 560, 240, 700);
+        }
+        wmCol = C.cream;
+    }
+
+    // 6) النهاية
+    show("#end", inF);
+    if (inF) {
+        g.fillStyle = C.ink; g.fillRect(0, 0, 1080, 1920);
+        const tf = t - T.F;
+        // المعيّن يطيح وينط ويستقر فوق الشعار
+        const land = [0.45, 0.8, 1.02], rest = 640;
+        let y, sx = 1, sy = 1;
+        if (tf < land[0]) y = lerp(-150, rest, Math.pow(tf / land[0], 2));
+        else if (tf < land[1]) { const u = (tf - land[0]) / (land[1] - land[0]); y = rest - 170 * 4 * u * (1 - u); }
+        else if (tf < land[2]) { const u = (tf - land[1]) / (land[2] - land[1]); y = rest - 60 * 4 * u * (1 - u); }
+        else y = rest;
+        const dc = Math.min(...land.map((l) => Math.abs(tf - l)));
+        if (dc < 0.05) { const q = 1 - dc / 0.05; sx = 1 + 0.25 * q; sy = 1 - 0.3 * q; }
+        placeGem(gem, 540, y - 60 * sy + 60, 1.25, 0, sx, sy);
+        gemOn = true;
+        const rg2 = g.createRadialGradient(540, rest, 10, 540, rest, 300);
+        rg2.addColorStop(0, `rgba(233,167,46,${(0.35 * p(tf, 1.0, 1.6)).toFixed(2)})`); rg2.addColorStop(1, "rgba(233,167,46,0)");
+        g.fillStyle = rg2; g.beginPath(); g.arc(540, rest, 300, 0, Math.PI * 2); g.fill();
+        const kl = p(tf, 0.5, 0.9);
+        const el = $("#endLogo"); el.style.opacity = String(kl); el.style.transform = `scale(${lerp(0.85, 1, eo(kl))})`;
+        [["#e1", 0.85], ["#e2", 1.1], ["#e3", 1.3]].forEach(([id, at]) => { const k = p(tf, at, at + 0.35); put(id, { o: k, y: (1 - eo(k)) * 40 }); });
+        wmCol = C.cream;
+    }
+
+    gem.style.display = gemOn ? "block" : "none";
+    if (!gemOn) ghosts.forEach((gh) => (gh.style.opacity = "0"));
+    if (!inA && !inB) ghosts.forEach((gh) => (gh.style.opacity = "0"));
+    $("#wm").style.color = wmCol;
+    $("#wm").style.display = inF ? "none" : "block";
+};
+window.render(0);
+</script>
+</body>
+</html>
