@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعلان أثر — كل كوب يترك أثر</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<style>
+:root { --dark: #4A0D12; --cream: #F7F1E8; --acc: #F2A516; --wine: #7D1420; }
+.reel { background: var(--cream); font-family: "Plex", sans-serif; }
+.layer { position: absolute; inset: 0; }
+.txt { position: absolute; white-space: nowrap; line-height: 1.1; }
+.caret { display: inline-block; width: 8px; height: 0.9em; background: var(--acc); vertical-align: -0.08em; margin-inline-start: 8px; border-radius: 2px; }
+.mark { color: var(--acc); }
+.wine { color: var(--wine); }
+.scene { position: absolute; inset: 0; overflow: hidden; display: none; }
+.scene img.full { position: absolute; left: 50%; top: 50%; width: 1461px; height: 1920px; object-fit: cover; margin: -960px 0 0 -730px; }
+.half { position: absolute; left: 0; width: 1080px; height: 954px; overflow: hidden; background: #E9E6E1; }
+.half img { position: absolute; left: 0; top: -63px; width: 1080px; height: 1080px; object-fit: cover; }
+.head { position: absolute; right: 80px; top: 250px; font-size: 92px; font-weight: 700; color: var(--dark); white-space: nowrap; line-height: 1.15; }
+.head.box { background: var(--cream); padding: 12px 34px 24px; border-radius: 14px 14px 44px 14px; font-size: 80px; }
+.chip { position: absolute; right: 80px; top: 1440px; padding: 14px 32px 22px; background: var(--acc); color: var(--dark); font-size: 50px; font-weight: 700; border-radius: 12px 12px 40px 12px; white-space: nowrap; box-shadow: 0 14px 30px rgba(60, 20, 10, .18); }
+.fact { position: absolute; right: 110px; display: flex; align-items: center; gap: 26px; font-size: 62px; font-weight: 600; color: var(--dark); white-space: nowrap; }
+.fact b { width: 72px; height: 72px; border-radius: 50%; background: var(--acc); display: grid; place-items: center; flex-shrink: 0; }
+.fact svg { width: 40px; height: 40px; fill: none; stroke: var(--dark); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.fact.hot { color: var(--wine); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="reel" id="reel">
+    <div class="layer" id="bg"></div>
+
+    <!-- مرشّح بقعة القهوة (حافة غير منتظمة) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <filter id="stain" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="7" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G" result="d"/>
+                <feGaussianBlur in="d" stdDeviation="1.6"/>
+            </filter>
+            <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+            <radialGradient id="coffee" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#8A5636"/><stop offset=".55" stop-color="#4A2414"/><stop offset="1" stop-color="#2A120A"/></radialGradient>
+            <radialGradient id="rimG" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E7DDCF"/></radialGradient>
+        </defs>
+    </svg>
+
+    <!-- A: «كل يوم يبدأ بكوب» -->
+    <div class="txt" id="a1" style="font-size:120px;font-weight:700;color:var(--cream)"></div>
+
+    <!-- B: الكوب يرتفع ويترك أثر -->
+    <svg class="layer" id="ringScene" viewBox="-540 -960 1080 1920" aria-hidden="true">
+        <g id="ringG" transform="translate(0 -180)">
+            <g filter="url(#stain)">
+                <circle r="214" fill="none" stroke="#7D1420" stroke-opacity=".78" stroke-width="16"/>
+                <circle r="203" fill="none" stroke="#7D1420" stroke-opacity=".28" stroke-width="10"/>
+                <circle r="196" fill="#7D1420" fill-opacity=".07"/>
+                <path d="M196 30 C 214 70 232 92 250 110" stroke="#7D1420" stroke-opacity=".45" stroke-width="9" fill="none" stroke-linecap="round"/>
+            </g>
+            <g id="ringDots" opacity="0"><path d="M0 -76L46 -30L0 16L-46 -30ZM-48 -8L-2 38L-48 84L-94 38ZM48 -8L94 38L48 84L2 38Z" fill="#F2A516"/></g>
+        </g>
+        <g id="cupTop" transform="translate(0 -180)">
+            <circle id="cupShadow" r="236" cx="26" cy="34" fill="#3A1A10" opacity=".28" filter="url(#soft)"/>
+            <circle r="232" fill="url(#rimG)" stroke="#D9CDBC" stroke-width="3"/>
+            <circle r="198" fill="url(#coffee)"/>
+            <ellipse cx="-62" cy="-74" rx="70" ry="34" fill="#C9936A" opacity=".35" transform="rotate(-30 -62 -74)"/>
+            <path d="M 0 -232 A 232 232 0 0 1 164 -164" stroke="#FFFFFF" stroke-width="8" fill="none" opacity=".7" stroke-linecap="round"/>
+        </g>
+    </svg>
+    <div class="txt" id="b1" style="font-size:96px;color:var(--dark)"></div>
+    <div class="txt" id="b2" style="font-size:150px;font-weight:700;color:var(--dark)"></div>
+
+    <!-- D: اللحظات -->
+    <div class="scene" id="d1"><img class="full" src="../../../images/categories/quotes.jpg" alt=""><div class="head"></div><div class="chip">أكواب العبارات</div></div>
+    <div class="scene" id="d2"><img class="full" src="../../../images/categories/girls.jpg" alt=""><div class="head"></div><div class="chip">هدية مع بطاقة إهداء</div></div>
+    <div class="scene" id="d3" style="background:var(--dark)">
+        <div class="head" style="color:var(--cream)"></div>
+        <svg class="layer" viewBox="0 0 1080 1920" aria-hidden="true">
+            <g transform="translate(270 640) scale(0.9)">
+                <path d="M34 46C120 30 480 30 566 46C574 48 576 56 574 64L556 150C530 360 486 500 452 590L444 612C442 620 436 624 428 624L428 640C428 652 420 660 408 660L192 660C180 660 172 652 172 640L172 624C164 624 158 620 156 612L148 590C114 500 70 360 44 150L26 64C24 56 26 48 34 46Z" fill="#F7F1E8"/>
+                <g id="icBall" transform="translate(300 300)"><circle r="120" fill="#F2A516" stroke="#4A0D12" stroke-width="12"/><path d="M0 -50L48 -16L30 40H-30L-48 -16Z" fill="#4A0D12"/><path d="M0 -50V-118M48 -16L112 -38M30 40L70 96M-30 40L-70 96M-48 -16L-112 -38" stroke="#4A0D12" stroke-width="12" stroke-linecap="round"/></g>
+                <g id="icCap" transform="translate(300 300)"><path d="M0 -110L150 -44L0 22L-150 -44Z" fill="#F2A516" stroke="#4A0D12" stroke-width="12" stroke-linejoin="round"/><path d="M-92 -12V58C-92 100 92 100 92 58V-12L0 28Z" fill="#4A0D12"/><path d="M128 -34V58" stroke="#4A0D12" stroke-width="12" stroke-linecap="round"/><circle cx="128" cy="72" r="18" fill="#F2A516" stroke="#4A0D12" stroke-width="10"/></g>
+            </g>
+        </svg>
+        <div class="chip" style="top:1440px">أكواب الأندية والجامعات</div>
+    </div>
+    <div class="scene" id="d4"><img class="full" src="../../../images/categories/mugs.jpg" alt=""><div class="head"></div><div class="chip">مجات وأكواب حرارية</div></div>
+    <div class="scene" id="d5"><div class="half" style="top:0"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/bihbemafg-m.webp" alt=""></div><div class="head box"></div><div class="chip" style="top:1560px">أكواب البنات</div></div>
+
+    <!-- E: الحقائق -->
+    <div class="txt" id="e1" style="font-size:150px;font-weight:700;color:var(--dark)">أكواب سيراميك</div>
+    <div class="txt" id="e2" style="font-size:50px;color:rgba(74,13,18,.7)"></div>
+    <div class="fact" id="f0" style="top:860px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>الدفع عند الاستلام</div>
+    <div class="fact" id="f1" style="top:1020px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>توصيل لكل عُمان والخليج</div>
+    <div class="fact" id="f2" style="top:1180px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>بطاقة إهداء باسم من تحب</div>
+    <div class="fact hot" id="f3" style="top:1340px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>4 أكواب = التوصيل مجاني</div>
+
+    <!-- F: كلمة على كل نبضة -->
+    <div class="txt" id="fw" style="font-size:180px;font-weight:700;color:var(--cream)"></div>
+
+    <!-- G: الشعار يتكوّن داخل الأثر -->
+    <svg class="layer" id="logoScene" viewBox="-540 -960 1080 1920" aria-hidden="true">
+        <g transform="translate(0 -120)">
+            <g id="bigRing" filter="url(#stain)">
+                <circle r="330" fill="none" stroke="#7D1420" stroke-opacity=".7" stroke-width="22"/>
+                <circle r="314" fill="none" stroke="#7D1420" stroke-opacity=".22" stroke-width="12"/>
+                <circle r="304" fill="#7D1420" fill-opacity=".05"/>
+            </g>
+            <clipPath id="logoWipe"><rect id="wipeRect" x="492" y="-10" width="0" height="400"/></clipPath>
+            <g transform="translate(-241 -187)">
+                <path clip-path="url(#logoWipe)" fill="#4A0D12" d="M0 226L73 153V226H316.5L390.5 152.5V226A74 74 0 0 1 316.5 300H74L0 374ZM408 150.5L481.5 77V300H408ZM408 37H426.5A36.5 36.5 0 0 1 463 0.5V37H481.5V73.5H408Z"/>
+                <path id="dg0" fill="#F2A516" d="M269.8 68.7L305.8 104.7L269.8 140.7L233.8 104.7Z"/>
+                <path id="dg1" fill="#F2A516" d="M307.6 121.6L343.6 157.6L307.6 193.6L271.6 157.6Z"/>
+                <path id="dg2" fill="#F2A516" d="M232 121.7L268 157.7L232 193.7L196 157.7Z"/>
+            </g>
+        </g>
+    </svg>
+    <div class="txt" id="g1" style="font-size:96px;font-weight:700;color:var(--dark)"></div>
+    <div class="txt" id="h1" style="font-size:72px;font-weight:700;color:var(--cream);background:var(--wine);padding:14px 46px 26px;border-radius:14px 14px 46px 14px">اطلب الحين</div>
+    <div class="txt" id="h2" style="font-size:46px;color:rgba(74,13,18,.7)">الرابط في البايو</div>
+</div>
+
+<script src="../../kit/anim.js"></script>
+<script>
+// 90 نبضة/دقيقة: النبضة 0.667 ث، المقطع 2.667 ث
+const B = 60 / 90;
+const TL = {
+    a: 0, a1: 0.5, b: 4.0, lift: 4.6, b1: 5.33, b2: 6.33, dots: 7.33, iris: 8.0,
+    d: [8.67, 11.33, 14.0, 16.67, 19.33], d3swap: 15.33,
+    e: 22.0, facts: [23.33, 24.0, 24.67, 25.33],
+    f: 26.67, words: [26.67, 27.33, 28.0, 28.67],
+    g: 29.33, h: 32.0
+};
+window.DURATION = 35.0;
+window.COVER_T = 31.6;
+const C = { dark: "#4A0D12", cream: "#F7F1E8", acc: "#F2A516" };
+const $ = (s) => document.querySelector(s);
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+const p = A.p, back = A.back;
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeIn = (x) => x * x * x;
+const easeExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+function typed(full, t, start, cps) {
+    const chars = Array.from(full);
+    const n = t < start ? 0 : Math.min(chars.length, Math.floor((t - start) * cps) + 1);
+    return { text: chars.slice(0, n).join(""), done: n >= chars.length, n };
+}
+const blink = (t, from) => (t < from ? true : Math.floor((t - from) / 0.45) % 2 === 0);
+const caret = (on) => `<span class="caret" style="opacity:${on ? 1 : 0}"></span>`;
+function center(el, y, x = 540) {
+    el.style.left = "0px"; el.style.top = "0px";
+    const w = el.offsetWidth, h = el.offsetHeight;
+    el.style.left = `${x - w / 2}px`; el.style.top = `${y - h / 2}px`;
+    return { w, h };
+}
+function set(el, { o = 1, x = 0, y = 0, s = 1, r = 0 } = {}) {
+    el.style.opacity = String(o);
+    el.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${r}deg)`;
+}
+
+const MOMENTS = [
+    { id: "d1", head: "كوب يقول اللي في خاطرك" },
+    { id: "d2", head: "كوب يوصل باسمك" },
+    { id: "d3", head: "كوب يشجّع معك", head2: "ويتخرّج معك" },
+    { id: "d4", head: "يرافقك طول يومك" },
+    { id: "d5", head: "تصاميم تشبهك" }
+];
+const WORDS = ["اختار", "اكتب اسمه", "نوصّله", "واترك <span class=\"mark\">أثر</span>"];
+
+window.render = function (t) {
+    const dark = t < TL.b || (t >= TL.f && t < TL.g);
+    $("#bg").style.background = dark ? C.dark : C.cream;
+
+    // ---- A ----
+    const a1 = $("#a1");
+    if (t < TL.b) {
+        show(a1, true);
+        const ty = typed("كل يوم يبدأ بكوب", t, TL.a1, 10);
+        a1.innerHTML = ty.text + caret(blink(t, TL.a1 + 1.6));
+        center(a1, 960);
+        a1.style.transform = `scale(${1 + 0.04 * easeInOut(p(t, 2.2, TL.b))})`;
+    } else show(a1, false);
+
+    // ---- B: الكوب يرتفع ويترك أثر ----
+    const rs = $("#ringScene");
+    const bOn = t >= TL.b && t < TL.d[0] + 0.1;
+    show(rs, bOn);
+    if (bOn) {
+        const lift = easeInOut(p(t, TL.lift, TL.lift + 0.9));
+        const cup = $("#cupTop");
+        cup.setAttribute("transform", `translate(${lift * 40} ${-180 - lift * 1500}) scale(${1 + lift * 0.35})`);
+        $("#cupShadow").setAttribute("opacity", String(0.28 * (1 - lift)));
+        cup.style.display = lift >= 1 ? "none" : "";
+        const dk = back(p(t, TL.dots, TL.dots + 0.45));
+        $("#ringDots").setAttribute("opacity", String(easeOut(p(t, TL.dots, TL.dots + 0.2))));
+        $("#ringDots").setAttribute("transform", `scale(${0.6 + 0.4 * dk})`);
+        // انتقال: الأثر يكبر ويصير نافذة على المشهد التالي
+        const z = easeIn(p(t, TL.iris, TL.d[0] + 0.1));
+        $("#ringG").setAttribute("transform", `translate(0 ${-180 + z * 180}) scale(${1 + z * 9})`);
+        rs.style.opacity = String(1 - p(t, TL.d[0] - 0.1, TL.d[0] + 0.1));
+    }
+    const b1 = $("#b1"), b2 = $("#b2");
+    const bt = t >= TL.b1 && t < TL.iris + 0.25;
+    show(b1, bt); show(b2, bt && t >= TL.b2);
+    if (bt) {
+        const ty = typed("بس مو كل كوب", t, TL.b1, 13);
+        b1.innerHTML = ty.text + (t < TL.b2 ? caret(blink(t, TL.b1 + 1)) : "");
+        center(b1, 1240);
+        const ty2 = typed("يترك أثر.", t, TL.b2, 11);
+        const a = Array.from(ty2.text);
+        const pre = a.slice(0, 5).join(""), word = a.slice(5).join("");
+        b2.innerHTML = `${pre}<span class="wine">${word}</span>` + caret(blink(t, TL.b2 + 0.9));
+        center(b2, 1400);
+        const out = easeIn(p(t, TL.iris, TL.iris + 0.25));
+        b1.style.opacity = b2.style.opacity = String(1 - out);
+    }
+
+    // ---- D: اللحظات ----
+    MOMENTS.forEach((m, i) => {
+        const el = document.getElementById(m.id);
+        const T = TL.d[i];
+        const end = i < 4 ? TL.d[i + 1] + 0.5 : TL.e;
+        const on = t >= T - (i === 0 ? 0.67 : 0) && t < end;
+        el.style.display = on ? "block" : "none";
+        if (!on) return;
+        el.style.zIndex = String(10 + i);
+        if (i === 0) {
+            // يظهر من داخل الأثر (دائرة تتسع)
+            const z = easeIn(p(t, TL.iris, T + 0.1));
+            const r = 190 * (1 + 9 * z);
+            el.style.clipPath = r < 1150 ? `circle(${r}px at 50% ${40.6 + 9.4 * z}%)` : "none";
+            el.style.webkitMaskImage = el.style.maskImage = "none";
+        } else {
+            const k = easeInOut(p(t, T, T + 0.55));
+            const msk = `linear-gradient(225deg, #000 ${k * 100}%, transparent ${k * 100 + 0.01}%)`;
+            el.style.webkitMaskImage = el.style.maskImage = k < 1 ? msk : "none";
+            el.style.clipPath = "none";
+        }
+        const kb = p(t, T, end);
+        el.querySelectorAll("img.full").forEach((img) => { img.style.transform = `scale(${1.1 - 0.08 * kb}) translateY(${(i % 2 ? -1 : 1) * 12 * kb}px)`; });
+        el.querySelectorAll(".half img").forEach((img, j) => { img.style.transform = `scale(${1.07 - 0.06 * kb}) translateX(${(j ? -1 : 1) * 14 * kb}px)`; });
+        const head = el.querySelector(".head");
+        const swap = m.head2 && t >= TL.d3swap;
+        const txt = swap ? m.head2 : m.head;
+        const st = swap ? TL.d3swap + 0.1 : T + 0.35;
+        const ty = typed(txt, t, st, 14);
+        head.innerHTML = ty.text + caret(!ty.done || blink(t, st + 1.4));
+        const chip = el.querySelector(".chip");
+        const ck = back(p(t, T + 1.1, T + 1.5));
+        set(chip, { o: easeOut(p(t, T + 1.1, T + 1.25)), s: 0.8 + 0.2 * ck, y: (1 - ck) * 24 });
+        if (i === 2) {
+            const ball = $("#icBall"), cap = $("#icCap");
+            const kIn = back(p(t, T + 0.3, T + 0.7));
+            const kSwap = p(t, TL.d3swap, TL.d3swap + 0.3);
+            const kCap = back(p(t, TL.d3swap + 0.15, TL.d3swap + 0.55));
+            ball.setAttribute("transform", `translate(300 300) scale(${Math.max(0.001, kIn * (1 - kSwap))}) rotate(${(1 - kIn) * -40})`);
+            cap.setAttribute("transform", `translate(300 300) scale(${Math.max(0.001, kCap)}) rotate(${(1 - Math.min(1, kCap)) * 30})`);
+        }
+    });
+
+    // ---- E: الحقائق ----
+    const e1 = $("#e1"), e2 = $("#e2");
+    const eOn = t >= TL.e && t < TL.f;
+    show(e1, eOn); show(e2, eOn);
+    for (let i = 0; i < 4; i++) show(document.getElementById(`f${i}`), eOn && t >= TL.facts[i]);
+    if (eOn) {
+        const k = back(p(t, TL.e, TL.e + 0.45));
+        const up = easeInOut(p(t, TL.facts[0] - 0.5, TL.facts[0]));
+        center(e1, 900 - up * 380);
+        set(e1, { o: easeOut(p(t, TL.e, TL.e + 0.2)), s: (0.86 + 0.14 * k) * (1 - 0.3 * up) });
+        const ty = typed("عبارات · بنات · أندية · جامعات · مجات", t, TL.e + 0.5, 22);
+        e2.innerHTML = ty.text;
+        center(e2, 1030 - up * 380);
+        for (let i = 0; i < 4; i++) {
+            const at = TL.facts[i];
+            const fk = easeOut(p(t, at, at + 0.5));
+            set(document.getElementById(`f${i}`), { o: fk, x: (1 - fk) * -70 });
+        }
+        const out = easeIn(p(t, TL.f - 0.35, TL.f));
+        if (out > 0) for (let i = 0; i < 4; i++) document.getElementById(`f${i}`).style.opacity = String(1 - out);
+    }
+
+    // ---- F: كلمة على كل نبضة ----
+    const fw = $("#fw");
+    const fOn = t >= TL.f && t < TL.g;
+    show(fw, fOn);
+    if (fOn) {
+        let j = 0;
+        TL.words.forEach((w, n) => { if (t >= w) j = n; });
+        fw.innerHTML = WORDS[j];
+        fw.style.fontSize = j === 3 ? "200px" : "170px";
+        center(fw, 960);
+        const k = back(p(t, TL.words[j], TL.words[j] + 0.3));
+        set(fw, { o: easeOut(p(t, TL.words[j], TL.words[j] + 0.1)), s: 0.82 + 0.18 * k });
+    }
+
+    // ---- G: الشعار داخل الأثر ----
+    const ls = $("#logoScene"), g1 = $("#g1"), h1 = $("#h1"), h2 = $("#h2");
+    const gOn = t >= TL.g;
+    show(ls, gOn); show(g1, gOn); show(h1, gOn && t >= TL.h); show(h2, gOn && t >= TL.h);
+    if (gOn) {
+        const rk = easeOut(p(t, TL.g, TL.g + 0.6));
+        $("#bigRing").setAttribute("transform", `scale(${0.7 + 0.3 * rk})`);
+        $("#bigRing").setAttribute("opacity", String(rk));
+        const wk = easeInOut(p(t, TL.g + 0.25, TL.g + 0.85));
+        $("#wipeRect").setAttribute("width", String(510 * wk));
+        $("#wipeRect").setAttribute("x", String(492 - 510 * wk));
+        ["dg0", "dg1", "dg2"].forEach((id, i) => {
+            const at = TL.g + 0.95 + i * 0.22;
+            const dk = back(p(t, at, at + 0.35));
+            const el = document.getElementById(id);
+            const cx = [269.8, 307.6, 232][i], cy = [104.7, 157.6, 157.7][i];
+            el.setAttribute("transform", `translate(${cx} ${cy}) scale(${Math.max(0.001, dk)}) translate(${-cx} ${-cy})`);
+        });
+        const ty = typed("أكواب تترك أثراً", t, TL.g + 1.75, 14);
+        g1.innerHTML = ty.text + (t >= TL.g + 1.6 && t < TL.h ? caret(blink(t, TL.g + 2.9)) : "");
+        center(g1, 1300);
+        if (t >= TL.h) {
+            const hk = back(p(t, TL.h, TL.h + 0.4));
+            center(h1, 1480);
+            set(h1, { o: easeOut(p(t, TL.h, TL.h + 0.15)), s: 0.85 + 0.15 * hk });
+            center(h2, 1600);
+            h2.style.opacity = String(easeOut(p(t, TL.h + 0.5, TL.h + 0.9)));
+        }
+    }
+};
+document.fonts.ready.then(() => window.render(0));
+</script>
+</body>
+</html>
