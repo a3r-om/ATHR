@@ -90,7 +90,7 @@
     <div class="txt" id="e2" style="font-size:50px;color:rgba(74,13,18,.7)"></div>
     <div class="fact" id="f0" style="top:860px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>الدفع عند الاستلام</div>
     <div class="fact" id="f1" style="top:1020px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>توصيل لكل عُمان والخليج</div>
-    <div class="fact" id="f2" style="top:1180px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>بطاقة إهداء باسم من تحب</div>
+    <div class="fact" id="f2" style="top:1180px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>بطاقة إهداء فيها رسالتك</div>
     <div class="fact hot" id="f3" style="top:1340px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>4 أكواب = التوصيل مجاني</div>
 
     <!-- F: كلمة على كل نبضة -->
@@ -159,12 +159,12 @@ function set(el, { o = 1, x = 0, y = 0, s = 1, r = 0 } = {}) {
 
 const MOMENTS = [
     { id: "d1", head: "كوب يقول اللي في خاطرك" },
-    { id: "d2", head: "كوب يوصل باسمك" },
+    { id: "d2", head: "كوب يوصل لمن تحب" },
     { id: "d3", head: "كوب يشجّع معك", head2: "ويتخرّج معك" },
     { id: "d4", head: "يرافقك طول يومك" },
     { id: "d5", head: "تصاميم تشبهك" }
 ];
-const WORDS = ["اختار", "اكتب اسمه", "نوصّله", "واترك <span class=\"mark\">أثر</span>"];
+const WORDS = ["اختار", "أرسلها هدية", "نوصّلها", "واترك <span class=\"mark\">أثر</span>"];
 
 window.render = function (t) {
     const dark = t < TL.b || (t >= TL.f && t < TL.g);
