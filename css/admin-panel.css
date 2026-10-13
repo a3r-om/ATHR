@@ -882,3 +882,21 @@ html.theme-dark .ob-stats > div.hot { background: #2B2210; border-color: #5A4417
 .rp-bar { display: flex; align-items: flex-end; width: 70%; height: 90px; border-radius: 8px; background: var(--a-bg); overflow: hidden; }
 .rp-bar i { display: block; width: 100%; min-height: 2px; border-radius: 8px 8px 0 0; background: var(--a-primary); }
 .rv-ok { color: #1F7A4D; font-weight: 700; }
+
+/* =====================================================
+   v18 — النسخ الاحتياطي
+===================================================== */
+.aot-txt small.hot { color: #A3261E; font-weight: 700; }
+.adm-orders-tile:not(.alt) .aot-txt small.hot { color: #FFE3A3; }
+html.theme-dark .adm-orders-tile.alt .aot-txt small.hot { color: #F7B4AC; }
+.bk-box { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-primary) 6%, var(--a-surface)); border: 1px solid var(--a-line); font-size: 14px; line-height: 1.7; }
+.bk-box p { margin: 0; }
+.bk-box.warn { background: #FFF3D6; border-color: #E7C277; color: #4A3306; }
+html.theme-dark .bk-box.warn { background: #2B2210; border-color: #6B5220; color: #F7DCA0; }
+.bk-title { margin: 10px 0 0; font-size: 15px; }
+.bk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bk-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--a-bg); border: 1px solid var(--a-line); }
+.bk-info { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.bk-info b { font-size: 14px; }
+.bk-info small { color: var(--a-muted); font-size: 12.5px; }
+.bk-act { display: flex; gap: 6px; flex-shrink: 0; }

@@ -90,6 +90,7 @@
         eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
         back: '<path d="M9.5 6l6 6-6 6"/>',
         dots: '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>',
+        shield: '<path d="M12 3.2 5 6v5.2c0 4.3 2.9 8 7 9.6 4.1-1.6 7-5.3 7-9.6V6l-7-2.8Z"/><path d="m9 12.2 2.1 2.1L15.2 10"/>',
         users: '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5c.8-3.4 3.2-5 6-5s5.2 1.6 6 5"/><circle cx="17" cy="9.5" r="2.6"/><path d="M16 14.6c2.6 0 4.4 1.4 5 4.4"/>',
         gift: '<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5V20h14v-7.5M12 8.5V20M12 8.5C10 4 6.5 5 7.5 7.2 8.2 8.5 12 8.5 12 8.5ZM12 8.5c2-4.5 5.5-3.5 4.5-1.3-.7 1.3-4.5 1.3-4.5 1.3Z"/>'
     };
@@ -446,6 +447,11 @@
             <button class="adm-orders-tile alt" type="button" data-a="open-customers">
                 <span class="aot-ico">${icon("users")}</span>
                 <span class="aot-txt"><b>العملاء والعروض</b><small>أسماء وأرقام زبائنك، وأرسل لهم الخصومات</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>
+            <button class="adm-orders-tile alt" type="button" data-a="backup-open">
+                <span class="aot-ico">${icon("shield")}</span>
+                <span class="aot-txt"><b>النسخ الاحتياطي</b>${backupHint()}</span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
             ${lowStockProducts().length ? `<button class="adm-orders-tile warn-tile" type="button" data-a="products-low-open">
@@ -2673,6 +2679,189 @@
         if (btn) { btn.disabled = false; btn.textContent = "✨ اكتب رسالة بالذكاء الاصطناعي"; }
     }
 
+    // =====================================================
+    // v18 — النسخ الاحتياطي
+    //  - نسخة كاملة (مع الطلبات والعملاء) تنزل على جوال صاحب المتجر بضغطة
+    //  - النسخ اليومية من قاعدة البيانات تظهر هنا تلقائياً لما تكون مفعّلة (backup_list)
+    // =====================================================
+    const BACKUP_KEY = "athr_backup_last";
+    const BACKUP_TABLES = [
+        ["categories", "id"], ["products", "id"], ["product_media", "id"], ["store_settings", "id"], ["coupons", "code"],
+        ["orders", "id"], ["customers", "phone"], ["reviews", "id"], ["restock_requests", "product_id"], ["product_stats", "product_id"], ["stats_daily", "day"]
+    ];
+    const BACKUP_KINDS = { auto: "تلقائية", manual: "يدوية", "pre-restore": "قبل الاسترجاع" };
+
+    function bkDays(iso) {
+        const t = new Date(iso).getTime();
+        if (!Number.isFinite(t)) return null;
+        return Math.floor((Date.now() - t) / 864e5);
+    }
+
+    function daysText(n) {
+        return n <= 0 ? "اليوم" : n === 1 ? "أمس" : n === 2 ? "قبل يومين" : n <= 10 ? `قبل ${n} أيام` : `قبل ${n} يوم`;
+    }
+
+    function backupHint() {
+        const last = storage.get(BACKUP_KEY);
+        const n = last && last.at ? bkDays(last.at) : null;
+        if (n === null) return `<small class="hot">ما نزّلت نسخة كاملة على جوالك للحين</small>`;
+        return `<small${n > 7 ? ' class="hot"' : ""}>آخر نسخة على جوالك: ${daysText(n)}</small>`;
+    }
+
+    function muscatTime(iso) {
+        try {
+            return new Intl.DateTimeFormat("ar-OM", { timeZone: "Asia/Muscat", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
+        } catch { return String(iso).slice(0, 16).replace("T", " "); }
+    }
+
+    async function fetchAllRows(table, order) {
+        const rows = [];
+        for (let from = 0; from < 200000; from += 1000) {
+            const { data, error } = await sb.from(table).select("*").order(order, { ascending: true }).range(from, from + 999);
+            if (error) throw error;
+            rows.push(...(data || []));
+            if (!data || data.length < 1000) break;
+        }
+        return rows;
+    }
+
+    function saveJsonFile(obj, name) {
+        const blob = new Blob([JSON.stringify(obj, null, 1)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 8000);
+    }
+
+    const fileStamp = () => new Date(Date.now() + 4 * 36e5).toISOString().slice(0, 16).replace("T", "-").replace(":", "");
+
+    function countsLine(c) {
+        if (!c) return "";
+        const parts = [];
+        if (c.products !== undefined) parts.push(`${c.products} منتج`);
+        if (c.categories !== undefined) parts.push(`${c.categories} قسم`);
+        if (c.orders !== undefined) parts.push(`${c.orders} طلب`);
+        if (c.customers !== undefined) parts.push(`${c.customers} عميل`);
+        return parts.join(" · ");
+    }
+
+    async function loadServerBackups() {
+        const { data, error } = await sb.rpc("backup_list");
+        if (error) return null;           // غير مفعّلة في قاعدة البيانات بعد
+        return Array.isArray(data) ? data : [];
+    }
+
+    async function openBackups() {
+        const head = `<div class="adm-sheet-head"><h2>🛡️ النسخ الاحتياطي</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>`;
+        const last = storage.get(BACKUP_KEY);
+        const lastLine = last && last.at
+            ? `آخر نسخة كاملة نزّلتها: <b>${esc(daysText(bkDays(last.at)))}</b>${last.counts ? ` (${esc(countsLine(last.counts))})` : ""}`
+            : "ما نزّلت نسخة كاملة للحين.";
+        const render = (server) => openSheet(`${head}
+            <div class="af-stack">
+                <div class="bk-box">
+                    <p><b>✅ المنتجات والأقسام والإعدادات</b> تنحفظ تلقائياً مع كل تغيير، وكل نسخة سابقة محفوظة.</p>
+                    <p><b>📦 النسخة الكاملة</b> فيها كل شي مع الطلبات والعملاء. نزّلها على جوالك واحفظها في «الملفات»، ويفضّل مرة كل أسبوع.</p>
+                </div>
+                <button class="ab ab-primary ab-block" type="button" data-a="backup-download" id="bkDownload">⬇️ نزّل نسخة كاملة الحين</button>
+                <p class="adm-muted" id="bkLast">${lastLine}</p>
+                ${server === null ? "" : `
+                <h3 class="bk-title">نسخ يومية تلقائية (3 الفجر)</h3>
+                <button class="ab ab-soft ab-sm" type="button" data-a="backup-now">خذ نسخة الحين</button>
+                ${server.length ? `<ul class="bk-list">${server.map((b) => `<li>
+                    <span class="bk-info"><b>${esc(muscatTime(b.taken_at))}</b><small>${esc(BACKUP_KINDS[b.kind] || b.kind)}${b.counts ? ` · ${esc(countsLine(b.counts))}` : ""}</small></span>
+                    <span class="bk-act"><button class="ab-mini" type="button" data-bk-get="${b.id}">تنزيل</button><button class="ab-mini" type="button" data-bk-restore="${b.id}">استرجاع</button></span>
+                </li>`).join("")}</ul>` : `<p class="adm-muted">ما فيه نسخ للحين.</p>`}`}
+            </div>`);
+        render(A.backups === undefined ? null : A.backups);
+        A.backups = await loadServerBackups();
+        if ($("#bkDownload")) render(A.backups);
+    }
+
+    async function downloadFullBackup(btn) {
+        if (btn) { btn.disabled = true; btn.textContent = "جاري تجهيز النسخة…"; }
+        try {
+            const tables = {};
+            for (const [t, order] of BACKUP_TABLES) tables[t] = await fetchAllRows(t, order);
+            const counts = Object.fromEntries(Object.entries(tables).map(([k, v]) => [k, v.length]));
+            saveJsonFile({ app: "athr", version: 1, source: "admin-download", taken_at: new Date().toISOString(), counts, tables }, `athr-backup-${fileStamp()}.json`);
+            storage.set(BACKUP_KEY, { at: new Date().toISOString(), counts });
+            toast("نزلت النسخة الكاملة ✓ احفظها في الملفات");
+            if ($("#bkLast")) $("#bkLast").innerHTML = `آخر نسخة كاملة نزّلتها: <b>اليوم</b> (${esc(countsLine(counts))})`;
+            renderHomeHint();
+        } catch (error) {
+            toast("تعذّر تجهيز النسخة، تأكد من الاتصال وحاول مرة ثانية");
+        }
+        if (btn) { btn.disabled = false; btn.textContent = "⬇️ نزّل نسخة كاملة الحين"; }
+    }
+
+    function renderHomeHint() {
+        const tile = $('[data-a="backup-open"] .aot-txt');
+        if (tile) tile.innerHTML = `<b>النسخ الاحتياطي</b>${backupHint()}`;
+    }
+
+    function restoreSheet(id) {
+        const b = (A.backups || []).find((x) => String(x.id) === String(id));
+        if (!b) return;
+        const head = `<div class="adm-sheet-head"><h2>↩️ استرجاع نسخة</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>`;
+        openSheet(`${head}
+            <div class="af-stack">
+                <p class="adm-sentence">ترجّع المتجر مثل ما كان <b>${esc(muscatTime(b.taken_at))}</b>.</p>
+                <div class="bk-box warn">
+                    <p>• المنتجات والأقسام اللي انضافت بعد هذا الوقت <b>بتنحذف</b>، والمعدّلة ترجع مثل ما كانت.</p>
+                    <p>• قبل الاسترجاع ناخذ نسخة من الوضع الحالي، فتقدر تتراجع في أي وقت.</p>
+                    ${isDirty() ? "<p>• عندك تعديلات غير منشورة في اللوحة <b>بتضيع</b>.</p>" : ""}
+                </div>
+                <button class="ab ab-primary ab-block" type="button" data-bk-scope="catalog" data-id="${b.id}">استرجع المنتجات والأقسام والإعدادات</button>
+                <button class="ab ab-soft ab-block" type="button" data-bk-scope="all" data-id="${b.id}">استرجع الكل + الطلبات والعملاء المحذوفين</button>
+                <p class="adm-muted">الطلبات الجديدة ما تنحذف أبداً، الاسترجاع يرجّع المحذوف منها بس.</p>
+            </div>`);
+    }
+
+    async function runRestore(id, scope, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = "جاري الاسترجاع…"; }
+        const { error } = await sb.rpc("backup_restore", { backup_id: Number(id), scope });
+        if (error) {
+            toast("تعذّر الاسترجاع: " + (error.message || "خطأ"));
+            if (btn) { btn.disabled = false; btn.textContent = "حاول مرة ثانية"; }
+            return;
+        }
+        storage.del(DRAFT_KEY);
+        toast("تم الاسترجاع ✓ نعيد تحميل اللوحة");
+        setTimeout(() => location.reload(), 1200);
+    }
+
+    async function backupClick(d) {
+        if (d.a === "backup-open") { await openBackups(); return true; }
+        if (d.a === "backup-download") { await downloadFullBackup($("#bkDownload")); return true; }
+        if (d.a === "backup-now") {
+            const { error } = await sb.rpc("backup_now", { label: null });
+            toast(error ? "تعذّر أخذ النسخة، حاول بعد دقيقة" : "انحفظت نسخة جديدة ✓");
+            await openBackups();
+            return true;
+        }
+        if (d.bkGet) {
+            const { data, error } = await sb.rpc("backup_get", { backup_id: Number(d.bkGet) });
+            if (error || !data) { toast("تعذّر تنزيل النسخة"); return true; }
+            const b = (A.backups || []).find((x) => String(x.id) === String(d.bkGet));
+            const when = b ? new Date(new Date(b.taken_at).getTime() + 4 * 36e5).toISOString().slice(0, 16).replace("T", "-").replace(":", "") : fileStamp();
+            saveJsonFile(data, `athr-backup-${when}.json`);
+            return true;
+        }
+        if (d.bkRestore) { restoreSheet(d.bkRestore); return true; }
+        if (d.bkScope) {
+            const sure = window.confirm(d.bkScope === "all" ? "متأكد؟ بنرجّع المتجر لهذي النسخة ونرجّع الطلبات والعملاء المحذوفين." : "متأكد؟ بنرجّع المنتجات والأقسام والإعدادات لهذي النسخة.");
+            if (sure) await runRestore(d.id, d.bkScope, $(`[data-bk-scope="${d.bkScope}"]`));
+            return true;
+        }
+        return false;
+    }
+
     // أزرار هذه المميزات
     async function v17Click(d) {
         switch (d.a) {
@@ -3301,6 +3490,7 @@
             return;
         }
         if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
+        if (((d.a && /^backup-/.test(d.a)) || d.bkGet || d.bkRestore || d.bkScope) && await backupClick(d)) return;
         if (((d.a && /^(xlsx-|import-|products-low|ai-|offer-ai$|reward-)/.test(d.a)) || d.aiDesc || d.custReward) && await v17Click(d)) return;
         if ((d.a && /^(coupon|restock|promo)-/.test(d.a)) || d.cpToggle || d.cpEdit || d.cpLink || d.cpMsg || d.restockSend || d.restockClear || d.restockAvail || d.favOffer) {
             await promoClick(d);

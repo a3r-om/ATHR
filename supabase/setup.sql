@@ -1633,3 +1633,291 @@ end;
 $$;
 revoke all on function public.social_proof() from public;
 grant execute on function public.social_proof() to anon, authenticated;
+
+-- =====================================================
+-- v18 — حماية إضافية + نسخ احتياطي يومي داخل قاعدة البيانات
+-- (يُطبَّق بموافقة صاحب المتجر؛ لوحة التحكم تكتشف وجود backup_list وتعرض النسخ تلقائياً)
+-- =====================================================
+
+-- ---------- 1) تضييق صلاحيات الزائر (anon) — طبقة حماية ثانية فوق RLS ----------
+revoke all on public.admin_users from anon;
+revoke insert, update, delete on public.categories, public.products, public.product_media, public.store_settings from anon;
+revoke select, update, delete on public.orders from anon;
+revoke update, delete on public.reviews from anon;
+revoke select, update, delete on public.events from anon;
+revoke all on public.stats_daily from anon;
+revoke truncate, references, trigger on all tables in schema public from anon, authenticated;
+
+-- دالة داخلية بدون search_path ثابت
+alter function private.athr_phone_intl(text, text) set search_path = public;
+revoke execute on function private.athr_phone_intl(text, text) from public, anon, authenticated;
+
+-- حدود رفع الصور والفيديو (للأدمن فقط أصلاً)
+update storage.buckets
+   set file_size_limit = 52428800,
+       allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif','image/avif','image/heic','image/heif','video/mp4','video/quicktime','video/webm']
+ where id = 'product-images';
+
+
+-- ---------- منع إغراق المتجر بطلبات أو تقييمات وهمية ----------
+create or replace function private.athr_limit_orders()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    same_phone int;
+    last_hour int;
+begin
+    if public.is_admin() or coalesce(new.source, 'web') <> 'web' then return new; end if;
+    select count(*) into same_phone from public.orders
+     where source = 'web' and phone = new.phone and created_at > now() - interval '30 minutes';
+    if same_phone >= 5 then
+        raise exception 'too many orders from this number, try later' using errcode = '54000';
+    end if;
+    select count(*) into last_hour from public.orders where source = 'web' and created_at > now() - interval '1 hour';
+    if last_hour >= 150 then
+        raise exception 'too many orders right now, try later' using errcode = '54000';
+    end if;
+    return new;
+end;
+$$;
+revoke execute on function private.athr_limit_orders() from public, anon, authenticated;
+drop trigger if exists athr_a_limit_orders on public.orders;
+create trigger athr_a_limit_orders before insert on public.orders for each row execute function private.athr_limit_orders();
+
+create or replace function private.athr_limit_reviews()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    same_order int;
+    last_hour int;
+begin
+    if public.is_admin() then return new; end if;
+    new.name := left(coalesce(new.name, ''), 60);
+    new.text := left(coalesce(new.text, ''), 1500);
+    select count(*) into same_order from public.reviews
+     where order_no is not distinct from new.order_no and new.order_no is not null and created_at > now() - interval '1 day';
+    select count(*) into last_hour from public.reviews where status = 'pending' and created_at > now() - interval '1 hour';
+    if same_order >= 10 or last_hour >= 40 then
+        raise exception 'too many reviews, try later' using errcode = '54000';
+    end if;
+    return new;
+end;
+$$;
+revoke execute on function private.athr_limit_reviews() from public, anon, authenticated;
+drop trigger if exists athr_a_limit_reviews on public.reviews;
+create trigger athr_a_limit_reviews before insert on public.reviews for each row execute function private.athr_limit_reviews();
+
+-- ---------- 2) النسخ الاحتياطي ----------
+create table if not exists private.backups (
+    id bigint generated always as identity primary key,
+    taken_at timestamptz not null default now(),
+    kind text not null check (kind in ('auto', 'manual', 'pre-restore')),
+    label text,
+    counts jsonb not null default '{}'::jsonb,
+    bytes int not null default 0,
+    data jsonb not null
+);
+alter table private.backups enable row level security;
+revoke all on private.backups from public, anon, authenticated;
+
+-- كل بيانات المتجر في ملف واحد (بدون الأسرار ولا سجل الزيارات الخام)
+create or replace function private.backup_data()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    t text;
+    tables text[] := array['categories', 'products', 'product_media', 'store_settings', 'coupons',
+                           'orders', 'customers', 'reviews', 'restock_requests', 'product_stats', 'stats_daily', 'admin_users'];
+    out jsonb := '{}'::jsonb;
+    rows jsonb;
+begin
+    foreach t in array tables loop
+        execute format('select coalesce(jsonb_agg(to_jsonb(x)), ''[]''::jsonb) from public.%I x', t) into rows;
+        out := out || jsonb_build_object(t, rows);
+    end loop;
+    return jsonb_build_object('app', 'athr', 'version', 1, 'taken_at', now(), 'tables', out);
+end;
+$$;
+revoke execute on function private.backup_data() from public, anon, authenticated;
+
+create or replace function private.backup_take(k text, lbl text default null)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    d jsonb := private.backup_data();
+    c jsonb := '{}'::jsonb;
+    t text;
+    new_id bigint;
+begin
+    for t in select jsonb_object_keys(d->'tables') loop
+        c := c || jsonb_build_object(t, jsonb_array_length(d->'tables'->t));
+    end loop;
+    insert into private.backups (kind, label, counts, bytes, data)
+    values (k, nullif(left(trim(coalesce(lbl, '')), 80), ''), c, octet_length(d::text), d)
+    returning id into new_id;
+    -- نحتفظ بآخر 30 تلقائية و20 يدوية و10 قبل الاسترجاع
+    delete from private.backups b
+     where b.id in (
+        select id from (
+            select id, row_number() over (partition by kind order by taken_at desc) as rn, kind
+              from private.backups
+        ) z
+        where (z.kind = 'auto' and z.rn > 30) or (z.kind = 'manual' and z.rn > 20) or (z.kind = 'pre-restore' and z.rn > 10)
+     );
+    return new_id;
+end;
+$$;
+revoke execute on function private.backup_take(text, text) from public, anon, authenticated;
+
+-- ---------- 3) دوال لوحة التحكم (للأدمن فقط) ----------
+create or replace function public.backup_list()
+returns table (id bigint, taken_at timestamptz, kind text, label text, counts jsonb, bytes int)
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+begin
+    if not public.is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+    return query select b.id, b.taken_at, b.kind, b.label, b.counts, b.bytes from private.backups b order by b.taken_at desc limit 80;
+end;
+$$;
+
+create or replace function public.backup_now(label text default null)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    recent int;
+begin
+    if not public.is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+    select count(*) into recent from private.backups where kind = 'manual' and taken_at > now() - interval '1 minute';
+    if recent >= 3 then raise exception 'too many backups, wait a minute' using errcode = '54000'; end if;
+    return private.backup_take('manual', label);
+end;
+$$;
+
+create or replace function public.backup_get(backup_id bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    d jsonb;
+begin
+    if not public.is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+    select data into d from private.backups where id = backup_id;
+    if d is null then raise exception 'backup not found' using errcode = 'P0002'; end if;
+    return d;
+end;
+$$;
+
+-- إرجاع نسخة:
+--  scope = 'catalog' : المنتجات والأقسام والصور والإعدادات والكوبونات ترجع مثل ما كانت (اللي انضاف بعدها ينحذف)
+--  scope = 'all'     : نفس السابق + إرجاع الطلبات والعملاء والتقييمات المحذوفة (بدون حذف أي شي جديد)
+-- قبل أي إرجاع نأخذ نسخة «قبل الاسترجاع» حتى نقدر نتراجع
+create or replace function public.backup_restore(backup_id bigint, scope text default 'catalog')
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    d jsonb;
+    pre bigint;
+    t text;
+    cols text;
+    upd text;
+    pk text;
+    n int;
+    result jsonb := '{}'::jsonb;
+    catalog text[] := array['categories', 'products', 'product_media', 'store_settings', 'coupons', 'product_stats'];
+    keys jsonb := '{"categories":"id","products":"id","product_media":"id","store_settings":"id","coupons":"code","product_stats":"product_id","orders":"id","customers":"phone","reviews":"id","restock_requests":"product_id, phone","stats_daily":"day, key"}';
+begin
+    if not public.is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+    if scope not in ('catalog', 'all') then raise exception 'bad scope'; end if;
+    select data into d from private.backups where id = backup_id;
+    if d is null or d->>'app' <> 'athr' then raise exception 'backup not found' using errcode = 'P0002'; end if;
+
+    pre := private.backup_take('pre-restore', 'قبل استرجاع نسخة ' || backup_id);
+
+    -- حذف ما انضاف بعد النسخة (من الأبناء إلى الآباء)
+    delete from public.product_media m where not exists (select 1 from jsonb_array_elements(d->'tables'->'product_media') e where (e->>'id')::uuid = m.id);
+    delete from public.products p where not exists (select 1 from jsonb_array_elements(d->'tables'->'products') e where (e->>'id')::uuid = p.id);
+    delete from public.categories c where not exists (select 1 from jsonb_array_elements(d->'tables'->'categories') e where (e->>'id')::uuid = c.id);
+    delete from public.coupons k where not exists (select 1 from jsonb_array_elements(d->'tables'->'coupons') e where e->>'code' = k.code);
+
+    -- إرجاع الصفوف كما كانت (من الآباء إلى الأبناء)
+    foreach t in array catalog loop
+        select string_agg(quote_ident(column_name), ', ' order by ordinal_position),
+               string_agg(format('%1$I = excluded.%1$I', column_name), ', ' order by ordinal_position)
+          into cols, upd
+          from information_schema.columns
+         where table_schema = 'public' and table_name = t and is_generated = 'NEVER';
+        pk := keys->>t;
+        execute format('insert into public.%1$I (%2$s) select %2$s from jsonb_populate_recordset(null::public.%1$I, $1) on conflict (%3$s) do update set %4$s',
+                       t, cols, pk, upd)
+          using coalesce(d->'tables'->t, '[]'::jsonb);
+        get diagnostics n = row_count;
+        result := result || jsonb_build_object(t, n);
+    end loop;
+
+    if scope = 'all' then
+        -- بدون إعادة حساب الأسعار وعدّادات العملاء للطلبات المسترجعة
+        alter table public.orders disable trigger athr_recompute_order;
+        alter table public.orders disable trigger athr_track_customer;
+        alter table public.orders disable trigger athr_a_limit_orders;
+        alter table public.reviews disable trigger athr_a_limit_reviews;
+        foreach t in array array['customers', 'orders', 'reviews', 'restock_requests', 'stats_daily'] loop
+            select string_agg(quote_ident(column_name), ', ' order by ordinal_position)
+              into cols
+              from information_schema.columns
+             where table_schema = 'public' and table_name = t and is_generated = 'NEVER';
+            execute format('insert into public.%1$I (%2$s) select %2$s from jsonb_populate_recordset(null::public.%1$I, $1) x %4$s on conflict (%3$s) do nothing',
+                           t, cols, keys->>t,
+                           case when t in ('reviews', 'restock_requests') then 'where x.product_id is null or exists (select 1 from public.products p where p.id = x.product_id)' else '' end)
+              using coalesce(d->'tables'->t, '[]'::jsonb);
+            get diagnostics n = row_count;
+            result := result || jsonb_build_object(t, n);
+        end loop;
+        alter table public.orders enable trigger athr_recompute_order;
+        alter table public.orders enable trigger athr_track_customer;
+        alter table public.orders enable trigger athr_a_limit_orders;
+        alter table public.reviews enable trigger athr_a_limit_reviews;
+    end if;
+
+    return jsonb_build_object('restored', backup_id, 'scope', scope, 'undo', pre, 'rows', result);
+end;
+$$;
+
+revoke execute on function public.backup_list() from public, anon;
+revoke execute on function public.backup_now(text) from public, anon;
+revoke execute on function public.backup_get(bigint) from public, anon;
+revoke execute on function public.backup_restore(bigint, text) from public, anon;
+grant execute on function public.backup_list() to authenticated;
+grant execute on function public.backup_now(text) to authenticated;
+grant execute on function public.backup_get(bigint) to authenticated;
+grant execute on function public.backup_restore(bigint, text) to authenticated;
+
+-- ---------- 4) جدولة يومية: 3 الفجر بتوقيت مسقط (23:00 UTC) ----------
+create extension if not exists pg_cron with schema pg_catalog;
+grant usage on schema cron to postgres;
+select cron.unschedule(jobid) from cron.job where jobname = 'athr-daily-backup';
+select cron.schedule('athr-daily-backup', '0 23 * * *', $$select private.backup_take('auto', null)$$);
+
+-- أول نسخة الحين
+select private.backup_take('manual', 'أول نسخة بعد تفعيل النسخ الاحتياطي');

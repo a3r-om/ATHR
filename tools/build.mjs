@@ -266,6 +266,22 @@ async function main() {
         throw new Error("لا توجد منتجات ظاهرة. أوقفت البناء حتى لا تُحذف صفحات المتجر بالخطأ (استعمل --allow-empty إن كان ذلك مقصودًا).");
     }
 
+    // نسخة احتياطية للمنتجات والأقسام والإعدادات (بيانات عامة فقط، بدون طلبات أو عملاء).
+    // تُحفظ في Git مع كل تغيير، فكل نسخة سابقة موجودة في سجل المستودع ويمكن الرجوع لها.
+    if (!args.data) {
+        const byId = (a, b) => String(a.id || a.product_id).localeCompare(String(b.id || b.product_id));
+        const backup = {
+            app: "athr",
+            kind: "catalog",
+            note: "نسخة تلقائية من بناء المتجر: الأقسام والمنتجات الظاهرة وصورها والإعدادات. الطلبات والعملاء في النسخة الكاملة من لوحة التحكم.",
+            config: data.config || {},
+            categories: (data.categories || []).slice().sort(byId),
+            products: (data.products || []).slice().sort(byId),
+            product_media: (data.media || []).slice().sort((a, b) => byId(a, b) || (a.sort_order ?? 0) - (b.sort_order ?? 0) || String(a.media_url).localeCompare(String(b.media_url)))
+        };
+        writeFile("backup/catalog.json", JSON.stringify(backup, null, 1) + "\n");
+    }
+
     // الصور المصغّرة
     const imageUrls = [];
     products.forEach((p) => { if (p.image_url) imageUrls.push(p.image_url); });
@@ -688,7 +704,7 @@ async function main() {
 ${sitemap.map((u) => `<url><loc>${xml(u.loc)}</loc>${u.images.map((i) => `<image:image><image:loc>${xml(i)}</image:loc></image:image>`).join("")}</url>`).join("\n")}
 </urlset>
 `);
-    writeFile("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`);
+    writeFile("robots.txt", `User-agent: *\nAllow: /\nDisallow: /backup/\n\nSitemap: ${SITE}sitemap.xml\n`);
     writeFile(".nojekyll", "");
 
     console.log(`✓ بُنيت صفحات ${SITE}`);
