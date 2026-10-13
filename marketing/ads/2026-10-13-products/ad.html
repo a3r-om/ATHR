@@ -55,15 +55,14 @@
     <div class="thumb" id="t3" style="left:560px;top:1060px"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div>
 
     <!-- S3: جولة المنتجات (8 مشاهد على الإيقاع) -->
-    <div class="scene" id="p0"><img class="full" src="../../../images/categories/quotes.jpg" alt=""><div class="idx">01 / 08</div><div class="lab"></div><div class="chip">2.800<small>ر.ع</small></div></div>
-    <div class="scene" id="p1"><img class="full" src="../../../images/categories/girls.jpg" alt=""><div class="idx">02 / 08</div><div class="lab"></div><div class="chip">2.800<small>ر.ع</small></div></div>
-    <div class="scene" id="p2"><div class="half" style="top:0"><img src="../../../images/t/z56pmmhapz-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/1w1dpwvjdvv-m.webp" alt=""></div><div class="idx" style="color:rgba(74,13,18,.7)">03 / 08</div><div class="lab box"></div></div>
-    <div class="scene" id="p3"><img class="full" src="../../../images/categories/mugs.jpg" alt=""><div class="idx">04 / 08</div><div class="lab"></div><div class="chip">4.800<small>ر.ع</small></div></div>
-    <div class="scene" id="p4"><div class="half" style="top:0"><img src="../../../images/t/2aokbiqd9wv-m.webp" alt="" style="top:-40px"></div><div class="half" style="top:966px"><img src="../../../images/t/1t091cfjk2s-m.webp" alt="" style="top:-40px"></div><div class="idx" style="color:rgba(74,13,18,.7)">05 / 08</div><div class="lab box"></div><div class="chip" style="top:1560px">4.900<small>ر.ع</small></div></div>
-    <div class="scene" id="p5"><img class="full" src="../../../images/categories/makeup-bags.jpg" alt=""><div class="idx">06 / 08</div><div class="lab"></div><div class="chip">1.000<small>ر.ع</small></div></div>
-    <div class="scene" id="p6"><div class="half" style="top:0"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/bihbemafg-m.webp" alt=""></div><div class="idx" style="color:rgba(74,13,18,.7)">07 / 08</div><div class="lab box"></div><div class="chip" style="top:1560px">2.800<small>ر.ع</small></div></div>
-    <div class="scene" id="p7" style="background:var(--dark)">
-        <div class="idx" style="color:rgba(247,241,232,.55)">08 / 08</div>
+    <div class="scene" id="p0"><img class="full" src="../../../images/categories/quotes.jpg" alt=""><div class="idx">01 / 07</div><div class="lab"></div><div class="chip">2.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p1"><img class="full" src="../../../images/categories/girls.jpg" alt=""><div class="idx">02 / 07</div><div class="lab"></div><div class="chip">2.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p2"><div class="half" style="top:0"><img src="../../../images/t/z56pmmhapz-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/1w1dpwvjdvv-m.webp" alt=""></div><div class="idx" style="color:rgba(74,13,18,.7)">03 / 07</div><div class="lab box"></div></div>
+    <div class="scene" id="p3"><img class="full" src="../../../images/categories/mugs.jpg" alt=""><div class="idx">04 / 07</div><div class="lab"></div><div class="chip">4.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p4"><div class="half" style="top:0"><img src="../../../images/t/2aokbiqd9wv-m.webp" alt="" style="top:-40px"></div><div class="half" style="top:966px"><img src="../../../images/t/1t091cfjk2s-m.webp" alt="" style="top:-40px"></div><div class="idx" style="color:rgba(74,13,18,.7)">05 / 07</div><div class="lab box"></div><div class="chip" style="top:1560px">4.900<small>ر.ع</small></div></div>
+    <div class="scene" id="p5"><div class="half" style="top:0"><img src="../../../images/t/7vcms8hodq-m.webp" alt=""></div><div class="half" style="top:966px"><img src="../../../images/t/bihbemafg-m.webp" alt=""></div><div class="idx" style="color:rgba(74,13,18,.7)">06 / 07</div><div class="lab box"></div><div class="chip" style="top:1560px">2.800<small>ر.ع</small></div></div>
+    <div class="scene" id="p6" style="background:var(--dark)">
+        <div class="idx" style="color:rgba(247,241,232,.55)">07 / 07</div>
         <div class="txt" id="more" style="font-size:64px;font-weight:600;color:rgba(247,241,232,.8)">وعندنا بعد</div>
         <div class="txt" id="cyc" style="font-size:190px;font-weight:700;color:var(--cream)"></div>
         <div class="abs" id="cycLine" style="height:12px;background:var(--acc);border-radius:6px"></div>
@@ -99,13 +98,22 @@
 
 <script src="../../kit/anim.js"></script>
 <script>
-window.DURATION = 26;
-window.COVER_T = 4.62;
+// الإيقاع: 100 نبضة/دقيقة (النبضة 0.6 ث). كل منتج 2.4 ث (4 نبضات)
+const TL = {
+    q1: 0.4, s2: 2.4, w2: 3.0, thumbs: [3.6, 4.2, 4.8, 5.4], zoom: [5.7, 6.0],
+    run: 6.0, scene: 2.4, n: 7,
+    q2: 22.8, cards: [24.0, 26.4, 28.8], upto: 31.2,
+    offer: 32.4, cups: [32.4, 33.0, 33.6, 34.2], eq: 34.8, eqs: 35.2,
+    trust: 36.0, cta: 37.8, taps: [38.6, 39.0], end: 39.6
+};
+window.DURATION = 42.6;
+window.COVER_T = 8.2;
 const C = { dark: "#4A0D12", cream: "#F7F1E8", acc: "#F2A516" };
 const $ = (s) => document.querySelector(s);
 const show = (el, on) => { el.style.display = on ? "" : "none"; };
 const p = A.p, back = A.back;
 const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const easeExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
 const easeIn = (x) => x * x * x;
 function typed(full, t, start, cps) {
@@ -113,7 +121,7 @@ function typed(full, t, start, cps) {
     const n = t < start ? 0 : Math.min(chars.length, Math.floor((t - start) * cps) + 1);
     return { text: chars.slice(0, n).join(""), done: n >= chars.length };
 }
-const blink = (t, from) => (t < from ? true : Math.floor((t - from) / 0.27) % 2 === 0);
+const blink = (t, from) => (t < from ? true : Math.floor((t - from) / 0.4) % 2 === 0);
 const caret = (on) => `<span class="caret" style="opacity:${on ? 1 : 0}"></span>`;
 function center(el, y, x = 540) {
     el.style.left = "0px"; el.style.top = "0px";
@@ -125,26 +133,26 @@ function set(el, { o = 1, x = 0, y = 0, s = 1, r = 0 } = {}) {
     el.style.opacity = String(o);
     el.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${r}deg)`;
 }
+const withQ = (txt) => {
+    const a = Array.from(txt);
+    return a[a.length - 1] === "؟" ? a.slice(0, -1).join("") + '<span class="mark">؟</span>' : a.join("");
+};
 
-// ---------- المشاهد ----------
 const SCENES = [
     { id: "p0", label: "أكواب العبارات" },
     { id: "p1", label: "أكواب البنات" },
     { id: "p2", label: "أبيض أو أسود" },
     { id: "p3", label: "المجات" },
     { id: "p4", label: "أكواب حرارية 750 مل" },
-    { id: "p5", label: "حقائب مكياج" },
-    { id: "p6", label: "تصاميم تشبهك" },
-    { id: "p7", label: "" }
+    { id: "p5", label: "تصاميم تشبهك" },
+    { id: "p6", label: "" }
 ];
-const RUN0 = 4.0;            // بداية الجولة، مشهد كل ثانية
 const CYCLE = ["أندية", "جامعات", "شخصيات"];
+const RUN_END = TL.run + TL.scene * TL.n;
 
-// ---------- أكواب العرض (نفس شكل كوب الإعلان الأول) ----------
 const CUP = "M34 46C120 30 480 30 566 46C574 48 576 56 574 64L556 150C530 360 486 500 452 590L444 612C442 620 436 624 428 624L428 640C428 652 420 660 408 660L192 660C180 660 172 652 172 640L172 624C164 624 158 620 156 612L148 590C114 500 70 360 44 150L26 64C24 56 26 48 34 46Z";
 $("#cups").innerHTML = [0, 1, 2, 3].map((i) => `<g id="cup${i}"><path d="${CUP}" fill="#F7F1E8"/><path d="M269.8 288.7L305.8 324.7L269.8 360.7L233.8 324.7ZM232 341.7L268 377.7L232 413.7L196 377.7ZM307.6 341.6L343.6 377.6L307.6 413.6L271.6 377.6Z" fill="#F2A516"/></g>`).join("");
 
-// ---------- يد بكسل ----------
 (function () {
     const HAND = ["....XX.......", "...XXXX......", "...XXXX......", "...XXXX......", "...XXXXXX....", "...XXXXXXXX..", ".XXXXXXXXXXX.", "XXXXXXXXXXXXX", "XXXXXXXXXXXXX", ".XXXXXXXXXXXX", "..XXXXXXXXXXX", "..XXXXXXXXXX.", "...XXXXXXXXX.", "...XXXXXXXX..", "....XXXXXXX..", "....XXXXXXX.."];
     const on = (x, y) => y >= 0 && y < HAND.length && x >= 0 && x < 13 && HAND[y][x] === "X";
@@ -159,202 +167,183 @@ $("#cups").innerHTML = [0, 1, 2, 3].map((i) => `<g id="cup${i}"><path d="${CUP}"
 })();
 
 window.render = function (t) {
-    const bg = $("#bg");
-    const dark = t < 2.0 || (t >= 18.0 && t < 20.9) || t >= 23.5;
-    bg.style.background = dark ? C.dark : C.cream;
+    const dark = t < TL.s2 || (t >= TL.offer && t < TL.trust) || t >= TL.end;
+    $("#bg").style.background = dark ? C.dark : C.cream;
 
-    // ---- S1: «عندك ذوق؟» ----
+    // ---- «عندك ذوق؟» ----
     const q1 = $("#q1");
-    if (t < 2.0) {
+    if (t < TL.s2) {
         show(q1, true);
-        const ty = typed("عندك ذوق؟", t, 0.35, 14);
-        const a = Array.from(ty.text);
-        const q = a[a.length - 1] === "؟";
-        q1.innerHTML = (q ? a.slice(0, -1).join("") + '<span class="mark">؟</span>' : a.join("")) + caret(blink(t, 1.0));
+        const ty = typed("عندك ذوق؟", t, TL.q1, 9);
+        q1.innerHTML = withQ(ty.text) + caret(blink(t, TL.q1 + 1.0));
         center(q1, 960);
-        q1.style.transform = `scale(${1 + 0.06 * easeIn(p(t, 1.5, 2.0))})`;
+        q1.style.transform = `scale(${1 + 0.05 * easeInOut(p(t, 1.4, TL.s2))})`;
     } else show(q1, false);
 
-    // ---- S2: «عندنا كوبه.» + 4 صور ----
+    // ---- «عندنا كوبه.» + 4 صور ----
     const w1 = $("#w1"), w2 = $("#w2");
-    const s2 = t >= 2.0 && t < 4.0;
+    const s2 = t >= TL.s2 && t < TL.run;
     show(w1, s2); show(w2, s2);
-    for (let i = 0; i < 4; i++) show($(`#t${i}`), s2 && t >= 3.0);
+    for (let i = 0; i < 4; i++) show($(`#t${i}`), s2 && t >= TL.thumbs[0]);
     if (s2) {
-        const up = easeExpo(p(t, 2.95, 3.25));
-        center(w1, 880 - up * 560);
-        center(w2, 1100 - up * 520);
-        const k1 = back(p(t, 2.0, 2.25)), k2 = back(p(t, 2.5, 2.75));
-        w1.style.transform = `scale(${0.8 + 0.2 * k1})`; w1.style.opacity = String(Math.min(1, p(t, 2.0, 2.08) * 2));
-        w2.style.transform = `scale(${0.8 + 0.2 * k2})`; w2.style.opacity = String(t < 2.5 ? 0 : Math.min(1, p(t, 2.5, 2.58) * 2));
+        const up = easeInOut(p(t, TL.thumbs[0] - 0.1, TL.thumbs[0] + 0.45));
         const sz = 1 - 0.38 * up;
         w1.style.fontSize = w2.style.fontSize = `${200 * sz}px`;
+        center(w1, 880 - up * 560);
+        center(w2, 1100 - up * 520);
+        const k1 = back(p(t, TL.s2, TL.s2 + 0.4)), k2 = back(p(t, TL.w2, TL.w2 + 0.4));
+        w1.style.transform = `scale(${0.85 + 0.15 * k1})`; w1.style.opacity = String(easeOut(p(t, TL.s2, TL.s2 + 0.2)));
+        w2.style.transform = `scale(${0.85 + 0.15 * k2})`; w2.style.opacity = String(easeOut(p(t, TL.w2, TL.w2 + 0.2)));
         for (let i = 0; i < 4; i++) {
-            const at = 3.0 + i * 0.25;
-            const k = back(p(t, at, at + 0.22));
-            set($(`#t${i}`), { o: Math.min(1, p(t, at, at + 0.08) * 2), s: 0.6 + 0.4 * k, r: (1 - k) * (i % 2 ? 8 : -8), y: 160 });
+            const at = TL.thumbs[i];
+            const k = back(p(t, at, at + 0.4));
+            set($(`#t${i}`), { o: easeOut(p(t, at, at + 0.2)), s: 0.7 + 0.3 * k, r: (1 - k) * (i % 2 ? 6 : -6), y: 160 });
         }
-        // تكبير قبل الجولة
-        if (t > 3.75) {
-            const z = easeIn(p(t, 3.75, 4.0));
-            for (let i = 0; i < 4; i++) $(`#t${i}`).style.transform += ` scale(${1 + z * 0.25})`;
+        if (t > TL.zoom[0]) {
+            const z = easeIn(p(t, TL.zoom[0], TL.zoom[1]));
+            for (let i = 0; i < 4; i++) $(`#t${i}`).style.transform += ` scale(${1 + z * 0.2})`;
         }
     }
 
-    // ---- S3: جولة المنتجات ----
+    // ---- جولة المنتجات: منتج كل 2.4 ث ----
     const band = $("#band");
-    let bandOn = false;
     SCENES.forEach((sc, i) => {
         const el = document.getElementById(sc.id);
-        const T = RUN0 + i;
-        const on = t >= T && t < T + 1.0 + (i === 7 ? 0 : 0.25) && t < 12.0;
+        const T = TL.run + i * TL.scene;
+        const on = t >= T && t < T + TL.scene + 0.5 && t < RUN_END;
         el.style.display = on ? "block" : "none";
         if (!on) return;
         el.style.zIndex = String(10 + i);
-        // كشف بزاوية 45° (من شعار أثر)
-        const k = easeOut(p(t, T, T + 0.24));
+        const k = easeInOut(p(t, T, T + 0.5));
         const m = `linear-gradient(225deg, #000 ${k * 100}%, transparent ${k * 100 + 0.01}%)`;
         el.style.webkitMaskImage = el.style.maskImage = k < 1 ? m : "none";
-        // حركة كاميرا بطيئة
-        const kb = p(t, T, T + 1.25);
-        el.querySelectorAll("img.full").forEach((img) => { img.style.transform = `scale(${1.14 - 0.12 * kb}) translateY(${(i % 2 ? -1 : 1) * 14 * kb}px)`; });
-        el.querySelectorAll(".half img").forEach((img, j) => { img.style.transform = `scale(${1.08 - 0.07 * kb}) translateX(${(j ? -1 : 1) * 18 * kb}px)`; });
-        // العنوان ينكتب
+        const kb = p(t, T, T + TL.scene + 0.5);
+        el.querySelectorAll("img.full").forEach((img) => { img.style.transform = `scale(${1.1 - 0.09 * kb}) translateY(${(i % 2 ? -1 : 1) * 12 * kb}px)`; });
+        el.querySelectorAll(".half img").forEach((img, j) => { img.style.transform = `scale(${1.07 - 0.06 * kb}) translateX(${(j ? -1 : 1) * 14 * kb}px)`; });
         const lab = el.querySelector(".lab");
         if (lab && sc.label) {
-            const ty = typed(sc.label, t, T + 0.12, 32);
-            lab.innerHTML = ty.text + caret(!ty.done || blink(t, T + 0.6));
+            const ty = typed(sc.label, t, T + 0.35, 16);
+            lab.innerHTML = ty.text + caret(!ty.done || blink(t, T + 1.6));
         }
         const chip = el.querySelector(".chip");
         if (chip) {
-            const ck = back(p(t, T + 0.3, T + 0.5));
-            set(chip, { o: Math.min(1, p(t, T + 0.3, T + 0.36) * 2), s: 0.7 + 0.3 * ck, y: (1 - ck) * 30 });
+            const ck = back(p(t, T + 0.9, T + 1.3));
+            set(chip, { o: easeOut(p(t, T + 0.9, T + 1.05)), s: 0.8 + 0.2 * ck, y: (1 - ck) * 24 });
         }
-        if (k < 1 && i > 0) bandOn = true;
-        if (i === 7) {
+        if (i === 6) {
             const more = $("#more"), cyc = $("#cyc"), line = $("#cycLine");
             center(more, 760);
-            set(more, { o: easeOut(p(t, T + 0.05, T + 0.2)), y: 0 });
-            more.style.transform = "none";
+            more.style.opacity = String(easeOut(p(t, T + 0.2, T + 0.5)));
+            const starts = [0, 0.8, 1.6];
             let j = 0;
-            [0, 0.33, 0.66].forEach((d, n) => { if (t >= T + d) j = n; });
+            starts.forEach((d, n) => { if (t >= T + d) j = n; });
             cyc.textContent = CYCLE[j];
             const r = center(cyc, 960);
-            const ck = back(p(t, T + [0, 0.33, 0.66][j], T + [0, 0.33, 0.66][j] + 0.18));
-            cyc.style.transform = `scale(${0.85 + 0.15 * ck})`;
+            const ck = back(p(t, T + starts[j], T + starts[j] + 0.35));
+            cyc.style.transform = `scale(${0.88 + 0.12 * ck})`;
+            cyc.style.opacity = String(easeOut(p(t, T + starts[j], T + starts[j] + 0.15)));
             line.style.left = `${540 - r.w / 2}px`; line.style.top = "1080px";
-            line.style.width = `${r.w * easeOut(p(t, T + [0, 0.33, 0.66][j], T + [0, 0.33, 0.66][j] + 0.2))}px`;
+            line.style.width = `${r.w * easeOut(p(t, T + starts[j] + 0.1, T + starts[j] + 0.45))}px`;
         }
     });
-    // شريط عنابي مائل يمسح بين المشاهد
     show(band, false);
-    for (let i = 1; i < 8; i++) {
-        const T = RUN0 + i;
-        if (t >= T - 0.06 && t < T + 0.24) {
-            const k = p(t, T - 0.06, T + 0.24);
+    for (let i = 1; i < TL.n; i++) {
+        const T = TL.run + i * TL.scene;
+        if (t >= T - 0.1 && t < T + 0.45) {
+            const k = easeInOut(p(t, T - 0.1, T + 0.45));
             show(band, true);
             band.style.zIndex = "40";
-            const x = 1500 - k * 2700;
-            band.style.transform = `translate(${x}px, -900px) rotate(45deg)`;
-            band.style.background = i === 7 ? C.acc : C.dark;
+            band.style.transform = `translate(${1500 - k * 2700}px, -900px) rotate(45deg)`;
+            band.style.background = i === TL.n - 1 ? C.acc : C.dark;
         }
     }
 
-    // ---- S4: الأسعار ----
+    // ---- الأسعار ----
     const q2 = $("#q2");
-    if (t >= 12.0 && t < 13.0) {
+    if (t >= TL.q2 && t < TL.cards[0]) {
         show(q2, true);
-        const ty = typed("والأسعار؟", t, 12.08, 22);
-        const a = Array.from(ty.text);
-        const q = a[a.length - 1] === "؟";
-        q2.innerHTML = (q ? a.slice(0, -1).join("") + '<span class="mark">؟</span>' : a.join("")) + caret(blink(t, 12.5));
+        const ty = typed("والأسعار؟", t, TL.q2 + 0.1, 12);
+        q2.innerHTML = withQ(ty.text) + caret(blink(t, TL.q2 + 0.9));
         center(q2, 960);
-        const out = easeIn(p(t, 12.8, 13.0));
-        q2.style.transform = `translateY(${-out * 300}px)`; q2.style.opacity = String(1 - out);
+        const out = easeIn(p(t, TL.cards[0] - 0.35, TL.cards[0]));
+        q2.style.transform = `translateY(${-out * 260}px)`; q2.style.opacity = String(1 - out);
     } else show(q2, false);
-    const CARDS = [13.0, 14.5, 16.0];
-    CARDS.forEach((T, i) => {
+    TL.cards.forEach((T, i) => {
         const el = document.getElementById(`c${i}`);
-        const end = i < 2 ? CARDS[i + 1] + 0.3 : 17.5;
+        const next = i < 2 ? TL.cards[i + 1] : TL.upto;
+        const end = i < 2 ? next + 0.45 : next;
         const on = t >= T && t < end;
         show(el, on);
         if (!on) return;
-        const kin = easeExpo(p(t, T, T + 0.35));
-        const kout = easeIn(p(t, end - 0.3, end));
-        const x = (1 - kin) * 1100 - kout * 1150;
-        const r = (1 - kin) * 10 - kout * 8;
-        set(el, { o: 1, x, r, s: 1 });
+        const kin = easeExpo(p(t, T, T + 0.6));
+        const kout = i < 2 ? easeInOut(p(t, next - 0.05, end)) : easeIn(p(t, next - 0.4, next));
+        set(el, { o: 1, x: (1 - kin) * 1100 - kout * 1150, r: (1 - kin) * 8 - kout * 6 });
         el.style.zIndex = String(20 + i);
-        const ph = el.querySelector(".ph img");
-        ph.style.transform = `scale(${1.1 - 0.08 * p(t, T, T + 1.5)})`;
-        const strike = el.querySelector(".was i");
+        el.querySelector(".ph img").style.transform = `scale(${1.08 - 0.07 * p(t, T, T + 2.6)})`;
         const was = el.querySelector(".was");
-        strike.style.width = `${(was.offsetWidth + 12) * easeOut(p(t, T + 0.55, T + 0.8))}px`;
-        const off = el.querySelector(".off");
-        const ok = back(p(t, T + 0.8, T + 1.0));
-        set(off, { o: Math.min(1, p(t, T + 0.8, T + 0.86) * 2), s: 0.5 + 0.5 * ok, r: (1 - ok) * -20 });
+        el.querySelector(".was i").style.width = `${(was.offsetWidth + 12) * easeOut(p(t, T + 0.9, T + 1.3))}px`;
+        const ok = back(p(t, T + 1.3, T + 1.65));
+        set(el.querySelector(".off"), { o: easeOut(p(t, T + 1.3, T + 1.45)), s: 0.6 + 0.4 * ok, r: (1 - ok) * -16 });
     });
     const upto = $("#upto");
-    if (t >= 17.5 && t < 18.0) {
+    if (t >= TL.upto && t < TL.offer) {
         show(upto, true);
         center(upto, 960);
-        const k = back(p(t, 17.5, 17.72));
-        upto.style.transform = `scale(${0.75 + 0.25 * k})`;
-        upto.style.opacity = String(Math.min(1, p(t, 17.5, 17.56) * 2));
+        const k = back(p(t, TL.upto, TL.upto + 0.4));
+        upto.style.transform = `scale(${0.8 + 0.2 * k})`;
+        upto.style.opacity = String(easeOut(p(t, TL.upto, TL.upto + 0.15)));
     } else show(upto, false);
 
-    // ---- S5: 4 أكواب = التوصيل مجاني ----
-    const s5 = t >= 18.0 && t < 20.9;
+    // ---- 4 أكواب = التوصيل مجاني ----
+    const s5 = t >= TL.offer && t < TL.trust;
     show($("#four"), s5); show($("#cups"), s5); show($("#eq"), s5); show($("#eqs"), s5);
     if (s5) {
         const four = $("#four");
         center(four, 640);
-        set(four, { o: Math.min(1, p(t, 18.0, 18.08) * 2), s: 0.85 + 0.15 * back(p(t, 18.0, 18.22)) });
+        set(four, { o: easeOut(p(t, TL.offer, TL.offer + 0.2)), s: 0.88 + 0.12 * back(p(t, TL.offer, TL.offer + 0.4)) });
         for (let i = 0; i < 4; i++) {
-            const at = 18.0 + i * 0.5;
-            const k = back(p(t, at, at + 0.25));
+            const at = TL.cups[i];
+            const k = back(p(t, at, at + 0.4));
             const g = document.getElementById(`cup${i}`);
             const S = 0.36;
-            const cx = 540 + (1.5 - i) * 236;        // من اليمين لليسار
-            const yy = 820 + (1 - Math.min(1, k)) * 120;
+            const cx = 540 + (1.5 - i) * 236;
+            const yy = 820 + (1 - Math.min(1, k)) * 100;
             g.setAttribute("transform", `translate(${cx - 300 * S * k} ${yy}) scale(${S * Math.max(0.001, k)})`);
             g.setAttribute("opacity", t >= at ? "1" : "0");
         }
         const eq = $("#eq");
         center(eq, 1220);
-        const ek = back(p(t, 20.0, 20.25));
-        set(eq, { o: t >= 20.0 ? Math.min(1, p(t, 20.0, 20.06) * 2) : 0, s: 0.7 + 0.3 * ek });
+        set(eq, { o: t >= TL.eq ? easeOut(p(t, TL.eq, TL.eq + 0.15)) : 0, s: 0.75 + 0.25 * back(p(t, TL.eq, TL.eq + 0.4)) });
         const eqs = $("#eqs");
         center(eqs, 1350);
-        eqs.style.opacity = String(easeOut(p(t, 20.3, 20.55)));
+        eqs.style.opacity = String(easeOut(p(t, TL.eqs, TL.eqs + 0.4)));
     }
-    // الثقة
-    const s5b = t >= 20.9 && t < 22.0;
+    const s5b = t >= TL.trust && t < TL.cta;
     for (let i = 0; i < 3; i++) {
         const el = document.getElementById(`tr${i}`);
         show(el, s5b);
         if (s5b) {
-            const at = 20.9 + i * 0.22;
-            const k = easeExpo(p(t, at, at + 0.3));
-            set(el, { o: k, x: (1 - k) * -80 });
+            const at = TL.trust + 0.15 + i * 0.45;
+            const k = easeOut(p(t, at, at + 0.5));
+            set(el, { o: k, x: (1 - k) * -70 });
         }
     }
 
-    // ---- S6: «اطلب الحين» ----
+    // ---- «اطلب الحين» ----
     const cta = $("#cta"), hand = $("#hand"), rip = $("#ripple");
-    const s6 = t >= 22.0 && t < 23.5;
+    const s6 = t >= TL.cta && t < TL.end;
     show(cta, s6); show(hand, s6); show(rip, s6);
     if (s6) {
-        const k = back(p(t, 22.0, 22.25));
+        const k = back(p(t, TL.cta, TL.cta + 0.4));
         const r = center(cta, 980);
-        cta.style.transform = `scale(${0.85 + 0.15 * k})`;
-        cta.style.opacity = String(Math.min(1, p(t, 22.0, 22.08) * 2));
-        const hk = easeOut(p(t, 22.1, 22.35));
-        const tap = (a) => Math.sin(Math.PI * p(t, a, a + 0.16));
-        const press = Math.max(tap(22.5), tap(22.9));
-        const hx = 540 - r.w / 2 - 70, hy = 980 - 270 + (1 - hk) * -120 + press * 22;
+        cta.style.transform = `scale(${0.88 + 0.12 * k})`;
+        cta.style.opacity = String(easeOut(p(t, TL.cta, TL.cta + 0.15)));
+        const hk = easeOut(p(t, TL.cta + 0.2, TL.cta + 0.6));
+        const tap = (a) => Math.sin(Math.PI * p(t, a, a + 0.2));
+        const press = Math.max(tap(TL.taps[0]), tap(TL.taps[1]));
+        const hx = 540 - r.w / 2 - 70, hy = 980 - 270 + (1 - hk) * -100 + press * 22;
         hand.style.left = `${hx}px`; hand.style.top = `${hy}px`; hand.style.opacity = String(hk);
-        const rk = t < 22.8 ? p(t, 22.56, 22.78) : p(t, 22.96, 23.18);
+        const rk = t < TL.taps[1] - 0.05 ? p(t, TL.taps[0] + 0.08, TL.taps[0] + 0.35) : p(t, TL.taps[1] + 0.08, TL.taps[1] + 0.35);
         rip.style.left = `${hx - 32}px`; rip.style.top = `${hy - 52}px`;
         $("#rippleC").setAttribute("r", String(10 + 44 * rk));
         rip.style.opacity = String(rk > 0 && rk < 1 ? 1 - rk : 0);
@@ -362,15 +351,15 @@ window.render = function (t) {
 
     // ---- النهاية ----
     const tile = $("#tile"), tag = $("#tag"), bio = $("#bio");
-    const s7 = t >= 23.5;
+    const s7 = t >= TL.end;
     show(tile, s7); show(tag, s7); show(bio, s7);
     if (s7) {
-        const k = back(p(t, 23.5, 23.8));
-        tile.style.transform = `scale(${0.8 + 0.2 * k})`;
-        tile.style.opacity = String(Math.min(1, p(t, 23.5, 23.58) * 2));
-        const tk = easeOut(p(t, 23.95, 24.3));
+        const k = back(p(t, TL.end, TL.end + 0.45));
+        tile.style.transform = `scale(${0.82 + 0.18 * k})`;
+        tile.style.opacity = String(easeOut(p(t, TL.end, TL.end + 0.15)));
+        const tk = easeOut(p(t, TL.end + 0.6, TL.end + 1.1));
         center(tag, 1150 + (1 - tk) * 24); tag.style.opacity = String(tk);
-        const bk = easeOut(p(t, 24.4, 24.75));
+        const bk = easeOut(p(t, TL.end + 1.1, TL.end + 1.6));
         center(bio, 1260 + (1 - bk) * 20); bio.style.opacity = String(bk);
     }
 };

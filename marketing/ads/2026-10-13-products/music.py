@@ -1,4 +1,4 @@
-"""موسيقى ومؤثرات أصلية لإعلان منتجات أثر (26 ثانية، 120 نبضة/دقيقة) على نفس توقيت ad.html.
+"""موسيقى ومؤثرات أصلية لإعلان منتجات أثر (42.6 ثانية، 100 نبضة/دقيقة) على نفس توقيت ad.html.
 
 python3 marketing/ads/2026-10-13-products/music.py <out.wav>
 """
@@ -8,7 +8,7 @@ import scipy.io.wavfile as wf
 import scipy.signal as ss
 
 SR = 44100
-DUR = 26.0
+DUR = 42.6
 N = int(SR * DUR)
 rng = np.random.default_rng(21)
 L = np.zeros(N)
@@ -135,123 +135,132 @@ def zip_(d=0.16):
     return filt(noise(d), "band", [2500, 9000]) * np.sin(np.pi * np.clip(t / d, 0, 1)) * 0.6
 
 
-# ---------- التوزيع الموسيقي ----------
+# ---------- التوزيع الموسيقي (100 نبضة/دقيقة: النبضة 0.6 ث) ----------
+BEAT = 0.6
+TL = dict(q1=0.4, s2=2.4, w2=3.0, thumbs=[3.6, 4.2, 4.8, 5.4], run=6.0, scene=2.4, n=7,
+          q2=22.8, cards=[24.0, 26.4, 28.8], upto=31.2, offer=32.4, cups=[32.4, 33.0, 33.6, 34.2],
+          eq=34.8, trust=36.0, cta=37.8, taps=[38.6, 39.0], end=39.6)
+RUN_END = TL["run"] + TL["scene"] * TL["n"]
 AM = [220.0, 261.63, 329.63]
 FM = [174.61, 220.0, 261.63]
 CM = [261.63, 329.63, 392.0]
 GM = [196.0, 246.94, 293.66]
 PROG = [(AM, 110.0), (FM, 87.31), (CM, 130.81), (GM, 98.0)]
+BAR = BEAT * 4
 
 
 def chord_at(t):
-    b = int(max(0, t - 2.0) // 2)
+    b = int(max(0, t - TL["s2"]) // BAR)
     return PROG[b % 4]
 
 
-DRUMS = [(4.0, 12.0), (13.0, 18.0), (20.0, 23.5)]
-in_drums = lambda t: any(a <= t < b for a, b in DRUMS)
+DRUMS = [(TL["run"], RUN_END), (TL["cards"][0], TL["upto"]), (TL["eq"], TL["end"])]
+in_drums = lambda t: any(a - 1e-6 <= t < b - 1e-6 for a, b in DRUMS)
 
-# باد هادئ من البداية حتى 23.5 (المقدمة أخف)
-add(0.0, pad([f / 2 for f in AM], 2.1), 0.1)
-for bar_t in np.arange(2.0, 23.5, 2.0):
+# باد هادئ طول الفيديو (المقدمة أخف)
+add(0.0, pad([f / 2 for f in AM], TL["s2"] + 0.1), 0.1)
+for bar_t in np.arange(TL["s2"], TL["end"], BAR):
     ch, _ = chord_at(bar_t + 0.01)
-    add(bar_t, pad(ch, min(2.1, 23.5 - bar_t)), 0.16)
+    add(bar_t, pad(ch, min(BAR + 0.1, TL["end"] - bar_t)), 0.16)
 
-# الطبول والباص
-for k in range(int((23.5 - 4.0) / BEAT)):
-    t = 4.0 + k * BEAT
+# الطبول والباص (أهدأ: الهاي هات على نصف النبضة فقط، والكيك على كل نبضة)
+k = 0
+while True:
+    t = TL["run"] + k * BEAT
+    k += 1
+    if t >= TL["end"]:
+        break
     if not in_drums(t):
         continue
-    beat_in_bar = int(round((t - 4.0) / BEAT)) % 4
-    add(t, kick(), 0.72)
+    beat_in_bar = int(round((t - TL["run"]) / BEAT)) % 4
+    add(t, kick(140, 46, 0.42, 0.13), 0.6)
     if beat_in_bar in (1, 3):
-        add(t, clap(), 0.5, pan=0.05)
-    add(t + 0.25, hat(), 0.32, pan=-0.2)
+        add(t, clap(0.3), 0.36, pan=0.05)
+    add(t + BEAT / 2, hat(), 0.22, pan=-0.2)
     if beat_in_bar == 3:
-        add(t + 0.25, hat(open_=True), 0.22, pan=0.2)
+        add(t + BEAT / 2, hat(open_=True), 0.14, pan=0.2)
     _, root = chord_at(t)
-    add(t + 0.25, bass(root), 0.5)
+    add(t + BEAT / 2, bass(root, 0.28), 0.45)
     if beat_in_bar == 0:
-        add(t, bass(root, 0.18), 0.35)
-    if beat_in_bar in (1, 3):
+        add(t, bass(root, 0.26), 0.32)
+    if beat_in_bar == 2:
         ch, _ = chord_at(t)
-        add(t + 0.25, stab([f * 2 for f in ch]), 0.12, pan=0.25)
+        add(t + BEAT / 2, stab([f * 2 for f in ch], 0.4), 0.1, pan=0.25)
 
 # ---------- المؤثرات على المشاهد ----------
 add(0.0, pluck(2400, 0.05, 0.008), 0.25)
 for i in range(9):                                   # «عندك ذوق؟»
-    add(0.35 + i / 14 + rng.uniform(-0.004, 0.004), key(rng.uniform(0.7, 1.0)), 0.2, pan=rng.uniform(-0.3, 0.3))
-ra, rb = riser(0.5)
-add(1.5, ra, 0.28, other=rb)
-ba, bb = boom(1.0, 50, 0.15)                          # «عندنا»
-add(2.0, ba, 0.8, other=bb)
-add(2.0, kick(170, 45), 0.6)
-add(2.5, kick(150, 46), 0.75)                         # «كوبه.»
+    add(TL["q1"] + i / 9 + rng.uniform(-0.004, 0.004), key(rng.uniform(0.7, 1.0)), 0.2, pan=rng.uniform(-0.3, 0.3))
+ra, rb = riser(0.8)
+add(TL["s2"] - 0.8, ra, 0.24, other=rb)
+ba, bb = boom(1.2, 50, 0.15)                          # «عندنا»
+add(TL["s2"], ba, 0.75, other=bb)
+add(TL["s2"], kick(160, 45), 0.55)
+add(TL["w2"], kick(140, 46), 0.6)                     # «كوبه.»
 for i, f in enumerate([440.0, 523.25, 587.33, 659.25]):   # 4 صور
-    add(3.0 + i * 0.25, pluck(f * 2, 0.4, 0.14), 0.22)
-    add(3.0 + i * 0.25, bloop(500 + i * 120, 1100 + i * 150), 0.12)
-ra, rb = riser(0.5)
-add(3.5, ra, 0.32, other=rb)
-ba, bb = boom(0.9, 52, 0.12)                          # بداية الجولة
-add(4.0, ba, 0.7, other=bb)
+    add(TL["thumbs"][i], pluck(f * 2, 0.5, 0.18), 0.22)
+    add(TL["thumbs"][i], bloop(500 + i * 120, 1100 + i * 150, 0.2), 0.1)
+ra, rb = riser(0.7)
+add(TL["run"] - 0.7, ra, 0.28, other=rb)
+ba, bb = boom(1.1, 52, 0.12)                          # بداية الجولة
+add(TL["run"], ba, 0.65, other=bb)
 
-for i in range(8):                                   # جولة المنتجات
-    T = 4.0 + i
+for i in range(TL["n"]):                             # جولة المنتجات
+    T = TL["run"] + i * TL["scene"]
     if i > 0:
-        wa, wb = whoosh(0.32, 600, 6500, peak=0.45)
-        add(T - 0.08, wa, 0.3, other=wb)
-    if i < 7:
-        for j in range(4):
-            add(T + 0.12 + j * 0.07, key(0.8), 0.06, pan=rng.uniform(-0.3, 0.3))
-        if i not in (2,):
-            add(T + 0.3, bloop(700, 1500, 0.14), 0.1)
-for j, d in enumerate([0, 0.33, 0.66]):              # أندية / جامعات / شخصيات
-    add(11.0 + d, stab([f * 2 for f in [CM, GM, AM][j]], 0.35), 0.28)
-for k in range(8):                                   # لفة سنير قبل الأسعار
-    add(11.5 + k * 0.0625, clap(0.12), 0.12 + k * 0.03)
-ra, rb = riser(0.5)
-add(11.5, ra, 0.3, other=rb)
-ba, bb = boom(0.9, 50, 0.12)                          # «والأسعار؟»
-add(12.0, ba, 0.75, other=bb)
+        wa, wb = whoosh(0.6, 450, 6000, peak=0.5)
+        add(T - 0.15, wa, 0.26, other=wb)
+    if i < TL["n"] - 1:
+        for j in range(5):
+            add(T + 0.35 + j * 0.12, key(0.8), 0.05, pan=rng.uniform(-0.3, 0.3))
+        if i != 2:
+            add(T + 0.9, bloop(650, 1350, 0.2), 0.09)
+LAST = TL["run"] + (TL["n"] - 1) * TL["scene"]
+for j, d in enumerate([0, 0.8, 1.6]):                # أندية / جامعات / شخصيات
+    add(LAST + d, stab([f * 2 for f in [CM, GM, AM][j]], 0.5), 0.26)
+ra, rb = riser(0.8)
+add(TL["q2"] - 0.8, ra, 0.26, other=rb)
+ba, bb = boom(1.1, 50, 0.12)                          # «والأسعار؟»
+add(TL["q2"], ba, 0.7, other=bb)
 for i in range(9):
-    add(12.08 + i / 22, key(rng.uniform(0.7, 1.0)), 0.1, pan=rng.uniform(-0.3, 0.3))
+    add(TL["q2"] + 0.1 + i / 12, key(rng.uniform(0.7, 1.0)), 0.12, pan=rng.uniform(-0.3, 0.3))
 
-for T in (13.0, 14.5, 16.0):                         # بطاقات الأسعار
-    wa, wb = whoosh(0.35, 500, 5500, peak=0.4)
-    add(T - 0.05, wa, 0.32, other=wb)
-    add(T + 0.55, zip_(), 0.25)
-    add(T + 0.8, bloop(900, 1800, 0.16), 0.18)
-    add(T + 0.8, pluck(1318.5, 0.3, 0.08), 0.1)
-ra, rb = riser(0.5)
-add(17.0, ra, 0.3, other=rb)
-ba, bb = boom(0.8, 52, 0.12)                          # «خصومات حتى 40%»
-add(17.5, ba, 0.8, other=bb)
-add(17.5, stab([f * 2 for f in AM]), 0.3)
+for T in TL["cards"]:                                # بطاقات الأسعار
+    wa, wb = whoosh(0.6, 450, 5000, peak=0.45)
+    add(T - 0.1, wa, 0.28, other=wb)
+    add(T + 0.9, zip_(0.32), 0.22)
+    add(T + 1.3, bloop(850, 1700, 0.2), 0.15)
+    add(T + 1.3, pluck(1318.5, 0.4, 0.1), 0.09)
+ra, rb = riser(0.8)
+add(TL["upto"] - 0.8, ra, 0.26, other=rb)
+ba, bb = boom(1.1, 52, 0.12)                          # «خصومات حتى 40%»
+add(TL["upto"], ba, 0.75, other=bb)
+add(TL["upto"], stab([f * 2 for f in AM], 0.5), 0.26)
 
-ba, bb = boom(0.9, 48, 0.12)                          # 4 أكواب
-add(18.0, ba, 0.7, other=bb)
+ba, bb = boom(1.0, 48, 0.12)                          # 4 أكواب
+add(TL["offer"], ba, 0.6, other=bb)
 for i, f in enumerate([523.25, 587.33, 659.25, 783.99]):
-    add(18.0 + i * 0.5, pluck(f, 0.6, 0.25), 0.4)
-    add(18.0 + i * 0.5, kick(140, 46), 0.45)
-ra, rb = riser(0.5)
-add(19.5, ra, 0.25, other=rb)
-ba, bb = boom(1.0, 46, 0.15)                          # «= التوصيل مجاني»
-add(20.0, ba, 0.9, other=bb)
-add(20.0, pluck(880.0, 0.8, 0.3), 0.35)
+    add(TL["cups"][i], pluck(f, 0.7, 0.3), 0.38)
+    add(TL["cups"][i], kick(130, 46), 0.38)
+ra, rb = riser(0.6)
+add(TL["eq"] - 0.6, ra, 0.22, other=rb)
+ba, bb = boom(1.2, 46, 0.15)                          # «= التوصيل مجاني»
+add(TL["eq"], ba, 0.85, other=bb)
+add(TL["eq"], pluck(880.0, 1.0, 0.35), 0.32)
 for i in range(3):                                   # الثقة
-    add(20.9 + i * 0.22, bloop(800 + i * 150, 1600 + i * 200, 0.14), 0.16)
+    add(TL["trust"] + 0.15 + i * 0.45, bloop(800 + i * 150, 1600 + i * 200, 0.18), 0.14)
+ra, rb = riser(0.7)
+add(TL["cta"] - 0.7, ra, 0.26, other=rb)
+add(TL["cta"], kick(160, 45), 0.65)                   # «اطلب الحين»
+add(TL["cta"], stab([f * 2 for f in CM], 0.5), 0.28)
+for T in TL["taps"]:
+    add(T + 0.08, key(1.0), 0.18)
 ra, rb = riser(0.5)
-add(21.5, ra, 0.3, other=rb)
-add(22.0, kick(170, 45), 0.7)                         # «اطلب الحين»
-add(22.0, stab([f * 2 for f in CM]), 0.3)
-for T in (22.5, 22.9):
-    add(T + 0.06, key(1.0), 0.18)
-ra, rb = riser(0.5)
-add(23.0, ra, 0.3, other=rb)
-ba, bb = boom(2.4, 45, 0.22)                          # الشعار
-add(23.5, ba, 1.0, other=bb)
-add(23.5, pluck(440.0, 2.0, 0.7), 0.18)
-add(23.5, pluck(659.25, 2.0, 0.7), 0.12)
+add(TL["end"] - 0.5, ra, 0.26, other=rb)
+ba, bb = boom(2.6, 45, 0.22)                          # الشعار
+add(TL["end"], ba, 0.95, other=bb)
+add(TL["end"], pluck(440.0, 2.6, 0.9), 0.17)
+add(TL["end"], pluck(659.25, 2.6, 0.9), 0.11)
 
 mix = np.stack([L, R], axis=1)
 mix = np.tanh(mix * 1.1) / np.tanh(1.1)
