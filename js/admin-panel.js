@@ -449,6 +449,11 @@
                 <span class="aot-txt"><b>مساعدك الذكي</b><small>اسأل متجرك: كم بعت؟ مين أفضل عملائك؟ ويسوّي لك أكواد الخصم</small></span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
+            <button class="adm-orders-tile alt fin-tile" type="button" data-a="fin-open">
+                <span class="aot-ico" aria-hidden="true">💰</span>
+                <span class="aot-txt"><b>المبيعات والمصاريف</b><small>ربحك لكل شهر تلقائياً، وسجّل مصاريفك</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>
             <button class="adm-orders-tile alt" type="button" data-a="open-customers">
                 <span class="aot-ico">${icon("users")}</span>
                 <span class="aot-txt"><b>العملاء والعروض</b><small>أسماء وأرقام زبائنك، وأرسل لهم الخصومات</small></span>
@@ -2793,6 +2798,7 @@
         try {
             const tables = {};
             for (const [t, order] of BACKUP_TABLES) tables[t] = await fetchAllRows(t, order);
+            try { const ex = await finCall({ action: "get", doc: "expenses" }); tables.expenses = (ex.data && ex.data.items) || []; } catch { /* المصاريف اختيارية في النسخة */ }
             const counts = Object.fromEntries(Object.entries(tables).map(([k, v]) => [k, v.length]));
             saveJsonFile({ app: "athr", version: 1, source: "admin-download", taken_at: new Date().toISOString(), counts, tables }, `athr-backup-${fileStamp()}.json`);
             storage.set(BACKUP_KEY, { at: new Date().toISOString(), counts });
@@ -2896,6 +2902,7 @@
         if (!A.ordersLoaded) jobs.push(loadOrders());
         if (!A.customersLoaded) jobs.push(loadCustomers());
         if (!A.statsRows || Date.now() - (A.statsAt || 0) > 300000) jobs.push(loadStatsRows());
+        if (!finState().loaded) jobs.push(loadFinance());
         await Promise.all(jobs.map((p) => p.catch(() => null)));
     }
 
@@ -3146,7 +3153,8 @@
         ["customers", "👥 عملائي"],
         ["unsold", "😴 منتجات ما تنباع"],
         ["sources", "📍 من وين الطلبات"],
-        ["stock", "📦 المخزون"]
+        ["stock", "📦 المخزون"],
+        ["profit", "💰 الأرباح"]
     ];
 
     function asstState() {
@@ -3197,6 +3205,18 @@
             if (m.places.length) L.push(`<b>أكثر المناطق (3 شهور):</b> ${m.places.slice(0, 4).map(([k, n]) => `${esc(k)} ${n}`).join("، ")}`);
             return L.join("<br>");
         }
+        if (kind === "profit") {
+            const f = finState();
+            const cur = monthSummary(thisMonth());
+            const prev = monthSummary(addMonths(thisMonth(), -1));
+            const open = `<div class="asst-acts"><button class="ab-mini" type="button" data-a="fin-open">💰 افتح المبيعات والمصاريف</button></div>`;
+            if (!f.loaded) return `ما قدرت أقرأ المصاريف الحين. مبيعات ${monthName(cur.m, false)} للحين: <b>${money(cur.sales)}</b>.${open}`;
+            L.push(`<b>${monthName(cur.m, false)} للحين:</b> مبيعات ${money(cur.sales)} − مصاريف ${money(cur.expenses)} = <b>${cur.profit < 0 ? "خسارة" : "ربح"} ${money(Math.abs(cur.profit))}</b>${cur.margin !== null ? ` (هامش ${cur.margin}%)` : ""}`);
+            if (prev.sales || prev.expenses) L.push(`<b>${monthName(prev.m, false)}:</b> مبيعات ${money(prev.sales)} · مصاريف ${money(prev.expenses)} · ${prev.profit < 0 ? "خسارة" : "ربح"} ${money(Math.abs(prev.profit))}`);
+            if (cur.byCat[0]) L.push(`أكبر مصروف هالشهر: ${finCat(cur.byCat[0][0])[1]} ${finCat(cur.byCat[0][0])[2]} (${money(cur.byCat[0][1])})`);
+            if (!cur.exps.length) L.push(`⚠️ ما سجلت مصاريف هالشهر، فالربح هنا هو نفس المبيعات. سجّل مصاريفك عشان يطلع الرقم الصحيح.`);
+            return L.join("<br>") + open;
+        }
         if (kind === "stock") {
             if (!m.low.length) return "ما فيه منتجات قربت تخلص. (المتابعة تشتغل للمنتجات اللي حاط لها كمية في المخزون.)";
             return `<b>قربت تخلص:</b><ul>${m.low.map((x) => `<li>${esc(x.name)} — باقي ${x.stock}</li>`).join("")}</ul>`;
@@ -3228,6 +3248,10 @@
             top_places_90d: m.places.slice(0, 6),
             customers: m.cust,
             top_customers: m.topCustomers,
+            finance: finState().loaded ? [thisMonth(), addMonths(thisMonth(), -1), addMonths(thisMonth(), -2)].map((mm) => {
+                const x = monthSummary(mm);
+                return { month: mm, sales: x.sales, expenses: x.expenses, profit: x.profit, margin_pct: x.margin, orders: x.orders, expenses_by_type: x.byCat.map(([k, v]) => [finCat(k)[2], v]) };
+            }) : "expenses_not_loaded",
             coupons: ((A.promo && A.promo.coupons) || []).slice(0, 15).map((k) => ({ code: k.code, kind: k.kind, value: Number(k.value), enabled: k.enabled, ends_at: k.ends_at })),
             products: (A.draft ? A.draft.products : []).slice(0, 120).map((p) => ({
                 id: p.id, name: p.name, category: catName(p.category_id), price: Number(p.price), old_price: p.old_price ? Number(p.old_price) : null,
@@ -3408,6 +3432,349 @@
         if (d.asstNo) { await asstRun(d.asstNo, false); return true; }
         if (d.custOpen) { await openCustomer(d.custOpen); return true; }
         if (d.profSuggest) { suggestToCustomer(d.profSuggest); return true; }
+        return false;
+    }
+
+    // =====================================================
+    // v20 — «مبيعات ومصاريف مشروعي»
+    //  - المبيعات تنحسب تلقائياً من الطلبات (غير المخفية)
+    //  - المصاريف يسجلها المدير، وتنحفظ في مخزن خاص عبر دالة admin-data (ما يشوفها الزوار)
+    //  - ملخص شهري تلقائي: المبيعات، المصاريف، الربح، الهامش، الطلبات + رسم آخر 6 شهور + تنزيل Excel
+    // =====================================================
+    const FIN_CATS = [
+        ["stock", "📦", "بضاعة وطباعة"],
+        ["pack", "🎀", "تغليف"],
+        ["ship", "🚚", "توصيل"],
+        ["ads", "📣", "إعلانات"],
+        ["subs", "💻", "اشتراكات ورسوم"],
+        ["other", "🧾", "أخرى"]
+    ];
+    const finCat = (k) => FIN_CATS.find((c) => c[0] === k) || FIN_CATS[FIN_CATS.length - 1];
+    const AR_MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+    const muscatDay = (t = Date.now()) => new Date(Number(t) + 4 * 36e5).toISOString().slice(0, 10);
+    const thisMonth = () => muscatDay().slice(0, 7);
+    const monthName = (m, year = true) => `${AR_MONTHS[Number(m.slice(5, 7)) - 1]}${year ? ` ${m.slice(0, 4)}` : ""}`;
+    function addMonths(m, n) {
+        const d = new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1 + n, 1));
+        return d.toISOString().slice(0, 7);
+    }
+    const orderMonth = (o) => muscatDay(new Date(o.ordered_at || o.created_at).getTime());
+
+    function finState() {
+        if (!A.fin) A.fin = { loaded: false, loading: false, err: "", rev: 0, items: [], month: thisMonth(), edit: null };
+        return A.fin;
+    }
+
+    async function finCall(body) {
+        const { data } = await sb.auth.getSession();
+        const token = data && data.session && data.session.access_token;
+        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/admin-data`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
+            body: JSON.stringify(body)
+        });
+        let out = {};
+        try { out = await res.json(); } catch { /* رد غير متوقع */ }
+        if (!res.ok || out.error) {
+            const error = new Error(out.error || `http_${res.status}`);
+            error.code = out.error || `http_${res.status}`;
+            error.body = out;
+            throw error;
+        }
+        return out;
+    }
+
+    async function loadFinance() {
+        const f = finState();
+        if (f.loading) return f.loading;
+        f.loading = (async () => {
+            try {
+                const out = await finCall({ action: "get", doc: "expenses" });
+                f.items = (out.data && Array.isArray(out.data.items)) ? out.data.items : [];
+                f.rev = Number(out.rev) || 0;
+                f.loaded = true;
+                f.err = "";
+            } catch (error) {
+                f.err = error.code || "net";
+            }
+            f.loading = false;
+        })();
+        return f.loading;
+    }
+
+    // تعديل المصاريف: نحفظ برقم النسخة، ولو انحفظ شي من جهاز ثاني نعيد التعديل فوق آخر نسخة
+    async function finMutate(change) {
+        const f = finState();
+        const run = () => change(f.items.map((x) => ({ ...x })));
+        let out;
+        try {
+            out = await finCall({ action: "put", doc: "expenses", rev: f.rev, data: { items: run() } });
+        } catch (error) {
+            if (error.code !== "conflict") throw error;
+            f.items = (error.body.data && error.body.data.items) || [];
+            f.rev = Number(error.body.rev) || 0;
+            out = await finCall({ action: "put", doc: "expenses", rev: f.rev, data: { items: run() } });
+        }
+        f.items = out.data.items || [];
+        f.rev = Number(out.rev) || 0;
+    }
+
+    // مصاريف شهر معيّن (مع المصاريف الشهرية المتكررة)
+    function expensesIn(m) {
+        const f = finState();
+        const now = thisMonth();
+        return f.items.filter((x) => {
+            const start = x.d.slice(0, 7);
+            if (!x.m) return start === m;
+            return start <= m && m <= now && (!x.u || m <= x.u);
+        }).map((x) => ({ ...x, shown: x.m ? `${m}-${x.d.slice(8, 10)}` : x.d }))
+            .sort((a, b) => (b.shown > a.shown ? 1 : b.shown < a.shown ? -1 : 0));
+    }
+
+    function monthSummary(m) {
+        const ord = liveOrders().filter((o) => orderMonth(o).slice(0, 7) === m);
+        const sales = r3(ord.reduce((s, o) => s + Number(o.total || 0), 0));
+        const delivery = r3(ord.reduce((s, o) => s + Number(o.delivery_price || 0), 0));
+        const exps = expensesIn(m);
+        const expenses = r3(exps.reduce((s, x) => s + Number(x.a || 0), 0));
+        const profit = r3(sales - expenses);
+        const byCat = FIN_CATS.map(([k]) => [k, r3(exps.filter((x) => x.c === k).reduce((s, x) => s + Number(x.a), 0))]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
+        return { m, orders: ord.length, sales, delivery, expenses, profit, margin: sales > 0 ? Math.round((profit / sales) * 100) : null, byCat, exps };
+    }
+
+    // الأشهر اللي فيها بيانات (طلبات أو مصاريف)، من الأحدث
+    function finMonths() {
+        const set = new Set([thisMonth()]);
+        liveOrders().forEach((o) => set.add(orderMonth(o).slice(0, 7)));
+        finState().items.forEach((x) => {
+            set.add(x.d.slice(0, 7));
+            if (x.m) for (let m = x.d.slice(0, 7), i = 0; m <= thisMonth() && (!x.u || m <= x.u) && i < 60; m = addMonths(m, 1), i++) set.add(m);
+        });
+        return [...set].filter((m) => m <= thisMonth()).sort().reverse();
+    }
+
+    const signMoney = (n) => (n < 0 ? `− ${money(Math.abs(n))}` : money(n));
+
+    function finChart(sel) {
+        const months = Array.from({ length: 6 }, (_, i) => addMonths(sel, i - 5));
+        const data = months.map(monthSummary);
+        const max = Math.max(1, ...data.map((d) => Math.max(d.sales, d.expenses)));
+        const nice = (v) => { const p = 10 ** Math.floor(Math.log10(v)); return Math.ceil(v / p / (v / p > 5 ? 2 : 1)) * p * (v / p > 5 ? 2 : 1); };
+        const top = nice(max);
+        const W = 340, H = 170, padR = 34, padL = 6, padT = 16, padB = 26;
+        const plotW = W - padR - padL, plotH = H - padT - padB;
+        const gw = plotW / months.length;
+        const bw = Math.min(18, (gw - 14) / 2);
+        const y = (v) => padT + plotH - (v / top) * plotH;
+        const fmt = (v) => (v >= 1000 ? `${Math.round(v / 100) / 10}K` : String(Math.round(v * 10) / 10));
+        const bar = (x, v, cls) => {
+            if (v <= 0) return "";
+            const h = Math.max(2, (v / top) * plotH), r = Math.min(4, h / 2, bw / 2), b = padT + plotH;
+            return `<path class="${cls}" d="M${x},${b} V${b - h + r} Q${x},${b - h} ${x + r},${b - h} H${x + bw - r} Q${x + bw},${b - h} ${x + bw},${b - h + r} V${b} Z"/>`;
+        };
+        const grid = [0, top / 2, top].map((v) => `<line class="fg" x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}"/><text class="ft" x="${W - padR + 4}" y="${y(v) + 3.5}">${fmt(v)}</text>`).join("");
+        // اتجاه عربي: الأقدم يمين، والأحدث يسار
+        const groups = data.map((d, i) => {
+            const gx = W - padR - (i + 1) * gw;
+            const cx = gx + gw / 2;
+            const on = d.m === sel;
+            return `<g class="fgrp${on ? " on" : ""}" data-a="fin-pick" data-m="${d.m}" role="button" aria-label="${esc(monthName(d.m))}: المبيعات ${money(d.sales)}، المصاريف ${money(d.expenses)}">
+                <rect class="fhit" x="${gx + 2}" y="${padT - 12}" width="${gw - 4}" height="${plotH + 12 + padB}" rx="8"/>
+                ${bar(cx + 1, d.sales, "fb-s")}${bar(cx - 1 - bw, d.expenses, "fb-e")}
+                <text class="fm" x="${cx}" y="${H - 8}">${AR_MONTHS[Number(d.m.slice(5, 7)) - 1]}</text>
+            </g>`;
+        }).join("");
+        return `<div class="fin-chart">
+            <div class="fin-legend"><span><i class="sw s"></i>المبيعات</span><span><i class="sw e"></i>المصاريف</span><small class="adm-muted">اضغط على أي شهر</small></div>
+            <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="المبيعات والمصاريف آخر 6 شهور">${grid}${groups}</svg>
+        </div>`;
+    }
+
+    function finKpis(s, prev) {
+        const delta = (a, b) => {
+            if (!b) return "";
+            const p = Math.round(((a - b) / Math.abs(b)) * 100);
+            return p ? `<small class="fk-d">${p > 0 ? "▲" : "▼"} ${Math.abs(p)}% عن ${monthName(prev.m, false)}</small>` : "";
+        };
+        const row = (label, value, extra = "", cls = "") => `<div class="fk-row${cls ? ` ${cls}` : ""}"><span>${label}</span><b dir="ltr">${value}</b>${extra}</div>`;
+        const f = finState();
+        const expTxt = f.loaded ? money(s.expenses) : f.err ? "—" : "…";
+        return `<div class="fin-kpis">
+            ${row("المبيعات", money(s.sales), delta(s.sales, prev.sales))}
+            ${row("المصاريف", expTxt, f.loaded ? delta(s.expenses, prev.expenses) : "")}
+            ${row(s.profit < 0 && f.loaded ? "الخسارة" : "الربح", f.loaded ? signMoney(s.profit) : "…", f.loaded ? delta(s.profit, prev.profit) : "", s.profit < 0 && f.loaded ? "neg" : "hero")}
+            ${row("الهامش", f.loaded && s.margin !== null ? `${s.margin}%` : "—")}
+            ${row("الطلبات", String(s.orders))}
+        </div>
+        ${s.delivery > 0 ? `<p class="adm-muted fin-sub">منها رسوم توصيل دفعها الزبائن: ${money(s.delivery)}</p>` : ""}`;
+    }
+
+    function finExpensesHTML(s) {
+        const f = finState();
+        if (f.err && !f.loaded) {
+            return `<div class="bk-box warn"><p>تعذّر تحميل المصاريف. تأكد من الاتصال.</p><button class="ab ab-ghost ab-sm" type="button" data-a="fin-retry">حاول مرة ثانية</button></div>`;
+        }
+        if (!f.loaded) return `<p class="adm-muted">جاري تحميل المصاريف…</p>`;
+        return `${s.byCat.length ? `<div class="fin-cats">${s.byCat.map(([k, v]) => `<span class="fin-cat">${finCat(k)[1]} ${finCat(k)[2]} <b dir="ltr">${money(v)}</b></span>`).join("")}</div>` : ""}
+            ${s.exps.length ? `<ul class="fin-list">${s.exps.map((x) => `<li><button type="button" class="fin-item" data-fin-edit="${esc(x.id)}">
+                <span class="fi-ico" aria-hidden="true">${finCat(x.c)[1]}</span>
+                <span class="fi-txt"><b>${esc(x.n || finCat(x.c)[2])}</b><small>${esc(finCat(x.c)[2])} · ${Number(x.shown.slice(8, 10))} ${AR_MONTHS[Number(x.shown.slice(5, 7)) - 1]}${x.m ? " · 🔁 شهري" : ""}</small></span>
+                <span class="fi-amt" dir="ltr">${money(x.a)}</span>
+            </button></li>`).join("")}</ul>` : `<p class="adm-muted fin-empty">ما فيه مصاريف مسجلة في ${monthName(s.m, false)}. سجّل مصاريفك (طباعة، تغليف، توصيل، إعلانات…) عشان يطلع ربحك الصحيح.</p>`}`;
+    }
+
+    function finTableHTML() {
+        const rows = finMonths().slice(0, 12).map(monthSummary);
+        const f = finState();
+        return `<div class="fin-table-wrap"><table class="fin-table">
+            <thead><tr><th>الشهر</th><th>المبيعات</th><th>المصاريف</th><th>الربح</th></tr></thead>
+            <tbody>${rows.map((s) => `<tr${s.m === f.month ? ' class="on"' : ""}><td><button type="button" class="link-mini" data-a="fin-pick" data-m="${s.m}">${monthName(s.m)}</button></td><td dir="ltr">${money(s.sales)}</td><td dir="ltr">${f.loaded ? money(s.expenses) : "—"}</td><td dir="ltr" class="${s.profit < 0 && f.loaded ? "neg" : ""}">${f.loaded ? signMoney(s.profit) : "—"}</td></tr>`).join("")}</tbody>
+        </table></div>`;
+    }
+
+    function finFormHTML() {
+        const f = finState();
+        const x = f.edit && f.edit.id ? f.items.find((i) => i.id === f.edit.id) : null;
+        const day = x ? x.d : (f.month === thisMonth() ? muscatDay() : `${f.month}-01`);
+        const cat = x ? x.c : (f.edit && f.edit.c) || "stock";
+        return `<form class="fin-form" id="finForm" autocomplete="off">
+            <h3>${x ? "تعديل مصروف" : "➕ مصروف جديد"}</h3>
+            <label class="af"><span>المبلغ (ر.ع)</span><input class="ai" name="amount" inputmode="decimal" dir="ltr" placeholder="0.000" value="${x ? esc(String(x.a)) : ""}" required></label>
+            <div class="af"><span>النوع</span><div class="fin-chips">${FIN_CATS.map(([k, ic, l]) => `<label class="fin-chip"><input type="radio" name="cat" value="${k}"${k === cat ? " checked" : ""}><span>${ic} ${l}</span></label>`).join("")}</div></div>
+            <label class="af"><span>التاريخ</span><input class="ai" type="date" name="day" value="${esc(day)}" max="${muscatDay()}" required></label>
+            <label class="af"><span>وصف (اختياري)</span><input class="ai" name="note" maxlength="200" placeholder="مثال: طباعة 50 كوب" value="${x ? esc(x.n || "") : ""}"></label>
+            <label class="fin-check"><input type="checkbox" name="monthly"${x && x.m ? " checked" : ""}><span>🔁 يتكرر كل شهر <small class="adm-muted">(مثل اشتراك أو إيجار)</small></span></label>
+            <p class="af-err" id="finErr" role="alert"></p>
+            <div class="fin-form-btns">
+                <button class="ab ab-primary" type="submit">${x ? "حفظ التعديل" : "إضافة"}</button>
+                <button class="ab ab-ghost" type="button" data-a="fin-cancel">إلغاء</button>
+            </div>
+            ${x ? `<div class="fin-form-btns del">
+                ${x.m && !x.u && f.month > x.d.slice(0, 7) ? `<button class="ab-mini" type="button" data-a="fin-stop">⏹️ أوقف التكرار من ${monthName(f.month, false)}</button>` : ""}
+                <button class="ab-mini danger" type="button" data-a="fin-del">🗑️ حذف</button>
+            </div>` : ""}
+        </form>`;
+    }
+
+    function finBody() {
+        const f = finState();
+        if (f.edit) return finFormHTML();
+        const s = monthSummary(f.month);
+        const prev = monthSummary(addMonths(f.month, -1));
+        const isNow = f.month >= thisMonth();
+        return `<div class="fin-month">
+                <button class="adm-icon" type="button" data-a="fin-prev" aria-label="الشهر السابق">→</button>
+                <b>${monthName(f.month)}</b>
+                <button class="adm-icon" type="button" data-a="fin-next" aria-label="الشهر التالي"${isNow ? " disabled" : ""}>←</button>
+            </div>
+            ${finKpis(s, prev)}
+            ${finChart(f.month)}
+            <section class="prof-sec">
+                <div class="fin-sec-head"><h3>🧾 مصاريف ${monthName(f.month, false)}</h3>${f.loaded ? `<button class="ab ab-soft ab-sm" type="button" data-a="fin-add">➕ أضف مصروف</button>` : ""}</div>
+                ${finExpensesHTML(s)}
+            </section>
+            <section class="prof-sec"><h3>📅 ملخص شهري تلقائي</h3>${finTableHTML()}</section>
+            <div class="fin-foot">
+                <button class="ab ab-ghost ab-sm" type="button" data-a="fin-xlsx">⬇️ تنزيل Excel</button>
+                <small class="adm-muted">المبيعات تنحسب تلقائياً من الطلبات (ما عدا المخفية). المصاريف تنحفظ بشكل خاص، ما يشوفها غيرك.</small>
+            </div>`;
+    }
+
+    function renderFinance(keepScroll) {
+        const box = $("#finBody");
+        if (!box) return;
+        const panel = $("#admSheet .adm-sheet-panel");
+        const top = keepScroll && panel ? panel.scrollTop : 0;
+        box.innerHTML = finBody();
+        if (panel) panel.scrollTop = keepScroll ? top : 0;
+        if (finState().edit) { const a = box.querySelector("input[name=amount]"); if (a && !a.value) a.focus(); }
+    }
+
+    async function openFinance() {
+        const f = finState();
+        f.edit = null;
+        openSheet(`
+            <div class="adm-sheet-head"><h2>💰 المبيعات والمصاريف</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>
+            <div class="fin" id="finBody"><p class="adm-muted">جاري التحميل…</p></div>`);
+        if (!A.ordersLoaded) { try { await loadOrders(); } catch { /* نعرض الموجود */ } }
+        renderFinance();
+        if (!f.loaded) { await loadFinance(); renderFinance(true); }
+    }
+
+    async function saveExpense(form) {
+        const f = finState();
+        const err = $("#finErr");
+        const v = Object.fromEntries(new FormData(form).entries());
+        const amount = r3(Number(ATHR.digits(String(v.amount || "")).replace(/[٫,]/g, ".").replace(/[^\d.]/g, "")));
+        if (!(amount > 0 && amount < 100000)) { err.textContent = "اكتب المبلغ بالأرقام، مثال: 12.500"; return; }
+        const day = /^\d{4}-\d{2}-\d{2}$/.test(v.day || "") ? v.day : muscatDay();
+        if (day > muscatDay()) { err.textContent = "التاريخ ما يكون بعد اليوم."; return; }
+        const id = f.edit && f.edit.id;
+        const row = { d: day, a: amount, c: finCat(v.cat)[0], n: String(v.note || "").trim().slice(0, 200), m: Boolean(v.monthly) };
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        try {
+            await finMutate((items) => {
+                const clean = (x) => { const o = { ...x, ...row }; if (!o.n) delete o.n; if (!o.m) { delete o.m; delete o.u; } return o; };
+                if (id) return items.map((x) => (x.id === id ? clean(x) : x));
+                return [...items, clean({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` })];
+            });
+            f.edit = null;
+            f.month = day.slice(0, 7);
+            toast(id ? "انحفظ التعديل ✓" : "انضاف المصروف ✓");
+            renderFinance();
+        } catch (error) {
+            btn.disabled = false;
+            err.textContent = "تعذّر الحفظ. تأكد من الاتصال وحاول مرة ثانية.";
+        }
+    }
+
+    async function deleteExpense(stopOnly) {
+        const f = finState();
+        const id = f.edit && f.edit.id;
+        const x = f.items.find((i) => i.id === id);
+        if (!x) return;
+        if (!stopOnly && !confirm(x.m ? "تحذف هذا المصروف الشهري من كل الأشهر؟" : "تحذف هذا المصروف؟")) return;
+        try {
+            const until = addMonths(f.month, -1);
+            await finMutate((items) => (stopOnly ? items.map((i) => (i.id === id ? { ...i, u: until } : i)) : items.filter((i) => i.id !== id)));
+            f.edit = null;
+            toast(stopOnly ? `وقف التكرار من ${monthName(f.month, false)} ✓` : "انحذف ✓");
+            renderFinance();
+        } catch {
+            toast("تعذّر الحفظ. تأكد من الاتصال وحاول مرة ثانية.");
+        }
+    }
+
+    function financeWorkbook() {
+        const f = finState();
+        const months = finMonths().slice().reverse();
+        const sum = months.map(monthSummary);
+        const head = ["الشهر", "الطلبات", "المبيعات", "منها توصيل", "المصاريف", "الربح", "الهامش %"];
+        const rows = [head, ...sum.map((s) => [monthName(s.m), s.orders, s.sales, s.delivery, s.expenses, s.profit, s.margin === null ? "" : s.margin])];
+        const tot = sum.reduce((a, s) => ({ orders: a.orders + s.orders, sales: a.sales + s.sales, delivery: a.delivery + s.delivery, expenses: a.expenses + s.expenses }), { orders: 0, sales: 0, delivery: 0, expenses: 0 });
+        rows.push(["المجموع", tot.orders, r3(tot.sales), r3(tot.delivery), r3(tot.expenses), r3(tot.sales - tot.expenses), tot.sales > 0 ? Math.round(((tot.sales - tot.expenses) / tot.sales) * 100) : ""]);
+        const exps = [["التاريخ", "النوع", "الوصف", "المبلغ", "شهري"]];
+        months.forEach((m) => expensesIn(m).slice().reverse().forEach((x) => exps.push([x.shown, finCat(x.c)[2], x.n || "", Number(x.a), x.m ? "نعم" : ""])));
+        const sheets = [{ name: "الملخص الشهري", rows, widths: [16, 9, 12, 12, 12, 12, 10] }];
+        if (f.loaded) sheets.push({ name: "المصاريف", rows: exps, widths: [12, 16, 36, 11, 7] });
+        return XL.workbook(sheets);
+    }
+
+    async function financeClick(d) {
+        const f = finState();
+        if (d.a === "fin-open") { await openFinance(); return true; }
+        if (!$("#finBody")) return false;
+        if (d.a === "fin-prev") { f.month = addMonths(f.month, -1); renderFinance(true); return true; }
+        if (d.a === "fin-next") { if (f.month < thisMonth()) f.month = addMonths(f.month, 1); renderFinance(true); return true; }
+        if (d.a === "fin-pick" && /^\d{4}-\d{2}$/.test(d.m || "")) { f.month = d.m; renderFinance(true); return true; }
+        if (d.a === "fin-add") { f.edit = { id: null }; renderFinance(); return true; }
+        if (d.finEdit) { f.edit = { id: d.finEdit }; renderFinance(); return true; }
+        if (d.a === "fin-cancel") { f.edit = null; renderFinance(); return true; }
+        if (d.a === "fin-del") { await deleteExpense(false); return true; }
+        if (d.a === "fin-stop") { await deleteExpense(true); return true; }
+        if (d.a === "fin-retry") { f.err = ""; renderFinance(true); await loadFinance(); renderFinance(true); return true; }
+        if (d.a === "fin-xlsx") { XL.download(financeWorkbook(), `athr-finance-${muscatDay()}.xlsx`); toast("نُزّل ملف المبيعات والمصاريف"); return true; }
         return false;
     }
 
@@ -4039,6 +4406,7 @@
             return;
         }
         if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
+        if (((d.a && /^fin-/.test(d.a)) || d.finEdit) && await financeClick(d)) return;
         if (((d.a && /^(asst|prof)-/.test(d.a)) || d.asstQ || d.asstAct || d.asstNo || d.custOpen || d.profSuggest) && await insightsClick(d)) return;
         if (((d.a && /^backup-/.test(d.a)) || d.bkGet || d.bkRestore || d.bkScope) && await backupClick(d)) return;
         if (((d.a && /^(xlsx-|import-|products-low|ai-|offer-ai$|reward-)/.test(d.a)) || d.aiDesc || d.custReward) && await v17Click(d)) return;
@@ -4229,6 +4597,7 @@
         if (e.target.id === "passwordForm") changePassword(e.target);
         if (e.target.id === "orderForm") saveOrderForm(e.target);
         if (e.target.id === "couponForm") saveCoupon(e.target);
+        if (e.target.id === "finForm") saveExpense(e.target);
     }
 
     // =====================================================

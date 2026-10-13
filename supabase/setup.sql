@@ -1921,3 +1921,11 @@ select cron.schedule('athr-daily-backup', '0 23 * * *', $$select private.backup_
 
 -- أول نسخة الحين
 select private.backup_take('manual', 'أول نسخة بعد تفعيل النسخ الاحتياطي');
+
+-- =====================================================
+-- v20: مخزن خاص لبيانات المدير (المصاريف)
+-- بدون سياسات وصول: ما يقرأه ولا يكتبه إلا دالة الخادم admin-data بالمفتاح السري بعد التحقق من is_admin
+-- =====================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('athr-private', 'athr-private', false, 1048576, array['application/json'])
+on conflict (id) do nothing;
