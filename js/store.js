@@ -1854,7 +1854,7 @@
                             </div>
                             ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("اكتب رسالتك أو اختر من المقترحات"))}">${esc(saved.gift_message || "")}</textarea>`)}
                             <div class="msg-sugs" id="msgSugs">${giftSugs(saved.gift_occasion)}</div>
-                            ${cfg.sales.gift_card !== false ? `<p class="gift-card-note">💌 ${esc(t("يستلم المُهدى إليه بطاقة إهداء رقمية جميلة فيها اسمه ورسالتك، ترسلها له بعد تأكيد الطلب."))}</p>` : ""}
+                            ${cfg.sales.gift_card !== false ? `<p class="gift-card-note">💌 ${esc(t("يستلم المُهدى إليه بطاقة إهداء رقمية فيها رسالتك بعد تأكيد الطلب."))}</p>` : ""}
                             <label class="check-line"><input type="checkbox" name="gift_hide_price" value="1"${hidePrice ? " checked" : ""}><span>${esc(t("لا تذكر السعر للمُهدى إليه"))}</span></label>
                         </div>` : ""}
                         <div class="panel form">

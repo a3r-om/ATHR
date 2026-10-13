@@ -386,7 +386,7 @@
         "نلوّن بطاقة الإهداء على حسب اختيارك.": "We color the gift card based on your choice.",
         "اختر: الهدية لولد أو لبنت.": "Choose: is the gift for a boy or a girl?",
         "اكتب رسالتك أو اختر من المقترحات": "Write your message or pick a suggestion",
-        "يستلم المُهدى إليه بطاقة إهداء رقمية جميلة فيها اسمه ورسالتك، ترسلها له بعد تأكيد الطلب.": "The recipient gets a beautiful digital gift card with their name and your message — you can send it after confirming the order.",
+        "يستلم المُهدى إليه بطاقة إهداء رقمية فيها رسالتك بعد تأكيد الطلب.": "The recipient gets a digital gift card with your message after the order is confirmed.",
         "🎁 {from} أرسل لك هدية من {store}! افتح بطاقتك: {link}": "🎁 {from} sent you a gift from {store}! Open your card: {link}",
         "بطاقة إهداء لـ{name}": "Gift card for {name}",
         "أرسل البطاقة لـ{name} عبر واتساب": "Send the card to {name} on WhatsApp",
