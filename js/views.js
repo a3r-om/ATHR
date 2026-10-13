@@ -743,7 +743,7 @@
     // GIFT (بنر الهدية، زر الهدية المميز، وبطاقة الإهداء)
     // =====================================================
 
-    V.giftSub = (v) => (v.cfg.sales.gift_card !== false ? ct(v, "gift.cta_sub") || t("بطاقة إهداء رقمية باسمك، وبدون ذكر السعر") : t("نوصلها باسمك، وبدون ذكر السعر"));
+    V.giftSub = (v) => (v.cfg.sales.gift_card !== false ? ct(v, "gift.cta_sub") || t("بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر") : t("نوصلها لمن تحب، وبدون ذكر السعر"));
 
     V.giftCta = function (v, { attrs = "", href = "", title, sub = V.giftSub(v) }) {
         const inner = `<span class="gcta-ico">${V.icon.gift}</span><span class="gcta-txt"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span><span class="gcta-go">${V.icon.side}</span>`;
@@ -756,7 +756,7 @@
         return `<section class="wrap gift-promo" aria-label="${esc(t("أرسل هدية"))}">
             <a class="gp" href="${ATHR.url.page("checkout", "gift=1")}" data-gift-start>
                 <span class="gp-art" aria-hidden="true">${V.icon.gift}</span>
-                <span class="gp-text"><b>${esc(ct(v, "gift.banner_title") || t("أرسلها هدية لمن تحب"))}</b><small>${esc(ct(v, "gift.banner_text") || (s.gift_card !== false ? t("نوصلها باسمك مع بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر.") : t("نوصلها باسمك مع رسالتك، وبدون ذكر السعر.")))}</small></span>
+                <span class="gp-text"><b>${esc(ct(v, "gift.banner_title") || t("أرسلها هدية لمن تحب"))}</b><small>${esc(ct(v, "gift.banner_text") || (s.gift_card !== false ? t("نوصلها لمن تحب مع بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر.") : t("نوصلها لمن تحب مع رسالتك، وبدون ذكر السعر.")))}</small></span>
                 <span class="gp-go">${esc(ct(v, "gift.banner_button") || t("ابدأ"))}${V.icon.side}</span>
             </a>
         </section>`;
