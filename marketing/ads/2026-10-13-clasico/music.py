@@ -293,7 +293,6 @@ ba, bb = boom(0.9, 52, 0.1)
 add(TL["f"], ba, 0.55, other=bb)
 add(TL["price"], ceramic(0.9), 0.36)
 add(TL["price"], pluck(880.0, 0.8, 0.3), 0.18)
-add(TL["price"] + 0.35, zip_(0.3), 0.16)              # خط على السعر القديم
 for i, T in enumerate(TL["facts"]):
     add(T, bloop(760 + i * 140, 1500 + i * 200, 0.2), 0.14 if i < 2 else 0.2)
     add(T, pluck([523.25, 587.33, 880.0][i], 0.5, 0.2), 0.14 if i < 2 else 0.22)

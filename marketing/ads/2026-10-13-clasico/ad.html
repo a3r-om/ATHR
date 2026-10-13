@@ -66,14 +66,14 @@
     <div class="scene night" id="sc" style="z-index:11">
         <div class="head"></div>
         <div class="card"><img class="w" src="../../../images/t/za1xge3mhw-m.webp" alt=""><img class="k" src="../../../images/t/t5sfmeikxj-m.webp" alt=""></div>
-        <div class="chips"><div class="chip c1">2.800<small>ر.ع</small></div><div class="chip alt c2">أبيض أو أسود</div></div>
+        <div class="chips"><div class="chip c1">3.500<small>ر.ع</small></div><div class="chip alt c2">أبيض أو أسود</div></div>
     </div>
 
     <!-- D: برشلونة -->
     <div class="scene night" id="sd" style="z-index:12">
         <div class="head"></div>
         <div class="card"><img class="w" src="../../../images/t/28gbozy4u59-m.webp" alt=""><img class="k" src="../../../images/t/2c2jrt7x7s1-m.webp" alt=""></div>
-        <div class="chips"><div class="chip c1">2.800<small>ر.ع</small></div><div class="chip alt c2">أبيض أو أسود</div></div>
+        <div class="chips"><div class="chip c1">3.500<small>ر.ع</small></div><div class="chip alt c2">أبيض أو أسود</div></div>
     </div>
 
     <!-- E: هدية لكل مشجّع -->
@@ -89,10 +89,10 @@
     <!-- F: السعر والحقائق -->
     <div class="scene" id="sf" style="z-index:14;background:var(--cream)">
         <div class="txt" id="f_t" style="font-size:150px;font-weight:700;color:var(--dark)">أكواب سيراميك</div>
-        <div class="txt" id="f_p" style="display:flex;align-items:center;gap:30px"><span class="now">2.800<small>ر.ع</small></span><span class="was">3.500<i></i></span><span class="off">-20%</span></div>
+        <div class="txt" id="f_p" style="display:flex;align-items:center;gap:30px"><span class="now">3.500<small>ر.ع</small></span></div>
         <div class="fact" id="f0" style="top:880px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>الدفع عند الاستلام</div>
         <div class="fact" id="f1" style="top:1040px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>توصيل لكل عُمان والخليج</div>
-        <div class="fact hot" id="f2" style="top:1200px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>4 أكواب = التوصيل مجاني</div>
+        <div class="fact hot" id="f2" style="top:1200px"><b><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b>3 أكواب = التوصيل مجاني</div>
     </div>
 
     <!-- G: كلمة على كل نبضة -->
@@ -267,8 +267,6 @@ window.render = function (t) {
         const fp = $("#f_p");
         center(fp, 680);
         pop(fp, t, TL.price, 0.45, 0.82);
-        const was = fp.querySelector(".was");
-        was.querySelector("i").style.width = `${(was.offsetWidth + 12) * easeInOut(p(t, TL.price + 0.35, TL.price + 0.7))}px`;
         TL.facts.forEach((at, i) => {
             const el = document.getElementById(`f${i}`);
             const fk = easeOut(p(t, at, at + 0.5));
