@@ -1289,6 +1289,88 @@
 
     const CART_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 4h2.4l2.2 10.3a1.6 1.6 0 0 0 1.6 1.3h8.3a1.6 1.6 0 0 0 1.5-1.2L20.6 8H6"/><circle cx="9.6" cy="19.6" r="1.5"/><circle cx="17.2" cy="19.6" r="1.5"/></svg>';
 
+    // الزبون يسحب زر السلة لأي مكان في الشاشة، ويبقى مكانه محفوظاً بين الصفحات والزيارات.
+    // المكان يُحفظ كنسبة من المساحة المتاحة حتى يبقى صحيحاً لو تدوّر الجوال أو تغيّر حجم النافذة.
+    const CF_POS_KEY = "athr_cf_pos";
+    const CF_GAP = 8;
+    let cfJustDragged = false;
+
+    function cfRoom(el) {
+        const vw = document.documentElement.clientWidth || window.innerWidth;
+        const vh = window.innerHeight;
+        const w = el.offsetWidth, h = el.offsetHeight;
+        return { maxX: Math.max(CF_GAP, vw - w - CF_GAP), maxY: Math.max(CF_GAP, vh - h - CF_GAP) };
+    }
+
+    function cfPlace(el, x, y) {
+        const room = cfRoom(el);
+        const cx = Math.min(room.maxX, Math.max(CF_GAP, x));
+        const cy = Math.min(room.maxY, Math.max(CF_GAP, y));
+        el.classList.add("moved");
+        el.style.left = `${Math.round(cx)}px`;
+        el.style.top = `${Math.round(cy)}px`;
+        return { fx: room.maxX > CF_GAP ? (cx - CF_GAP) / (room.maxX - CF_GAP) : 0, fy: room.maxY > CF_GAP ? (cy - CF_GAP) / (room.maxY - CF_GAP) : 0 };
+    }
+
+    function cfRestore(el) {
+        const pos = storage.get(CF_POS_KEY);
+        if (!el || el.hidden || el.classList.contains("dragging")) return;
+        if (!pos || typeof pos.fx !== "number" || typeof pos.fy !== "number") return;
+        const room = cfRoom(el);
+        const f = (n) => Math.min(1, Math.max(0, n));
+        cfPlace(el, CF_GAP + f(pos.fx) * (room.maxX - CF_GAP), CF_GAP + f(pos.fy) * (room.maxY - CF_GAP));
+    }
+
+    function cfDraggable(el) {
+        el.draggable = false;
+        let drag = null;
+        el.addEventListener("pointerdown", (e) => {
+            if (e.pointerType === "mouse" && e.button !== 0) return;
+            const r = el.getBoundingClientRect();
+            drag = { id: e.pointerId, px: e.clientX, py: e.clientY, x: r.left, y: r.top, moved: false };
+            // نلتقط المؤشر من البداية حتى لو تحرك الماوس بسرعة خارج الزر
+            try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+        });
+        el.addEventListener("pointermove", (e) => {
+            if (!drag || e.pointerId !== drag.id) return;
+            const dx = e.clientX - drag.px, dy = e.clientY - drag.py;
+            if (!drag.moved) {
+                if (Math.hypot(dx, dy) < 8) return;   // لمسة عادية: تفتح السلة
+                drag.moved = true;
+                el.classList.add("dragging");
+            }
+            e.preventDefault();
+            cfPlace(el, drag.x + dx, drag.y + dy);
+        });
+        const end = (e) => {
+            if (!drag || e.pointerId !== drag.id) return;
+            if (drag.moved) {
+                el.classList.remove("dragging");
+                const r = el.getBoundingClientRect();
+                storage.set(CF_POS_KEY, cfPlace(el, r.left, r.top));
+                cfJustDragged = true;
+                setTimeout(() => { cfJustDragged = false; }, 350);
+            }
+            drag = null;
+        };
+        el.addEventListener("pointerup", end);
+        el.addEventListener("pointercancel", end);
+        // بعد السحب لا نفتح السلة
+        el.addEventListener("click", (e) => {
+            if (!cfJustDragged) return;
+            e.preventDefault();
+            e.stopPropagation();
+            cfJustDragged = false;
+        });
+        el.addEventListener("dragstart", (e) => e.preventDefault());
+    }
+
+    let cfResizeRaf = 0;
+    window.addEventListener("resize", () => {
+        cancelAnimationFrame(cfResizeRaf);
+        cfResizeRaf = requestAnimationFrame(() => cfRestore($("#cartFloat")));
+    });
+
     function renderCartFloat({ bump = false } = {}) {
         let el = $("#cartFloat");
         const cfg = C();
@@ -1302,6 +1384,7 @@
             el.id = "cartFloat";
             el.className = "cart-float";
             document.body.appendChild(el);
+            cfDraggable(el);
         }
         const tt = computeCart();
         const pct = tt.freeEligible ? Math.min(100, Math.round(((Number(cfg.order.free_min) - tt.leftForFree) / Number(cfg.order.free_min)) * 100)) : (tt.count ? 100 : 0);
@@ -1316,6 +1399,7 @@
         el.setAttribute("aria-label", `${t("السلة")} (${tt.count})`);
         el.innerHTML = `<span class="cf-ring" style="--p:${Math.max(0, pct)}%"><span class="cf-in">${CART_ICON}<small>${esc(t("السلة"))}</small></span></span>
             ${tt.count ? `<b class="cf-count">${tt.count > 99 ? "99+" : tt.count}</b>` : ""}${pill}`;
+        cfRestore(el);
         if (bump) {
             el.classList.remove("bump");
             void el.offsetWidth;
