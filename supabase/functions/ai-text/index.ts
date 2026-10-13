@@ -1,4 +1,4 @@
-// دالة الخادم: كتابة نصوص المتجر بالذكاء الاصطناعي (وصف المنتجات ورسائل العروض)
+// دالة الخادم: الذكاء الاصطناعي للوحة التحكم (وصف المنتجات، رسائل العروض، ومساعد المتجر)
 // - تقبل الطلب من مدير المتجر فقط (تتحقق بنفسها عبر is_admin)
 // - تقرأ مفتاح Gemini أو OpenAI من قاعدة البيانات بالمفتاح السري، ولا يصل المفتاح للمتصفح أبداً
 // - تختار أحدث نموذج سريع متاح للمفتاح تلقائياً، حتى لا تتعطل عند تغيّر أسماء النماذج
@@ -84,7 +84,7 @@ class ProviderError extends Error {
   constructor(public code: string, public status = 0) { super(code); }
 }
 
-async function generate(provider: string, key: string, system: string, user: string) {
+async function generate(provider: string, key: string, system: string, user: string, temperature = 0.9) {
   if (provider === "gemini") {
     const model = await geminiModel(key);
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -93,7 +93,7 @@ async function generate(provider: string, key: string, system: string, user: str
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: { temperature: 0.9, responseMimeType: "application/json" },
+        generationConfig: { temperature, responseMimeType: "application/json" },
       }),
     });
     if (!res.ok) {
@@ -112,6 +112,7 @@ async function generate(provider: string, key: string, system: string, user: str
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model,
+      temperature,
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: system }, { role: "user", content: user }],
     }),
@@ -149,6 +150,53 @@ const OFFER_SYSTEM = `أنت كاتب رسائل تسويق عبر واتساب 
 - إذا أُعطيت منتجاً استخدم أيضاً {product} و{price}، و{old} و{pct} إن كان عليه خصم، و{ends} إن كانت للعرض مدة. لا تكتب أرقاماً أو أسعاراً بنفسك.
 - بدون وعود غير صحيحة، وبدون روابط أو أرقام هواتف.
 أرجع JSON فقط بهذا الشكل: {"text":"..."}`;
+
+const ASSIST_SYSTEM = `أنت «مساعد المتجر» لصاحب متجر عُماني إلكتروني اسمه «{store}» يبيع أكواب سيراميك ومجات وأكواب حرارية ومحافظ مطبوعة بتصاميم الأندية والجامعات والعبارات.
+تكلّم بلهجة خليجية خفيفة ومحترمة، وكأنك مدير تسويق ومحلل أرقام يشتغل معه.
+القواعد:
+- اعتمد فقط على «بيانات المتجر» المرفقة. إذا المعلومة مو موجودة قل ذلك باختصار ولا تخمّن ولا تخترع أرقاماً أو عملاء.
+- العملة ريال عُماني بثلاث خانات عشرية، مثل 3.500 ر.ع.
+- الرد قصير ومفيد: من سطرين إلى 8 أسطر، نص عادي بدون Markdown، وتقدر تستخدم «• » في بداية السطر للنقاط.
+- إذا سألك عن قرار (سعر، عرض، منتج) أعطه رأي واضح مبني على الأرقام، وخطوة عملية يسويها اليوم.
+- عند ذكر الأكواب قل «أكواب سيراميك» فقط، بدون أي وصف للملمس أو اللمعة.
+- المتجر لا يطبع أسماء الأشخاص على المنتجات؛ لا تقترح أبداً منتجاً باسم الشخص أو طباعة اسم.
+- لا تطلب كلمات مرور أو مفاتيح، ولا تذكر أرقام هواتف.
+الإجراءات (actions): إذا طلب صاحب المتجر تنفيذ شي، أو كان إجراء واضح يفيده، جهّز له حتى 3 إجراءات من هذه الأنواع فقط، وقل له في الرد إنها جاهزة ويضغط «نفّذ» (لا تقل إنك نفّذتها):
+1) {"type":"create_coupon","code":"EID10","kind":"pct","value":10,"min_total":0,"days":7,"max_uses":null}
+   kind: pct نسبة (1 إلى 90) أو fixed مبلغ بالريال أو ship توصيل مجاني (value 0). الكود حروف إنجليزية كبيرة وأرقام فقط من 3 إلى 20.
+2) {"type":"update_product","id":"معرّف المنتج من البيانات","price":3.5,"old_price":null,"is_visible":true,"is_available":true,"stock":10}
+   اكتب فقط الحقول اللي تتغير. old_price null يعني بدون سعر مشطوب.
+3) {"type":"open_customers","filter":"second"}  والفلاتر: second (جاهزين للطلب الثاني) أو away (غائبين) أو vip أو repeat أو new أو marketing.
+أرجع JSON فقط بهذا الشكل: {"reply":"...","actions":[]}`;
+
+const ACTION_TYPES = ["create_coupon", "update_product", "open_customers"];
+
+function cleanAction(a: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(a).slice(0, 12)) {
+    if (!/^[a-z_]{1,20}$/.test(k)) continue;
+    if (v === null || typeof v === "boolean" || typeof v === "number") out[k] = v;
+    else if (typeof v === "string") out[k] = v.slice(0, 80);
+  }
+  return out;
+}
+
+// سياق المتجر: نقصّ قائمة المنتجات إذا كبر حتى يبقى الطلب خفيف
+function contextText(ctx: unknown) {
+  if (!ctx || typeof ctx !== "object") return "{}";
+  const c = { ...(ctx as Record<string, unknown>) };
+  let text = JSON.stringify(c);
+  let products = Array.isArray(c.products) ? c.products.slice() : [];
+  while (text.length > 22000 && products.length > 10) {
+    products = products.slice(0, Math.floor(products.length * 0.7));
+    c.products = products;
+    text = JSON.stringify(c);
+  }
+  return text.slice(0, 24000);
+}
+
+// شبكة أمان: كلمة لا نستخدمها في وصف منتجاتنا
+const scrub = (t: string) => t.replace(/\s*(\u0645\u0637\u0641\u064A[\u0629\u0647]?|matte)/gi, "");
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -202,6 +250,25 @@ Deno.serve(async (req: Request) => {
       if (!msg) return json({ error: "empty" }, 502);
       if (!msg.includes("{link}")) msg += "\n{link}";
       return json({ text: msg, provider });
+    }
+
+    if (body.task === "assistant") {
+      const question = clip(body.question, 600);
+      if (!question) return json({ error: "bad_request" }, 400);
+      const history = (Array.isArray(body.history) ? body.history : []).slice(-10)
+        .map((h: Record<string, unknown>) => `${h.role === "user" ? "صاحب المتجر" : "المساعد"}: ${clip(h.text, 800)}`)
+        .filter((l: string) => l.length > 12)
+        .join("\n");
+      const user = `بيانات المتجر (JSON):\n${contextText(body.context)}\n\n${history ? `المحادثة السابقة:\n${history}\n\n` : ""}سؤال صاحب المتجر الآن: ${question}`;
+      const text = await generate(provider, key, ASSIST_SYSTEM.replace("{store}", store), user, 0.4);
+      const out = parseJson(text);
+      const reply = scrub(String(out?.reply ?? (out ? "" : text) ?? "").trim()).slice(0, 2500);
+      const actions = (Array.isArray(out?.actions) ? out.actions : [])
+        .filter((a: unknown) => a && typeof a === "object" && ACTION_TYPES.includes(String((a as Record<string, unknown>).type)))
+        .slice(0, 3)
+        .map((a: Record<string, unknown>) => cleanAction(a));
+      if (!reply && !actions.length) return json({ error: "empty" }, 502);
+      return json({ reply, actions, provider });
     }
   } catch (e) {
     if (e instanceof ProviderError) return json({ error: e.code, status: e.status }, 502);
