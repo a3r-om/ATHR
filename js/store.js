@@ -1619,20 +1619,21 @@
                         <div class="panel">
                             ${totals.lines.map((l) => `
                                 <div class="cart-line">
-                                    <a href="${ATHR.url.product(l.product)}">${V.img(l.product) ? `<img src="${esc(V.img(l.product))}" alt="" width="74" height="92">` : ""}</a>
-                                    <div>
-                                        <a class="name" href="${ATHR.url.product(l.product)}">${esc(V.pname(l.product))}</a>
-                                        <div>${V.colorTag(v(), l.product)}</div>
-                                        <div class="muted small">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</div>
+                                    <a class="cl-img" href="${ATHR.url.product(l.product)}">${V.img(l.product) ? `<img src="${esc(V.img(l.product))}" alt="" width="60" height="60" loading="lazy">` : ""}</a>
+                                    <div class="cl-body">
+                                        <div class="cl-top">
+                                            <a class="name" href="${ATHR.url.product(l.product)}">${esc(V.pname(l.product))}</a>
+                                            <button class="cl-del" type="button" data-remove="${esc(l.product.id)}" aria-label="${esc(t("حذف"))}" title="${esc(t("حذف"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2V7M6.5 7l.8 11.6c.1 1 .9 1.9 2 1.9h5.4c1.1 0 1.9-.9 2-1.9L17.5 7M10.2 11v5.5M13.8 11v5.5"/></svg></button>
+                                        </div>
+                                        <div class="cl-meta">${V.colorTag(v(), l.product)}${l.qty > 1 ? `<span class="cl-each">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</span>` : ""}</div>
                                         <div class="cart-line-foot">
-                                            <div class="stepper" role="group" aria-label="${esc(t("الكمية"))}">
+                                            <div class="stepper sm" role="group" aria-label="${esc(t("الكمية"))}">
                                                 <button type="button" data-inc="${esc(l.product.id)}" aria-label="${esc(t("زيادة"))}"${l.qty >= maxFor(l.product.id) ? " disabled" : ""}>+</button>
                                                 <output>${l.qty}</output>
                                                 <button type="button" data-dec="${esc(l.product.id)}" aria-label="${esc(t("إنقاص"))}">−</button>
                                             </div>
-                                            <b>${money(l.total)}</b>
+                                            <b class="cl-total">${money(l.total)}</b>
                                         </div>
-                                        <button class="remove" type="button" data-remove="${esc(l.product.id)}">${esc(t("حذف"))}</button>
                                     </div>
                                 </div>`).join("")}
                         </div>
