@@ -42,11 +42,11 @@
 .chip2 { padding: 4px 34px 16px; border-radius: 999px; background: var(--wine); color: var(--cream); font-size: 64px; line-height: 1.3; white-space: nowrap; box-shadow: 0 10px 24px rgba(74,13,18,.25); }
 .spk { width: 80px; height: 80px; left: 0; top: 0; overflow: visible; }
 .spk path { fill: #F2B640; filter: drop-shadow(0 0 8px rgba(233,167,46,.9)); }
-.row { position: absolute; left: 540px; display: flex; align-items: center; gap: 28px; transform-origin: 50% 50%; white-space: nowrap; }
-.row svg { width: 150px; height: 150px; overflow: visible; filter: drop-shadow(0 0 8px rgba(233,167,46,.5)); }
+.row { position: absolute; left: 540px; display: flex; flex-direction: column; align-items: center; gap: 4px; transform-origin: 50% 50%; white-space: nowrap; }
+.row svg { width: 240px; height: 240px; overflow: visible; filter: drop-shadow(0 0 8px rgba(233,167,46,.5)); }
 .row svg .d { fill: none; stroke: var(--wine); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
-.row span { font-size: 80px; line-height: 1.3; }
-#dim { position: absolute; left: -1000px; top: -1000px; width: 3080px; height: 3920px; background: radial-gradient(ellipse 900px 1200px at 50% 50%, rgba(40,8,14,.86), rgba(18,3,6,.94)); opacity: 0; transform: translateZ(-120px); }
+.row span { font-size: 104px; line-height: 1.3; }
+#dim, #dim1 { position: absolute; left: -1000px; top: -1000px; width: 3080px; height: 3920px; background: radial-gradient(ellipse 900px 1200px at 50% 50%, rgba(40,8,14,.86), rgba(18,3,6,.94)); opacity: 0; transform: translateZ(-120px); }
 #flash { position: absolute; inset: 0; background: #FFF8EC; opacity: 0; pointer-events: none; }
 #vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 760px 1180px at 50% 48%, transparent 58%, rgba(120,72,40,.28) 100%); }
 </style>
@@ -64,8 +64,9 @@
     <div id="grid"></div>
     <div id="decor"></div>
 
-    <!-- 1) كوبك... يضوي؟ -->
+    <!-- 1) طفّي النور... وخلّ كوبك يضوي -->
     <div class="sc" id="s1">
+        <div id="dim1"></div>
         <svg class="ic" id="icCup" viewBox="0 0 200 200" width="540" height="540" style="left:540px;top:640px">
             <g id="rays" opacity="0" stroke="#E9A72E" stroke-width="7" stroke-linecap="round">
                 <path d="M100 -6 V-30"/><path d="M152 12 L168 -6"/><path d="M48 12 L32 -6"/><path d="M178 70 H202"/><path d="M22 70 H-2"/>
@@ -77,9 +78,9 @@
             <path class="d" pathLength="1" d="M108 32 L120 2"/>
             <path class="d" pathLength="1" d="M64 96 H136"/>
         </svg>
-        <div class="t w" id="t1a" style="left:540px;top:1080px;font-size:200px">كوبك...</div>
-        <div class="t n" id="t1b" style="left:540px;top:1300px;font-size:240px">يضوي؟</div>
-        <svg class="trail" id="tr1" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
+        <div class="t c" id="t1a" style="left:540px;top:1080px;font-size:180px">طفّي النور...</div>
+        <div class="t" id="t1b" style="left:540px;top:1280px;font-size:148px;color:#FFD98A;text-shadow:0 0 16px rgba(233,167,46,.9),0 0 46px rgba(233,167,46,.6)">وخلّ كوبك يضوي</div>
+        <svg class="trail" id="tr1" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc" style="stroke:#FFE3A3"/></svg>
     </div>
 
     <!-- 2) أكواب ريد بول المضيئة -->
@@ -108,23 +109,20 @@
         <div class="t w" id="t3b" style="left:540px;top:1320px;font-size:140px;display:flex;gap:30px"><span>سعة</span><span id="ml" style="direction:ltr">750</span><span>مل</span></div>
         <div class="card" id="th0" style="width:440px;height:440px"><img src="../../../images/t/2aokbiqd9wv-m.webp" alt=""><div class="shine"></div></div>
         <div class="card" id="th1" style="width:440px;height:440px"><img src="../../../images/t/1t091cfjk2s-m.webp" alt=""><div class="shine"></div></div>
-        <div class="chip2" id="chipW" style="left:780px;top:1230px">أبيض</div>
-        <div class="chip2" id="chipP" style="left:300px;top:1230px">وردي</div>
-        <div class="t n" id="t3c" style="left:540px;top:1430px;font-size:128px">للقهوة والمشروبات</div>
+        <div class="chip2" id="chipW" style="left:780px;top:1190px">أبيض</div>
+        <div class="chip2" id="chipP" style="left:300px;top:1190px">وردي</div>
+        <div class="t n" id="t3c" style="left:540px;top:1365px;font-size:124px">للقهوة والمشروبات</div>
+        <div class="t w" id="t3d" style="left:540px;top:1505px;font-size:112px">الساخنة والباردة</div>
         <svg class="trail" id="tr3" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
     </div>
 
     <!-- 4) التوصيل والدفع -->
     <div class="sc" id="s4">
-        <div class="row" id="r0" style="top:680px">
+        <div class="row" id="r0" style="top:720px">
             <svg viewBox="0 0 200 200"><path class="d" pathLength="1" d="M38 62 H128 V142 H38 Z"/><path class="d" pathLength="1" d="M128 88 H160 L182 114 V142 H128"/><circle class="d" pathLength="1" cx="70" cy="150" r="14"/><circle class="d" pathLength="1" cx="156" cy="150" r="14"/></svg>
             <span class="w">توصيل لكل دول الخليج</span>
         </div>
-        <div class="row" id="r1" style="top:960px">
-            <svg viewBox="0 0 200 200"><circle class="d" pathLength="1" cx="100" cy="100" r="80"/><text x="100" y="128" text-anchor="middle" font-family="Lalezar" font-size="84" fill="#7D1420">11</text></svg>
-            <span class="n">مجاني في عُمان من 11 ر.ع</span>
-        </div>
-        <div class="row" id="r2" style="top:1240px">
+        <div class="row" id="r1" style="top:1210px">
             <svg viewBox="0 0 200 200"><path class="d" pathLength="1" d="M40 44 H172 V112 H40 Z"/><circle class="d" pathLength="1" cx="106" cy="78" r="18"/><path class="d" pathLength="1" d="M14 156 H48 L84 140 C93 136 103 138 108 146 L116 158 H96 M116 158 L148 146 C158 142 169 149 165 159 L130 182 C122 187 112 189 102 187 L50 178 H14"/></svg>
             <span class="w">الدفع عند الاستلام</span>
         </div>
@@ -165,10 +163,10 @@ window.DURATION = 23.4;
 window.COVER_T = 8.9;
 const BEAT = 0.6;                                         // 100 نبضة/دقيقة
 const T = {
-    kob: 0.8, dw: 1.5, light: 1.85,
+    off: 0.8, kob: 0.85, dw: 1.5, light: 1.85,
     s2: 3.0, h2a: 3.15, h2b: 3.45, c0: 3.3, c1: 5.4, both: 7.8, tag: 8.15,
-    s3: 10.2, t3a: 10.6, t3b: 11.0, zoom: 12.6, cards: 12.65, t3c: 13.2,
-    s4: 15.0, rows: [15.2, 15.8, 16.4],
+    s3: 10.2, t3a: 10.6, t3b: 11.0, zoom: 12.6, cards: 12.65, t3c: 13.2, t3d: 13.55,
+    s4: 15.0, rows: [15.25, 15.9],
     s5: 17.4, logo: 17.5, t5a: 17.75, t5b: 18.5, t5c: 19.1, t5d: 19.6, shine: 20.6, end: 22.2
 };
 window.TIMELINE = T;
@@ -333,18 +331,21 @@ window.render = function (t) {
     applyCam(t);
     decor(t);
     const fl = (at, a, d) => (t >= at ? a * (1 - p(t, at, at + d)) : 0);
-    $("#flash").style.opacity = String(Math.max(fl(T.light, 0.45, 0.2), fl(T.zoom, 0.3, 0.18)));
+    $("#flash").style.opacity = String(Math.max(fl(T.light, 0.35, 0.2), fl(T.zoom, 0.3, 0.18)));
 
-    // 1) كوبك... يضوي؟
+    // 1) طفّي النور... (الشاشة تظلم) وخلّ كوبك يضوي (الكوب يشتغل نوره)
     if (t < 3.0) {
         const ic = $("#icCup");
-        draw(ic, p(t, 0.2, 0.95));
-        put(ic, { o: t > 0.15 ? 1 : 0, s: 1 + 0.06 * Math.sin(Math.PI * p(t, T.light, T.light + 0.3)), y: Math.sin(t * 2.2) * 8 });
-        // يشتغل النور: وميض ثم ثبات
+        draw(ic, p(t, 0.15, 0.75));
+        put(ic, { o: t > 0.1 ? 1 : 0, s: 1 + 0.06 * Math.sin(Math.PI * p(t, T.light, T.light + 0.3)), y: Math.sin(t * 2.2) * 8 });
+        const kd = t >= T.off ? (t < T.off + 0.12 ? (Math.sin((t - T.off) * 120) > 0 ? 0.6 : 1) : 1) : 0;
+        $("#dim1").style.opacity = String(0.95 * kd);
+        const col = kd > 0.5 ? "#F3E2C4" : "#7D1420";
+        ic.querySelectorAll(".d").forEach((d) => (d.style.stroke = col));
         const on = t >= T.light ? (t < T.light + 0.25 ? (Math.sin((t - T.light) * 90) > 0 ? 1 : 0.25) : 1) : 0;
-        $("#cupGlow").setAttribute("opacity", String(0.5 * on * (0.85 + 0.15 * Math.sin(t * 6))));
+        $("#cupGlow").setAttribute("opacity", String(0.75 * on * (0.85 + 0.15 * Math.sin(t * 6))));
         $("#rays").setAttribute("opacity", String(on * (0.6 + 0.4 * Math.sin(t * 8))));
-        ic.style.filter = on ? `drop-shadow(0 0 ${(18 + 10 * Math.sin(t * 6)).toFixed(0)}px rgba(233,167,46,.95)) drop-shadow(0 0 60px rgba(233,167,46,.6))` : "";
+        ic.style.filter = on ? `drop-shadow(0 0 ${(22 + 10 * Math.sin(t * 6)).toFixed(0)}px rgba(233,167,46,.95)) drop-shadow(0 0 70px rgba(233,167,46,.7))` : (kd ? "drop-shadow(0 0 6px rgba(243,226,196,.35))" : "");
         slam("#t1a", t, T.kob, 0.3);
         const kf = p(t, T.dw, T.dw + 0.3);
         const flick = t < T.dw + 0.45 && t > T.dw ? (Math.sin((t - T.dw) * 70) > -0.2 ? 1 : 0.3) : 1;
@@ -414,11 +415,12 @@ window.render = function (t) {
             const el = $(id), k = p(t, T.cards + i * 0.12, T.cards + 0.45 + i * 0.12);
             el.style.display = t >= T.cards ? "block" : "none";
             el.style.opacity = String(clamp(k * 3));
-            el.style.transform = `translate(-50%,-50%) translate3d(${x}px,${880 + Math.sin(t * 2 + i) * 8}px,0) rotateY(${(lerp(d * 90, d * 10, eo(k))).toFixed(1)}deg) rotateZ(${(-d * 3).toFixed(1)}deg) scale(${lerp(0.7, 1, eo(k))})`;
+            el.style.transform = `translate(-50%,-50%) translate3d(${x}px,${840 + Math.sin(t * 2 + i) * 8}px,0) rotateY(${(lerp(d * 90, d * 10, eo(k))).toFixed(1)}deg) rotateZ(${(-d * 3).toFixed(1)}deg) scale(${lerp(0.7, 1, eo(k))})`;
             shine(el.querySelector(".shine"), t, T.t3c + 0.3 + i * 0.25, 0.7);
         });
         [["#chipW", 0], ["#chipP", 1]].forEach(([id, i]) => (t >= T.cards + 0.35 ? popIn(id, t, T.cards + 0.35 + i * 0.12, 0.35) : ($(id).style.opacity = "0")));
         slam("#t3c", t, T.t3c, 0.32);
+        rise("#t3d", t, T.t3d, 0.4);
         streak("#tr3", eio(p(t, T.cards + 0.1, T.cards + 0.9)), 0.35, 0.85);
     }
 
@@ -426,7 +428,7 @@ window.render = function (t) {
     if (t >= 15.0 && t < 17.4) {
         T.rows.forEach((at, i) => {
             const el = $("#r" + i), k = p(t, at, at + 0.4);
-            put(el, { o: k * 2, x: (1 - eo(k)) * (i % 2 ? -140 : 140), b: (1 - k) * 12 });
+            put(el, { o: k * 2, y: (1 - eo(k)) * 90, s: lerp(0.85, 1, eo(k)), b: (1 - k) * 12 });
             draw(el.querySelector("svg"), p(t, at + 0.05, at + 0.6));
         });
     }

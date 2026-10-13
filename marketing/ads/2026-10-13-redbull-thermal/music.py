@@ -18,8 +18,8 @@ BAR = BEAT * 4
 GRID0 = 0.6                      # أول ضربة في المقياس الموسيقي (كل المشاهد تبدأ على ضربة)
 
 # نفس توقيت ad.html
-T = dict(kob=0.8, dw=1.5, light=1.85, s2=3.0, h2a=3.15, h2b=3.45, c0=3.3, c1=5.4, both=7.8, tag=8.15,
-         s3=10.2, t3a=10.6, t3b=11.0, zoom=12.6, cards=12.65, t3c=13.2, s4=15.0, rows=[15.2, 15.8, 16.4],
+T = dict(off=0.8, kob=0.85, dw=1.5, light=1.85, s2=3.0, h2a=3.15, h2b=3.45, c0=3.3, c1=5.4, both=7.8, tag=8.15,
+         s3=10.2, t3a=10.6, t3b=11.0, zoom=12.6, cards=12.65, t3c=13.2, t3d=13.55, s4=15.0, rows=[15.25, 15.9],
          s5=17.4, logo=17.5, t5a=17.75, t5b=18.5, t5c=19.1, t5d=19.6, shine=20.6, end=22.2)
 SP5 = [17.8, 18.0, 19.3, 19.6, 19.9]
 WHIPS = [3.0, 10.2, 15.0, 17.4]
@@ -377,6 +377,10 @@ music.add(T["end"], sub808(hz(50), 1.0), 0.4)
 a, b2 = whoosh(1.1, 120, 2500, peak=0.85, width=0.7)
 sfx.add(0.0, a, 0.35, other=b2)
 sfx.add(0.2, neon_on(0.7), 0.2)
+sfx.add(T["off"] - 0.02, switch(1.0), 0.5)                 # طفّي النور
+t_ = tt(0.35)
+pdown = np.sin(2 * np.pi * np.cumsum(440 * 2 ** (-2 * np.clip(t_ / 0.3, 0, 1))) / SR) * np.exp(-t_ / 0.12)
+sfx.add(T["off"], filt(pdown, "low", 2000), 0.16)
 sfx.add(T["kob"], hit(0.8), 0.45)
 sfx.add(T["dw"], hit(0.9), 0.5)
 sfx.add(T["dw"], neon_on(0.45), 0.22)
@@ -432,6 +436,9 @@ for i in range(2):
     sfx.add(T["cards"] + i * 0.12 - 0.05, a, 0.2, pan=0.4 * (1 if i else -1), other=b2)
     sfx.add(T["cards"] + 0.35 + i * 0.12, pop(0.6), 0.22)
 sfx.add(T["t3c"], hit(0.85), 0.5)
+sfx.add(T["t3d"], blip(900, 1500, 0.1), 0.12)
+a, b2 = whoosh(0.3, 1500, 7000, peak=0.5, width=0.45)
+sfx.add(T["t3d"] - 0.05, a, 0.12, other=b2)
 for i in range(2):
     a, b2 = shing(0.6)
     sfx.add(T["t3c"] + 0.3 + i * 0.25, a, 0.11, other=b2)
