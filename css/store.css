@@ -2372,3 +2372,13 @@ html.is-app, html.is-app body { overscroll-behavior-y: none; }
 .push-card .btn-sm { min-height: 34px; padding: 4px 14px; flex-shrink: 0; }
 .push-card .ab-x { width: 30px; height: 30px; margin-inline-start: -4px; border: 0; background: none; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; flex-shrink: 0; }
 .mi.bell { font-size: 18px; }
+
+/* ===== v23 — فيديو الإعلان: صورة غلاف + زر تشغيل لو الجوال منع التشغيل التلقائي ===== */
+.ad-media { position: relative; }
+.ad-media video { display: block; background: var(--line); }
+.ad-play { display: none; position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; border-radius: 50%; background: rgba(0, 0, 0, .45); pointer-events: none; }
+.ad-play::before { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-35%, -50%); border-style: solid; border-width: 13px 0 13px 21px; border-color: transparent transparent transparent #fff; }
+.ad-paused .ad-play { display: block; }
+.ad-paused { cursor: pointer; }
+/* حركة أيقونة الهدية: كم مرة وبس، بدل ما تشتغل للأبد (أخف على الجوال) */
+.gp-art, .ob-ico { animation-iteration-count: 3; }

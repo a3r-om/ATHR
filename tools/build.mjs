@@ -234,6 +234,85 @@ async function makeThumbs(ATHR, urls) {
 }
 
 // =====================================================
+// فيديو الإعلان: نسخة خفيفة تشتغل في كل الجوالات (H.264 + بداية سريعة) مع صورة غلاف
+// يُخدم من نفس موقع المتجر بدل رابط الرفع الأصلي
+// =====================================================
+
+async function findFfmpeg() {
+    try {
+        const mod = await import(path.join(ROOT, "tools/node_modules/ffmpeg-static/index.js"));
+        if (mod && mod.default && exists(mod.default)) return mod.default;
+    } catch { /* نجرب نسخة الجهاز */ }
+    for (const p of ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/homebrew/bin/ffmpeg"]) if (exists(p)) return p;
+    return "";
+}
+
+function run(bin, argv) {
+    return new Promise((resolve) => {
+        import("node:child_process").then(({ spawn }) => {
+            const child = spawn(bin, argv, { stdio: ["ignore", "ignore", "pipe"] });
+            let err = "";
+            child.stderr.on("data", (d) => { err += d; if (err.length > 200000) err = err.slice(-100000); });
+            child.on("close", (code) => resolve({ code, err }));
+            child.on("error", (e) => resolve({ code: -1, err: String(e) }));
+        });
+    });
+}
+
+async function makeAdVideo(cfg) {
+    const ad = cfg.ad || {};
+    const dir = path.join(OUT, "images/ad");
+    const keep = new Set();
+    const out = {};
+    const url = ad.show !== false && ad.type === "video" ? String(ad.video_url || "") : "";
+    if (url && !args["no-media"]) {
+        const h = hashOf(url);
+        const mp4 = `images/ad/${h}.mp4`, jpg = `images/ad/${h}.jpg`;
+        if (exists(path.join(OUT, mp4)) && exists(path.join(OUT, jpg))) {
+            let prev = {};
+            try { prev = JSON.parse(fs.readFileSync(path.join(OUT, "js/catalog.js"), "utf8").replace(/^window\.ATHR_CATALOG=/, "").replace(/;\s*$/, "")).ad[url] || {}; } catch { /* أول مرة */ }
+            out[url] = { v: mp4, p: jpg, w: prev.w || 0, h: prev.h || 0 };
+        } else {
+            const ffmpeg = await findFfmpeg();
+            if (!ffmpeg) console.warn("  ! ما لقينا ffmpeg، فيديو الإعلان يبقى من الرابط الأصلي");
+            else {
+                try {
+                    fs.mkdirSync(dir, { recursive: true });
+                    const src = path.join(dir, `${h}.src`);
+                    if (/^https?:/i.test(url)) {
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        fs.writeFileSync(src, Buffer.from(await res.arrayBuffer()));
+                    } else fs.copyFileSync(path.join(OUT, url.replace(/^\//, "")), src);
+                    const probe = await run(ffmpeg, ["-hide_banner", "-i", src]);
+                    probe.err.split("\n").filter((l) => /Duration|Stream #/.test(l)).forEach((l) => console.log(`  • فيديو الإعلان الأصلي: ${l.trim()}`));
+                    const enc = await run(ffmpeg, ["-hide_banner", "-y", "-i", src, "-an", "-t", "60",
+                        "-vf", "scale='min(720,iw)':-2:flags=lanczos,fps=30,format=yuv420p",
+                        "-c:v", "libx264", "-preset", "slow", "-crf", "27", "-profile:v", "main", "-level", "3.1",
+                        "-movflags", "+faststart", path.join(OUT, mp4)]);
+                    if (enc.code !== 0) throw new Error(enc.err.split("\n").slice(-4).join(" "));
+                    const shot = await run(ffmpeg, ["-hide_banner", "-y", "-ss", "0.4", "-i", path.join(OUT, mp4), "-frames:v", "1", "-q:v", "4", path.join(OUT, jpg)]);
+                    if (shot.code !== 0 || !exists(path.join(OUT, jpg))) await run(ffmpeg, ["-hide_banner", "-y", "-i", path.join(OUT, mp4), "-frames:v", "1", "-q:v", "4", path.join(OUT, jpg)]);
+                    fs.unlinkSync(src);
+                    if (!exists(path.join(OUT, jpg))) throw new Error("poster");
+                    const dims = ((await run(ffmpeg, ["-hide_banner", "-i", path.join(OUT, mp4)])).err.match(/Video:.*?(\d{2,5})x(\d{2,5})/) || []);
+                    out[url] = { v: mp4, p: jpg, w: Number(dims[1]) || 0, h: Number(dims[2]) || 0 };
+                    console.log(`• فيديو الإعلان: ${(fs.statSync(path.join(OUT, mp4)).size / 1024).toFixed(0)}KB بعد الضغط`);
+                } catch (error) {
+                    console.warn(`  ! تعذر تجهيز فيديو الإعلان: ${error.message}`);
+                    [mp4, jpg].forEach((f) => { try { fs.unlinkSync(path.join(OUT, f)); } catch { /* */ } });
+                    try { fs.unlinkSync(path.join(dir, `${h}.src`)); } catch { /* */ }
+                }
+            }
+        }
+        if (out[url]) { keep.add(path.basename(out[url].v)); keep.add(path.basename(out[url].p)); }
+    }
+    // حذف فيديوهات الإعلانات القديمة (فقط في البناء الكامل)
+    if (!args["no-media"] && exists(dir)) fs.readdirSync(dir).forEach((f) => { if (!keep.has(f)) fs.unlinkSync(path.join(dir, f)); });
+    return out;
+}
+
+// =====================================================
 // MAIN
 // =====================================================
 
@@ -298,6 +377,25 @@ async function main() {
         writeFile("js/rates.js", `window.ATHR_RATES=${JSON.stringify(rates)};\n`);
         sandbox.ATHR_RATES = rates;
     }
+
+    // نسخة جاهزة من بيانات المتجر داخل الموقع: المتجر يشتغل فوراً بدون انتظار قاعدة البيانات،
+    // وبعدها يتحدّث بالخلفية. (بيانات عامة فقط: نفس اللي يقرأه أي زائر)
+    const adMedia = await makeAdVideo(cfg);
+    const mediaOf = {};
+    media.forEach((m) => { (mediaOf[m.product_id] = mediaOf[m.product_id] || []).push({ media_type: m.media_type, media_url: m.media_url, sort_order: m.sort_order }); });
+    const catalog = {
+        data: {
+            config: data.config || {},
+            categories: data.categories || [],
+            products: (data.products || []).filter((p) => p.is_visible !== false),
+            reviews: (data.reviews || []).slice(0, 300)
+        },
+        media: mediaOf,
+        ad: adMedia
+    };
+    const catalogSrc = `window.ATHR_CATALOG=${JSON.stringify(catalog)};\n`;
+    writeFile("js/catalog.js", catalogSrc);
+    sandbox.ATHR_CATALOG = catalog;
     const ratesSrc = exists(path.join(OUT, "js/rates.js")) ? fs.readFileSync(path.join(OUT, "js/rates.js"), "utf8") : "";
 
     const v = V.ctx({ cfg, products, categories, reviews: data.reviews || [], country: ATHR.BASE_COUNTRY, prerender: true });
@@ -383,6 +481,7 @@ async function main() {
         V_I18N: hashOf(read("js/i18n-en.js")),
         V_THUMBS: hashOf(JSON.stringify(thumbs)),
         V_RATES: hashOf(ratesSrc),
+        V_CATALOG: hashOf(catalogSrc),
         V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"))
     };
     // شاشات البداية لتطبيق آيفون (عرض × طول بالبكسل، والمقاس المنطقي، ونسبة البكسل)
@@ -797,7 +896,7 @@ async function trim(name, max) {
 function keep(name, request, response, max) {
     if (!response || !response.ok || response.type !== "basic") return;
     const copy = response.clone();
-    caches.open(name).then((c) => c.put(request, copy)).then(() => trim(name, max)).catch(() => {});
+    caches.open(name).then((c) => c.put(request, copy)).then(() => (Math.random() < 0.15 ? trim(name, max) : null)).catch(() => {});
 }
 
 self.addEventListener("fetch", (event) => {
@@ -806,6 +905,8 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(req.url);
     // الطلبات الخارجية (قاعدة البيانات، الخطوط، الصور المرفوعة) يتعامل معها المتصفح مباشرة
     if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE) || url.pathname.startsWith(BASE + "backup/")) return;
+    // الفيديو يتركه للمتصفح (آيفون يطلبه على أجزاء، والتخزين هنا يوقفه)
+    if (req.headers.has("range") || /\.(mp4|webm|mov|m4v)$/i.test(url.pathname)) return;
 
     // الصفحات: من الإنترنت دائماً (أحدث سعر ومخزون)، والنسخة المحفوظة فقط إذا انقطع الاتصال
     if (req.mode === "navigate") {
@@ -821,9 +922,17 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // الباقي (الصور وغيرها): المحفوظ فوراً مع تحديثه من الإنترنت بالخلفية
+    // الصور المصغّرة (أسماؤها ثابتة المحتوى): من المحفوظ دائماً
+    if (url.pathname.startsWith(BASE + "images/t/") || url.pathname.startsWith(BASE + "images/ad/")) {
+        event.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { keep(ASSETS, req, res, 250); return res; })));
+        return;
+    }
+
+    // الباقي: المحفوظ فوراً، ونحدّثه من الإنترنت بالخلفية إذا صار له أكثر من 6 ساعات
     event.respondWith(caches.match(req).then((hit) => {
-        const net = fetch(req).then((res) => { keep(ASSETS, req, res, 200); return res; }).catch(() => hit || Response.error());
+        const age = hit ? Date.now() - (Date.parse(hit.headers.get("date") || "") || 0) : Infinity;
+        if (hit && age < 6 * 3600e3) return hit;
+        const net = fetch(req).then((res) => { keep(ASSETS, req, res, 250); return res; }).catch(() => hit || Response.error());
         return hit || net;
     }));
 });

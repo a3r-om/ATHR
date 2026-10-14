@@ -409,13 +409,26 @@
     window.addEventListener("beforeunload", () => { leavingPage = true; });
     window.addEventListener("pagehide", () => { leavingPage = true; });
 
+    // بصمة البيانات المعروضة: لو وصلت نفس البيانات من الخادم ما نعيد رسم الصفحة (أسلس وما يرمش)
+    const dataKey = (d) => {
+        try { return JSON.stringify([d.config, d.categories, d.products, d.reviews]); } catch { return String(Math.random()); }
+    };
+
     async function loadData() {
         const cached = storage.get(KEYS.cache, null);
-        if (cached && cached.products) applyData(cached, { fromCache: true });
+        const built = window.ATHR_CATALOG && window.ATHR_CATALOG.data;
+        // آخر بيانات محفوظة في الجهاز لو جديدة (أقل من يوم)، وإلا النسخة الجاهزة من بناء المتجر
+        const fresh24 = cached && cached.products && Date.now() - (Number(cached.savedAt) || 0) < 864e5;
+        const hasBuilt = built && built.products && built.products.length;
+        const first = fresh24 ? cached : hasBuilt ? built : cached && cached.products ? cached : null;
+        let shown = "";
+        if (first) { applyData(first, { fromCache: true }); shown = dataKey(first); }
         try {
             const fresh = await fetchData();
-            storage.set(KEYS.cache, fresh);
-            if (!S.preview) applyData(fresh);
+            storage.set(KEYS.cache, { ...fresh, savedAt: Date.now() });
+            if (S.preview) return;
+            if (dataKey(fresh) !== shown) applyData(fresh);
+            else if (fresh.proof && !S.proof) { S.proof = fresh.proof; proofRoute(S.route.name); }
         } catch (error) {
             if (leavingPage) return;
             console.error("Store load error:", error);
@@ -427,6 +440,14 @@
 
     async function loadMedia(productId) {
         if (S.media.has(productId)) return S.media.get(productId);
+        // صور المنتج من النسخة الجاهزة فوراً، ونحدّثها بالخلفية للمرة الجاية
+        const built = window.ATHR_CATALOG && window.ATHR_CATALOG.media && window.ATHR_CATALOG.media[productId];
+        if (built) {
+            S.media.set(productId, built);
+            rest(`product_media?select=media_type,media_url,sort_order&product_id=eq.${encodeURIComponent(productId)}&order=sort_order.asc`)
+                .then((rows) => { if (Array.isArray(rows)) S.media.set(productId, rows); }).catch(() => {});
+            return built;
+        }
         let rows = [];
         try {
             rows = await rest(`product_media?select=media_type,media_url,sort_order&product_id=eq.${encodeURIComponent(productId)}&order=sort_order.asc`) || [];
@@ -866,8 +887,25 @@
     const shownKey = () => (S.route.name === "home" ? `home:${S.homeCat}` : `${S.route.name}:${S.route.slug || ""}`);
 
     function renderHome() {
+        const oldVideo = $("#ad video");
         $("#view").innerHTML = V.home(v(), { sort: S.sort, cat: S.homeCat, shown: S.shown[shownKey()] || 0 });
+        // نفس فيديو الإعلان يكمل بدون ما يرجع يتحمّل من البداية
+        const nv = $("#ad video");
+        if (oldVideo && nv && oldVideo.getAttribute("src") === nv.getAttribute("src") && oldVideo.readyState > 0) nv.replaceWith(oldVideo);
+        playAd();
         homeFavRail();
+    }
+
+    // تشغيل فيديو الإعلان (لو الجوال منع التشغيل التلقائي، مثل وضع توفير الطاقة، تظهر الصورة مع زر تشغيل)
+    function playAd() {
+        const vid = $("#ad video");
+        if (!vid) return;
+        vid.muted = true;
+        vid.defaultMuted = true;
+        vid.playsInline = true;
+        const box = vid.closest(".ad-media");
+        const p = vid.play();
+        if (p && p.then) p.then(() => box && box.classList.remove("ad-paused")).catch(() => { if (box) box.classList.add("ad-paused"); });
     }
 
     // «مفضلتك» في الرئيسية لمن حفظ تصاميم
@@ -2806,6 +2844,14 @@
     }
 
     document.addEventListener("click", (e) => {
+        // فيديو الإعلان موقوف (الجوال منع التشغيل التلقائي): أول ضغطة تشغّله
+        const adBox = e.target.closest(".ad-media.ad-paused");
+        const adVid = adBox && adBox.querySelector("video");
+        if (adVid && adVid.paused) {
+            e.preventDefault();
+            adVid.play().then(() => adBox.classList.remove("ad-paused")).catch(() => {});
+            return;
+        }
         const el = e.target.closest("button, a");
         if (!el) {
             if (e.target.closest("[data-close-sheet]")) closeSheet();
@@ -3326,7 +3372,7 @@
         state: () => S,
         reload: async () => {
             const fresh = await fetchData();
-            storage.set(KEYS.cache, fresh);
+            storage.set(KEYS.cache, { ...fresh, savedAt: Date.now() });
             S.media.clear();
             S.preview = false;
             applyData(fresh);

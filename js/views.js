@@ -594,7 +594,11 @@
             return `<section class="ad wrap" id="ad">${open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(ct(v, "ad.image_alt"))}" fetchpriority="high">`, "ad-media")}</section>`;
         }
         if (ad.type === "video" && ad.video_url) {
-            return `<section class="ad wrap" id="ad">${open(`<video muted loop playsinline autoplay preload="none" data-deferred-src="${esc(ad.video_url)}" aria-label="${esc(ct(v, "ad.video_alt"))}"></video>`, "ad-media")}</section>`;
+            // نسخة الفيديو المضغوطة من بناء المتجر (تشتغل في كل الجوالات) + صورة غلاف تظهر فوراً
+            const cat = typeof ATHR_CATALOG !== "undefined" && ATHR_CATALOG && ATHR_CATALOG.ad ? ATHR_CATALOG.ad[ad.video_url] : null;
+            const src = cat ? ATHR.base() + cat.v : ad.video_url;
+            const poster = cat ? ATHR.base() + cat.p : ad.image_url ? V.asset(ad.image_url) : "";
+            return `<section class="ad wrap" id="ad">${open(`<video muted loop playsinline autoplay preload="auto" src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ""}${cat && cat.w && cat.h ? ` width="${cat.w}" height="${cat.h}"` : ""} aria-label="${esc(ct(v, "ad.video_alt"))}"></video><span class="ad-play" aria-hidden="true"></span>`, "ad-media")}</section>`;
         }
         const title = ct(v, "ad.title");
         const text = ct(v, "ad.text");
