@@ -1,6 +1,6 @@
 // عامل الخدمة لتطبيق أثر: يفتح المتجر كتطبيق، ويعرض صفحة بديلة إذا انقطع الإنترنت
 // يبنيه tools/build.mjs تلقائياً، لا تعدّله يدوياً
-const VERSION = "882f8af8e1";
+const VERSION = "6752904576";
 const BASE = "/ATHR/";
 const PAGES = "athr-pages-" + VERSION;
 const ASSETS = "athr-assets-" + VERSION;
