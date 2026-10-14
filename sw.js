@@ -1,6 +1,6 @@
 // عامل الخدمة لتطبيق أثر: يفتح المتجر كتطبيق، ويعرض صفحة بديلة إذا انقطع الإنترنت
 // يبنيه tools/build.mjs تلقائياً، لا تعدّله يدوياً
-const VERSION = "6981ec9a5e";
+const VERSION = "2611bfaf3f";
 const BASE = "/ATHR/";
 const PAGES = "athr-pages-" + VERSION;
 const ASSETS = "athr-assets-" + VERSION;
@@ -53,5 +53,34 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(caches.match(req).then((hit) => {
         const net = fetch(req).then((res) => { keep(ASSETS, req, res, 200); return res; }).catch(() => hit || Response.error());
         return hit || net;
+    }));
+});
+
+// ---------- إشعارات العروض ----------
+self.addEventListener("push", (event) => {
+    let d = {};
+    try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : "" }; }
+    event.waitUntil(self.registration.showNotification(d.title || "أثر", {
+        body: d.body || "",
+        icon: BASE + "images/app/icon-192.png",
+        badge: BASE + "images/app/badge-96.png",
+        image: d.image || undefined,
+        dir: "rtl",
+        lang: "ar",
+        tag: d.tag || "athr",
+        data: { url: d.url || BASE }
+    }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    let target;
+    try { target = new URL((event.notification.data && event.notification.data.url) || BASE, self.location.origin); } catch (e) { target = new URL(BASE, self.location.origin); }
+    if (target.origin !== self.location.origin || !target.pathname.startsWith(BASE)) target = new URL(BASE, self.location.origin);
+    target.searchParams.set("src", "push");
+    event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        const win = list.find((c) => c.url.startsWith(self.location.origin + BASE));
+        if (win) return win.focus().then((c) => (c || win).navigate(target.href)).catch(() => self.clients.openWindow(target.href));
+        return self.clients.openWindow(target.href);
     }));
 });
