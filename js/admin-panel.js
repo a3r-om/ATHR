@@ -622,11 +622,7 @@
                 </ul>
                 <p class="adm-muted">اضغط على المنتج لتعديله. المفتاح يُظهر أو يخفي المنتج، و«⋯» للترتيب والنسخ والحذف.</p>
             </section>
-            ${card("سعر موحّد", `
-                <div class="inline">
-                    <input class="ai" type="number" inputmode="decimal" step="0.001" min="0" id="unifiedPrice" placeholder="اكتب سعراً لتطبيقه على كل المنتجات">
-                    <button class="ab ab-ghost" type="button" data-a="unified-price">تطبيق على الكل</button>
-                </div>`, "يغيّر سعر كل المنتجات دفعة واحدة. يمكنك التراجع بـ«تجاهل التعديلات» قبل النشر.")}
+            ${bulkCard()}
             ${card("✨ وصف المنتجات بالذكاء الاصطناعي", `
                 <p class="adm-sentence">${noDesc ? `${noDesc} منتج بدون وصف خاص (يظهر لها وصف القسم).` : "كل المنتجات لها وصف خاص ✓"}</p>
                 ${noDesc ? `<button class="ab ab-primary ab-sm" type="button" data-a="ai-bulk">✨ اكتب وصفاً لـ ${noDesc} منتج</button>` : ""}
@@ -4181,6 +4177,7 @@
 
     function onInput(e) {
         const t = e.target;
+        if (bulkInput(t, false)) return;
         if (t.id === "productFilter") {
             A.productFilter = t.value;
             const pos = t.selectionStart;
@@ -4255,6 +4252,7 @@
 
     async function onChange(e) {
         const t = e.target;
+        if (bulkInput(t, true)) return;
         if (t.dataset.pixel) {
             setPixel(t);
             return;
@@ -4447,6 +4445,7 @@
         if (((d.a && /^fin-/.test(d.a)) || d.finEdit) && await financeClick(d)) return;
         if (((d.a && /^(asst|prof)-/.test(d.a)) || d.asstQ || d.asstAct || d.asstNo || d.custOpen || d.profSuggest) && await insightsClick(d)) return;
         if (((d.a && /^backup-/.test(d.a)) || d.bkGet || d.bkRestore || d.bkScope) && await backupClick(d)) return;
+        if ((d.a && /^bulk-/.test(d.a)) || d.bpMode || d.bpPct !== undefined) { bulkClick(d); return; }
         if (((d.a && /^(xlsx-|import-|products-low|ai-|offer-ai$|reward-)/.test(d.a)) || d.aiDesc || d.custReward) && await v17Click(d)) return;
         if ((d.a && /^(coupon|restock|promo)-/.test(d.a)) || d.cpToggle || d.cpEdit || d.cpLink || d.cpMsg || d.restockSend || d.restockClear || d.restockAvail || d.favOffer) {
             await promoClick(d);
@@ -4466,7 +4465,6 @@
             case "discard": discard(); return;
             case "publish": publish(); return;
             case "add-product": addProduct(); return;
-            case "unified-price": unifiedPrice(); return;
             case "add-category":
                 A.draft.categories.push({ id: crypto.randomUUID(), name: "", slug: "", description: "", image_url: "" });
                 afterChange();
@@ -4674,16 +4672,230 @@
     // ACTIONS
     // =====================================================
 
-    function unifiedPrice() {
-        const value = Number(ATHR.digits($("#unifiedPrice").value));
-        if (!(value > 0)) {
-            toast("اكتب سعراً أكبر من صفر.");
+    // =====================================================
+    // v27 — سعر موحّد وخصومات: السعر الجديد والقديم لكل المنتجات أو جزء منها دفعة وحدة
+    // السعر الجديد = اللي يدفعه الزبون (price) · السعر القديم = المشطوب (old_price)
+    // =====================================================
+    const BP_MODES = [
+        ["set", "🏷️", "سعر جديد وقديم", "تكتب السعرين بنفسك"],
+        ["pct", "٪", "خصم بالنسبة", "يحسب السعر الجديد من الأصلي"],
+        ["adjust", "↕️", "زيادة أو تخفيض", "بمبلغ أو بنسبة على الكل"],
+        ["end", "✖️", "إنهاء الخصم", "يرجع السعر الأصلي ويشيل الشطب"]
+    ];
+    const BP_PCTS = [10, 15, 20, 25, 30, 40, 50];
+
+    function bpState() {
+        if (!A.bulk) A.bulk = { mode: "set", scope: "all", cat: "", eq: "", visibleOnly: false, newPrice: "", oldPrice: "", noOld: false, pct: "", dir: "down", val: "", unit: "pct", round: "0" };
+        return A.bulk;
+    }
+    const bpNum = (v) => (v === "" || v === null || v === undefined ? null : Number(ATHR.digits(String(v))));
+    const bpDec = () => (Number.isInteger(Number(cfg().order.decimals)) ? Number(cfg().order.decimals) : 3);
+    const bpFix = (v) => { const f = 10 ** bpDec(); return Math.round(v * f) / f; };
+    const bpRound = (v, st) => { const step = Number(st.round) || 0; return bpFix(step ? Math.max(step, Math.round(v / step) * step) : v); };
+
+    // المنتجات اللي بيشملها التعديل
+    function bpTargets(st = bpState()) {
+        const eq = bpNum(st.eq);
+        return A.draft.products.filter((p) => {
+            if (st.visibleOnly && !p.is_visible) return false;
+            if (st.scope === "cat") return Boolean(st.cat) && p.category_id === st.cat;
+            if (st.scope === "sale") return pctOf(p) > 0;
+            if (st.scope === "nosale") return !pctOf(p);
+            if (st.scope === "price") return eq !== null && Math.abs(Number(p.price) - eq) < 0.0005;
+            return true;
+        });
+    }
+
+    // السعر بعد التعديل لمنتج واحد: { price, old } أو null لو ما بيتغيّر
+    function bpCompute(p, st = bpState()) {
+        const price = Number(p.price) > 0 ? Number(p.price) : null;
+        const old = pctOf(p) ? Number(p.old_price) : null;
+        let np = price, no = old;
+        if (st.mode === "set") {
+            const a = bpNum(st.newPrice), b = bpNum(st.oldPrice);
+            if (a === null && b === null && !st.noOld) return null;
+            if (a !== null) { if (!(a > 0)) return null; np = bpRound(a, st); }
+            if (st.noOld) no = null;
+            else if (b !== null) no = b > 0 ? bpFix(b) : null;
+        } else if (st.mode === "pct") {
+            const pct = bpNum(st.pct);
+            if (pct === null || !(pct > 0) || pct > 90 || !price) return null;
+            const base = old || price;
+            no = bpFix(base);
+            np = bpRound(base * (1 - pct / 100), st);
+        } else if (st.mode === "adjust") {
+            const val = bpNum(st.val);
+            if (val === null || !(val > 0) || !price) return null;
+            const k = st.dir === "up" ? 1 : -1;
+            const adj = (x) => (st.unit === "pct" ? x * (1 + (k * val) / 100) : x + k * val);
+            np = adj(price);
+            if (!(np > 0)) return { skip: true };
+            np = bpRound(np, st);
+            no = old ? bpRound(adj(old), st) : null;
+        } else if (st.mode === "end") {
+            if (!old) return null;
+            np = bpFix(old);
+            no = null;
+        }
+        if (!(np > 0)) return null;
+        const dropped = no !== null && no <= np;   // السعر القديم لازم يكون أكبر من الجديد عشان يبان خصم
+        if (dropped) no = null;
+        if (np === price && no === old) return dropped ? { same: true, dropped } : null;
+        return { price: np, old: no, dropped };
+    }
+
+    function bpPlan(st = bpState()) {
+        const targets = bpTargets(st);
+        const rows = [];
+        let skipped = 0, dropped = 0;
+        targets.forEach((p) => {
+            const r = bpCompute(p, st);
+            if (!r) return;
+            if (r.skip) { skipped++; return; }
+            if (r.dropped) dropped++;
+            if (r.same) return;
+            rows.push({ p, ...r });
+        });
+        return { targets, rows, skipped, dropped };
+    }
+
+    const bpPriceHTML = (price, old) => price > 0
+        ? `<b>${money(price)}</b>${old ? ` <s>${money(old)}</s> <span class="tag sale">خصم ${Math.round((1 - price / old) * 100)}%</span>` : ""}`
+        : `<span class="adm-muted">بدون سعر</span>`;
+
+    function bpPreviewHTML() {
+        const st = bpState();
+        const plan = bpPlan(st);
+        const n = plan.rows.length;
+        const need = {
+            set: "اكتب السعر الجديد أو القديم (أو الاثنين).",
+            pct: "اختار نسبة الخصم.",
+            adjust: "اكتب قيمة الزيادة أو التخفيض.",
+            end: "ما فيه منتجات عليها خصم في اختيارك."
+        }[st.mode];
+        const head = plan.targets.length
+            ? `<p class="bp-count">الاختيار يشمل <b>${plan.targets.length}</b> منتج${n ? ` · بيتغيّر سعر <b>${n}</b>` : ""}</p>`
+            : `<p class="bp-count warn">ما فيه منتجات تطابق اختيارك.</p>`;
+        const list = n ? `<ul class="bp-prev">${plan.rows.slice(0, 6).map((r) => `<li>
+                <span class="bp-name">${esc(r.p.name || "منتج بدون اسم")}</span>
+                <span class="bp-was">${bpPriceHTML(Number(r.p.price), pctOf(r.p) ? Number(r.p.old_price) : null)}</span>
+                <span class="bp-arrow" aria-hidden="true">←</span>
+                <span class="bp-now">${bpPriceHTML(r.price, r.old)}</span>
+            </li>`).join("")}</ul>${n > 6 ? `<p class="adm-muted bp-more">و ${n - 6} منتج ثاني بنفس الطريقة.</p>` : ""}` : plan.targets.length ? `<p class="adm-muted">${need}</p>` : "";
+        const warns = [
+            plan.dropped ? `⚠️ ${plan.dropped} منتج السعر القديم فيه مو أكبر من الجديد، فبيختفي الشطب (بدون خصم).` : "",
+            plan.skipped ? `⚠️ ${plan.skipped} منتج بيصير سعره صفر أو أقل، فما بيتغيّر.` : ""
+        ].filter(Boolean).map((w) => `<p class="bp-warn">${w}</p>`).join("");
+        return `${head}${list}${warns}
+            <button class="ab ab-primary ab-block" type="button" data-a="bulk-apply"${n ? "" : " disabled"}>${n ? `تطبيق على ${n} منتج` : "تطبيق"}</button>`;
+    }
+
+    function bulkCard() {
+        const st = bpState();
+        const all = A.draft.products.length;
+        const onSale = A.draft.products.filter((p) => pctOf(p) > 0).length;
+        const cats = A.draft.categories.map((c) => [c.id, `${c.name || "قسم بدون اسم"} (${A.draft.products.filter((p) => p.category_id === c.id).length})`]);
+        const opt = (v, l, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? " selected" : ""}>${esc(l)}</option>`;
+        const numIn = (id, label, value, ph, help = "") => `<label class="af"><span>${label}</span><input class="ai" type="number" inputmode="decimal" step="0.001" min="0" id="${id}" value="${esc(value)}" placeholder="${esc(ph)}">${help ? `<small>${help}</small>` : ""}</label>`;
+        let fields = "";
+        if (st.mode === "set") {
+            fields = `<div class="two">
+                    ${numIn("bpNew", "السعر الجديد", st.newPrice, "فاضي = ما يتغيّر", "اللي يدفعه الزبون")}
+                    ${st.noOld ? `<label class="af"><span>السعر القديم</span><input class="ai" disabled placeholder="بدون"><small>بدون شطب</small></label>` : numIn("bpOld", "السعر القديم", st.oldPrice, "فاضي = ما يتغيّر", "يظهر مشطوب فوق الجديد")}
+                </div>
+                <label class="fin-check"><input type="checkbox" id="bpNoOld"${st.noOld ? " checked" : ""}><span>شيل السعر القديم (بدون خصم)</span></label>`;
+        } else if (st.mode === "pct") {
+            fields = `${numIn("bpPct", "نسبة الخصم %", st.pct, "مثال: 20", "يُحسب من السعر الأصلي: السعر الأصلي يصير هو القديم المشطوب، والجديد بعد الخصم.")}
+                <div class="pct-chips">${BP_PCTS.map((n) => `<button type="button" class="ab-mini${Number(st.pct) === n ? " on" : ""}" data-bp-pct="${n}">${n}%</button>`).join("")}</div>`;
+        } else if (st.mode === "adjust") {
+            fields = `<div class="bp-adj">
+                    <label class="af"><span>النوع</span><select class="ai" id="bpDir">${opt("down", "تخفيض ⬇️", st.dir)}${opt("up", "زيادة ⬆️", st.dir)}</select></label>
+                    ${numIn("bpVal", "القيمة", st.val, st.unit === "pct" ? "مثال: 10" : "مثال: 0.500")}
+                    <label class="af"><span>بـ</span><select class="ai" id="bpUnit">${opt("pct", "نسبة %", st.unit)}${opt("amt", "مبلغ (ر.ع)", st.unit)}</select></label>
+                </div>
+                <small class="adm-muted">يتغيّر السعر الجديد والقديم مع بعض، فنسبة الخصم تبقى نفسها.</small>`;
+        } else {
+            fields = `<p class="adm-sentence">يرجع كل منتج عليه خصم لسعره الأصلي، ويختفي السعر المشطوب.</p>`;
+        }
+        const roundSel = st.mode === "end" ? "" : `<label class="af"><span>تقريب السعر الجديد</span><select class="ai" id="bpRound">${opt("0", "بدون تقريب", st.round)}${opt("0.05", "لأقرب 0.050", st.round)}${opt("0.1", "لأقرب 0.100", st.round)}${opt("0.5", "لأقرب 0.500", st.round)}${opt("1", "لأقرب 1 ر.ع", st.round)}</select></label>`;
+        const undo = A.bulkUndo ? `<div class="bp-undo"><span>آخر تعديل: ${esc(A.bulkUndo.label)}</span><button class="ab ab-ghost ab-sm" type="button" data-a="bulk-undo">↩️ تراجع</button></div>` : "";
+        return `<section class="adm-card bp" id="bulkBox">
+            <h2>💰 سعر موحّد وخصومات</h2>
+            <p class="adm-muted">غيّر السعر الجديد والقديم لكل المنتجات أو لقسم معيّن دفعة وحدة. تشوف النتيجة قبل التطبيق، وما يوصل للزبائن إلا بعد «نشر التغييرات».</p>
+            <div class="bp-stats"><span><b>${all}</b> منتج</span><span><b>${onSale}</b> عليها خصم</span><span><b>${all - onSale}</b> بدون خصم</span></div>
+            ${undo}
+            <div class="bp-step"><h3><span>1</span> أي منتجات؟</h3>
+                <label class="af"><span>المنتجات</span><select class="ai" id="bpScope">
+                    ${opt("all", `كل المنتجات (${all})`, st.scope)}
+                    ${cats.length ? opt("cat", "قسم معيّن", st.scope) : ""}
+                    ${opt("sale", `اللي عليها خصم (${onSale})`, st.scope)}
+                    ${opt("nosale", `اللي بدون خصم (${all - onSale})`, st.scope)}
+                    ${opt("price", "اللي سعرها الحالي…", st.scope)}
+                </select></label>
+                ${st.scope === "cat" ? `<label class="af"><span>القسم</span><select class="ai" id="bpCat">${opt("", "اختار القسم", st.cat)}${cats.map(([v, l]) => opt(v, l, st.cat)).join("")}</select></label>` : ""}
+                ${st.scope === "price" ? numIn("bpEq", "السعر الحالي (اللي يدفعه الزبون)", st.eq, "مثال: 3.500", "مثلاً: كل الأكواب اللي بـ 3.500 تصير بسعر ثاني.") : ""}
+                <label class="fin-check"><input type="checkbox" id="bpVisible"${st.visibleOnly ? " checked" : ""}><span>الظاهرة في المتجر بس (بدون المخفية)</span></label>
+            </div>
+            <div class="bp-step"><h3><span>2</span> وش تبي تسوي؟</h3>
+                <div class="bp-modes" role="radiogroup" aria-label="نوع التعديل">${BP_MODES.map(([id, ic, l, d]) => `<button type="button" class="bp-mode" role="radio" aria-checked="${st.mode === id}" data-bp-mode="${id}"><i aria-hidden="true">${ic}</i><b>${l}</b><small>${d}</small></button>`).join("")}</div>
+                ${fields}
+                ${roundSel}
+            </div>
+            <div class="bp-step"><h3><span>3</span> شوف النتيجة وطبّق</h3>
+                <div id="bpPreview">${bpPreviewHTML()}</div>
+            </div>
+        </section>`;
+    }
+
+    // قراءة الحقول: الكتابة تحدّث المعاينة بس، والاختيارات تعيد رسم البطاقة
+    function bulkInput(t, changed) {
+        if (!t.closest || !t.closest("#bulkBox")) return false;
+        const st = bpState();
+        const map = { bpScope: "scope", bpCat: "cat", bpEq: "eq", bpNew: "newPrice", bpOld: "oldPrice", bpPct: "pct", bpDir: "dir", bpVal: "val", bpUnit: "unit", bpRound: "round" };
+        if (t.id === "bpVisible") st.visibleOnly = t.checked;
+        else if (t.id === "bpNoOld") st.noOld = t.checked;
+        else if (map[t.id]) st[map[t.id]] = t.value;
+        else return true;
+        const redraw = t.tagName === "SELECT" || t.type === "checkbox";
+        if (redraw) { if (changed) renderTab({ keepScroll: true }); return true; }
+        // «change» يجي لما يطلع المؤشر من الخانة (مثلاً عند الضغط على «تطبيق»)، والمعاينة محدّثة من الكتابة أصلاً
+        if (changed) return true;
+        if (t.id === "bpPct") $$("#bulkBox [data-bp-pct]").forEach((b) => b.classList.toggle("on", Number(b.dataset.bpPct) === Number(t.value)));
+        const box = $("#bpPreview");
+        if (box) box.innerHTML = bpPreviewHTML();
+        return true;
+    }
+
+    function bulkClick(d) {
+        const st = bpState();
+        if (d.bpMode) { st.mode = d.bpMode; renderTab({ keepScroll: true }); return; }
+        if (d.bpPct !== undefined) { st.pct = d.bpPct; renderTab({ keepScroll: true }); return; }
+        if (d.a === "bulk-undo") {
+            const u = A.bulkUndo;
+            if (!u) return;
+            u.items.forEach(([id, price, old]) => { const p = A.draft.products.find((x) => x.id === id); if (p) { p.price = price; p.old_price = old; } });
+            A.bulkUndo = null;
+            afterChange();
+            toast(`رجعت أسعار ${u.items.length} منتج`);
             return;
         }
-        if (!confirm(`تطبيق السعر ${money(value)} على كل المنتجات (${A.draft.products.length})؟ المنتجات التي عليها خصم تبقى بنفس نسبة الخصم.`)) return;
-        A.draft.products.forEach((p) => applyDiscount(p, value, pctOf(p)));
-        afterChange();
-        toast("طُبّق السعر على كل المنتجات");
+        if (d.a === "bulk-apply") {
+            const plan = bpPlan(st);
+            const n = plan.rows.length;
+            if (!n) return;
+            const what = {
+                set: "تغيير السعر",
+                pct: `خصم ${Number(st.pct)}%`,
+                adjust: `${st.dir === "up" ? "زيادة" : "تخفيض"} ${st.unit === "pct" ? `${Number(st.val)}%` : money(Number(st.val))}`,
+                end: "إنهاء الخصم"
+            }[st.mode];
+            if (!confirm(`${what} على ${n} منتج؟\nتقدر تتراجع قبل «نشر التغييرات».`)) return;
+            A.bulkUndo = { label: `${what} (${n} منتج)`, items: plan.rows.map((r) => [r.p.id, r.p.price, r.p.old_price ?? null]) };
+            plan.rows.forEach((r) => { r.p.price = r.price; r.p.old_price = r.old; });
+            if (st.mode === "set") { st.newPrice = ""; st.oldPrice = ""; }
+            afterChange();
+            toast(`✓ ${what} على ${n} منتج. لا تنسى «نشر التغييرات»`);
+        }
     }
 
     function discard() {
