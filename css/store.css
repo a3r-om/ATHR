@@ -1963,7 +1963,7 @@ html.tpl-minimal .card-action { top: calc(125cqw - 48px); }
 /* =====================================================
    v15 — رأس صفحة المنتج: شريط المزايا، الوصف، والسعر قبل وبعد الخصم
 ===================================================== */
-:root { --deal: #D9480F; }
+:root { --deal: #D9480F; --cart-red: #D92D20; }
 html[data-mode="dark"] { --deal: #FF9A57; }
 @media (prefers-color-scheme: dark) { html[data-mode="auto"] { --deal: #FF9A57; } }
 
@@ -2007,8 +2007,8 @@ html[data-mode="dark"] { --deal: #FF9A57; }
 .cf-in { display: grid; place-items: center; align-content: center; width: 100%; height: 100%; border-radius: 50%; background: var(--surface); color: var(--ok); }
 .cf-in svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .cf-in small { margin-top: 1px; font-size: 9.5px; font-weight: 800; line-height: 1.1; }
-.cf-count { position: absolute; top: -4px; inset-inline-end: -3px; display: grid; place-items: center; min-width: 21px; height: 21px; padding: 0 5px; border: 2px solid var(--surface); border-radius: 99px; background: var(--deal); color: #fff; font-size: 11.5px; font-weight: 800; line-height: 1; }
-.cf-pill { position: relative; margin-top: -9px; padding: 2px 8px; border-radius: 99px; background: var(--deal); color: #fff; font-size: 10px; font-weight: 800; line-height: 1.5; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); }
+.cf-count { position: absolute; top: -4px; inset-inline-end: -3px; display: grid; place-items: center; min-width: 21px; height: 21px; padding: 0 5px; border: 2px solid var(--surface); border-radius: 99px; background: var(--cart-red); color: #fff; font-size: 11.5px; font-weight: 800; line-height: 1; }
+.cf-pill { position: relative; margin-top: -9px; padding: 2px 8px; border-radius: 99px; background: var(--cart-red); color: #fff; font-size: 10px; font-weight: 800; line-height: 1.5; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); }
 .cf-pill.ok { background: var(--ok); }
 html[data-mode="dark"] .cf-pill.ok { color: #0D2418; }
 .cart-float.bump .cf-ring { animation: cf-bump .5s ease; }
