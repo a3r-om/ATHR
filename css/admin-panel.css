@@ -1091,3 +1091,8 @@ html.theme-dark .adm {
 .at input:checked + .at-ui, .vis-switch[aria-checked="true"] { background: var(--a-primary); }
 .adm-busy { background: var(--a-primary); color: var(--a-on-primary); }
 .seg button[aria-pressed="true"] { color: var(--a-primary); }
+
+/* v26 — أكثر من إعلان */
+.ad-tools { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin-top: -4px; }
+.ad-add { margin: 2px 0 10px; border: 1.5px dashed color-mix(in srgb, var(--a-primary) 45%, transparent); min-height: 48px; }
+.ad-tip { margin: 0 4px 14px; }

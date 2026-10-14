@@ -2346,6 +2346,16 @@ textarea.input { min-height: 62px; line-height: 1.5; }
 .ad-play::before { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-35%, -50%); border-style: solid; border-width: 13px 0 13px 21px; border-color: transparent transparent transparent #fff; }
 .ad-paused .ad-play { display: block; }
 .ad-paused { cursor: pointer; }
+/* أكثر من إعلان: شريط يتسحب باليد مع نقاط تحت */
+.ad-multi .ad-track { display: flex; align-items: center; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; border-radius: var(--r); }
+.ad-multi .ad-track::-webkit-scrollbar { display: none; }
+.ad-slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: center; scroll-snap-stop: always; }
+.ad-slide > .ad-media, .ad-slide > .ad-text { width: 100%; }
+.ad-dots { display: flex; justify-content: center; gap: 2px; margin-top: 4px; }
+.ad-dots button { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 2px; border: 0; background: none; cursor: pointer; }
+.ad-dots button::before { content: ""; width: 7px; height: 7px; border-radius: 99px; background: color-mix(in srgb, var(--text) 24%, transparent); transition: width .25s ease, background-color .25s ease; }
+.ad-dots button[aria-current="true"]::before { width: 20px; background: var(--primary); }
+@media (prefers-reduced-motion: reduce) { .ad-dots button::before { transition: none; } }
 /* حركة أيقونة الهدية: كم مرة وبس، بدل ما تشتغل للأبد (أخف على الجوال) */
 .gp-art, .ob-ico { animation-iteration-count: 3; }
 /* زر المفضلة على كل بطاقة: بدون تأثير الضبابية (يثقّل التمرير في آيفون) */

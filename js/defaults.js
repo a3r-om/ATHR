@@ -93,7 +93,9 @@ const ATHR_DEFAULTS = {
         text: "",
         button: "",
         bg: "#570418",
-        link: ""
+        link: "",
+        more: [],
+        auto: true
     },
 
     colors: [],
@@ -300,6 +302,16 @@ ATHR.ct = function (config, path) {
     if (!empty) return own;
     return Object.prototype.hasOwnProperty.call(ATHR.EN_TEXTS, path) ? ATHR.EN_TEXTS[path] : value;
 };
+
+// الإعلانات أعلى الرئيسية: الأول محفوظ في config.ad نفسه (مثل قبل)، والإضافية في config.ad.more
+ATHR.AD_FIELDS = ["type", "image_url", "image_alt", "video_url", "video_alt", "title", "text", "button", "bg", "link"];
+ATHR.adSlides = function (config) {
+    const ad = (config && config.ad) || {};
+    const first = {};
+    ATHR.AD_FIELDS.forEach((k) => { first[k] = ad[k]; });
+    return [first, ...(Array.isArray(ad.more) ? ad.more.filter((x) => x && typeof x === "object" && !Array.isArray(x)) : [])];
+};
+ATHR.adReady = (s) => Boolean(s && ((s.type === "image" && s.image_url) || (s.type === "video" && s.video_url) || (s.type === "text" && String(s.title || s.text || "").trim())));
 
 ATHR.storeName = (config) => ATHR.ct(config, "name") || (config && config.name) || "";
 

@@ -264,8 +264,10 @@ async function makeAdVideo(cfg) {
     const dir = path.join(OUT, "images/ad");
     const keep = new Set();
     const out = {};
-    const url = ad.show !== false && ad.type === "video" ? String(ad.video_url || "") : "";
-    if (url && !args["no-media"]) {
+    // كل إعلانات الفيديو (الأول + الإضافية) تنضغط وتاخذ صورة غلاف
+    const urls = ad.show === false ? [] : [ad, ...(Array.isArray(ad.more) ? ad.more : [])]
+        .filter((x) => x && x.type === "video" && x.video_url).map((x) => String(x.video_url));
+    for (const url of args["no-media"] ? [] : [...new Set(urls)]) {
         const h = hashOf(url);
         const mp4 = `images/ad/${h}.mp4`, jpg = `images/ad/${h}.jpg`;
         if (exists(path.join(OUT, mp4)) && exists(path.join(OUT, jpg))) {

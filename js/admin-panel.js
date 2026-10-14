@@ -1045,30 +1045,66 @@
     // TAB 2: AD
     // =====================================================
 
+    // الإعلان الأول محفوظ في config.ad نفسه، والإضافية في config.ad.more (نفس الحقول)
+    const adPath = (i) => (i === 0 ? "config.ad" : `config.ad.more.${i - 1}`);
+
     function tabAd() {
         const ad = cfg().ad;
-        let body = toggle("config.ad.show", "إظهار الإعلان في المتجر");
-        body += select("config.ad.type", "نوع الإعلان", [["image", "صورة جاهزة (تصميمي الخاص)"], ["video", "فيديو جاهز"], ["text", "تصميم نصي أعدّله هنا"]], { rerender: true });
+        if (!Array.isArray(ad.more)) ad.more = [];
+        const n = 1 + ad.more.length;
+        let top = toggle("config.ad.show", "إظهار الإعلانات في المتجر");
+        if (n > 1) top += toggle("config.ad.auto", "تقليب تلقائي", { help: "يتغيّر الإعلان كل 5 ثواني، ويوقف لما الزبون يلمسه." });
+        top += `<p class="adm-muted">${n > 1
+            ? `عندك ${n} إعلانات. الزبون يسحب الإعلان يمين ويسار ويتغيّر، وتحته نقاط توضح كم إعلان.`
+            : "تقدر تضيف أكثر من إعلان، والزبون يسحب الشاشة ويتغيّر الإعلان."}</p>`;
+        let html = card("الإعلانات", top, "مستطيل يظهر أعلى الصفحة الرئيسية قبل الواجهة.");
+        for (let i = 0; i < n; i++) html += adSlideCard(i, n);
+        html += `<button class="ab ab-soft ab-block ad-add" type="button" data-a="ad-add">+ إضافة إعلان</button>`;
+        if (n > 1) html += `<p class="adm-muted ad-tip">💡 خلّ كل الإعلانات بنفس المقاس (نفس الطول والعرض) عشان يطلع الشريط مرتّب.</p>`;
+        return html;
+    }
+
+    function adSlideCard(i, n) {
+        const base = adPath(i);
+        const ad = getPath(base) || {};
+        const tools = n > 1 ? `<div class="ad-tools">
+                ${i > 0 ? `<button class="ab-mini" type="button" data-a="ad-move" data-i="${i}" data-dir="-1" aria-label="قدّم الإعلان ${i + 1}">⬆️ قبل</button>` : ""}
+                ${i < n - 1 ? `<button class="ab-mini" type="button" data-a="ad-move" data-i="${i}" data-dir="1" aria-label="أخّر الإعلان ${i + 1}">⬇️ بعد</button>` : ""}
+                <button class="ab-mini danger" type="button" data-a="ad-del" data-i="${i}" aria-label="حذف الإعلان ${i + 1}">🗑️ حذف</button>
+            </div>` : "";
+        let body = tools + select(`${base}.type`, "نوع الإعلان", [["image", "صورة جاهزة (تصميمي الخاص)"], ["video", "فيديو جاهز"], ["text", "تصميم نصي أعدّله هنا"]], { rerender: true });
         if (ad.type === "image") {
-            body += `<div class="af"><span>صورة الإعلان</span>${uploadButton(ad.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="config.ad.image_url" data-kind="ad"`, { current: ad.image_url, remove: ad.image_url ? `data-clear="config.ad.image_url"` : "" })}</div>`;
-            body += text("config.ad.image_alt", "وصف قصير للصورة (للقارئات الصوتية)");
+            body += `<div class="af"><span>صورة الإعلان</span>${uploadButton(ad.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="${base}.image_url" data-kind="ad"`, { current: ad.image_url, remove: ad.image_url ? `data-clear="${base}.image_url"` : "" })}</div>`;
+            body += text(`${base}.image_alt`, "وصف قصير للصورة (للقارئات الصوتية)");
         } else if (ad.type === "video") {
-            body += `<div class="af"><span>فيديو الإعلان</span>${uploadButton(ad.video_url ? "استبدال الفيديو" : "رفع فيديو", `data-upload="config.ad.video_url" data-kind="adVideo"`, { accept: "video/*", current: ad.video_url, remove: ad.video_url ? `data-clear="config.ad.video_url"` : "" })}</div>`;
+            body += `<div class="af"><span>فيديو الإعلان</span>${uploadButton(ad.video_url ? "استبدال الفيديو" : "رفع فيديو", `data-upload="${base}.video_url" data-kind="adVideo"`, { accept: "video/*", current: ad.video_url, remove: ad.video_url ? `data-clear="${base}.video_url"` : "" })}</div>`;
             body += videoQuality("adVideoQuality", "480");
             body += `<small class="adm-muted">الإعلان يظهر أول الصفحة، لذلك الأفضل جودة خفيفة ومدة قصيرة. يعمل تلقائياً بدون صوت وبتكرار.</small>`;
-            body += text("config.ad.video_alt", "وصف قصير للفيديو (للقارئات الصوتية)");
+            body += text(`${base}.video_alt`, "وصف قصير للفيديو (للقارئات الصوتية)");
         } else {
-            body += text("config.ad.title", "العنوان", { max: 80 });
-            body += area("config.ad.text", "النص تحت العنوان", { rows: 2 });
-            body += text("config.ad.button", "نص الزر (اختياري)", { max: 30 });
-            body += colorField("config.ad.bg", "لون خلفية الإعلان");
+            body += text(`${base}.title`, "العنوان", { max: 80 });
+            body += area(`${base}.text`, "النص تحت العنوان", { rows: 2 });
+            body += text(`${base}.button`, "نص الزر (اختياري)", { max: 30 });
+            body += colorField(`${base}.bg`, "لون خلفية الإعلان");
         }
-        body += text("config.ad.link", "رابط عند الضغط على الإعلان (اختياري)", {
+        body += text(`${base}.link`, "رابط عند الضغط على الإعلان (اختياري)", {
             dir: "ltr",
             placeholder: "https://  أو  c/clubs/",
             help: ad.type === "text" ? "إن لم تكتب رابطاً، يفتح الزر قسم المنتجات. لرابط قسم اكتب مثلاً c/clubs/" : "لرابط قسم اكتب مثلاً c/clubs/ ولمنتج انسخ رابطه من صفحة المنتج."
         });
-        return card("الإعلان", body, "مستطيل يظهر أعلى الصفحة الرئيسية قبل الواجهة.");
+        return card(n > 1 ? `الإعلان ${i + 1}` : "الإعلان", body);
+    }
+
+    // نسخ حقول إعلان وكتابتها (عشان التقديم والتأخير والحذف بين الأول والإضافية)
+    function adGet(i) {
+        const src = getPath(adPath(i)) || {};
+        const out = {};
+        ATHR.AD_FIELDS.forEach((k) => { out[k] = src[k] ?? ""; });
+        return out;
+    }
+    function adPut(i, slide) {
+        const dst = getPath(adPath(i));
+        if (dst) ATHR.AD_FIELDS.forEach((k) => { dst[k] = slide[k] ?? ""; });
     }
 
     // =====================================================
@@ -4440,6 +4476,38 @@
                 cfg().colors.push({ id: ATHR.uid("c-"), name: "", hex: "#cccccc" });
                 afterChange();
                 return;
+            case "ad-add": {
+                const ad = cfg().ad;
+                if (!Array.isArray(ad.more)) ad.more = [];
+                const blank = {};
+                ATHR.AD_FIELDS.forEach((k) => { blank[k] = ""; });
+                ad.more.push({ ...blank, type: "image", bg: cfg().theme.primary || "#570418" });
+                afterChange();
+                setTimeout(() => { const cards = $$("#admBody .adm-card"); const last = cards[cards.length - 1]; if (last) last.scrollIntoView({ behavior: "smooth", block: "start" }); }, 40);
+                return;
+            }
+            case "ad-move": {
+                const i = Number(d.i), j = i + Number(d.dir);
+                const n = 1 + (cfg().ad.more || []).length;
+                if (j < 0 || j >= n) return;
+                const a = adGet(i), b = adGet(j);
+                adPut(i, b);
+                adPut(j, a);
+                afterChange();
+                return;
+            }
+            case "ad-del": {
+                const i = Number(d.i);
+                const ad = cfg().ad;
+                const more = Array.isArray(ad.more) ? ad.more : [];
+                if (!more.length || !confirm(`تحذف الإعلان ${i + 1}؟`)) return;
+                // حذف الأول: الثاني يصير مكانه
+                if (i === 0) adPut(0, adGet(1));
+                more.splice(i === 0 ? 0 : i - 1, 1);
+                afterChange();
+                toast("انحذف الإعلان");
+                return;
+            }
             case "reset-colors":
                 ["primary", "hero", "bg", "text"].forEach((k) => { cfg().theme[k] = ATHR_DEFAULTS.theme[k]; });
                 afterChange();
@@ -4725,9 +4793,14 @@
         });
 
         if (c.ad.show) {
-            if (c.ad.type === "image" && !c.ad.image_url) add("ad", "الإعلان مفعّل بدون صورة.");
-            if (c.ad.type === "video" && !c.ad.video_url) add("ad", "الإعلان مفعّل بدون فيديو.");
-            if (c.ad.type === "text" && !String(c.ad.title || c.ad.text || "").trim()) add("ad", "الإعلان مفعّل بدون نص.");
+            const slides = ATHR.adSlides(c);
+            slides.forEach((x, i) => {
+                const who = slides.length > 1 ? `الإعلان ${i + 1}` : "الإعلان";
+                if (x.type === "image" && !x.image_url) add("ad", `${who} مفعّل بدون صورة.`);
+                if (x.type === "video" && !x.video_url) add("ad", `${who} مفعّل بدون فيديو.`);
+                if (x.type === "text" && !String(x.title || x.text || "").trim()) add("ad", `${who} مفعّل بدون نص.`);
+                if (i > 0 && x.link && !ATHR.isSafeLink(x.link)) add("ad", `رابط ${who} غير صحيح.`);
+            });
         }
         if (c.ad.link && !ATHR.isSafeLink(c.ad.link)) add("ad", "رابط الإعلان غير صحيح.");
         if (c.contact.share_url && !ATHR.isUrl(c.contact.share_url)) add("contact", "رابط المتجر للمشاركة غير صحيح.");

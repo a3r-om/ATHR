@@ -886,25 +886,118 @@
     const shownKey = () => (S.route.name === "home" ? `home:${S.homeCat}` : `${S.route.name}:${S.route.slug || ""}`);
 
     function renderHome() {
-        const oldVideo = $("#ad video");
+        const old = new Map([...document.querySelectorAll("#ad video")].filter((x) => x.readyState > 0).map((x) => [x.getAttribute("src"), x]));
         $("#view").innerHTML = V.home(v(), { sort: S.sort, cat: S.homeCat, shown: S.shown[shownKey()] || 0 });
         // نفس فيديو الإعلان يكمل بدون ما يرجع يتحمّل من البداية
-        const nv = $("#ad video");
-        if (oldVideo && nv && oldVideo.getAttribute("src") === nv.getAttribute("src") && oldVideo.readyState > 0) nv.replaceWith(oldVideo);
+        document.querySelectorAll("#ad video").forEach((nv) => { const o = old.get(nv.getAttribute("src")); if (o && o !== nv) nv.replaceWith(o); });
+        setupAdSlider();
         playAd();
         homeFavRail();
     }
 
-    // تشغيل فيديو الإعلان (لو الجوال منع التشغيل التلقائي، مثل وضع توفير الطاقة، تظهر الصورة مع زر تشغيل)
-    function playAd() {
-        const vid = $("#ad video");
-        if (!vid) return;
+    // تشغيل فيديو (لو الجوال منع التشغيل التلقائي، مثل وضع توفير الطاقة، تظهر الصورة مع زر تشغيل)
+    function playVideo(vid) {
         vid.muted = true;
         vid.defaultMuted = true;
         vid.playsInline = true;
         const box = vid.closest(".ad-media");
         const p = vid.play();
         if (p && p.then) p.then(() => box && box.classList.remove("ad-paused")).catch(() => { if (box) box.classList.add("ad-paused"); });
+    }
+
+    // إعلان واحد: يشتغل فيديوه. أكثر من إعلان: يشتغل فيديو الإعلان الظاهر بس، والباقي يوقف
+    function playAd() {
+        const box = $("#ad");
+        if (!box) return;
+        if (!box.classList.contains("ad-multi")) {
+            const vid = box.querySelector("video");
+            if (vid) playVideo(vid);
+            return;
+        }
+        box.querySelectorAll(".ad-slide").forEach((slide, i) => {
+            const vid = slide.querySelector("video");
+            if (!vid) return;
+            if (i === AD.i) playVideo(vid);
+            else if (!vid.paused) vid.pause();
+        });
+    }
+
+    // =====================================================
+    // شريط الإعلانات: سحب باليد + نقاط + تقليب تلقائي (يوقف لما يلمسه الزبون)
+    // =====================================================
+    const AD = { i: 0, timer: 0, hold: 0, visible: true, io: null };
+    const adParts = () => {
+        const box = $("#ad.ad-multi");
+        if (!box) return null;
+        const track = box.querySelector(".ad-track");
+        const slides = track ? [...track.children] : [];
+        return slides.length > 1 ? { box, track, slides } : null;
+    };
+    const adStep = (p) => Math.abs(p.slides[1].offsetLeft - p.slides[0].offsetLeft) || p.track.clientWidth || 1;
+    const adSign = (p) => (getComputedStyle(p.track).direction === "rtl" ? -1 : 1);
+
+    function adGo(i, smooth) {
+        const p = adParts();
+        if (!p) return;
+        const n = p.slides.length;
+        AD.i = ((i % n) + n) % n;
+        p.track.scrollTo({ left: adSign(p) * AD.i * adStep(p), behavior: smooth ? "smooth" : "auto" });
+        adMark();
+    }
+
+    function adMark() {
+        const p = adParts();
+        if (!p) return;
+        p.box.querySelectorAll("[data-ad-dot]").forEach((d, i) => { if (i === AD.i) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current"); });
+        playAd();
+    }
+
+    function adSchedule() {
+        clearTimeout(AD.timer);
+        const p = adParts();
+        if (!p || p.box.hasAttribute("data-manual") || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+        const vid = p.slides[AD.i] && p.slides[AD.i].querySelector("video");
+        // الصورة تبقى 5 ثواني، والفيديو مدته (بين 5 و 12 ثانية)
+        const ms = vid && Number.isFinite(vid.duration) && vid.duration > 0 ? Math.min(Math.max(vid.duration * 1000, 5000), 12000) : 5000;
+        AD.timer = setTimeout(() => {
+            if (document.hidden || !AD.visible || Date.now() < AD.hold) { adSchedule(); return; }
+            adGo(AD.i + 1, true);
+            adSchedule();
+        }, Math.max(ms, AD.hold - Date.now()));
+    }
+
+    function setupAdSlider() {
+        clearTimeout(AD.timer);
+        if (AD.io) { AD.io.disconnect(); AD.io = null; }
+        const p = adParts();
+        if (!p) { AD.i = 0; return; }
+        if (AD.i >= p.slides.length) AD.i = 0;
+        if (AD.i) p.track.scrollTo({ left: adSign(p) * AD.i * adStep(p), behavior: "auto" });
+        adMark();
+        let settle = 0;
+        p.track.addEventListener("scroll", () => {
+            clearTimeout(settle);
+            settle = setTimeout(() => {
+                const q = adParts();
+                if (!q) return;
+                const i = Math.min(q.slides.length - 1, Math.round(Math.abs(q.track.scrollLeft) / adStep(q)));
+                if (i !== AD.i) { AD.i = i; adMark(); adSchedule(); }
+            }, 80);
+        }, { passive: true });
+        const touched = () => { AD.hold = Date.now() + 7000; };
+        ["touchstart", "pointerdown", "wheel"].forEach((ev) => p.track.addEventListener(ev, touched, { passive: true }));
+        p.box.addEventListener("click", (e) => {
+            const dot = e.target.closest("[data-ad-dot]");
+            if (!dot) return;
+            touched();
+            adGo(Number(dot.dataset.adDot), true);
+            adSchedule();
+        });
+        if ("IntersectionObserver" in window) {
+            AD.io = new IntersectionObserver((entries) => { AD.visible = entries.some((x) => x.isIntersecting); });
+            AD.io.observe(p.box);
+        }
+        adSchedule();
     }
 
     // «مفضلتك» في الرئيسية لمن حفظ تصاميم

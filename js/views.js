@@ -582,8 +582,23 @@
     // =====================================================
 
     V.ad = function (v) {
-        const ad = v.cfg.ad;
-        if (!ad.show) return "";
+        if (!v.cfg.ad.show) return "";
+        const parts = ATHR.adSlides(v.cfg).map((s, i) => V.adSlide(v, s, i)).filter(Boolean);
+        if (!parts.length) return "";
+        if (parts.length === 1) return `<section class="ad wrap" id="ad">${parts[0]}</section>`;
+        // أكثر من إعلان: الزبون يسحب يمين ويسار، والنقاط تحت توضح وين وصل
+        const n = parts.length;
+        return `<section class="ad wrap ad-multi" id="ad" aria-roledescription="carousel" aria-label="${esc(t("العروض"))}"${v.cfg.ad.auto === false ? ' data-manual=""' : ""}>
+            <div class="ad-track">${parts.map((p, i) => `<div class="ad-slide" role="group" aria-roledescription="slide" aria-label="${i + 1} / ${n}">${p}</div>`).join("")}</div>
+            <div class="ad-dots">${parts.map((_, i) => `<button type="button" data-ad-dot="${i}" aria-label="${esc(t("إعلان {n}", { n: i + 1 }))}"${i ? "" : ' aria-current="true"'}></button>`).join("")}</div>
+        </section>`;
+    };
+
+    // إعلان واحد: الأول نصوصه من config.ad (وترجمته)، والإضافي من حقوله مباشرة
+    V.adSlide = function (v, ad, i) {
+        if (!ATHR.adReady(ad)) return "";
+        const first = i === 0;
+        const txt = (k) => (first ? ct(v, `ad.${k}`) : ATHR.L(ad, k));
         const raw = ATHR.isSafeLink(ad.link) && ad.link ? ad.link : "";
         const link = raw && !/^https?:/i.test(raw) && !raw.startsWith("#") ? ATHR.base() + raw.replace(/^\//, "") : raw;
         const ext = /^https?:/i.test(link);
@@ -591,26 +606,27 @@
             ? `<a class="${cls}" href="${esc(link)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
             : `<div class="${cls}">${inner}</div>`;
         if (ad.type === "image" && ad.image_url) {
-            return `<section class="ad wrap" id="ad">${open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(ct(v, "ad.image_alt"))}" fetchpriority="high">`, "ad-media")}</section>`;
+            return open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(txt("image_alt") || "")}"${first ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"'}>`, "ad-media");
         }
         if (ad.type === "video" && ad.video_url) {
             // نسخة الفيديو المضغوطة من بناء المتجر (تشتغل في كل الجوالات) + صورة غلاف تظهر فوراً
             const cat = typeof ATHR_CATALOG !== "undefined" && ATHR_CATALOG && ATHR_CATALOG.ad ? ATHR_CATALOG.ad[ad.video_url] : null;
             const src = cat ? ATHR.base() + cat.v : ad.video_url;
             const poster = cat ? ATHR.base() + cat.p : ad.image_url ? V.asset(ad.image_url) : "";
-            return `<section class="ad wrap" id="ad">${open(`<video muted loop playsinline autoplay preload="auto" src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ""}${cat && cat.w && cat.h ? ` width="${cat.w}" height="${cat.h}"` : ""} aria-label="${esc(ct(v, "ad.video_alt"))}"></video><span class="ad-play" aria-hidden="true"></span>`, "ad-media")}</section>`;
+            // الفيديو الأول يشتغل تلقائياً، والباقي يشتغل لما يوصله الزبون
+            return open(`<video muted loop playsinline${first ? ' autoplay preload="auto"' : ' preload="none"'} src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ""}${cat && cat.w && cat.h ? ` width="${cat.w}" height="${cat.h}"` : ""} aria-label="${esc(txt("video_alt") || "")}"></video><span class="ad-play" aria-hidden="true"></span>`, "ad-media");
         }
-        const title = ct(v, "ad.title");
-        const text = ct(v, "ad.text");
-        const button = ct(v, "ad.button");
+        const title = txt("title");
+        const text = txt("text");
+        const button = txt("button");
         if (ad.type === "text" && (title || text)) {
             const bg = /^#[0-9a-f]{6}$/i.test(ad.bg) ? ad.bg : v.cfg.theme.primary;
             const btnHref = link || "#catalog";
-            return `<section class="ad wrap" id="ad"><div class="ad-text" style="background:${esc(bg)}">
+            return `<div class="ad-text" style="background:${esc(bg)}">
                 ${title ? `<h2>${esc(fill(v, title))}</h2>` : ""}
                 ${text ? `<p>${esc(fill(v, text))}</p>` : ""}
                 ${button ? `<a class="btn" href="${esc(btnHref)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${esc(fill(v, button))}</a>` : ""}
-            </div></section>`;
+            </div>`;
         }
         return "";
     };

@@ -377,6 +377,8 @@
         "شحن مجاني فوق {amount}": "Free shipping over {amount}",
         "تصفية حسب القسم": "Filter by category",
         "المفضلة": "Favorites",
+        "العروض": "Offers",
+        "إعلان {n}": "Ad {n}",
         "أضف الكل للسلة": "Add all to cart",
         "التصاميم التي أعجبتك محفوظة هنا على جهازك. ارجع لها متى ما تحب.": "Designs you liked are saved here on your device. Come back to them anytime.",
         "لا توجد منتجات في المفضلة بعد. اضغط ♡ على أي تصميم يعجبك لتحفظه هنا.": "No favorites yet. Tap ♡ on any design you like to save it here.",
