@@ -1,6 +1,6 @@
 // عامل الخدمة لتطبيق أثر: يفتح المتجر كتطبيق، ويعرض صفحة بديلة إذا انقطع الإنترنت
 // يبنيه tools/build.mjs تلقائياً، لا تعدّله يدوياً
-const VERSION = "2611bfaf3f";
+const VERSION = "4ae3dcef3e";
 const BASE = "/ATHR/";
 const PAGES = "athr-pages-" + VERSION;
 const ASSETS = "athr-assets-" + VERSION;
@@ -25,7 +25,7 @@ async function trim(name, max) {
 function keep(name, request, response, max) {
     if (!response || !response.ok || response.type !== "basic") return;
     const copy = response.clone();
-    caches.open(name).then((c) => c.put(request, copy)).then(() => trim(name, max)).catch(() => {});
+    caches.open(name).then((c) => c.put(request, copy)).then(() => (Math.random() < 0.15 ? trim(name, max) : null)).catch(() => {});
 }
 
 self.addEventListener("fetch", (event) => {
@@ -34,6 +34,8 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(req.url);
     // الطلبات الخارجية (قاعدة البيانات، الخطوط، الصور المرفوعة) يتعامل معها المتصفح مباشرة
     if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE) || url.pathname.startsWith(BASE + "backup/")) return;
+    // الفيديو يتركه للمتصفح (آيفون يطلبه على أجزاء، والتخزين هنا يوقفه)
+    if (req.headers.has("range") || /.(mp4|webm|mov|m4v)$/i.test(url.pathname)) return;
 
     // الصفحات: من الإنترنت دائماً (أحدث سعر ومخزون)، والنسخة المحفوظة فقط إذا انقطع الاتصال
     if (req.mode === "navigate") {
@@ -49,9 +51,17 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // الباقي (الصور وغيرها): المحفوظ فوراً مع تحديثه من الإنترنت بالخلفية
+    // الصور المصغّرة (أسماؤها ثابتة المحتوى): من المحفوظ دائماً
+    if (url.pathname.startsWith(BASE + "images/t/") || url.pathname.startsWith(BASE + "images/ad/")) {
+        event.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { keep(ASSETS, req, res, 250); return res; })));
+        return;
+    }
+
+    // الباقي: المحفوظ فوراً، ونحدّثه من الإنترنت بالخلفية إذا صار له أكثر من 6 ساعات
     event.respondWith(caches.match(req).then((hit) => {
-        const net = fetch(req).then((res) => { keep(ASSETS, req, res, 200); return res; }).catch(() => hit || Response.error());
+        const age = hit ? Date.now() - (Date.parse(hit.headers.get("date") || "") || 0) : Infinity;
+        if (hit && age < 6 * 3600e3) return hit;
+        const net = fetch(req).then((res) => { keep(ASSETS, req, res, 250); return res; }).catch(() => hit || Response.error());
         return hit || net;
     }));
 });
