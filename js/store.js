@@ -531,6 +531,7 @@
             langBtn.setAttribute("aria-label", ATHR.isEn() ? "التبديل إلى العربية" : "Switch to English");
         }
         $("#menuBtn").hidden = !(cfg.contact.menu_show || S.isAdmin);
+        $(".top-row").classList.toggle("no-menu", !(cfg.contact.menu_show || S.isAdmin));
 
         const multi = ATHR.countries(cfg).filter((c) => c.enabled).length > 1;
         const cur = CC();

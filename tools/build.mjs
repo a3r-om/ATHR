@@ -488,7 +488,8 @@ async function main() {
     const SPLASH = [[1320, 2868, 440, 956, 3], [1290, 2796, 430, 932, 3], [1206, 2622, 402, 874, 3], [1179, 2556, 393, 852, 3], [1284, 2778, 428, 926, 3],
         [1170, 2532, 390, 844, 3], [1125, 2436, 375, 812, 3], [1242, 2688, 414, 896, 3], [828, 1792, 414, 896, 2], [750, 1334, 375, 667, 2]];
     const splashHTML = SPLASH.map(([w, h, cw, ch, r]) => `<link rel="apple-touch-startup-image" media="(device-width: ${cw}px) and (device-height: ${ch}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)" href="${BASE}images/app/splash-${w}x${h}.png">`).join("\n");
-    const statusStyle = cfg.theme && cfg.theme.header === "light" ? "default" : "black-translucent";
+    // شريط الحالة في آيفون: لون ثابت (من theme-color) والمحتوى يبدأ تحته، عشان يكون الهيدر واضح بدون تغبيش
+    const statusStyle = "default";
     const baseCountry = ATHR.country(cfg, ATHR.BASE_COUNTRY);
     const multi = enabled.length > 1;
     const waOk = cfg.contact.wa_float && ATHR.isValidWhatsapp(cfg.order.whatsapp);
@@ -518,7 +519,7 @@ async function main() {
             API_ORIGIN: new URL(supabaseConfig().url).origin,
             FONT_HREF: ATHR.fontHref(cfg) || "data:text/css,",
             THEME_CSS: ATHR.themeVars(cfg),
-            TOPROW_CLASS: cfg.theme.show_search === false ? " no-search" : "",
+            TOPROW_CLASS: `${cfg.theme.show_search === false ? " no-search" : ""}${cfg.contact.menu_show ? "" : " no-menu"}`,
             MENU_HIDDEN: cfg.contact.menu_show ? "" : " hidden",
             BRAND: brandHTML,
             STORE_NAME: esc(name),

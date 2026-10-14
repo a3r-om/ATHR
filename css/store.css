@@ -2384,3 +2384,29 @@ html.is-app, html.is-app body { overscroll-behavior-y: none; }
 .gp-art, .ob-ico { animation-iteration-count: 3; }
 /* زر المفضلة على كل بطاقة: بدون تأثير الضبابية (يثقّل التمرير في آيفون) */
 .fav-btn { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in srgb, var(--surface) 94%, transparent); }
+
+/* =====================================================
+   v24 — هيدر واضح وبسيط
+   سطر واحد: القائمة · الشعار · السلة، وتحته البحث. اللغة والعملة داخل القائمة في الجوال
+===================================================== */
+.icon-btn { width: 44px; height: 44px; background: transparent; }
+.icon-btn:hover, .icon-btn:active { background: color-mix(in srgb, currentColor 14%, transparent); }
+.icon-btn svg { width: 25px; height: 25px; stroke-width: 1.9; }
+#menuBtn svg { fill: none; stroke: currentColor; stroke-width: 2.2; }
+.cart-count { top: 1px; inset-inline-end: 0; min-width: 19px; height: 19px; line-height: 19px; font-size: 11.5px; font-weight: 800; box-shadow: 0 0 0 2px var(--head-bg, var(--primary)); }
+.brand-logo { width: 38px; height: 38px; }
+.search { height: 40px; border-radius: 12px; padding: 0 12px; }
+.search svg { width: 18px; height: 18px; }
+.search input { font-size: 15.5px; }
+.search input::placeholder { opacity: .85; }
+@media (max-width: 759px) {
+    .top-row { grid-template-columns: auto 1fr auto; grid-template-areas: "menu brand cart" "search search search"; gap: 4px 6px; padding: 4px 0 10px; }
+    .top-row.no-search { grid-template-areas: "menu brand cart"; padding-bottom: 6px; }
+    html.tpl-minimal .top-row, html.tpl-boutique .top-row, html.tpl-luxe .top-row { grid-template-columns: auto 1fr auto; grid-template-areas: "menu brand cart" "search search search"; }
+    html.tpl-minimal .top-row.no-search, html.tpl-boutique .top-row.no-search, html.tpl-luxe .top-row.no-search { grid-template-areas: "menu brand cart"; }
+    .top-row .lang-btn, .top-row .cur-btn { display: none; }
+    /* لو صاحب المتجر أخفى القائمة: نرجّع اللغة والعملة في الهيدر */
+    .top-row.no-menu { grid-template-columns: 1fr auto auto auto; grid-template-areas: "brand lang cur cart" "search search search search"; }
+    .top-row.no-menu.no-search { grid-template-areas: "brand lang cur cart"; }
+    .top-row.no-menu .lang-btn, .top-row.no-menu .cur-btn:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
+}
