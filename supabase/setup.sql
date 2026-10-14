@@ -560,7 +560,7 @@ security definer
 set search_path = public
 as $$
 begin
-    if k is null or k !~ '^(visit|view|add|checkout|order)(:(direct|google|instagram|tiktok|whatsapp|snapchat|facebook|x|other))?$' then
+    if k is null or k !~ '^(visit|view|add|checkout|order)(:(direct|google|instagram|tiktok|whatsapp|snapchat|facebook|x|offer|app|other))?$' then
         return;
     end if;
     insert into public.stats_daily (day, key, n)

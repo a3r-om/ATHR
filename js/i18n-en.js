@@ -9,6 +9,20 @@
     const ATHR = root.ATHR;
 
     ATHR.EN = {
+        "حمّل تطبيق {name}": "Get the {name} app",
+        "حمّل التطبيق": "Get the app",
+        "أسرع للطلب، ويفتح من شاشة جوالك": "Faster ordering, right from your home screen",
+        "تحميل": "Get",
+        "يفتح بشاشة كاملة مثل أي تطبيق، وسلتك ومفضلتك محفوظة.": "Opens full screen like any app, with your cart and favorites saved.",
+        "اضغط زر <b>المشاركة</b> تحت الشاشة": "Tap the <b>Share</b> button at the bottom",
+        "اختر <b>«إضافة إلى الشاشة الرئيسية»</b>": "Choose <b>“Add to Home Screen”</b>",
+        "اضغط <b>«إضافة»</b>، وبتلقى أيقونة {name} في جوالك": "Tap <b>“Add”</b> and the {name} icon appears on your phone",
+        "اضغط <b>⋮</b> فوق في المتصفح": "Tap <b>⋮</b> at the top of the browser",
+        "اختر <b>«تثبيت التطبيق»</b> أو «إضافة إلى الشاشة الرئيسية»": "Choose <b>“Install app”</b> or “Add to Home screen”",
+        "اضغط <b>«تثبيت»</b>، وبتلقى أيقونة {name} في جوالك": "Tap <b>“Install”</b> and the {name} icon appears on your phone",
+        "أنت فاتح المتجر من داخل تطبيق ثاني. اضغط ⋯ واختر «فتح في Safari» أول، وبعدها اتبع الخطوات.": "You opened the store inside another app. Tap ⋯ and choose “Open in Safari” first, then follow the steps.",
+        "أنت فاتح المتجر من داخل تطبيق ثاني. اضغط ⋮ واختر «فتح في Chrome» أول، وبعدها اتبع الخطوات.": "You opened the store inside another app. Tap ⋮ and choose “Open in Chrome” first, then follow the steps.",
+        "مجاني، وما ياخذ مساحة تقريباً.": "Free, and takes almost no space.",
         "خصم الكمية {pct}%": "Quantity discount {pct}%",
         "خصم الباقة": "Set discount",
         "الخصم": "Discount",

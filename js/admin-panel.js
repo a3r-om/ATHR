@@ -56,6 +56,7 @@
         facebook: "فيسبوك",
         x: "X (تويتر)",
         offer: "عروض واتساب",
+        app: "📱 التطبيق",
         other: "مواقع أخرى"
     };
 
@@ -2883,7 +2884,7 @@
     const firstName = (name) => String(name || "").trim().split(/\s+/)[0] || "";
     const orderTime = (o) => new Date(o.ordered_at || o.created_at).getTime();
     const liveOrders = () => (A.orders || []).filter((o) => !o.hidden);
-    const CH_NAMES = { direct: "مباشر", google: "جوجل", instagram: "إنستغرام", tiktok: "تيك توك", whatsapp: "واتساب", snapchat: "سناب شات", facebook: "فيسبوك", x: "إكس", offer: "روابط العروض", other: "أخرى" };
+    const CH_NAMES = { direct: "مباشر", google: "جوجل", instagram: "إنستغرام", tiktok: "تيك توك", whatsapp: "واتساب", snapchat: "سناب شات", facebook: "فيسبوك", x: "إكس", offer: "روابط العروض", app: "التطبيق", other: "أخرى" };
     const chName = (k) => CH_NAMES[k] || k || "مباشر";
     // عدّ بالعربي: 1 طلب، 2 طلبين، 3-10 طلبات، 11+ طلب
     const countAr = (n, one, two, few) => (n === 1 ? `1 ${one}` : n === 2 ? two : n >= 3 && n <= 10 ? `${n} ${few}` : `${n} ${one}`);

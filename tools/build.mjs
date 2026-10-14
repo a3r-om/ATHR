@@ -385,6 +385,11 @@ async function main() {
         V_RATES: hashOf(ratesSrc),
         V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"))
     };
+    // شاشات البداية لتطبيق آيفون (عرض × طول بالبكسل، والمقاس المنطقي، ونسبة البكسل)
+    const SPLASH = [[1320, 2868, 440, 956, 3], [1290, 2796, 430, 932, 3], [1206, 2622, 402, 874, 3], [1179, 2556, 393, 852, 3], [1284, 2778, 428, 926, 3],
+        [1170, 2532, 390, 844, 3], [1125, 2436, 375, 812, 3], [1242, 2688, 414, 896, 3], [828, 1792, 414, 896, 2], [750, 1334, 375, 667, 2]];
+    const splashHTML = SPLASH.map(([w, h, cw, ch, r]) => `<link rel="apple-touch-startup-image" media="(device-width: ${cw}px) and (device-height: ${ch}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)" href="${BASE}images/app/splash-${w}x${h}.png">`).join("\n");
+    const statusStyle = cfg.theme && cfg.theme.header === "light" ? "default" : "black-translucent";
     const baseCountry = ATHR.country(cfg, ATHR.BASE_COUNTRY);
     const multi = enabled.length > 1;
     const waOk = cfg.contact.wa_float && ATHR.isValidWhatsapp(cfg.order.whatsapp);
@@ -408,6 +413,8 @@ async function main() {
             HTML_CLASS: ATHR.themeClasses(cfg).join(" "),
             HEAD: headHTML,
             THEME_COLOR: ATHR.headColor(cfg),
+            STATUS_STYLE: statusStyle,
+            SPLASH: splashHTML,
             BASE,
             API_ORIGIN: new URL(supabaseConfig().url).origin,
             FONT_HREF: ATHR.fontHref(cfg) || "data:text/css,",
@@ -430,7 +437,7 @@ async function main() {
             WA_ATTRS: waOk ? `href="${esc(ATHR.waLink(cfg.order.whatsapp, fill(cfg.contact.wa_float_msg)))}"` : "hidden",
             ...versions
         };
-        return shell.replace(/\{\{([A-Z_]+)\}\}/g, (m, key) => {
+        return shell.replace(/\{\{([A-Z0-9_]+)\}\}/g, (m, key) => {
             if (!(key in values)) throw new Error(`قيمة غير معروفة في القالب: ${key}`);
             return values[key];
         });
@@ -706,6 +713,121 @@ ${sitemap.map((u) => `<url><loc>${xml(u.loc)}</loc>${u.images.map((i) => `<image
 `);
     writeFile("robots.txt", `User-agent: *\nAllow: /\nDisallow: /backup/\n\nSitemap: ${SITE}sitemap.xml\n`);
     writeFile(".nojekyll", "");
+
+    // =====================================================
+    // التطبيق (PWA): ملف التعريف + عامل الخدمة + صفحة بدون إنترنت
+    // =====================================================
+    const colors = ATHR.themeColors(cfg);
+    const appDesc = clamp((cfg.seo && cfg.seo.home_description) || endDot(fill(cfg.texts.about || "").trim() || `متجر ${name}`));
+    const appIcon = (file, size, purpose = "any") => ({ src: `${BASE}images/app/${file}`, sizes: `${size}x${size}`, type: "image/png", purpose });
+    writeFile("manifest.webmanifest", JSON.stringify({
+        id: BASE,
+        name,
+        short_name: name.slice(0, 12),
+        description: appDesc,
+        lang: "ar",
+        dir: "rtl",
+        start_url: BASE,
+        scope: BASE,
+        display: "standalone",
+        orientation: "portrait",
+        background_color: colors.primary,
+        theme_color: ATHR.headColor(cfg),
+        categories: ["shopping", "lifestyle"],
+        icons: [appIcon("icon-192.png", 192), appIcon("icon-512.png", 512), appIcon("maskable-512.png", 512, "maskable")],
+        shortcuts: [
+            { name: "السلة", short_name: "السلة", url: `${BASE}cart/`, icons: [appIcon("icon-192.png", 192)] },
+            cfg.sales.gift_enabled ? { name: "إرسال هدية", short_name: "هدية", url: `${BASE}gift/`, icons: [appIcon("icon-192.png", 192)] } : null
+        ].filter(Boolean)
+    }, null, 1) + "\n");
+
+    writeFile("offline.html", `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="${esc(ATHR.headColor(cfg))}">
+<title>${esc(name)} | بدون إنترنت</title>
+<style>
+html,body{margin:0;height:100%}
+body{display:grid;place-items:center;background:${esc(colors.primary)};color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:24px;box-sizing:border-box}
+img{width:110px;height:auto;opacity:.95}
+h1{font-size:20px;margin:22px 0 8px}
+p{margin:0 0 22px;opacity:.85;line-height:1.7}
+button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:12px 26px;background:#fff;color:${esc(colors.primary)};cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+<img src="${BASE}images/logo.png" alt="${esc(name)}">
+<h1>ما فيه اتصال بالإنترنت</h1>
+<p>تأكد من الإنترنت وارجع جرّب، وسلتك محفوظة.</p>
+<button type="button" onclick="location.reload()">حاول مرة ثانية</button>
+</main>
+</body>
+</html>
+`);
+
+    const swVersion = hashOf(Object.values(versions).join("|"), shell, name);
+    writeFile("sw.js", `// عامل الخدمة لتطبيق ${name}: يفتح المتجر كتطبيق، ويعرض صفحة بديلة إذا انقطع الإنترنت
+// يبنيه tools/build.mjs تلقائياً، لا تعدّله يدوياً
+const VERSION = "${swVersion}";
+const BASE = "${BASE}";
+const PAGES = "athr-pages-" + VERSION;
+const ASSETS = "athr-assets-" + VERSION;
+const OFFLINE = BASE + "offline.html";
+
+self.addEventListener("install", (event) => {
+    event.waitUntil(caches.open(ASSETS).then((c) => c.addAll([OFFLINE, BASE + "images/logo.png", BASE + "images/app/icon-192.png"])).then(() => self.skipWaiting()));
+});
+
+self.addEventListener("activate", (event) => {
+    event.waitUntil(caches.keys()
+        .then((keys) => Promise.all(keys.filter((k) => k.startsWith("athr-") && k !== PAGES && k !== ASSETS).map((k) => caches.delete(k))))
+        .then(() => self.clients.claim()));
+});
+
+async function trim(name, max) {
+    const cache = await caches.open(name);
+    const keys = await cache.keys();
+    for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
+}
+
+function keep(name, request, response, max) {
+    if (!response || !response.ok || response.type !== "basic") return;
+    const copy = response.clone();
+    caches.open(name).then((c) => c.put(request, copy)).then(() => trim(name, max)).catch(() => {});
+}
+
+self.addEventListener("fetch", (event) => {
+    const req = event.request;
+    if (req.method !== "GET") return;
+    const url = new URL(req.url);
+    // الطلبات الخارجية (قاعدة البيانات، الخطوط، الصور المرفوعة) يتعامل معها المتصفح مباشرة
+    if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE) || url.pathname.startsWith(BASE + "backup/")) return;
+
+    // الصفحات: من الإنترنت دائماً (أحدث سعر ومخزون)، والنسخة المحفوظة فقط إذا انقطع الاتصال
+    if (req.mode === "navigate") {
+        event.respondWith(fetch(req)
+            .then((res) => { keep(PAGES, req, res, 40); return res; })
+            .catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match(OFFLINE))));
+        return;
+    }
+
+    // الملفات بإصدار (?v=) ثابتة: من المحفوظ أولاً
+    if (url.searchParams.has("v")) {
+        event.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { keep(ASSETS, req, res, 80); return res; })));
+        return;
+    }
+
+    // الباقي (الصور وغيرها): المحفوظ فوراً مع تحديثه من الإنترنت بالخلفية
+    event.respondWith(caches.match(req).then((hit) => {
+        const net = fetch(req).then((res) => { keep(ASSETS, req, res, 200); return res; }).catch(() => hit || Response.error());
+        return hit || net;
+    }));
+});
+`);
 
     console.log(`✓ بُنيت صفحات ${SITE}`);
     console.log(`  الرئيسية + ${catCount} قسم + ${v.products.length} منتج + سياسة الشحن، و${sitemap.length} رابط في خريطة الموقع`);

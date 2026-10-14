@@ -714,6 +714,7 @@
         if (route.name === "checkout" && computeCart().count) track("checkout");
         pixelRoute(route);
         proofRoute(route.name);
+        appBanner(route.name);
     }
 
     // =====================================================
@@ -2569,6 +2570,7 @@
             }
             if (cfg.sales.gift_enabled) main.push(row(`${ico(V.icon.gift, " gift")}<span class="ml">${esc(t("أرسل هدية"))}<small>${esc(V.giftSub(vv))}</small></span>`, { attrs: "data-gift-start", cls: " mrow-gift" }));
             if (cfg.contact.policy_show) main.push(row(`${ico(V.icon.truck)}<span class="ml">${esc(t("التوصيل والدفع"))}</span>`, { href: `${BASE}shipping/` }));
+            if (canOfferApp()) main.push(row(`<span class="mi app"><img src="${BASE}images/app/icon-192.png" alt="" width="22" height="22"></span><span class="ml">${esc(t("حمّل التطبيق"))}<small>${esc(t("أسرع للطلب، ويفتح من شاشة جوالك"))}</small></span>`, { attrs: "data-app-install" }));
             parts.push(`<div class="mgroup">${main.join("")}</div>`);
 
             const settings = [];
@@ -2665,6 +2667,7 @@
             if (/(^|\.|\/)x\.com|twitter|t\.co\//.test(s)) return "x";
             return "";
         };
+        if (!src && isStandalone()) return "app";
         let ch = (/^offer/.test(src) ? "offer" : "") || test(src) || test(ref) || test(ua);
         if (!ch && src) ch = "other";
         if (!ch && ref && !ref.includes(location.host)) ch = "other";
@@ -2945,6 +2948,8 @@
         }
 
         if (d.closeSheet !== undefined) { closeSheet(); return; }
+        if (d.appInstall !== undefined) { const fromMenu = Boolean(el.closest(".menu")); if (fromMenu) closeSheet(); setTimeout(() => afterReady(openAppInstall), fromMenu ? 250 : 0); return; }
+        if (d.appDismiss !== undefined) { storage.set(APP.key, Date.now() + 21 * 864e5); const b = $("#appBanner"); if (b) b.remove(); return; }
         if (el.id === "menuBtn") { afterReady(openMenu); return; }
         if (el.id === "langBtn") { afterReady(() => setLang(ATHR.isEn() ? "ar" : "en")); return; }
         if (d.setLang) { const l = d.setLang; afterReady(() => setLang(l)); return; }
@@ -3370,6 +3375,84 @@
     }
 
     // =====================================================
+    // التطبيق: تنزيل المتجر كتطبيق على الشاشة الرئيسية (آيفون وأندرويد)
+    // =====================================================
+    const APP = { prompt: null, key: "athr_app_banner" };
+    const isStandalone = () => (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isAndroid = () => /android/i.test(navigator.userAgent);
+    const inAppBrowser = () => /instagram|fban|fbav|fb_iab|tiktok|musical_ly|bytedance|snapchat|line\//i.test(navigator.userAgent);
+    const canOfferApp = () => !isStandalone() && !S.preview && (Boolean(APP.prompt) || isIOS() || isAndroid());
+
+    function setupApp() {
+        if (isStandalone()) document.documentElement.classList.add("is-app");
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            APP.prompt = e;
+            if (S.route && S.route.name === "home") appBanner("home");
+        });
+        window.addEventListener("appinstalled", () => {
+            APP.prompt = null;
+            storage.set(APP.key, Date.now() + 3650 * 864e5);
+            const b = $("#appBanner");
+            if (b) b.remove();
+        });
+        const sw = "serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname));
+        if (sw && !S.preview && (!navigator.webdriver || window.__ATHR_SW_TEST)) {
+            window.addEventListener("load", () => { navigator.serviceWorker.register(`${BASE}sw.js`, { scope: BASE }).catch(() => {}); });
+        }
+    }
+
+    // بطاقة صغيرة أعلى الرئيسية للزوار من الجوال (تنخفي 3 أسابيع إذا سكّرها)
+    function appBanner(routeName) {
+        const old = $("#appBanner");
+        if (routeName !== "home" || !canOfferApp() || window.innerWidth > 900 || Number(storage.get(APP.key, 0)) > Date.now()) {
+            if (old) old.remove();
+            return;
+        }
+        if (old) return;
+        const name = ATHR.storeName(C());
+        $("#view").insertAdjacentHTML("afterbegin", `<div class="app-banner wrap" id="appBanner">
+            <img src="${BASE}images/app/icon-192.png" alt="" width="44" height="44">
+            <span class="ab-txt"><b>${esc(t("حمّل تطبيق {name}").replace("{name}", name))}</b><small>${esc(t("أسرع للطلب، ويفتح من شاشة جوالك"))}</small></span>
+            <button class="btn btn-primary btn-sm" type="button" data-app-install>${esc(t("تحميل"))}</button>
+            <button class="ab-x" type="button" data-app-dismiss aria-label="${esc(t("إغلاق"))}">×</button>
+        </div>`);
+    }
+
+    async function openAppInstall() {
+        if (APP.prompt) {
+            const e = APP.prompt;
+            APP.prompt = null;
+            try {
+                await e.prompt();
+                const choice = await e.userChoice;
+                if (choice && choice.outcome === "accepted") { const b = $("#appBanner"); if (b) b.remove(); }
+            } catch { /* المتصفح رفض */ }
+            return;
+        }
+        const name = ATHR.storeName(C());
+        const share = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5"/><path d="M8 7.5l4-4 4 4"/><path d="M7 10.5H5.5v10h13v-10H17"/></svg>`;
+        const plus = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>`;
+        const dots = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>`;
+        const ok = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+        const step = (ico, html) => `<li><span class="st-ico">${ico}</span><span>${html}</span></li>`;
+        const ios = isIOS();
+        const steps = ios
+            ? [step(share, t("اضغط زر <b>المشاركة</b> تحت الشاشة")), step(plus, t("اختر <b>«إضافة إلى الشاشة الرئيسية»</b>")), step(ok, t("اضغط <b>«إضافة»</b>، وبتلقى أيقونة {name} في جوالك").replace("{name}", esc(name)))]
+            : [step(dots, t("اضغط <b>⋮</b> فوق في المتصفح")), step(plus, t("اختر <b>«تثبيت التطبيق»</b> أو «إضافة إلى الشاشة الرئيسية»")), step(ok, t("اضغط <b>«تثبيت»</b>، وبتلقى أيقونة {name} في جوالك").replace("{name}", esc(name)))];
+        openSheet(`
+            <div class="sheet-head"><h2>${esc(t("حمّل تطبيق {name}").replace("{name}", name))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
+            <div class="app-install">
+                <img class="ai-icon" src="${BASE}images/app/icon-192.png" alt="" width="72" height="72">
+                <p class="ai-lead">${esc(t("يفتح بشاشة كاملة مثل أي تطبيق، وسلتك ومفضلتك محفوظة."))}</p>
+                ${inAppBrowser() ? `<p class="ai-note">${esc(ios ? t("أنت فاتح المتجر من داخل تطبيق ثاني. اضغط ⋯ واختر «فتح في Safari» أول، وبعدها اتبع الخطوات.") : t("أنت فاتح المتجر من داخل تطبيق ثاني. اضغط ⋮ واختر «فتح في Chrome» أول، وبعدها اتبع الخطوات."))}</p>` : ""}
+                <ol class="ai-steps">${steps.join("")}</ol>
+                <p class="ai-free">${esc(t("مجاني، وما ياخذ مساحة تقريباً."))}</p>
+            </div>`, { label: t("حمّل التطبيق"), kind: "app" });
+    }
+
+    // =====================================================
     // START
     // =====================================================
 
@@ -3384,6 +3467,7 @@
     }
 
     applyLang(storage.get(KEYS.lang, "ar"));
+    setupApp();
     convertLegacyHash();
     S.route = parseRoute();
     trackVisit();
