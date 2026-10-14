@@ -1,0 +1,66 @@
+{
+ "id": "/ATHR/",
+ "name": "أثر",
+ "short_name": "أثر",
+ "description": "أكواب بتصاميم الأندية والشخصيات وتصاميم أخرى.",
+ "lang": "ar",
+ "dir": "rtl",
+ "start_url": "/ATHR/",
+ "scope": "/ATHR/",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#7D1420",
+ "theme_color": "#7D1420",
+ "categories": [
+  "shopping",
+  "lifestyle"
+ ],
+ "icons": [
+  {
+   "src": "/ATHR/images/app/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/ATHR/images/app/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/ATHR/images/app/maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "السلة",
+   "short_name": "السلة",
+   "url": "/ATHR/cart/",
+   "icons": [
+    {
+     "src": "/ATHR/images/app/icon-192.png",
+     "sizes": "192x192",
+     "type": "image/png",
+     "purpose": "any"
+    }
+   ]
+  },
+  {
+   "name": "إرسال هدية",
+   "short_name": "هدية",
+   "url": "/ATHR/gift/",
+   "icons": [
+    {
+     "src": "/ATHR/images/app/icon-192.png",
+     "sizes": "192x192",
+     "type": "image/png",
+     "purpose": "any"
+    }
+   ]
+  }
+ ]
+}
