@@ -4,7 +4,7 @@
  "note": "نسخة تلقائية من بناء المتجر: الأقسام والمنتجات الظاهرة وصورها والإعدادات. الطلبات والعملاء في النسخة الكاملة من لوحة التحكم.",
  "config": {
   "ad": {
-   "bg": "#7D1420",
+   "bg": "#570418",
    "link": "",
    "show": true,
    "text": "",
@@ -581,12 +581,12 @@
   },
   "theme": {
    "bg": "#EBDDC9",
-   "hero": "#4A0D12",
+   "hero": "#45030F",
    "mode": "light",
    "text": "#251A1B",
    "header": "color",
    "radius": "medium",
-   "primary": "#7D1420",
+   "primary": "#570418",
    "template": "classic",
    "font_body": "IBM Plex Sans Arabic",
    "font_head": "IBM Plex Sans Arabic",
