@@ -715,6 +715,7 @@
         pixelRoute(route);
         proofRoute(route.name);
         appBanner(route.name);
+        pushCard(route.name);
     }
 
     // =====================================================
@@ -2429,6 +2430,7 @@
                 </div>
                 ${giftDoneHTML(order, code)}
                 ${loyaltyDoneHTML(order)}
+                ${["off", "install"].includes(pushStatus()) && !S.preview ? pushCardHTML("done") : ""}
                 <div class="panel">
                     <h2>${esc(t("ملخص الطلب"))}</h2>
                     <div class="rows">
@@ -2570,6 +2572,11 @@
             }
             if (cfg.sales.gift_enabled) main.push(row(`${ico(V.icon.gift, " gift")}<span class="ml">${esc(t("أرسل هدية"))}<small>${esc(V.giftSub(vv))}</small></span>`, { attrs: "data-gift-start", cls: " mrow-gift" }));
             if (cfg.contact.policy_show) main.push(row(`${ico(V.icon.truck)}<span class="ml">${esc(t("التوصيل والدفع"))}</span>`, { href: `${BASE}shipping/` }));
+            const pst = pushStatus();
+            if (pst !== "none") {
+                const sub = { on: "مفعّلة ✓ · اضغط للإيقاف", off: "أول من يعرف بالخصومات", install: "تشتغل بعد تنزيل التطبيق", denied: "مقفلة من إعدادات الجوال" }[pst];
+                main.push(row(`<span class="mi bell">🔔</span><span class="ml">${esc(t("إشعارات العروض"))}<small>${esc(t(sub))}</small></span>`, { attrs: "data-push-toggle" }));
+            }
             if (canOfferApp()) main.push(row(`<span class="mi app"><img src="${BASE}images/app/icon-192.png" alt="" width="22" height="22"></span><span class="ml">${esc(t("حمّل التطبيق"))}<small>${esc(t("أسرع للطلب، ويفتح من شاشة جوالك"))}</small></span>`, { attrs: "data-app-install" }));
             parts.push(`<div class="mgroup">${main.join("")}</div>`);
 
@@ -2668,6 +2675,7 @@
             return "";
         };
         if (!src && isStandalone()) return "app";
+        if (src === "push") return "push";
         let ch = (/^offer/.test(src) ? "offer" : "") || test(src) || test(ref) || test(ua);
         if (!ch && src) ch = "other";
         if (!ch && ref && !ref.includes(location.host)) ch = "other";
@@ -2948,6 +2956,16 @@
         }
 
         if (d.closeSheet !== undefined) { closeSheet(); return; }
+        if (d.pushOn !== undefined) { enablePush(); return; }
+        if (d.pushDismiss !== undefined) { storage.set(PUSH.card, Date.now() + 14 * 864e5); removePushCards(); return; }
+        if (d.pushToggle !== undefined) {
+            const st = pushStatus();
+            if (st === "on") { closeSheet(); if (confirm(t("توقف إشعارات العروض؟"))) disablePush(); return; }
+            if (st === "install") { closeSheet(); setTimeout(() => afterReady(() => openAppInstall({ push: true })), 250); return; }
+            enablePush();
+            closeSheet();
+            return;
+        }
         if (d.appInstall !== undefined) { const fromMenu = Boolean(el.closest(".menu")); if (fromMenu) closeSheet(); setTimeout(() => afterReady(openAppInstall), fromMenu ? 250 : 0); return; }
         if (d.appDismiss !== undefined) { storage.set(APP.key, Date.now() + 21 * 864e5); const b = $("#appBanner"); if (b) b.remove(); return; }
         if (el.id === "menuBtn") { afterReady(openMenu); return; }
@@ -3420,7 +3438,7 @@
         </div>`);
     }
 
-    async function openAppInstall() {
+    async function openAppInstall({ push = false } = {}) {
         if (APP.prompt) {
             const e = APP.prompt;
             APP.prompt = null;
@@ -3445,11 +3463,108 @@
             <div class="sheet-head"><h2>${esc(t("حمّل تطبيق {name}").replace("{name}", name))}</h2><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
             <div class="app-install">
                 <img class="ai-icon" src="${BASE}images/app/icon-192.png" alt="" width="72" height="72">
-                <p class="ai-lead">${esc(t("يفتح بشاشة كاملة مثل أي تطبيق، وسلتك ومفضلتك محفوظة."))}</p>
+                <p class="ai-lead">${esc(push ? t("إشعارات العروض في آيفون تشتغل من التطبيق. نزّله بخطوتين، وافتحه من الأيقونة وفعّل الإشعارات.") : t("يفتح بشاشة كاملة مثل أي تطبيق، وسلتك ومفضلتك محفوظة."))}</p>
                 ${inAppBrowser() ? `<p class="ai-note">${esc(ios ? t("أنت فاتح المتجر من داخل تطبيق ثاني. اضغط ⋯ واختر «فتح في Safari» أول، وبعدها اتبع الخطوات.") : t("أنت فاتح المتجر من داخل تطبيق ثاني. اضغط ⋮ واختر «فتح في Chrome» أول، وبعدها اتبع الخطوات."))}</p>` : ""}
                 <ol class="ai-steps">${steps.join("")}</ol>
                 <p class="ai-free">${esc(t("مجاني، وما ياخذ مساحة تقريباً."))}</p>
             </div>`, { label: t("حمّل التطبيق"), kind: "app" });
+    }
+
+    // =====================================================
+    // إشعارات العروض (Web Push): الزبون يفعّلها بضغطة، وصاحب المتجر يرسل من لوحة التحكم
+    // آيفون: تشتغل بعد تنزيل التطبيق على الشاشة الرئيسية · أندرويد: من المتصفح أو التطبيق
+    // =====================================================
+    const PUSH = { key: null, busy: false, state: "athr_push", card: "athr_push_card" };
+    const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    function pushStatus() {
+        if (isIOS() && !isStandalone()) return "install";
+        if (!pushSupported()) return "none";
+        if (Notification.permission === "denied") return "denied";
+        if (Notification.permission === "granted" && storage.get(PUSH.state, "") === "on") return "on";
+        return "off";
+    }
+    async function pushCall(body) {
+        const res = await fetch(`${API.url}/functions/v1/push`, { method: "POST", headers: { apikey: API.key, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || out.error) throw new Error(out.error || `http_${res.status}`);
+        return out;
+    }
+    async function pushKey() {
+        if (PUSH.key) return PUSH.key;
+        const out = await pushCall({ action: "key" });
+        PUSH.key = out.key;
+        return PUSH.key;
+    }
+    const b64uBytes = (s) => {
+        const t2 = String(s).replace(/-/g, "+").replace(/_/g, "/");
+        return Uint8Array.from(atob(t2 + "===".slice((t2.length + 3) % 4)), (c) => c.charCodeAt(0));
+    };
+    function removePushCards() {
+        $$(".push-card").forEach((el) => el.remove());
+    }
+
+    // لازم تنادى مباشرة من ضغطة الزبون (شرط آيفون لطلب الإذن)
+    async function enablePush() {
+        const st = pushStatus();
+        if (st === "install") { openAppInstall({ push: true }); return; }
+        if (st === "none") { toast(t("جهازك ما يدعم الإشعارات")); return; }
+        if (st === "denied") { toast(t("الإشعارات مقفلة من إعدادات الجوال. فعّلها من الإعدادات وارجع جرّب.")); return; }
+        if (PUSH.busy) return;
+        PUSH.busy = true;
+        try {
+            const keyJob = pushKey();
+            keyJob.catch(() => {});
+            const perm = await Notification.requestPermission();
+            if (perm !== "granted") {
+                toast(t("ما تفعّلت الإشعارات. تقدر تفعّلها بعدين من القائمة."));
+                return;
+            }
+            await navigator.serviceWorker.register(`${BASE}sw.js`, { scope: BASE });
+            const reg = await navigator.serviceWorker.ready;
+            const key = await keyJob;
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(key) });
+            await pushCall({ action: "subscribe", sub: sub.toJSON(), lang: ATHR.isEn() ? "en" : "ar" });
+            storage.set(PUSH.state, "on");
+            removePushCards();
+            toast(t("تم ✓ بتوصلك عروضنا أول بأول"));
+        } catch (error) {
+            toast(t("ما قدرنا نفعّل الإشعارات، حاول مرة ثانية"));
+        } finally {
+            PUSH.busy = false;
+        }
+    }
+
+    async function disablePush() {
+        try {
+            const reg = await navigator.serviceWorker.getRegistration(BASE);
+            const sub = reg && await reg.pushManager.getSubscription();
+            if (sub) {
+                pushCall({ action: "unsubscribe", endpoint: sub.endpoint }).catch(() => {});
+                await sub.unsubscribe();
+            }
+        } catch { /* نكمل */ }
+        storage.set(PUSH.state, "off");
+        toast(t("وقّفنا إشعارات العروض"));
+    }
+
+    function pushCardHTML(kind) {
+        const install = pushStatus() === "install";
+        return `<div class="push-card${kind === "done" ? "" : " wrap"}" id="pushCard-${kind}">
+            <span class="pc-ico" aria-hidden="true">🔔</span>
+            <span class="pc-txt"><b>${esc(t(kind === "done" ? "تبي نعلمك بالعروض الجاية؟" : "خلك أول من يعرف بالعروض"))}</b><small>${esc(install ? t("نزّل التطبيق وفعّل الإشعارات، وتوصلك العروض على جوالك") : t("نرسل لك العروض والتصاميم الجديدة بس، بدون إزعاج"))}</small></span>
+            <button class="btn btn-primary btn-sm" type="button" data-push-on>${esc(t(install ? "نزّل التطبيق" : "فعّل"))}</button>
+            ${kind === "done" ? "" : `<button class="ab-x" type="button" data-push-dismiss aria-label="${esc(t("إغلاق"))}">×</button>`}
+        </div>`;
+    }
+
+    // بطاقة في الرئيسية لمن نزّل التطبيق (أو أندرويد) وما فعّل الإشعارات
+    function pushCard(routeName) {
+        const old = $("#pushCard-home");
+        const st = pushStatus();
+        const show = routeName === "home" && st === "off" && !S.preview && !$("#appBanner") && Number(storage.get(PUSH.card, 0)) < Date.now() && (isStandalone() || isAndroid());
+        if (!show) { if (old) old.remove(); return; }
+        if (!old) $("#view").insertAdjacentHTML("afterbegin", pushCardHTML("home"));
     }
 
     // =====================================================

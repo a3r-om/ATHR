@@ -2360,3 +2360,15 @@ textarea.input { min-height: 62px; line-height: 1.5; }
 html[data-mode="dark"] .ai-steps .st-ico { color: color-mix(in srgb, var(--primary) 45%, #fff); }
 /* داخل التطبيق: بدون تأثير السحب الزائد */
 html.is-app, html.is-app body { overscroll-behavior-y: none; }
+
+/* ===== v22 — إشعارات العروض ===== */
+.push-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line)); border-radius: var(--r-sm, 12px); background: color-mix(in srgb, var(--primary) 6%, var(--surface)); }
+.push-card.wrap { margin-top: 10px; margin-bottom: 4px; }
+.thanks .push-card { margin: 14px 0; }
+.push-card .pc-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); font-size: 20px; flex-shrink: 0; }
+.push-card .pc-txt { flex: 1; min-width: 0; display: grid; line-height: 1.4; }
+.push-card .pc-txt b { font-size: 14px; }
+.push-card .pc-txt small { color: var(--muted); font-size: 12px; }
+.push-card .btn-sm { min-height: 34px; padding: 4px 14px; flex-shrink: 0; }
+.push-card .ab-x { width: 30px; height: 30px; margin-inline-start: -4px; border: 0; background: none; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; flex-shrink: 0; }
+.mi.bell { font-size: 18px; }

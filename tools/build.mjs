@@ -827,6 +827,35 @@ self.addEventListener("fetch", (event) => {
         return hit || net;
     }));
 });
+
+// ---------- إشعارات العروض ----------
+self.addEventListener("push", (event) => {
+    let d = {};
+    try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : "" }; }
+    event.waitUntil(self.registration.showNotification(d.title || ${JSON.stringify(name)}, {
+        body: d.body || "",
+        icon: BASE + "images/app/icon-192.png",
+        badge: BASE + "images/app/badge-96.png",
+        image: d.image || undefined,
+        dir: "rtl",
+        lang: "ar",
+        tag: d.tag || "athr",
+        data: { url: d.url || BASE }
+    }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    let target;
+    try { target = new URL((event.notification.data && event.notification.data.url) || BASE, self.location.origin); } catch (e) { target = new URL(BASE, self.location.origin); }
+    if (target.origin !== self.location.origin || !target.pathname.startsWith(BASE)) target = new URL(BASE, self.location.origin);
+    target.searchParams.set("src", "push");
+    event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        const win = list.find((c) => c.url.startsWith(self.location.origin + BASE));
+        if (win) return win.focus().then((c) => (c || win).navigate(target.href)).catch(() => self.clients.openWindow(target.href));
+        return self.clients.openWindow(target.href);
+    }));
+});
 `);
 
     console.log(`✓ بُنيت صفحات ${SITE}`);
