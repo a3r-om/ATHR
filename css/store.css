@@ -2382,3 +2382,5 @@ html.is-app, html.is-app body { overscroll-behavior-y: none; }
 .ad-paused { cursor: pointer; }
 /* حركة أيقونة الهدية: كم مرة وبس، بدل ما تشتغل للأبد (أخف على الجوال) */
 .gp-art, .ob-ico { animation-iteration-count: 3; }
+/* زر المفضلة على كل بطاقة: بدون تأثير الضبابية (يثقّل التمرير في آيفون) */
+.fav-btn { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in srgb, var(--surface) 94%, transparent); }
