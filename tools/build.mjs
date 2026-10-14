@@ -269,7 +269,8 @@ async function makeAdVideo(cfg) {
         .filter((x) => x && x.type === "video" && x.video_url).map((x) => String(x.video_url));
     for (const url of args["no-media"] ? [] : [...new Set(urls)]) {
         const h = hashOf(url);
-        const mp4 = `images/ad/${h}.mp4`, jpg = `images/ad/${h}.jpg`;
+        // الغلاف من منتصف الفيديو (مو أول لحظة) عشان يطلع التصميم كامل لو الجوال منع التشغيل التلقائي
+        const mp4 = `images/ad/${h}.mp4`, jpg = `images/ad/${h}-cover.jpg`;
         if (exists(path.join(OUT, mp4)) && exists(path.join(OUT, jpg))) {
             let prev = {};
             try { prev = JSON.parse(fs.readFileSync(path.join(OUT, "js/catalog.js"), "utf8").replace(/^window\.ATHR_CATALOG=/, "").replace(/;\s*$/, "")).ad[url] || {}; } catch { /* أول مرة */ }
@@ -293,7 +294,10 @@ async function makeAdVideo(cfg) {
                         "-c:v", "libx264", "-preset", "slow", "-crf", "27", "-profile:v", "main", "-level", "3.1",
                         "-movflags", "+faststart", path.join(OUT, mp4)]);
                     if (enc.code !== 0) throw new Error(enc.err.split("\n").slice(-4).join(" "));
-                    const shot = await run(ffmpeg, ["-hide_banner", "-y", "-ss", "0.4", "-i", path.join(OUT, mp4), "-frames:v", "1", "-q:v", "4", path.join(OUT, jpg)]);
+                    const dm = probe.err.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+                    const dur = dm ? Number(dm[1]) * 3600 + Number(dm[2]) * 60 + parseFloat(dm[3]) : 0;
+                    const at = dur ? Math.min(3, Math.max(0.4, Math.min(dur, 60) * 0.5)) : 0.4;
+                    const shot = await run(ffmpeg, ["-hide_banner", "-y", "-ss", String(at), "-i", path.join(OUT, mp4), "-frames:v", "1", "-q:v", "4", path.join(OUT, jpg)]);
                     if (shot.code !== 0 || !exists(path.join(OUT, jpg))) await run(ffmpeg, ["-hide_banner", "-y", "-i", path.join(OUT, mp4), "-frames:v", "1", "-q:v", "4", path.join(OUT, jpg)]);
                     fs.unlinkSync(src);
                     if (!exists(path.join(OUT, jpg))) throw new Error("poster");
