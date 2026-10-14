@@ -8,7 +8,7 @@
     --a-text: #231A1B;
     --a-muted: #6F6466;
     --a-line: #E4DEDB;
-    --a-primary: var(--primary, #7D1420);
+    --a-primary: var(--primary, #570418);
     --a-ok: #1F7A4D;
     --a-danger: #B3261E;
     position: fixed;

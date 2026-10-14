@@ -5,8 +5,8 @@
 ===================================================== */
 
 :root {
-    --primary: #7D1420;
-    --hero: #4A0D12;
+    --primary: #570418;
+    --hero: #45030F;
     --bg: #EBDDC9;
     --text: #251A1B;
     --surface: #FFFFFF;
@@ -515,7 +515,7 @@ main { flex: 1; outline: none; }
     box-shadow: var(--shadow);
 }
 .badge.sale { background: var(--primary); color: var(--on-primary); }
-.badge.hot { background: #F3D9B1; color: #4A0D12; }
+.badge.hot { background: #F3D9B1; color: #45030F; }
 .badge.out { background: var(--text); color: var(--bg); }
 
 .card-body { padding: 9px 10px 10px; display: grid; gap: 4px; flex: 1; align-content: start; }

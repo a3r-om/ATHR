@@ -39,8 +39,8 @@ const ATHR_DEFAULTS = {
     logo_shape: "rounded",
 
     theme: {
-        primary: "#7D1420",
-        hero: "#4A0D12",
+        primary: "#570418",
+        hero: "#45030F",
         bg: "#EBDDC9",
         text: "#251A1B",
         mode: "auto",
@@ -92,7 +92,7 @@ const ATHR_DEFAULTS = {
         title: "",
         text: "",
         button: "",
-        bg: "#7D1420",
+        bg: "#570418",
         link: ""
     },
 
@@ -1161,8 +1161,8 @@ ATHR.TEMPLATES = [
     {
         id: "classic",
         name: "أثر الكلاسيكي",
-        desc: "الشكل الأصلي: عنابي وبيج مع زخرفة عربية، وأقسام بصور مستطيلة.",
-        theme: { primary: "#7D1420", hero: "#4A0D12", bg: "#EBDDC9", text: "#251A1B", font_head: "Reem Kufi", font_body: "IBM Plex Sans Arabic", radius: "medium", header: "color", hero_pattern: true }
+        desc: "الشكل الأصلي: برغندي وبيج مع زخرفة عربية، وأقسام بصور مستطيلة.",
+        theme: { primary: "#570418", hero: "#45030F", bg: "#EBDDC9", text: "#251A1B", font_head: "Reem Kufi", font_body: "IBM Plex Sans Arabic", radius: "medium", header: "color", hero_pattern: true }
     },
     {
         id: "minimal",
