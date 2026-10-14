@@ -139,19 +139,33 @@
         return el;
     }
 
-    async function open(name) {
+    // فتح اللوحة مرة وحدة حتى لو انطلب مرتين ورا بعض (تغيّر الرابط + الرجوع في المتصفح)
+    let opening = null;
+    function open(name) {
+        if (opening && opening.name === name) return opening.p;
+        const p = openNow(name).finally(() => { if (opening && opening.p === p) opening = null; });
+        opening = { name, p };
+        return p;
+    }
+
+    async function openNow(name) {
         const el = root();
         el.hidden = false;
         document.body.classList.add("locked");
         A.view = name;
+        if (!el.querySelector(".adm-shell, .adm-login")) el.innerHTML = `<div class="adm-loading">جاري تحميل لوحة التحكم...</div>`;
 
         const { data } = await sb.auth.getSession();
         if (!data || !data.session) {
             renderLogin();
             return;
         }
+        // التحقق من الصلاحية وتحميل بيانات المتجر في نفس الوقت (أسرع)
+        const early = name !== "orders" && !A.server ? loadServer().then(() => null, (e) => e) : null;
         const isAdmin = await verifyAdmin(data.session.user.id);
+        if (early) await early;
         if (!isAdmin) {
+            A.server = null;
             await sb.auth.signOut();
             renderLogin("هذا الحساب ليس لديه صلاحية إدارة المتجر.");
             return;
@@ -234,7 +248,14 @@
     // SERVER STATE & DRAFT
     // =====================================================
 
-    async function loadServer() {
+    // طلب واحد للبيانات حتى لو انطلبت من أكثر من مكان في نفس الوقت
+    let serverLoading = null;
+    function loadServer() {
+        if (!serverLoading) serverLoading = loadServerNow().finally(() => { serverLoading = null; });
+        return serverLoading;
+    }
+
+    async function loadServerNow() {
         const [s, c, p, m] = await Promise.all([
             sb.from("store_settings").select("config,updated_at").eq("id", 1).maybeSingle(),
             sb.from("categories").select("id,name,name_en,slug,sort_order,description,description_en,image_url").order("sort_order", { ascending: true }),

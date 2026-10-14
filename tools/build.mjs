@@ -259,6 +259,18 @@ function run(bin, argv) {
     });
 }
 
+// مكتبة supabase-js للوحة التحكم من نفس موقع المتجر (أسرع من موقع خارجي)
+function copyVendor() {
+    const src = path.join(ROOT, "tools/node_modules/@supabase/supabase-js/dist/umd/supabase.js");
+    if (!exists(src)) { console.warn("  ! ما لقينا supabase-js، لوحة التحكم تحمّلها من الإنترنت"); return; }
+    const dst = path.join(OUT, "js/vendor/supabase.js");
+    const buf = fs.readFileSync(src);
+    if (exists(dst) && fs.readFileSync(dst).equals(buf)) return;
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.writeFileSync(dst, buf);
+    console.log(`• مكتبة supabase-js: ${(buf.length / 1024).toFixed(0)}KB`);
+}
+
 async function makeAdVideo(cfg) {
     const ad = cfg.ad || {};
     const dir = path.join(OUT, "images/ad");
@@ -386,6 +398,7 @@ async function main() {
 
     // نسخة جاهزة من بيانات المتجر داخل الموقع: المتجر يشتغل فوراً بدون انتظار قاعدة البيانات،
     // وبعدها يتحدّث بالخلفية. (بيانات عامة فقط: نفس اللي يقرأه أي زائر)
+    copyVendor();
     const adMedia = await makeAdVideo(cfg);
     const mediaOf = {};
     media.forEach((m) => { (mediaOf[m.product_id] = mediaOf[m.product_id] || []).push({ media_type: m.media_type, media_url: m.media_url, sort_order: m.sort_order }); });

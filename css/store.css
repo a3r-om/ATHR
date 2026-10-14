@@ -2386,3 +2386,12 @@ textarea.input { min-height: 62px; line-height: 1.5; }
 }
 /* الشعار: بدون قائمة آيفون عند الضغط الطويل (الضغط الطويل يفتح دخول صاحب المتجر) */
 .brand { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* شاشة فتح لوحة التحكم (تظهر من أول ضغطة) */
+.owner-loading { position: fixed; inset: 0; z-index: 95; display: grid; place-content: center; justify-items: center; gap: 14px; background: var(--bg); color: var(--text); font-size: 15px; }
+.ol-spin { width: 40px; height: 40px; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--primary) 18%, transparent); border-top-color: var(--primary); animation: ol-spin .8s linear infinite; }
+@keyframes ol-spin { to { transform: rotate(360deg); } }
+/* فتح المتجر من رابط لوحة التحكم: نخفي المتجر (وصوره ما تتحمّل) ونعرض الانتظار من أول لحظة */
+html.owner-boot #view, html.owner-boot #footer, html.owner-boot .bars { display: none !important; }
+html.owner-boot body::before { content: ""; position: fixed; inset: 0; z-index: 94; background: var(--bg); }
+html.owner-boot body::after { content: ""; position: fixed; top: calc(50% - 38px); left: calc(50% - 20px); z-index: 94; width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--primary) 18%, transparent); border-top-color: var(--primary); animation: ol-spin .8s linear infinite; }

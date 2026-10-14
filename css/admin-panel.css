@@ -1130,3 +1130,9 @@ html.theme-dark .bp-now b { color: var(--a-head); }
 .bp-warn { margin: 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, #A15C00 10%, var(--a-surface)); color: #8A4E00; font-size: 13px; }
 html.theme-dark .bp-warn { color: #F2B866; }
 .bp-undo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--a-primary) 7%, var(--a-surface)); font-size: 13px; }
+
+/* v28 — شاشة التحميل نفس شاشة فتح اللوحة */
+.adm-loading { background: var(--a-bg); color: var(--a-text); font-size: 15px; justify-items: center; }
+.adm-loading::before { content: ""; width: 40px; height: 40px; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--a-primary) 18%, transparent); border-top-color: var(--a-primary); animation: ol-spin .8s linear infinite; }
+@keyframes ol-spin { to { transform: rotate(360deg); } }
+.adm-loading:has(button)::before { display: none; }

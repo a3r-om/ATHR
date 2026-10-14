@@ -864,6 +864,7 @@
 
     // الصور الكبيرة والفيديو بعد ظهور النصوص
     function startDeferredMedia() {
+        if (location.hash === "#admin" || location.hash === "#orders") return;
         const run = () => {
             $$("[data-deferred-src]").forEach((el) => {
                 el.src = el.dataset.deferredSrc;
@@ -3388,17 +3389,25 @@
     function loadAdminScripts() {
         if (window.ATHR_ADMIN) return Promise.resolve();
         if (adminLoading) return adminLoading;
+        const jsUrl = `${BASE}js/admin-panel.js?v=${assetVersion}`;
+        // التنسيق وملف اللوحة يبدون التحميل فوراً مع مكتبة supabase، وننفّذ الملف بعد ما تجهز المكتبة
+        const css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = `${BASE}css/admin-panel.css?v=${assetVersion}`;
+        const cssReady = new Promise((resolve) => { css.onload = resolve; css.onerror = resolve; setTimeout(resolve, 4000); });
+        document.head.appendChild(css);
+        const pre = document.createElement("link");
+        pre.rel = "preload";
+        pre.as = "script";
+        pre.href = jsUrl;
+        document.head.appendChild(pre);
         adminLoading = window.athrLoadSupabase().then(() => new Promise((resolve, reject) => {
-            const css = document.createElement("link");
-            css.rel = "stylesheet";
-            css.href = `${BASE}css/admin-panel.css?v=${assetVersion}`;
-            document.head.appendChild(css);
             const script = document.createElement("script");
-            script.src = `${BASE}js/admin-panel.js?v=${assetVersion}`;
+            script.src = jsUrl;
             script.onload = () => resolve();
             script.onerror = () => reject(new Error("admin script"));
             document.body.appendChild(script);
-        })).catch((error) => {
+        })).then(() => cssReady).catch((error) => {
             adminLoading = null;
             throw error;
         });
@@ -3431,12 +3440,27 @@
     })();
 
     let ownerOpening = false;
+    // شاشة «جاري فتح لوحة التحكم» تظهر من أول ضغطة لين تجهز اللوحة
+    function ownerLoading(on) {
+        let el = document.getElementById("ownerLoading");
+        if (!on) { if (el) el.remove(); document.documentElement.classList.remove("owner-boot"); return; }
+        if (el || (window.ATHR_ADMIN && !document.querySelector("#adm[hidden]") && document.querySelector("#adm"))) return;
+        el = document.createElement("div");
+        el.id = "ownerLoading";
+        el.className = "owner-loading";
+        el.setAttribute("role", "status");
+        el.innerHTML = `<span class="ol-spin" aria-hidden="true"></span><b>جاري فتح لوحة التحكم…</b>`;
+        document.body.appendChild(el);
+    }
+
     async function openOwnerArea(name) {
         if (ownerOpening) return;
         ownerOpening = true;
+        ownerLoading(true);
         try {
+            const scripts = loadAdminScripts();
             await ready;
-            await loadAdminScripts();
+            await scripts;
             // لوحة التحكم بالعربي دائمًا
             if (ATHR.isEn()) {
                 S.langBeforeOwner = "en";
@@ -3449,6 +3473,7 @@
             toast(t("تعذر فتح لوحة التحكم. تأكد من الإنترنت وحاول مرة ثانية."));
         } finally {
             ownerOpening = false;
+            ownerLoading(false);
         }
     }
 
@@ -3461,6 +3486,7 @@
             const { data: row } = await sb.from("admin_users").select("id").eq("id", data.session.user.id).maybeSingle();
             S.isAdmin = Boolean(row);
             renderChrome();
+            if (S.isAdmin) (window.requestIdleCallback || ((fn) => setTimeout(fn, 1500)))(() => loadAdminScripts().catch(() => {}), { timeout: 5000 });
         } catch { /* not signed in */ }
     }
 
@@ -3493,6 +3519,7 @@
         },
         closeOwner() {
             if (location.hash === "#admin" || location.hash === "#orders") history.replaceState(history.state, "", location.pathname + location.search);
+            startDeferredMedia();
             if (S.langBeforeOwner) {
                 const back = S.langBeforeOwner;
                 S.langBeforeOwner = null;

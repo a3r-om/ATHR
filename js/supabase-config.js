@@ -25,8 +25,8 @@ window.athrLoadSupabase = (function () {
                 done();
                 return;
             }
-            // مصدرين للمكتبة: لو تعذر الأول نجرب الثاني
-            const sources = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"];
+            // المكتبة من نفس موقع المتجر أول (أسرع، بدون اتصال بموقع ثاني)، ولو تعذرت نجرب المواقع الخارجية
+            const sources = [(window.ATHR_BASE || "/") + "js/vendor/supabase.js", "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"];
             const tryLoad = (i) => {
                 const s = document.createElement("script");
                 s.src = sources[i];
