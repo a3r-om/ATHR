@@ -1056,3 +1056,38 @@ html.theme-dark .fin-chip input:checked + span { color: color-mix(in srgb, var(-
 .fin-form-btns.del { justify-content: space-between; flex-wrap: wrap; padding-top: 8px; border-top: 1px dashed var(--a-line); }
 .af-err:empty { display: none; }
 .af-err { margin: 0; color: var(--a-danger); font-size: 13px; font-weight: 600; }
+
+/* =====================================================
+   v25 — لوحة التحكم بنفس ألوان المتجر (البرغندي والبيج)
+   الألوان تُقرأ من هوية المتجر نفسها، فلو تغيّرت الهوية تتغيّر اللوحة معها
+===================================================== */
+.adm {
+    --a-bg: var(--bg, #EBDDC9);
+    --a-surface: var(--surface, #FFFFFF);
+    --a-text: var(--text, #251A1B);
+    --a-muted: var(--muted, #6F6466);
+    --a-line: var(--line, #E4DEDB);
+    --a-on-primary: var(--on-primary, #FFFFFF);
+    --a-head: var(--heading, var(--accent, var(--a-primary)));
+}
+/* الوضع الداكن يبقى على ألوانه الداكنة، والعناوين بدرجة برغندي فاتحة تنقرأ */
+html.theme-dark .adm {
+    --a-bg: #151112;
+    --a-surface: #201A1B;
+    --a-text: #F0E9E7;
+    --a-muted: #A89C9E;
+    --a-line: #362D2E;
+    --a-head: color-mix(in srgb, var(--a-primary) 45%, #FFFFFF);
+}
+
+/* العناوين بالبرغندي مثل المتجر، وعنوان الشريط العلوي يبقى أبيض */
+.adm h1 { color: inherit; }
+.adm-login-card h1, .adm h2, .adm h3:not(.rp-h) { color: var(--a-head); }
+.adm h2 small, .adm h3 small { color: var(--a-muted); }
+
+/* الأقسام المختارة والمفاتيح والرسائل: برغندي بدل الأسود والأخضر */
+.adm-tabs button[aria-selected="true"] { background: var(--a-primary); color: var(--a-on-primary); }
+.adm-tabs button[aria-selected="true"] svg { stroke: currentColor; }
+.at input:checked + .at-ui, .vis-switch[aria-checked="true"] { background: var(--a-primary); }
+.adm-busy { background: var(--a-primary); color: var(--a-on-primary); }
+.seg button[aria-pressed="true"] { color: var(--a-primary); }

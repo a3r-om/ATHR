@@ -98,7 +98,9 @@ a { color: inherit; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
-h1, h2, h3 { font-family: var(--font-head); line-height: 1.3; margin: 0; font-weight: 700; }
+h1, h2, h3 { font-family: var(--font-head); line-height: 1.3; margin: 0; font-weight: 700; color: var(--heading, var(--accent)); }
+/* العناوين بلون الهوية، إلا فوق الخلفيات الغامقة (الواجهة والإعلان) فتبقى بلون خلفيتها */
+.hero h1, .hero h2, .ad-text h1, .ad-text h2 { color: inherit; }
 p { margin: 0 0 8px; }
 [hidden] { display: none !important; }
 
@@ -484,7 +486,7 @@ main { flex: 1; outline: none; }
 @media (min-width: 980px) { .grid, .grid.one { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 .empty { padding: 36px 16px; text-align: center; color: var(--muted); display: grid; gap: 12px; justify-items: center; }
-.empty h1 { color: var(--text); font-size: 24px; }
+.empty h1 { font-size: 24px; }
 
 /* ---------- Product card ---------- */
 
@@ -1910,7 +1912,6 @@ html.tpl-fun .gp-go { background: #22163A; color: #fff; }
 .fav-page .section-head h1 { display: inline-flex; align-items: center; gap: 8px; }
 .fav-page .section-head h1 svg { width: 24px; height: 24px; fill: #E0245E; stroke: none; }
 .fav-empty svg { width: 54px; height: 54px; fill: color-mix(in srgb, #E0245E 18%, transparent); stroke: #E0245E; stroke-width: 1.4; }
-#favs .section-head h2 { color: var(--text); }
 /* فلترة الأقسام في الرئيسية */
 .cat-chips { display: flex; gap: 8px; overflow-x: auto; margin: -2px calc(-1 * var(--gutter)) 14px; padding: 2px var(--gutter) 4px; scrollbar-width: none; }
 .cat-chips::-webkit-scrollbar { display: none; }

@@ -18,7 +18,7 @@
 ## الأدوات (marketing/kit)
 
 - `brand.css` — الهوية: خط IBM Plex Sans Arabic (ملفاته في `kit/fonts`، رخصة SIL OFL)، الألوان:
-  عنابي `#7D1420`، عنابي غامق `#4A0D12`، رملي `#EADAC6`، جدار الصور `#DDBA9A`، كريمي `#F7F1E8`، حبر `#251A1B`، ذهبي `#F5B301`.
+  **برغندي `#570418`** (اللون الرسمي للهوية من 2026-10-14، بدل العنابي القديم `#7D1420`)، برغندي غامق `#45030F`، رملي `#EADAC6`، جدار الصور `#DDBA9A`، كريمي `#F7F1E8`، حبر `#251A1B`، ذهبي `#F5B301`.
   كلاسات جاهزة: `.slide` (1080×1350)، `.reel` (1080×1920)، `.logo`، `.count`، `.swipe`، `.h`، `.sub`، `.frame`، `.chip`، `.price`، `.on-dark`، `.pad`، `.center`.
 - `anim.js` — حركة الريلز: `A.p` `A.out` `A.back` `A.win` `A.set` `A.pop` `A.rise`.
 - `render.py` — التصدير:
@@ -28,6 +28,7 @@
   - الريلز: الصفحة تعرّف `window.DURATION` و `window.COVER_T` و `window.render(t)`.
 - `catalog.mjs` — قائمة المنتجات والأسعار والصور من صفحات المنتجات الجاهزة في المستودع:
   `node marketing/kit/catalog.mjs > marketing/kit/catalog.json` (كل منتج: name, color, category, price, old_price, thumb).
+- العناوين في التصاميم بالبرغندي (مثل المتجر)، وفوق الخلفيات الغامقة بالأبيض أو الكريمي.
 - `logo_burgundy.png` للخلفيات الفاتحة، `logo_white.png` للخلفيات الغامقة.
 
 ## الصور المتاحة

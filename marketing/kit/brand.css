@@ -1,12 +1,12 @@
-/* هوية أثر للتصاميم: خط IBM Plex Sans Arabic، عنابي + رملي + كريمي */
+/* هوية أثر للتصاميم: خط IBM Plex Sans Arabic، برغندي + رملي + كريمي */
 @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansArabic-Regular.ttf"); font-weight: 400; }
 @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansArabic-Medium.ttf"); font-weight: 500; }
 @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansArabic-SemiBold.ttf"); font-weight: 600; }
 @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSansArabic-Bold.ttf"); font-weight: 700; }
 
 :root {
-    --wine: #7D1420;
-    --deep: #4A0D12;
+    --wine: #570418;    /* البرغندي الرسمي (من 2026-10-14) */
+    --deep: #45030F;
     --tan: #DDBA9A;     /* لون جدار صور الأقسام */
     --sand: #EADAC6;
     --cream: #F7F1E8;
