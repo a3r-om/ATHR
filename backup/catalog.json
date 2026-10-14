@@ -5,7 +5,34 @@
  "config": {
   "ad": {
    "bg": "#570418",
+   "auto": true,
    "link": "",
+   "more": [
+    {
+     "bg": "#570418",
+     "link": "",
+     "text": "",
+     "type": "image",
+     "title": "",
+     "button": "",
+     "image_alt": "",
+     "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791983645172-c997a51a5b2f445c.jpg",
+     "video_alt": "",
+     "video_url": ""
+    },
+    {
+     "bg": "#570418",
+     "link": "",
+     "text": "",
+     "type": "image",
+     "title": "",
+     "button": "",
+     "image_alt": "",
+     "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791983696543-d1d562f9275f413b.jpg",
+     "video_alt": "",
+     "video_url": ""
+    }
+   ],
    "show": true,
    "text": "",
    "type": "video",
@@ -561,7 +588,7 @@
    "sold_out": "نفد المخزون",
    "all_label": "الكل",
    "hero_text": "تصاميم أندية وشخصيات على أكواب سيراميك. اختر تصميمك وأرسل طلبك عبر واتساب.",
-   "hero_title": "أكواب تترك أثراً",
+   "hero_title": "",
    "add_to_cart": "أضف للسلة",
    "hero_button": "تصفّح المنتجات",
    "thanks_text": "أرسل طلبك عبر واتساب بالضغط على الزر بالأسفل، وسنؤكده ونجهّزه لك.",
@@ -570,7 +597,7 @@
    "announce_text": "",
    "hero_features": [
     "توصيل لكل دول الخليج",
-    "توصيل مجاني داخل عُمان فوق {free}",
+    "توصيل مجاني داخل عُمان اكثر من {free}",
     "الدفع عند الاستلام في عُمان والإمارات"
    ],
    "wa_first_line": "طلب جديد من متجر {name}",
@@ -1474,8 +1501,8 @@
    "name": "كوب الاتحاد",
    "name_en": "Al Ittihad Cup",
    "slug": "كوب-الاتحاد-أسود",
-   "price": 2.9,
-   "old_price": 4.5,
+   "price": 4.5,
+   "old_price": null,
    "category_id": "1615ffc9-aaf9-4255-ad51-cf97aa31d339",
    "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791346727253-670d31312af2439ca4c547ea5df5317b.jpg",
    "thumb_url": null,
@@ -1727,7 +1754,7 @@
    "name": "كوب الهلال",
    "name_en": "Al Hilal Cup",
    "slug": "كوب-الهلال-أبيض",
-   "price": 2.9,
+   "price": 2.898,
    "old_price": 4.5,
    "category_id": "1615ffc9-aaf9-4255-ad51-cf97aa31d339",
    "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791346737164-fd724d9e298649489c9d43fc2593ffb6.jpg",
