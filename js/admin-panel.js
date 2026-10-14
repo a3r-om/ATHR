@@ -4590,7 +4590,7 @@
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
         if (d.orderCopy) { const o = A.orders.find((x) => x.id === d.orderCopy); if (o) ATHR.store.copyText(orderText(o), "نُسخ الطلب"); return; }
         if (d.orderHide) { const o = A.orders.find((x) => x.id === d.orderHide); if (o) updateOrderField(o.id, "hidden", !o.hidden); return; }
-        if (d.orderDelete) { deleteOrder(d.orderDelete); return; }
+        if (d.orderDelete) { await deleteOrder(d.orderDelete); return; }
     }
 
     function onSubmit(e) {
@@ -5741,9 +5741,43 @@
                     ${o.status === "delivered" && o.phone ? `<button type="button" class="ab-mini wa" data-order-review="${esc(o.id)}">اطلب تقييم</button>` : ""}
                     <button type="button" class="ab-mini" data-order-copy="${esc(o.id)}">نسخ</button>
                     <button type="button" class="ab-mini" data-order-hide="${esc(o.id)}">${o.hidden ? "إظهار في الدفتر" : "إخفاء"}</button>
+                    <button type="button" class="ab-mini danger" data-order-delete="${esc(o.id)}">🗑️ حذف</button>
                 </div>
             </article>`;
         }).join("");
+    }
+
+    // حذف الطلب نهائياً (مثل الطلبات التجريبية)، ونصحّح أرقام العميل معه
+    async function deleteOrder(id) {
+        const o = A.orders.find((x) => x.id === id);
+        if (!o) return;
+        if (!confirm(`تحذف الطلب ${o.order_no || ""} نهائياً؟\nما تقدر ترجعه بعد الحذف. (لو تبي تشيله من الدفتر بس، اختر «إخفاء»)`)) return;
+        const { error } = await sb.from("orders").delete().eq("id", id);
+        if (error) { toast("تعذر حذف الطلب. تأكد من الإنترنت."); return; }
+        A.orders = A.orders.filter((x) => x.id !== id);
+        closeOrderSheet();
+        renderOrdersList();
+        toast("انحذف الطلب ✓");
+        // أرقام العميل (عدد الطلبات والمشتريات) تنحسب عند إضافة الطلب، فننقص منها هنا
+        try {
+            const phone = o.phone ? ATHR.customerWhatsapp(o.phone, o.country || "OM") : "";
+            if (!phone) return;
+            const { data: c } = await sb.from("customers").select("phone,orders_count,total_spent,last_order_at").eq("phone", phone).maybeSingle();
+            if (!c) return;
+            const count = Math.max(0, (Number(c.orders_count) || 0) - 1);
+            if (!count) {
+                await sb.from("customers").delete().eq("phone", phone);
+            } else {
+                const rest = A.orders.filter((x) => x.phone && ATHR.customerWhatsapp(x.phone, x.country || "OM") === phone);
+                const last = rest.reduce((m, x) => { const t = x.ordered_at || x.created_at; return !m || t > m ? t : m; }, null);
+                await sb.from("customers").update({
+                    orders_count: count,
+                    total_spent: Math.max(0, Math.round(((Number(c.total_spent) || 0) - (Number(o.total) || 0)) * 1000) / 1000),
+                    ...(last ? { last_order_at: last } : {})
+                }).eq("phone", phone);
+            }
+            A.customersLoaded = false;
+        } catch (error) { console.warn("Customer totals not updated:", error); }
     }
 
     async function updateOrderField(id, field, value) {
@@ -5915,20 +5949,6 @@
         closeOrderSheet();
         renderOrdersList();
         toast(id ? "حُفظت التعديلات" : "أُضيف الطلب");
-    }
-
-    async function deleteOrder(id) {
-        const o = A.orders.find((x) => x.id === id);
-        if (!o || !confirm(`حذف الطلب ${o.order_no} نهائياً؟`)) return;
-        const { error } = await sb.from("orders").delete().eq("id", id);
-        if (error) {
-            toast("تعذر الحذف.");
-            return;
-        }
-        A.orders = A.orders.filter((x) => x.id !== id);
-        closeOrderSheet();
-        renderOrdersList();
-        toast("حُذف الطلب");
     }
 
     // ---------- paste from WhatsApp ----------
