@@ -3335,6 +3335,31 @@
         return adminLoading;
     }
 
+    // دخول صاحب المتجر من أي مكان (مثل التطبيق المنزّل اللي ما فيه شريط عنوان):
+    // ضغطة طويلة على الشعار، أو 5 ضغطات سريعة عليه
+    (() => {
+        let timer = null;
+        let fired = false;
+        let taps = [];
+        const openAdmin = () => { if (location.hash === "#admin") openOwnerArea("admin"); else location.hash = "#admin"; };
+        document.addEventListener("pointerdown", (e) => {
+            if (!e.target.closest || !e.target.closest("#brand")) return;
+            fired = false;
+            clearTimeout(timer);
+            timer = setTimeout(() => { fired = true; openAdmin(); }, 900);
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => document.addEventListener(ev, () => clearTimeout(timer)));
+        document.addEventListener("contextmenu", (e) => { if (e.target.closest && e.target.closest("#brand")) e.preventDefault(); });
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest || !e.target.closest("#brand")) return;
+            if (fired) { fired = false; e.preventDefault(); e.stopImmediatePropagation(); return; }
+            const now = Date.now();
+            taps = taps.filter((x) => now - x < 2500);
+            taps.push(now);
+            if (taps.length >= 5) { taps = []; e.preventDefault(); e.stopImmediatePropagation(); openAdmin(); }
+        }, true);
+    })();
+
     let ownerOpening = false;
     async function openOwnerArea(name) {
         if (ownerOpening) return;
@@ -3349,8 +3374,9 @@
                 render({ scroll: "keep" });
             }
             window.ATHR_ADMIN.open(name);
-        } catch {
-            toast(t("تعذر فتح لوحة التحكم. تأكد من الإنترنت."));
+        } catch (error) {
+            console.error("Owner area failed:", error);
+            toast(t("تعذر فتح لوحة التحكم. تأكد من الإنترنت وحاول مرة ثانية."));
         } finally {
             ownerOpening = false;
         }

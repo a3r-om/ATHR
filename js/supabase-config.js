@@ -25,14 +25,21 @@ window.athrLoadSupabase = (function () {
                 done();
                 return;
             }
-            const s = document.createElement("script");
-            s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-            s.onload = done;
-            s.onerror = () => {
-                loading = null;
-                reject(new Error("supabase-js"));
+            // مصدرين للمكتبة: لو تعذر الأول نجرب الثاني
+            const sources = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"];
+            const tryLoad = (i) => {
+                const s = document.createElement("script");
+                s.src = sources[i];
+                s.onload = () => (window.supabase && window.supabase.createClient ? done() : s.onerror());
+                s.onerror = () => {
+                    s.remove();
+                    if (i + 1 < sources.length) { tryLoad(i + 1); return; }
+                    loading = null;
+                    reject(new Error("supabase-js"));
+                };
+                document.head.appendChild(s);
             };
-            document.head.appendChild(s);
+            tryLoad(0);
         });
         return loading;
     };

@@ -2387,7 +2387,7 @@ html.is-app, html.is-app body { overscroll-behavior-y: none; }
 
 /* =====================================================
    v24 — هيدر واضح وبسيط
-   سطر واحد: القائمة · الشعار · السلة، وتحته البحث. اللغة والعملة داخل القائمة في الجوال
+   القائمة · الشعار · اللغة · العملة · السلة، وتحتهم البحث
 ===================================================== */
 .icon-btn { width: 44px; height: 44px; background: transparent; }
 .icon-btn:hover, .icon-btn:active { background: color-mix(in srgb, currentColor 14%, transparent); }
@@ -2399,14 +2399,14 @@ html.is-app, html.is-app body { overscroll-behavior-y: none; }
 .search svg { width: 18px; height: 18px; }
 .search input { font-size: 15.5px; }
 .search input::placeholder { opacity: .85; }
+/* الجوال: القائمة · الشعار · اللغة · العملة · السلة، وتحتهم البحث */
+.lang-btn, .cur-btn { height: 36px; background: color-mix(in srgb, currentColor 14%, transparent); }
+.lang-btn { min-width: 42px; padding: 0 9px; font-size: 13px; letter-spacing: .02em; }
+.cur-btn { padding: 0 10px; gap: 5px; font-size: 13px; }
+#curFlag { font-size: 17px; }
 @media (max-width: 759px) {
-    .top-row { grid-template-columns: auto 1fr auto; grid-template-areas: "menu brand cart" "search search search"; gap: 4px 6px; padding: 4px 0 10px; }
-    .top-row.no-search { grid-template-areas: "menu brand cart"; padding-bottom: 6px; }
-    html.tpl-minimal .top-row, html.tpl-boutique .top-row, html.tpl-luxe .top-row { grid-template-columns: auto 1fr auto; grid-template-areas: "menu brand cart" "search search search"; }
-    html.tpl-minimal .top-row.no-search, html.tpl-boutique .top-row.no-search, html.tpl-luxe .top-row.no-search { grid-template-areas: "menu brand cart"; }
-    .top-row .lang-btn, .top-row .cur-btn { display: none; }
-    /* لو صاحب المتجر أخفى القائمة: نرجّع اللغة والعملة في الهيدر */
-    .top-row.no-menu { grid-template-columns: 1fr auto auto auto; grid-template-areas: "brand lang cur cart" "search search search search"; }
-    .top-row.no-menu.no-search { grid-template-areas: "brand lang cur cart"; }
-    .top-row.no-menu .lang-btn, .top-row.no-menu .cur-btn:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
+    .top-row { gap: 4px 6px; padding: 4px 0 10px; }
+    .top-row.no-search { padding-bottom: 6px; }
 }
+/* الشعار: بدون قائمة آيفون عند الضغط الطويل (الضغط الطويل يفتح دخول صاحب المتجر) */
+.brand { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
