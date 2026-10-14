@@ -456,11 +456,6 @@
                 <span class="aot-txt"><b>المبيعات والمصاريف</b><small>ربحك لكل شهر تلقائياً، وسجّل مصاريفك</small></span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
-            <button class="adm-orders-tile alt push-tile" type="button" data-a="push-open">
-                <span class="aot-ico" aria-hidden="true">🔔</span>
-                <span class="aot-txt"><b>إشعارات العروض</b><small>أرسل عرض يوصل جوالات زبائنك مثل التطبيقات</small></span>
-                <span class="aot-go">${icon("back")}</span>
-            </button>
             <button class="adm-orders-tile alt" type="button" data-a="open-customers">
                 <span class="aot-ico">${icon("users")}</span>
                 <span class="aot-txt"><b>العملاء والعروض</b><small>أسماء وأرقام زبائنك، وأرسل لهم الخصومات</small></span>
@@ -3785,197 +3780,6 @@
         return false;
     }
 
-    // =====================================================
-    // v22 — «إشعارات العروض»: إرسال إشعار يوصل جوالات المشتركين (دالة push)
-    // =====================================================
-    const PUSH_TPL = [
-        ["🔥 عرض اليوم", "🔥 عرض اليوم في {store}", "خصم على تصاميم مختارة لفترة محدودة. لا يفوتك!"],
-        ["🆕 وصل جديد", "🆕 وصلت تصاميم جديدة", "شوف أحدث أكواب السيراميك والمحافظ في {store}."],
-        ["🚚 توصيل مجاني", "🚚 التوصيل علينا", "توصيل مجاني للطلبات من {free} داخل عُمان. اطلب الحين!"],
-        ["🎁 هدية", "🎁 فكّر بهدية لمن تحب", "أرسل هدية مع بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر."],
-        ["⏳ آخر فرصة", "⏳ آخر فرصة", "العرض ينتهي الليلة. الحق عليه قبل لا يخلص!"]
-    ];
-
-    function pushState() {
-        if (!A.push) A.push = { count: null, log: [], err: "", form: { title: "", body: "", link: "home", image: true }, sending: false };
-        return A.push;
-    }
-
-    async function pushFn(body) {
-        const { data } = await sb.auth.getSession();
-        const token = data && data.session && data.session.access_token;
-        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/push`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
-            body: JSON.stringify(body)
-        });
-        let out = {};
-        try { out = await res.json(); } catch { /* رد غير متوقع */ }
-        if (!res.ok || out.error) { const e = new Error(out.error || `http_${res.status}`); e.code = out.error || `http_${res.status}`; throw e; }
-        return out;
-    }
-
-    async function loadPushCount() {
-        const st = pushState();
-        try {
-            const out = await pushFn({ action: "count" });
-            st.count = Number(out.count) || 0;
-            st.log = Array.isArray(out.log) ? out.log : [];
-            st.err = "";
-        } catch (error) {
-            st.err = error.code || "net";
-        }
-    }
-
-    // روابط الإشعار: الرئيسية، الهدية، الأقسام، المنتجات المنشورة
-    function pushLinks() {
-        const c = cfg();
-        const cats = (A.server ? A.server.categories : []).filter((x) => x.is_visible !== false && x.slug);
-        const prods = ATHR.assignSlugs((A.server ? A.server.products : []).filter((p) => p.is_visible !== false), c).filter((p) => p.is_available !== false);
-        const out = [["home", "الصفحة الرئيسية", `${ATHR.base()}`, ""]];
-        if (c.sales.gift_enabled) out.push(["gift", "صفحة الهدية", `${ATHR.base()}gift/`, ""]);
-        cats.forEach((x) => out.push([`c:${x.id}`, `قسم: ${x.name}`, ATHR.url.category(x), ""]));
-        prods.forEach((p) => out.push([`p:${p.id}`, `منتج: ${p.name}`, ATHR.url.product(p), /^https:\/\//.test(p.image_url || "") ? p.image_url : ""]));
-        return out;
-    }
-
-    function pushFill(s) {
-        const c = cfg();
-        return String(s || "").replace(/\{store\}/g, ATHR.storeName(c)).replace(/\{free\}/g, money(Number(c.order.free_min) || 0));
-    }
-
-    function pushPreviewHTML() {
-        const st = pushState();
-        const link = pushLinks().find((l) => l[0] === st.form.link) || pushLinks()[0];
-        const img = st.form.image && link[3] ? link[3] : "";
-        return `<div class="pn-prev" aria-label="شكل الإشعار">
-            <div class="pn-top"><img src="${ATHR.base()}images/app/icon-192.png" alt="" width="20" height="20"><span>${esc(ATHR.storeName(cfg()))}</span><small>الآن</small></div>
-            <div class="pn-body"><span class="pn-txt"><b>${esc(st.form.title || "عنوان الإشعار")}</b><span>${esc(st.form.body || "نص الرسالة يظهر هنا…")}</span></span>${img ? `<img class="pn-img" src="${esc(ATHR.thumb(img))}" alt="">` : ""}</div>
-        </div>`;
-    }
-
-    function pushBody() {
-        const st = pushState();
-        const f = st.form;
-        const links = pushLinks();
-        const sel = links.find((l) => l[0] === f.link) || links[0];
-        const countTxt = st.count === null ? (st.err ? "—" : "…") : String(st.count);
-        const group = (label, list) => list.length ? `<optgroup label="${label}">${list.map(([k, l]) => `<option value="${esc(k)}"${k === f.link ? " selected" : ""}>${esc(l)}</option>`).join("")}</optgroup>` : "";
-        return `<div class="pn-stat">
-                <div><small>المشتركين</small><b>${countTxt}</b></div>
-                <p class="adm-muted">الزبون يفعّلها من التطبيق أو من القائمة («إشعارات العروض»). في آيفون تشتغل بعد تنزيل التطبيق.</p>
-            </div>
-            ${st.err ? `<div class="bk-box warn"><p>تعذّر الاتصال بخدمة الإشعارات. تأكد من الإنترنت.</p><button class="ab ab-ghost ab-sm" type="button" data-a="push-retry">حاول مرة ثانية</button></div>` : ""}
-            ${st.count === 0 ? `<div class="bk-box"><p>💡 للحين ما فيه مشتركين. انشر رابط المتجر في إنستغرام وتيك توك، وقل لزبائنك: «نزّلوا تطبيق ${esc(ATHR.storeName(cfg()))} وفعّلوا الإشعارات عشان توصلكم العروض أول».</p></div>` : ""}
-            <section class="prof-sec">
-                <h3>✍️ اكتب الإشعار</h3>
-                <div class="asst-chips pn-tpl">${PUSH_TPL.map(([l], i) => `<button type="button" class="chip-q" data-push-tpl="${i}">${l}</button>`).join("")}</div>
-                <label class="af"><span>العنوان</span><input class="ai" id="pushTitle" maxlength="60" value="${esc(f.title)}" placeholder="مثال: 🔥 خصم 20% على أكواب الأندية"></label>
-                <label class="af"><span>الرسالة</span><textarea class="ai" id="pushText" rows="2" maxlength="180" placeholder="جملة أو جملتين بس، واضحة ومغرية">${esc(f.body)}</textarea></label>
-                <label class="af"><span>لما يضغط الزبون يفتح</span><select class="ai" id="pushLink">
-                    ${group("الصفحات", links.filter((l) => !/^[cp]:/.test(l[0])))}
-                    ${group("الأقسام", links.filter((l) => l[0].startsWith("c:")))}
-                    ${group("المنتجات", links.filter((l) => l[0].startsWith("p:")))}
-                </select></label>
-                ${sel[3] ? `<label class="fin-check"><input type="checkbox" id="pushImage"${f.image ? " checked" : ""}><span>أرفق صورة المنتج <small class="adm-muted">(تظهر في أندرويد)</small></span></label>` : ""}
-            </section>
-            <section class="prof-sec"><h3>👀 كذا بيظهر في جوال الزبون</h3><div id="pushPrev">${pushPreviewHTML()}</div></section>
-            <p class="af-err" id="pushErr" role="alert"></p>
-            <div class="pn-btns">
-                <button class="ab ab-primary" type="button" data-a="push-send"${st.sending || !st.count ? " disabled" : ""}>🔔 أرسل للكل${st.count ? ` (${st.count})` : ""}</button>
-                <button class="ab ab-ghost" type="button" data-a="push-test"${st.sending ? " disabled" : ""}>📲 جرّب على جوالي</button>
-            </div>
-            <ul class="pn-tips adm-muted"><li>أفضل وقت للإرسال: من 8 إلى 10 بالليل.</li><li>لا تكثر: مرة أو مرتين بالأسبوع، عشان ما يوقفونها.</li></ul>
-            ${st.log.length ? `<section class="prof-sec"><h3>🕘 آخر الإشعارات</h3><ul class="pn-log">${st.log.map((x) => `<li><span><b>${esc(x.title)}</b><small>${esc(muscatTime(x.at))}</small></span><span class="pn-res">وصل لـ ${Number(x.sent) || 0}</span></li>`).join("")}</ul></section>` : ""}`;
-    }
-
-    function renderPush(keep) {
-        const box = $("#pushBody");
-        if (!box) return;
-        const panel = $("#admSheet .adm-sheet-panel");
-        const top = keep && panel ? panel.scrollTop : 0;
-        box.innerHTML = pushBody();
-        if (panel && keep) panel.scrollTop = top;
-    }
-
-    function readPushForm() {
-        const st = pushState();
-        const t = $("#pushTitle"), b = $("#pushText"), l = $("#pushLink"), i = $("#pushImage");
-        if (t) st.form.title = t.value;
-        if (b) st.form.body = b.value;
-        if (l) st.form.link = l.value;
-        if (i) st.form.image = i.checked;
-    }
-
-    async function openPush() {
-        openSheet(`
-            <div class="adm-sheet-head"><h2>🔔 إشعارات العروض</h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>
-            <div class="pn" id="pushBody"></div>`);
-        renderPush();
-        await loadPushCount();
-        renderPush(true);
-    }
-
-    async function sendPush(test) {
-        const st = pushState();
-        readPushForm();
-        const err = $("#pushErr");
-        const f = st.form;
-        if (!f.title.trim() || !f.body.trim()) { err.textContent = "اكتب العنوان والرسالة."; return; }
-        const link = pushLinks().find((l) => l[0] === f.link) || pushLinks()[0];
-        const payload = { action: "send", title: f.title.trim(), body: f.body.trim(), url: link[2], image: f.image && link[3] ? link[3] : undefined };
-        if (test) {
-            let sub = null;
-            try {
-                const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration(ATHR.base()) : null;
-                sub = reg && reg.pushManager ? await reg.pushManager.getSubscription() : null;
-            } catch { sub = null; }
-            if (!sub) { err.textContent = "فعّل الإشعارات في جوالك أول: افتح المتجر (في آيفون من أيقونة التطبيق) ← القائمة ← «إشعارات العروض»، وبعدها ارجع هنا."; return; }
-            payload.test = sub.toJSON();
-        } else if (!confirm(`نرسل الإشعار لـ ${st.count} جهاز؟`)) {
-            return;
-        }
-        err.textContent = "";
-        st.sending = true;
-        renderPush(true);
-        try {
-            const out = await pushFn(payload);
-            if (test) toast(out.sent ? "انرسل لجوالك ✓ شيّك الإشعارات" : "ما وصل لجوالك، فعّل الإشعارات مرة ثانية وجرّب");
-            else {
-                toast(`انرسل ✓ وصل لـ ${out.sent} جهاز`);
-                await loadPushCount();
-            }
-        } catch (error) {
-            toast("تعذّر الإرسال. تأكد من الإنترنت وحاول مرة ثانية.");
-        }
-        st.sending = false;
-        renderPush(true);
-    }
-
-    async function pushClick(d) {
-        if (d.a === "push-open") { await openPush(); return true; }
-        if (!$("#pushBody")) return false;
-        const st = pushState();
-        if (d.pushTpl !== undefined) {
-            const tpl = PUSH_TPL[Number(d.pushTpl)];
-            if (tpl) { readPushForm(); st.form.title = pushFill(tpl[1]); st.form.body = pushFill(tpl[2]); renderPush(true); }
-            return true;
-        }
-        if (d.a === "push-send") { await sendPush(false); return true; }
-        if (d.a === "push-test") { await sendPush(true); return true; }
-        if (d.a === "push-retry") { st.err = ""; st.count = null; renderPush(true); await loadPushCount(); renderPush(true); return true; }
-        return false;
-    }
-
-    function pushInput(t) {
-        if (!t.closest || !t.closest("#pushBody")) return false;
-        readPushForm();
-        if (t.id === "pushLink") { renderPush(true); return true; }
-        const prev = $("#pushPrev");
-        if (prev) prev.innerHTML = pushPreviewHTML();
-        return true;
-    }
-
     // أزرار هذه المميزات
     async function v17Click(d) {
         switch (d.a) {
@@ -4341,7 +4145,6 @@
 
     function onInput(e) {
         const t = e.target;
-        if (pushInput(t)) return;
         if (t.id === "productFilter") {
             A.productFilter = t.value;
             const pos = t.selectionStart;
@@ -4416,7 +4219,6 @@
 
     async function onChange(e) {
         const t = e.target;
-        if (pushInput(t)) return;
         if (t.dataset.pixel) {
             setPixel(t);
             return;
@@ -4606,7 +4408,6 @@
             return;
         }
         if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
-        if (((d.a && /^push-/.test(d.a)) || d.pushTpl !== undefined) && await pushClick(d)) return;
         if (((d.a && /^fin-/.test(d.a)) || d.finEdit) && await financeClick(d)) return;
         if (((d.a && /^(asst|prof)-/.test(d.a)) || d.asstQ || d.asstAct || d.asstNo || d.custOpen || d.profSuggest) && await insightsClick(d)) return;
         if (((d.a && /^backup-/.test(d.a)) || d.bkGet || d.bkRestore || d.bkScope) && await backupClick(d)) return;

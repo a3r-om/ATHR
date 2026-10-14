@@ -1056,30 +1056,3 @@ html.theme-dark .fin-chip input:checked + span { color: color-mix(in srgb, var(-
 .fin-form-btns.del { justify-content: space-between; flex-wrap: wrap; padding-top: 8px; border-top: 1px dashed var(--a-line); }
 .af-err:empty { display: none; }
 .af-err { margin: 0; color: var(--a-danger); font-size: 13px; font-weight: 600; }
-
-/* ===== v22 — إشعارات العروض ===== */
-.push-tile .aot-ico { font-size: 22px; }
-.pn { display: grid; gap: 14px; }
-.pn-stat { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--a-primary) 7%, var(--a-surface)); }
-.pn-stat > div { display: grid; justify-items: center; min-width: 74px; padding: 6px 10px; border-radius: 12px; background: var(--a-surface); }
-.pn-stat small { color: var(--a-muted); font-size: 11.5px; }
-.pn-stat b { font-size: 22px; }
-.pn-stat p { margin: 0; font-size: 12.5px; line-height: 1.6; }
-.pn-tpl { flex-wrap: wrap; overflow: visible; }
-.pn-prev { padding: 10px 12px; border-radius: 18px; background: color-mix(in srgb, var(--a-text) 6%, var(--a-surface)); box-shadow: 0 6px 18px rgba(0, 0, 0, .08); }
-.pn-top { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--a-muted); }
-.pn-top img { width: 20px; height: 20px; border-radius: 5px; }
-.pn-top span { font-weight: 700; color: var(--a-text); }
-.pn-top small { margin-inline-start: auto; }
-.pn-body { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
-.pn-txt { flex: 1; min-width: 0; display: grid; gap: 2px; font-size: 13.5px; line-height: 1.5; }
-.pn-txt b { font-size: 14px; }
-.pn-img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
-.pn-btns { display: grid; gap: 8px; }
-.pn-tips { margin: 0; padding-inline-start: 18px; font-size: 12.5px; line-height: 1.8; }
-.pn-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.pn-log li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--a-bg); }
-.pn-log li > span:first-child { display: grid; min-width: 0; }
-.pn-log b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pn-log small { color: var(--a-muted); font-size: 11.5px; }
-.pn-res { flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: var(--a-ok); }
