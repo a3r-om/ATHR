@@ -64,7 +64,7 @@
     "hero_title": "Cups that leave a mark",
     "hero_features": [
      "Delivery to all GCC countries",
-     "Free in Oman over {free}",
+     "Free office pickup in Oman over {free}",
      "Cash on delivery in Oman & UAE"
     ]
    }
@@ -75,12 +75,12 @@
    "google_verification": ""
   },
   "gift": {
-   "wa": "🎁✨ *{to}، وصلتك هدية!* ✨🎁\n\nهدية مختارة لك بكل حب من *{from}* 💝\n{occasion}\n\n💌 *رسالة لك:*\n«{message}»\n\n👇 افتح بطاقة هديتك:\n{link}\n\n🚚 هديتك في الطريق إليك من {store}",
+   "wa": "🎁✨ *وصلتك هدية!* ✨🎁\n\nهدية مختارة لك بكل حب 💝\n{occasion}\n\n💌 *رسالة لك:*\n«{message}»\n\n👇 افتح بطاقة هديتك:\n{link}\n\n🚚 هديتك في الطريق إليك من {store}",
    "tag": true,
    "font": "Amiri",
    "hint": "اضغط على الصندوق لتفتحها",
    "stars": true,
-   "title": "{to}، وصلتك هدية!",
+   "title": "وصلتك هدية!",
    "button": "افتح هديتك",
    "colors": {
     "bg": "#7A2E4A",
@@ -204,7 +204,6 @@
      "name_en": "Home delivery",
      "note_en": "Delivered to your door.",
      "pricing": "fixed",
-     "duration": "2 إلى 4 أيام",
      "countries": [
       "OM"
      ]
@@ -219,7 +218,6 @@
      "name_en": "Pick up from Jenakum office",
      "note_en": "Collect your order from the nearest office.",
      "pricing": "fixed",
-     "duration": "2 إلى 3 أيام",
      "countries": [
       "OM"
      ]
@@ -234,7 +232,6 @@
      "name_en": "Home delivery (GCC)",
      "note_en": "Delivered to your door.",
      "pricing": "fixed",
-     "duration": "7 إلى 10 أيام",
      "countries": [
       "AE",
       "SA",
@@ -409,6 +406,7 @@
     }
    ],
    "auto_rates": true,
+   "free_scope": "office",
    "show_notes": true,
    "show_wilaya": true,
    "free_enabled": true,
@@ -533,7 +531,7 @@
    "coupons": true,
    "loyalty": {
     "msg": "هلا {name} 🌟\n\nشكراً لأنك من عملاء {store} المميزين 💙\nجمعت *{points} نقطة*، وهذه مكافأتك:\n🎁 خصم *{value}* بالكود: *{code}*\n⏳ صالح حتى {ends}\n\nاستخدمه في طلبك القادم (يعمل برقمك فقط) 👇\n{link}",
-    "enabled": true,
+    "enabled": false,
     "per_omr": 1,
     "reward_days": 30,
     "reward_value": 1,
@@ -542,7 +540,7 @@
    "restock": true,
    "wa_quick": false,
    "favorites": true,
-   "free_done": "مبروك! توصيل طلبك مجاني",
+   "free_done": "مبروك! التوصيل للمكتب صار مجاني",
    "gift_card": true,
    "low_stock": 3,
    "new_title": "وصل حديثاً",
@@ -551,8 +549,8 @@
    "cart_float": true,
    "sets_title": "أطقم وهدايا بسعر أقل",
    "trust_show": true,
-   "free_before": "توصيل مجاني للطلبات من {free} أو أكثر",
-   "free_during": "أضف {left} أخرى للحصول على توصيل مجاني",
+   "free_before": "توصيل مجاني للمكتب للطلبات من {free} أو أكثر",
+   "free_during": "أضف {left} أخرى للحصول على توصيل مجاني للمكتب",
    "gift_banner": true,
    "gift_button": true,
    "upsell_show": false,
@@ -597,7 +595,7 @@
    "announce_text": "",
    "hero_features": [
     "الدفع عند الاستلام في عُمان والإمارات",
-    "توصيل مجاني داخل عُمان اكثر من {free}",
+    "توصيل مجاني للمكتب داخل عُمان اكثر من {free}",
     "توصيل لكل دول الخليج",
     ""
    ],
