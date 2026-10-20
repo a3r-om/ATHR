@@ -1,0 +1,79 @@
+# بناء صفحات المتجر (صفحة لكل منتج وقسم + خريطة الموقع + الصور المصغّرة)
+# يعمل تلقائيًا كل ساعة، وبعد أي تعديل على ملفات المتجر، ويمكن تشغيله يدويًا من تبويب Actions.
+name: بناء صفحات المتجر
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "marketing/**"
+      - "p/**"
+      - "c/**"
+      - "index.html"
+      - "404.html"
+      - "sitemap.xml"
+      - "robots.txt"
+      - "js/thumbs.js"
+      - "js/rates.js"
+      - "gift/**"
+      - "fav/**"
+      - "images/t/**"
+      - "cart/**"
+      - "checkout/**"
+      - "done/**"
+      - "review/**"
+      - "search/**"
+      - "shipping/**"
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: تثبيت أداة تصغير الصور
+        run: npm install --prefix tools --no-audit --no-fund --no-package-lock
+
+      - name: بناء الصفحات من بيانات المتجر
+        run: node tools/build.mjs
+
+      - name: حفظ الصفحات ونشرها
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "لا توجد تغييرات"
+            exit 0
+          fi
+          git commit -q -m "تحديث صفحات المتجر تلقائيًا"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && break
+            sleep 5
+          done
+
+      - name: فحص المتجر المنشور
+        continue-on-error: true
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"; repo="${GITHUB_REPOSITORY#*/}"
+          site="https://${owner,,}.github.io/${repo}/"
+          for path in "" "index.html" "shipping/" "sitemap.xml"; do
+            code=$(curl -s -o /tmp/page -w "%{http_code}" "${site}${path}")
+            title=$(grep -o "<title>[^<]*" /tmp/page | head -1)
+            echo "::notice title=فحص المتجر::${code} ${site}${path} ${title}"
+          done
