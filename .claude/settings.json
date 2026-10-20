@@ -1,0 +1,20 @@
+{
+  "enabledPlugins": {
+    "claude-router@claude-router-marketplace": true,
+    "context-optimizer@cco": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-router-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "0dust/ClaudeRouter"
+      }
+    },
+    "cco": {
+      "source": {
+        "source": "github",
+        "repo": "egorfedorov/claude-context-optimizer"
+      }
+    }
+  }
+}
