@@ -1,5 +1,6 @@
 -- =====================================================
--- ATHR STORE — إعداد قاعدة البيانات (يُشغَّل مرة واحدة)
+-- حروف وألوان — إعداد قاعدة البيانات (يُشغَّل مرة واحدة)
+-- (نفس نظام متجر أثر، مع نوع استلام «digital» للملفات التي تصل على واتساب)
 -- الجداول + الصلاحيات + مخزن الصور
 -- آمن لإعادة التشغيل: لا يحذف أي بيانات موجودة.
 -- =====================================================
@@ -173,7 +174,7 @@ create policy "athr admin delete images" on storage.objects
     using (bucket_id = 'product-images' and public.is_admin());
 
 -- =====================================================
--- المدير: ضع إيميل المالك مكان OWNER_EMAIL@example.com، ويصبح مديرًا تلقائيًا بعد تأكيد الإيميل
+-- المدير: ضع إيميل المالك مكان h3za3h@gmail.com، ويصبح مديرًا تلقائيًا بعد تأكيد الإيميل
 -- (حساب يُنشأ من Authentication ← Users ← Add user مع Auto Confirm).
 -- =====================================================
 
@@ -189,7 +190,7 @@ security definer
 set search_path = public
 as $$
 begin
-    if lower(new.email) = 'OWNER_EMAIL@example.com' and new.email_confirmed_at is not null then
+    if lower(new.email) = 'h3za3h@gmail.com' and new.email_confirmed_at is not null then
         insert into public.admin_users (id) values (new.id) on conflict (id) do nothing;
     end if;
     return new;
@@ -210,7 +211,7 @@ create trigger athr_grant_store_admin_on_confirm
 
 insert into public.admin_users (id)
 select id from auth.users
-where lower(email) = 'OWNER_EMAIL@example.com' and email_confirmed_at is not null
+where lower(email) = 'h3za3h@gmail.com' and email_confirmed_at is not null
 on conflict (id) do nothing;
 
 -- =====================================================
@@ -248,7 +249,7 @@ create table if not exists public.orders (
     office text check (char_length(office) <= 120),
     notes text check (char_length(notes) <= 1000),
     delivery_name text check (char_length(delivery_name) <= 120),
-    delivery_type text check (delivery_type in ('home', 'office')),
+    delivery_type text check (delivery_type in ('home', 'office', 'digital')),
     delivery_price numeric(10,3) not null default 0 check (delivery_price >= 0),
     payment_name text check (char_length(payment_name) <= 120),
     payment_type text check (payment_type in ('cod', 'bank', 'online', 'other')),
@@ -440,7 +441,7 @@ begin
     if m is null then
         raise exception 'athr: طريقة التوصيل غير متاحة' using errcode = '22023';
     end if;
-    new.delivery_type := case when m ->> 'type' = 'office' then 'office' else 'home' end;
+    new.delivery_type := case when m ->> 'type' in ('office', 'digital') then m ->> 'type' else 'home' end;
 
     -- 4) التوصيل المجاني
     free_min  := coalesce(nullif(cfg #>> '{order,free_min}', '')::numeric, 0);
@@ -1059,7 +1060,7 @@ begin
     if m is null then
         raise exception 'athr: طريقة التوصيل غير متاحة' using errcode = '22023';
     end if;
-    new.delivery_type := case when m ->> 'type' = 'office' then 'office' else 'home' end;
+    new.delivery_type := case when m ->> 'type' in ('office', 'digital') then m ->> 'type' else 'home' end;
 
     -- 4) التوصيل المجاني
     free_min  := coalesce(nullif(cfg #>> '{order,free_min}', '')::numeric, 0);
@@ -1350,7 +1351,7 @@ begin
     if m is null then
         raise exception 'athr: طريقة التوصيل غير متاحة' using errcode = '22023';
     end if;
-    new.delivery_type := case when m ->> 'type' = 'office' then 'office' else 'home' end;
+    new.delivery_type := case when m ->> 'type' in ('office', 'digital') then m ->> 'type' else 'home' end;
 
     -- 4) التوصيل المجاني
     free_min  := coalesce(nullif(cfg #>> '{order,free_min}', '')::numeric, 0);
@@ -1644,7 +1645,6 @@ revoke all on public.admin_users from anon;
 revoke insert, update, delete on public.categories, public.products, public.product_media, public.store_settings from anon;
 revoke select, update, delete on public.orders from anon;
 revoke update, delete on public.reviews from anon;
-revoke select, update, delete on public.events from anon;
 revoke all on public.stats_daily from anon;
 revoke truncate, references, trigger on all tables in schema public from anon, authenticated;
 
