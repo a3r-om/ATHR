@@ -1400,7 +1400,6 @@
                 ${text(`config.order.delivery.${i}.name_en`, "الاسم بالإنجليزي", { dir: "ltr" })}
                 ${text(`config.order.delivery.${i}.note_en`, "الشرح بالإنجليزي", { dir: "ltr" })}
             </div>
-            ${text(`config.order.delivery.${i}.duration`, "مدة التوصيل (اختياري)", { placeholder: "مثال: 2 إلى 4 أيام" })}
             ${listControls("config.order.delivery", i, o.delivery.length)}
         </li>`).join("");
 
@@ -1464,7 +1463,9 @@
                 <button class="ab ab-ghost ab-sm" type="button" data-add-item="config.order.delivery">+ إضافة طريقة توصيل</button>
                 <hr>
                 ${toggle("config.order.free_enabled", "توصيل مجاني عند حد معيّن", { rerender: true })}
-                ${o.free_enabled ? number("config.order.free_min", "حد التوصيل المجاني (قيمة الطلب)", { help: "يُطبَّق على كل طرق التوصيل في الدول المختارة." }) + countryChecks("config.order.free_countries", "التوصيل المجاني متاح لـ") : ""}
+                ${o.free_enabled ? number("config.order.free_min", "حد التوصيل المجاني (قيمة الطلب)")
+                    + select("config.order.free_scope", "التوصيل المجاني يشمل", [["office", "الاستلام من المكتب فقط"], ["all", "البيت والمكتب"]], { help: o.free_scope === "office" ? "التوصيل للبيت يبقى بسعره حتى لو وصل الطلب للحد. ونفس الشي لأكواد «توصيل مجاني»." : "يُطبَّق على كل طرق التوصيل في الدول المختارة." , rerender: true })
+                    + countryChecks("config.order.free_countries", "التوصيل المجاني متاح لـ") : ""}
 `)
             + card("نموذج الطلب", `
                 ${number("config.order.max_qty", "أقصى كمية من المنتج الواحد", { step: "1", min: "1" })}
@@ -1506,7 +1507,7 @@
         const volText = ATHR.volumeTiers(cfg()).map((t) => `${ATHR.piecesText(t.min)} خصم ${t.pct}%`).join("، ");
 
         promoMaybeLoad();
-        return couponsCard() + loyaltyCard() + stockCard() + restockCard() + favCard()
+        return couponsCard() + stockCard() + restockCard() + favCard()
             + card("خصم الكمية (يرفع قيمة الطلب)", `
                 ${toggle("config.sales.volume.enabled", "تفعيل خصم الكمية", { rerender: true })}
                 <ul class="lst">${tiers}</ul>
@@ -1663,7 +1664,6 @@
 
     function couponsCard() {
         const st = A.promo || {};
-        const rewards = (st.coupons || []).filter((k) => k.phone);
         const list = (st.coupons || []).filter((k) => !k.phone);
         const uses = st.uses || {};
         const sum = list.reduce((a, k) => {
@@ -1694,7 +1694,7 @@
             ${off ? `<p class="adm-note">الخانة متوقفة، فلن تعمل الأكواد عند الزبائن حتى تفعّلها وتنشر.</p>` : ""}
             ${promoState(`${list.length ? `<div class="ob-stats cp-sum"><div><small>طلبات بالأكواد</small><b>${sum.orders}</b></div><div><small>مبيعاتها</small><b>${money(sum.sales)}</b></div></div>
                 <ul class="cp-list">${rows}</ul>` : `<p class="adm-muted cp-empty">لا توجد أكواد بعد. أنشئ أول كود لمؤثر، مثل SARA10.</p>`}
-                ${rewards.length ? `<p class="adm-muted">⭐ أكواد مكافآت الولاء: ${rewards.length} (استُخدم منها ${rewards.filter((k) => ((st.uses || {})[k.code] || {}).orders).length}). تُنشأ من «العملاء» وتعمل لرقم صاحبها فقط.</p>` : ""}
+
                 <button class="ab ab-primary ab-sm" type="button" data-a="coupon-new">+ كود جديد</button>`)}`,
             "أعطِ كل مؤثر كوداً باسمه (مثل SARA10) ورابطاً يفعّل الكود تلقائياً، وتعرف كم طلب ومبيعات جاب كل واحد. الخصم يُحسب بعد خصومات المتجر، والخادم يتحقق منه فلا يمكن التلاعب به. الأكواد تُحفظ فوراً بدون «نشر».");
     }
@@ -3140,7 +3140,7 @@
         const line = (label, value) => value ? `<li><span>${label}</span><b>${esc(String(value))}</b></li>` : "";
         A.prof = { phone };
         openSheet(`
-            <div class="adm-sheet-head"><h2>${esc(c.name || "عميل")} <span aria-hidden="true">${flag}</span></h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>
+            <div class="adm-sheet-head"><h2>${c.name ? esc(c.name) : `<span dir="ltr">+${esc(c.phone)}</span>`} <span aria-hidden="true">${flag}</span></h2><button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button></div>
             <div class="prof">
                 <div class="prof-top">
                     <span dir="ltr" class="cust-phone">+${esc(c.phone)}</span>
@@ -3288,10 +3288,10 @@
             date: new Date(Date.now() + 4 * 36e5).toISOString().slice(0, 10),
             currency: "OMR",
             store: {
-                free_delivery_from: Number(c.order.free_min) || 0,
+                free_delivery_from: c.order.free_enabled ? Number(c.order.free_min) || 0 : 0,
+                free_delivery_office_only: ATHR.freeOfficeOnly(c),
                 delivery: (c.order.delivery || []).filter((d) => d.enabled !== false).map((d) => ({ name: d.name, price: Number(d.price) || 0 })),
-                payments: (c.order.payments || []).filter((p) => p.enabled !== false).map((p) => p.name),
-                loyalty: ATHR.loyaltyOn(c)
+                payments: (c.order.payments || []).filter((p) => p.enabled !== false).map((p) => p.name)
             },
             numbers: { today: m.today, last7: m.d7, last30: m.d30, all_time: m.all, pending_orders: m.pending, funnel_30d: m.funnel, gifts_90d: m.gifts },
             best_sellers_30d: m.top.map((x) => ({ name: x.name, qty: x.qty, sales: x.sales })),
@@ -4033,7 +4033,7 @@
     const NEW_ITEM = {
         "config.texts.hero_features": () => "",
         "config.texts.socials": () => ({ name: "", url: "" }),
-        "config.order.delivery": () => ({ id: ATHR.uid("d-"), enabled: true, name: "", type: "home", price: 0, note: "", duration: "" }),
+        "config.order.delivery": () => ({ id: ATHR.uid("d-"), enabled: true, name: "", type: "home", price: 0, note: "" }),
         "config.order.governorates": () => "",
         "config.order.payments": () => ({ id: ATHR.uid("p-"), enabled: false, name: "", type: "other", note: "", bank: { number: "", bank: "", holder: "", account: "", swift: "", iban: "" }, link: "" }),
         "config.sales.bundles": () => ({ id: ATHR.uid("b-"), enabled: true, a: "", b: "", pct: 10 }),
@@ -5478,9 +5478,9 @@
             </div>` : ""}
             ${list.length ? `<ul class="cust-list">${list.map((c) => `<li class="cust${c.marketing ? "" : " off"}">
                 <div class="cust-main">
-                    <button class="cust-open" type="button" data-cust-open="${esc(c.phone)}"><b>${esc(c.name || "بدون اسم")}${c.country && c.country !== "OM" ? ` <span aria-hidden="true">${flag(c.country)}</span>` : ""}</b><span class="co-more">الملف ‹</span></button>
+                    <button class="cust-open" type="button" data-cust-open="${esc(c.phone)}"><b${c.name ? "" : ' dir="ltr"'}>${esc(c.name || `+${c.phone}`)}${c.country && c.country !== "OM" ? ` <span aria-hidden="true">${flag(c.country)}</span>` : ""}</b><span class="co-more">الملف ‹</span></button>
                     ${custTags(c).length || (lyOn && custPoints(c, earned)) ? `<span class="cust-tags">${custTags(c).map(([k, l]) => `<span class="ctag ${k}">${l}</span>`).join("")}${lyOn && custPoints(c, earned) ? `<span class="ctag pts">⭐ ${ATHR.pointsText(custPoints(c, earned))}</span>` : ""}</span>` : ""}
-                    <span dir="ltr" class="cust-phone">+${esc(c.phone)}</span>
+                    ${c.name ? `<span dir="ltr" class="cust-phone">+${esc(c.phone)}</span>` : ""}
                     <small class="adm-muted">${c.orders_count} ${c.orders_count === 1 ? "طلب" : c.orders_count === 2 ? "طلبان" : "طلبات"} · ${money(c.total_spent)} · آخر طلب ${esc(sinceText(c.last_order_at))}${c.last_offer_at ? ` · آخر عرض ${esc(sinceText(c.last_offer_at))}` : ""}</small>
                 </div>
                 <div class="cust-ctrl">
@@ -5616,7 +5616,7 @@
         if (!st) return;
         const prevScroll = keepScroll ? ($("#admSheet .adm-sheet-panel") || {}).scrollTop || 0 : 0;
         const single = st.single ? A.customers.find((c) => c.phone === st.single) : null;
-        const who = single ? ` لـ${esc(String(single.name || "العميل").split(" ")[0])}` : "";
+        const who = single ? ` ${single.name ? `لـ${esc(String(single.name).split(" ")[0])}` : "للعميل"}` : "";
 
         if (st.step === "pick") {
             const discounted = offerProducts().filter((p) => p.pct).length;
@@ -5654,8 +5654,8 @@
                         return `<button type="button" class="ab-mini${st.audience === k ? " on" : ""}" data-offer-aud="${k}" aria-pressed="${st.audience === k}">${l} (${n})</button>`;
                     }).join("")}</div></div>
                     <label class="at"><input type="checkbox" id="offerSkip"${st.skipRecent ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>تخطَّ من وصله عرض خلال آخر 3 أيام</b><small>${recentSkipped ? `${recentSkipped} عميل وصلهم عرض قريباً. ` : ""}حتى لا يشعر العميل بالإزعاج ويحظر الرقم.</small></span></label>`}
-                    <div class="af"><span>👀 هكذا تصل الرسالة لـ${esc(String(sample.name || "العميل").split(" ")[0])}</span><div id="offerPreview">${waBubble(offerText(st, sample), st)}</div></div>
-                    <button class="ab ab-primary ab-block" type="button" data-a="offer-start"${targets.length ? "" : " disabled"}>${targets.length ? `ابدأ الإرسال ${targets.length === 1 ? `لـ${esc(String(targets[0].name || "العميل").split(" ")[0])}` : `(${targets.length} عميل)`}` : "لا يوجد عملاء في هذا الاختيار"}</button>
+                    <div class="af"><span>👀 هكذا تصل الرسالة ${sample.name ? `لـ${esc(String(sample.name).split(" ")[0])}` : "للعميل"}</span><div id="offerPreview">${waBubble(offerText(st, sample), st)}</div></div>
+                    <button class="ab ab-primary ab-block" type="button" data-a="offer-start"${targets.length ? "" : " disabled"}>${targets.length ? `ابدأ الإرسال ${targets.length === 1 ? `${targets[0].name ? `لـ${esc(String(targets[0].name).split(" ")[0])}` : "للعميل"}` : `(${targets.length} عميل)`}` : "لا يوجد عملاء في هذا الاختيار"}</button>
                     <button class="ab ab-ghost ab-block" type="button" data-a="offer-copy">📋 نسخ الرسالة لحالة واتساب أو قائمة البث</button>
                     <p class="adm-muted">واتساب لا يسمح بالإرسال الجماعي التلقائي، لذلك تضغط «أرسل» لكل عميل وننقلك للتالي تلقائياً. كل عميل يصله رابط باسمه يفتح له العرض الخاص.</p>
                 </div>`);
@@ -5680,7 +5680,7 @@
                 <p class="adm-muted">العميل ${st.i + 1} من ${st.targets.length} · أُرسل ${st.sent}</p>
                 <div class="offer-who"><b>${esc(c.name || "بدون اسم")}${custTags(c).map(([k, l]) => ` <span class="ctag ${k}">${l}</span>`).join("")}</b><span dir="ltr">+${esc(c.phone)}</span></div>
                 ${waBubble(offerText(st, c), st)}
-                <button class="ab ab-primary ab-block offer-send" type="button" data-a="offer-send">${ATHR.views.waIcon()}أرسل لـ${esc(String(c.name || "العميل").split(" ")[0])} في واتساب</button>
+                <button class="ab ab-primary ab-block offer-send" type="button" data-a="offer-send">${ATHR.views.waIcon()}أرسل ${c.name ? `لـ${esc(String(c.name).split(" ")[0])}` : "للعميل"} في واتساب</button>
                 <div class="inline"><button class="ab-mini" type="button" data-a="offer-skip">تخطي</button><button class="ab-mini" type="button" data-a="offer-stop">إيقاف</button></div>
             </div>`);
     }
@@ -6011,11 +6011,11 @@
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
                 <div class="oc-cust">
                     ${giftTo(o) ? `<small class="adm-muted">صاحب الهدية</small>` : ""}
-                    <b>${esc(o.customer_name || "بدون اسم")}</b>
-                    ${o.phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : ""}
+                    ${o.customer_name ? `<b>${esc(o.customer_name)}</b>` : ""}
+                    ${o.phone ? (o.customer_name ? `<span dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</span>` : `<b dir="ltr">${esc(ATHR.phoneText(o.phone, o.country))}</b>`) : o.customer_name ? "" : `<b>بدون رقم</b>`}
                     ${giftTo(o) ? `</div><div class="oc-cust oc-gift"><small class="adm-muted">🎁 المُهدى إليه${ATHR.giftFor(o.gift_for, cfg()) ? ` · <span class="gfor-tag ${o.gift_for}">${esc(ATHR.giftFor(o.gift_for, cfg()).emoji)} ${esc(ATHR.giftFor(o.gift_for, cfg()).label)}</span>` : ""}${giftOccTag(o)}${o.gift_hide_price ? " · لا تذكر السعر" : ""}</small>
-                    <b>${esc(o.gift_name || "")}</b>
-                    ${o.gift_phone ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : ""}` : ""}
+                    ${o.gift_name ? `<b>${esc(o.gift_name)}</b>` : ""}
+                    ${o.gift_phone ? (o.gift_name ? `<span dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</span>` : `<b dir="ltr">${esc(ATHR.phoneText(o.gift_phone, o.country))}</b>`) : ""}` : ""}
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
                     ${o.address || o.office ? `<span>${o.office ? `المكتب: ${esc(o.office)}` : esc(o.address)}</span>` : ""}
                 </div>
@@ -6337,8 +6337,10 @@
             const placeParts = split(place).filter((x) => !ATHR_COUNTRIES.some((c) => x.includes(c.name)));
             const isOm = country === "OM";
             const phoneOf = (v) => (v ? ATHR.parsePhone(v, country).stored : null);
-            const name = who[0] || get("الاسم") || get("صاحب الهدية") || null;
-            const phone = who[1] || get("الهاتف") || get("رقم صاحب الهدية");
+            // الاسم صار اختياري: السطر ممكن يكون فيه الرقم بس («👤 من: 91234567»)
+            const isPhoneText = (x) => /^\+?[\d\s-]{7,}$/.test(String(x || "").trim());
+            const name = who.find((x) => !isPhoneText(x)) || get("الاسم") || get("صاحب الهدية") || null;
+            const phone = who.find(isPhoneText) || get("الهاتف") || get("رقم صاحب الهدية");
 
             const payText = get("الدفع");
             const payType = /تحويل|بنك/.test(payText) ? "bank" : /استلام|كاش|نقد/.test(payText) ? "cod" : /إلكتروني|الكتروني|بطاقة/.test(payText) ? "online" : payText ? "other" : "bank";
@@ -6346,10 +6348,10 @@
             const deliveryText = get("التوصيل");
             const noMatch = get("رقم الطلب").match(/[A-Z]{1,4}-[0-9A-Z]{3,10}/i);
             const discountLine = block.find((l) => /^(خصم|الخصم)/.test(l)) || "";
-            const giftName = to[0] || get("المُهدى إليه") || null;
+            const giftName = to.find((x) => !isPhoneText(x)) || get("المُهدى إليه") || null;
             const forText = get("الهدية لـ") || get("الهدية ل");
             const giftFor = forText ? (ATHR.GIFT_FOR.find((id) => forText.includes(ATHR.giftFor(id, cfg()).label)) || (/بنت/.test(forText) ? "girl" : /ولد/.test(forText) ? "boy" : null)) : null;
-            const giftPhone = to[1] || get("رقم المُهدى إليه");
+            const giftPhone = to.find(isPhoneText) || get("رقم المُهدى إليه");
             return {
                 order_no: noMatch ? noMatch[0].toUpperCase() : null,
                 ordered_at: orderedAt,

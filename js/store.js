@@ -700,7 +700,7 @@
             case "product": renderProduct(route, { changed }); break;
             case "search": renderSearch(route); break;
             case "fav": renderFav(); break;
-            case "points": renderPoints(); break;
+            case "points": navigate(BASE, { replace: true }); return;
             case "shipping": view.innerHTML = V.shipping(v()); break;
             case "cart": renderCart(); break;
             case "checkout": renderCheckout(); break;
@@ -1222,7 +1222,7 @@
 
     function couponDesc(c) {
         if (!c) return "";
-        if (c.kind === "ship") return t("توصيل مجاني");
+        if (c.kind === "ship") return ATHR.freeOfficeOnly(C()) ? t("توصيل مجاني للمكتب") : t("توصيل مجاني");
         if (c.kind === "fixed") return t("خصم {amount}", { amount: money(c.value) });
         return t("خصم {pct}%", { pct: Number(c.value) });
     }
@@ -1523,7 +1523,7 @@
         const pct = tt.freeEligible ? Math.min(100, Math.round(((Number(cfg.order.free_min) - tt.leftForFree) / Number(cfg.order.free_min)) * 100)) : (tt.count ? 100 : 0);
         const short = (n) => ATHR.trimZeros(local(n));
         const pill = !tt.count ? ""
-            : tt.freeShipping ? `<span class="cf-pill ok">${esc(t("شحن مجاني"))}</span>`
+            : tt.freeShipping ? `<span class="cf-pill ok">${esc(tt.freeOffice ? t("مكتب مجاني") : t("شحن مجاني"))}</span>`
             : tt.freeEligible ? `<span class="cf-pill">${esc(t("باقي {amount}", { amount: short(tt.leftForFree) }))}</span>`
             : `<span class="cf-pill">${esc(local(tt.total !== undefined ? tt.total : tt.afterDiscount))}</span>`;
         el.href = ATHR.url.page("cart");
@@ -1692,7 +1692,7 @@
 
     function orderMessageAr(order) {
         const cfg = C();
-        const card = order.gift && order.gift_name && cfg.sales.gift_card !== false;
+        const card = order.gift && cfg.sales.gift_card !== false;
         return ATHR.orderText(order, cfg, {
             first: fill(cfg.texts.wa_first_line),
             last: fill(cfg.texts.wa_last_line || ""),
@@ -1716,7 +1716,7 @@
                 const db = b.price >= left ? b.price - left : 100 + (left - b.price);
                 return da - db || (b.is_best_seller ? 1 : 0) - (a.is_best_seller ? 1 : 0);
             });
-            return { title: t("أضف {amount} واحصل على توصيل مجاني", { amount: money(left) }), items: list.slice(0, 4) };
+            return { title: totals.freeOffice ? t("أضف {amount} واحصل على توصيل مجاني للمكتب", { amount: money(left) }) : t("أضف {amount} واحصل على توصيل مجاني", { amount: money(left) }), items: list.slice(0, 4) };
         }
         const related = V.relatedFor(vv, Array.from(inCart), 4);
         if (totals.volume && totals.volume.next) {
@@ -1789,8 +1789,8 @@
                             <div class="rows">
                                 <div class="row"><span>${esc(t("المنتجات ({n})", { n: totals.count }))}</span><span>${money(totals.subtotal)}</span></div>
                                 ${totals.discount > 0 ? `<div class="row ok"><span>${esc(ATHR.discountName(totals))}</span><span>-${money(totals.discount)}</span></div>` : ""}
-                                <div class="row"><span>${esc(t("التوصيل إلى {flag} {country}", { flag: c.flag, country: L(c, "name") }))}</span><span class="muted">${esc(totals.freeShipping ? t("مجاني") : delivery.length ? t("يُحدَّد في الخطوة التالية") : t("غير متاح حاليًا"))}</span></div>
-                                ${totals.freeShipping || !delivery.length ? "" : `<ul class="ship-list">${delivery.map((d) => `<li><span class="muted">${esc(L(d, "name"))}</span><span>${esc(V.deliveryPriceLabel(v(), d))}</span></li>`).join("")}</ul>`}
+                                <div class="row"><span>${esc(t("التوصيل إلى {flag} {country}", { flag: c.flag, country: L(c, "name") }))}</span><span class="muted">${esc(totals.freeShipping && delivery.every((d) => ATHR.freeForDelivery(C(), d)) ? t("مجاني") : delivery.length ? t("يُحدَّد في الخطوة التالية") : t("غير متاح حاليًا"))}</span></div>
+                                ${(totals.freeShipping && delivery.every((d) => ATHR.freeForDelivery(C(), d))) || !delivery.length ? "" : `<ul class="ship-list">${delivery.map((d) => `<li><span class="muted">${esc(L(d, "name"))}</span><span${totals.freeShipping && ATHR.freeForDelivery(C(), d) ? ' class="ok"' : ""}>${esc(totals.freeShipping && ATHR.freeForDelivery(C(), d) ? t("مجاني") : V.deliveryPriceLabel(v(), d))}</span></li>`).join("")}</ul>`}
                                 <div class="row total"><span>${esc(t("المجموع"))}</span><span>${money(totals.afterDiscount)}</span></div>
                                 ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(totals.afterDiscount)}</span></div>`}
                             </div>
@@ -1954,7 +1954,7 @@
                 </details>
                 <form class="layout-2" id="checkoutForm" novalidate>
                     <div class="form">
-                        ${saved.name && !keep ? `<div class="saved-note"><span>${esc(t("عبّأنا بياناتك من طلبك السابق."))}</span><button class="link-btn" type="button" data-forget-me>${esc(t("مسح بياناتي"))}</button></div>` : ""}
+                        ${(saved.phoneLocal || saved.phone) && !keep ? `<div class="saved-note"><span>${esc(t("عبّأنا بياناتك من طلبك السابق."))}</span><button class="link-btn" type="button" data-forget-me>${esc(t("مسح بياناتي"))}</button></div>` : ""}
                         ${giftOn() ? `<div class="panel who-pick">
                             <h2>${esc(t("لمن الطلب؟"))}</h2>
                             <div class="seg2" role="radiogroup" aria-label="${esc(t("لمن الطلب؟"))}">
@@ -1966,7 +1966,6 @@
                         <div class="panel form">
                             <h2>${esc(gift ? t("بياناتك (صاحب الهدية)") : t("بياناتك"))}</h2>
                             ${gift ? "" : countryField}
-                            ${field("name", gift ? t("اسمك") : t("الاسم الكامل"), `<input class="input" name="name" autocomplete="name" value="${esc(saved.name || "")}" required>`)}
                             ${field("phone", gift ? t("رقمك (واتساب)") : t("رقم الهاتف (واتساب)"), `<span class="phone-wrap">${senderDial}<input class="input" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${senderRule.example}" value="${esc(myPhone)}" required></span>`, esc(t("رقم {country}: {hint}", { country: L(sender, "name"), hint: L(senderRule, "hint") })))}
                             ${gift ? "" : locationField(c, saved, false)}
                             <input type="hidden" name="mk_seen" value="1">
@@ -1977,7 +1976,6 @@
                             <input type="hidden" name="gift_seen" value="1">
                             ${giftForField(saved)}
                             ${countryField}
-                            ${field("gift_name", t("اسم المُهدى إليه"), `<input class="input" name="gift_name" maxlength="120" autocomplete="off" value="${esc(saved.gift_name || "")}" required>`)}
                             ${field("gift_phone", t("رقم المُهدى إليه"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="gift_phone" type="tel" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="${rule.example}" value="${esc(saved.gift_phone || "")}" required></span>`, esc(t("نتواصل معه لتنسيق التوصيل فقط.")))}
                             ${locationField(c, saved, true)}
                             <div class="field occ-field"><span>${esc(t("المناسبة"))}</span>
@@ -1995,7 +1993,7 @@
                             ${delivery.length ? `<div class="choice" role="radiogroup">
                                 ${delivery.map((d) => `<label class="option">
                                     <input type="radio" name="delivery" value="${esc(d.id)}"${pickDelivery && pickDelivery.id === d.id ? " checked" : ""}>
-                                    <span><b>${esc(L(d, "name"))}</b>${L(d, "note") ? `<small>${esc(L(d, "note"))}</small>` : ""}${d.duration ? `<small>${esc(t("المدة: {d}", { d: ATHR.duration(d.duration) }))}</small>` : ""}</span>
+                                    <span><b>${esc(L(d, "name"))}</b>${L(d, "note") ? `<small>${esc(L(d, "note"))}</small>` : ""}</span>
                                     <span class="opt-price" data-ship-price="${esc(d.id)}"></span>
                                 </label>`).join("")}
                             </div>` : `<p class="err">${esc(t("التوصيل إلى {country} غير متاح حاليًا. تواصل معنا عبر واتساب.", { country: L(c, "name") }))}</p>`}
@@ -2053,6 +2051,8 @@
     function renderAddressField(saved = {}) {
         const box = $("#addressField");
         if (!box) return;
+        // عُمان: نكتفي بالولاية، والعنوان لباقي دول الخليج
+        if (S.country === "OM") { box.innerHTML = ""; return; }
         const d = selectedDelivery();
         const isOffice = d && d.type === "office";
         const current = box.querySelector("textarea, input")?.value;
@@ -2096,10 +2096,11 @@
         const shipping = ATHR.shippingFor(d, totals.lines, C());
         const coupon = C().sales.coupons === false ? null : S.coupon;
         const eff = ATHR.couponEffect(coupon, totals.afterDiscount);
-        const freeShip = totals.freeShipping || eff.freeShip;
+        const freeWanted = totals.freeShipping || eff.freeShip;
+        const freeShip = freeWanted && ATHR.freeForDelivery(C(), d);
         const ship = freeShip ? 0 : shipping.cost;
         return {
-            ...totals, ship, kg: freeShip ? 0 : shipping.kg, delivery: d,
+            ...totals, ship, kg: freeShip ? 0 : shipping.kg, delivery: d, freeMissed: freeWanted && !freeShip && shipping.cost > 0,
             coupon: coupon && coupon.code ? coupon : null, couponAmount: eff.amount, couponFree: eff.freeShip, couponShort: eff.short,
             total: Math.round((totals.afterDiscount - eff.amount + ship) * 1000) / 1000
         };
@@ -2116,7 +2117,7 @@
         $$("[data-ship-price]").forEach((el) => {
             const d = ATHR.deliveriesFor(C(), S.country).find((x) => x.id === el.dataset.shipPrice);
             const s = ATHR.shippingFor(d, tt.lines, C());
-            el.textContent = tt.freeShipping || !(s.cost > 0) ? t("مجاني") : money(s.cost);
+            el.textContent = ((tt.freeShipping || tt.couponFree) && ATHR.freeForDelivery(C(), d)) || !(s.cost > 0) ? t("مجاني") : money(s.cost);
         });
         const html = `<div class="rows">
             ${tt.lines.map((l) => `<div class="row"><span>${esc(V.label(v(), l.product))} × ${l.qty}</span><span>${money(l.total)}</span></div>`).join("")}
@@ -2127,6 +2128,7 @@
             ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(tt.total)}</span></div>`}
             ${ATHR.pointsFor(tt.total - tt.ship, C()) > 0 ? `<div class="row pts"><span>⭐ ${esc(t("نقاط الولاء من هذا الطلب"))}</span><span>+${ATHR.pointsFor(tt.total - tt.ship, C())}</span></div>` : ""}
             ${tt.kg ? `<p class="muted small" style="margin:4px 0 0">${esc(t("سعر التوصيل حسب الوزن التقريبي، ونؤكد لك الوزن النهائي قبل الشحن."))}</p>` : ""}
+            ${tt.freeMissed ? `<p class="free-miss">💡 ${esc(t("التوصيل المجاني للاستلام من المكتب فقط. اختر المكتب ويصير التوصيل مجاني."))}</p>` : ""}
         </div>`;
         box.innerHTML = html;
         if (S.coupon && $("#couponBox .coupon-on")) renderCouponBox();
@@ -2144,17 +2146,15 @@
         const isOm = S.country === "OM";
         const gift = giftOn() && values.gift === "1";
         const senderCode = gift && values.sender_country ? values.sender_country : S.country;
-        const name = String(values.name || "").trim();
+        const name = "";
         const phone = ATHR.parsePhone(values.phone, senderCode);
         const giftPhone = gift ? ATHR.parsePhone(values.gift_phone, S.country) : null;
         const d = selectedDelivery();
         const p = selectedPayment();
 
-        if (name.length < 3) errors.name = t("اكتب اسمك الكامل (3 أحرف على الأقل).");
         if (!phone.valid) errors.phone = t("اكتب رقم {country} الصحيح: {hint}.", { country: L(ATHR.country(cfg, senderCode), "name"), hint: L(phone.rule, "hint") });
         if (gift) {
             if (ATHR.giftGendersOn(cfg) && !ATHR.GIFT_FOR.includes(values.gift_for)) errors.gift_for = t("اختر: الهدية لولد أو لبنت.");
-            if (String(values.gift_name || "").trim().length < 2) errors.gift_name = t("اكتب اسم المُهدى إليه.");
             if (!giftPhone.valid) errors.gift_phone = t("اكتب رقم المُهدى إليه الصحيح: {hint}.", { hint: L(giftPhone.rule, "hint") });
             else if (phone.valid && ATHR.storePhone(giftPhone.local, S.country, "XX") === ATHR.storePhone(phone.local, senderCode, "XX")) errors.gift_phone = t("رقم المُهدى إليه نفس رقمك. اكتب رقم الشخص الذي ستصله الهدية.");
             if (values.gift_occasion === "custom" && cfg.gift.custom_occasion !== false && ATHR.cleanOccasion(values.gift_occasion_text).length < 2) errors.gift_occasion_text = t("اكتب اسم المناسبة، مثل: عيد الأم.");
@@ -2162,6 +2162,7 @@
         if (!isOm && !String(values.gov || "").trim()) errors.gov = t("اكتب المدينة.");
         if (isOm && (gift || (cfg.order.show_wilaya && cfg.order.wilaya_required)) && !String(values.wilaya || "").trim()) errors.wilaya = gift ? t("اكتب ولاية المُهدى إليه.") : t("اكتب الولاية.");
         if (!d) errors.delivery = t("اختر طريقة التوصيل.");
+        else if (isOm) { /* عُمان: الولاية تكفي، بدون عنوان */ }
         else if (d.type === "office") {
             if (String(values.office || "").trim().length < 3) errors.office = t("اكتب اسم المكتب (3 أحرف على الأقل).");
         } else if (String(values.address || "").trim().length < 6) errors.address = gift ? t("اكتب عنوان المُهدى إليه بوضوح (6 أحرف على الأقل).") : t("اكتب عنوانك بوضوح (6 أحرف على الأقل).");
@@ -2244,16 +2245,16 @@
             source: "web",
             country: S.country,
             channel,
-            customer_name: name,
+            customer_name: null,
             phone: ATHR.storePhone(phone.local, senderCode, S.country),
             governorate: isOm ? null : String(values.gov || "").trim(),
             wilaya: isOm && (gift || cfg.order.show_wilaya) ? String(values.wilaya || "").trim() || null : null,
-            address: d.type === "office" ? null : String(values.address || "").trim(),
-            office: d.type === "office" ? String(values.office || "").trim() : null,
+            address: isOm || d.type === "office" ? null : String(values.address || "").trim() || null,
+            office: !isOm && d.type === "office" ? String(values.office || "").trim() || null : null,
             notes: cfg.order.show_notes ? String(values.notes || "").trim() || null : null,
             gift,
             gift_message: gift ? String(values.gift_message || "").trim().slice(0, 300) || null : null,
-            gift_name: gift ? String(values.gift_name || "").trim().slice(0, 120) : null,
+            gift_name: null,
             gift_phone: gift ? giftPhone.stored : null,
             gift_hide_price: gift && Boolean(values.gift_hide_price),
             gift_occasion: gift ? ATHR.giftOccasion(customOcc ? "custom" : values.gift_occasion === "custom" ? "other" : values.gift_occasion, cfg, customOcc).id : null,
@@ -2306,9 +2307,9 @@
             // في الهدية نحفظ اسمك ورقمك فقط، ويبقى عنوانك السابق كما هو
             const prev = storage.get(KEYS.customer, null) || {};
             storage.set(KEYS.customer, gift
-                ? { ...prev, name, marketing_ok: Boolean(values.marketing_ok), country: senderCode, phone: senderCode === "OM" ? phone.local : "", phoneLocal: phone.local, ...(prev.country && prev.country !== senderCode ? { gov: "", wilaya: "", address: "", office: "" } : {}) }
+                ? { ...prev, name: "", marketing_ok: Boolean(values.marketing_ok), country: senderCode, phone: senderCode === "OM" ? phone.local : "", phoneLocal: phone.local, ...(prev.country && prev.country !== senderCode ? { gov: "", wilaya: "", address: "", office: "" } : {}) }
                 : {
-                    name, marketing_ok: Boolean(values.marketing_ok), country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
+                    name: "", marketing_ok: Boolean(values.marketing_ok), country: S.country, phone: isOm ? phone.local : "", phoneLocal: phone.local,
                     gov: isOm ? "" : values.gov, wilaya: values.wilaya || "", address: values.address || "", office: values.office || "",
                     delivery: d.id, payment: p.id
                 });
@@ -2345,7 +2346,7 @@
     // بطاقة الإهداء الرقمية بعد طلب الهدية: معاينة وإرسال للمُهدى إليه عبر واتساب
     function giftDoneHTML(order, code) {
         const cfg = C();
-        if (!order.gift || !order.gift_name || cfg.sales.gift_card === false) return "";
+        if (!order.gift || cfg.sales.gift_card === false) return "";
         const occ = ATHR.giftOccasion(order.gift_occasion, cfg, order.gift_occasion_text);
         const cardUrl = new URL(ATHR.giftCardPath(order), location.origin).href;
         const from = String(order.customer_name || "").trim().split(/\s+/)[0];
@@ -2355,9 +2356,9 @@
         return `<div class="panel gift-done${gf ? ` gd-${gf.id}` : ""}"${gf ? ` style="--gd:${esc(gf.colors.box)};--gd-bg:${esc(gf.colors.bg)}"` : ""}>
             <div class="gd-card">
                 <span class="gd-emoji" aria-hidden="true">${gf ? gf.emoji : occ.emoji}</span>
-                <div><b>${esc(t("بطاقة إهداء لـ{name}", { name: order.gift_name }))}${gf ? ` ${gf.heart}` : ""}</b><small>${esc(order.gift_message || L(occ, "title"))}</small></div>
+                <div><b>${esc(order.gift_name ? t("بطاقة إهداء لـ{name}", { name: order.gift_name }) : t("بطاقة الإهداء"))}${gf ? ` ${gf.heart}` : ""}</b><small>${esc(order.gift_message || L(occ, "title"))}</small></div>
             </div>
-            ${wa ? `<a class="btn btn-wa btn-block" href="${esc(wa)}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("أرسل البطاقة لـ{name} عبر واتساب", { name: order.gift_name }))}</a>` : ""}
+            ${wa ? `<a class="btn btn-wa btn-block" href="${esc(wa)}" target="_blank" rel="noopener">${V.waIcon()}${esc(order.gift_name ? t("أرسل البطاقة لـ{name} عبر واتساب", { name: order.gift_name }) : t("أرسل البطاقة للمُهدى إليه عبر واتساب"))}</a>` : ""}
             <div class="gd-row">
                 <a class="link-btn" href="${esc(cardUrl)}" target="_blank" rel="noopener">${esc(t("معاينة البطاقة"))}</a>
                 <button class="link-btn" type="button" data-copy="${esc(cardUrl)}">${esc(t("نسخ رابط البطاقة"))}</button>
@@ -2549,7 +2550,7 @@
             <div class="wrap thanks">
                 <div class="thanks-head">
                     <div class="check">${V.icon.check}</div>
-                    <h1>${esc(t("شكرًا لك، {name}", { name: order.customer_name.split(" ")[0] }))}</h1>
+                    <h1>${esc(order.customer_name ? t("شكرًا لك، {name}", { name: String(order.customer_name).split(" ")[0] }) : t("شكرًا لك!"))}</h1>
                     <span class="muted">${esc(t("رقم طلبك"))}</span>
                     <span class="order-no">${esc(order.order_no)}</span>
                 </div>
@@ -2574,8 +2575,9 @@
                         <div class="row total"><span>${esc(t("الإجمالي"))}</span><span>${money(order.total)}</span></div>
                         ${code === "OM" ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${ATHR.moneyIn(order.total, cfg, code)}</span></div>`}
                         <div class="row"><span class="muted">${esc(t("الدفع"))}</span><span>${esc(payment ? L(payment, "name") : order.payment_name)}</span></div>
-                        <div class="row"><span class="muted">${esc(order.delivery_type === "office" ? t("المكتب") : t("العنوان"))}</span><span>${esc(order.office || order.address || "")}</span></div>
-                        ${order.gift && order.gift_name ? `<div class="row"><span class="muted">${esc(t("المُهدى إليه"))}</span><span>${esc(order.gift_name)} · <span dir="ltr">${esc(ATHR.phoneText(order.gift_phone, code))}</span></span></div>` : ""}
+                        ${order.office || order.address ? `<div class="row"><span class="muted">${esc(order.office ? t("المكتب") : t("العنوان"))}</span><span>${esc(order.office || order.address)}</span></div>`
+                            : order.wilaya || order.governorate ? `<div class="row"><span class="muted">${esc(code === "OM" ? t("الولاية") : t("المدينة"))}</span><span>${esc(order.wilaya || order.governorate)}</span></div>` : ""}
+                        ${order.gift && (order.gift_name || order.gift_phone) ? `<div class="row"><span class="muted">${esc(t("المُهدى إليه"))}</span><span>${order.gift_name ? `${esc(order.gift_name)} · ` : ""}<span dir="ltr">${esc(ATHR.phoneText(order.gift_phone, code))}</span></span></div>` : ""}
                         ${order.gift ? `<div class="row"><span class="muted">${esc(t("هدية"))}</span><span>${esc(order.gift_message || t("نعم"))}</span></div>` : ""}
                     </div>
                 </div>

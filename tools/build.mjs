@@ -442,7 +442,9 @@ async function main() {
     const gulfAll = shipCountries.length === enabled.length && enabled.length > 1;
     const shipText = gulfAll ? "توصيل لكل دول الخليج" : shipCountries.length > 1 ? `توصيل إلى ${shipCountries.map((c) => c.name).join(" و")}` : "توصيل لكل محافظات عُمان";
     const freeText = cfg.order.free_enabled && Number(cfg.order.free_min) > 0
-        ? (ATHR.freeAppliesTo(cfg, "OM") && !(enabled.every((c) => ATHR.freeAppliesTo(cfg, c.code))) ? `ومجاني داخل عُمان فوق ${money(cfg.order.free_min)}` : `ومجاني فوق ${money(cfg.order.free_min)}`)
+        ? (ATHR.freeOfficeOnly(cfg)
+            ? `والتوصيل للمكتب مجاني${ATHR.freeAppliesTo(cfg, "OM") && !(enabled.every((c) => ATHR.freeAppliesTo(cfg, c.code))) ? " داخل عُمان" : ""} فوق ${money(cfg.order.free_min)}`
+            : ATHR.freeAppliesTo(cfg, "OM") && !(enabled.every((c) => ATHR.freeAppliesTo(cfg, c.code))) ? `ومجاني داخل عُمان فوق ${money(cfg.order.free_min)}` : `ومجاني فوق ${money(cfg.order.free_min)}`)
         : "";
     const codText = codCountries.length
         ? `والدفع عند الاستلام${codCountries.length < shipCountries.length ? ` في ${codCountries.map((c) => c.code === "OM" ? "عُمان" : c.name).join(" و")}` : ""}`
@@ -574,7 +576,7 @@ async function main() {
             const codes = enabled.filter((c) => ATHR.inCountries(d, c.code)).map((c) => c.code);
             if (!codes.length) return;
             const cost = ATHR.shippingFor(d, [{ product: p, qty: 1 }], cfg).cost;
-            const free = cfg.order.free_enabled && freeMin > 0 && Number(p.price) >= freeMin && codes.every((c) => ATHR.freeAppliesTo(cfg, c));
+            const free = cfg.order.free_enabled && freeMin > 0 && Number(p.price) >= freeMin && ATHR.freeForDelivery(cfg, d) && codes.every((c) => ATHR.freeAppliesTo(cfg, c));
             out.push({
                 "@type": "OfferShippingDetails",
                 shippingLabel: d.name,
@@ -787,7 +789,9 @@ async function main() {
         if (cfg.contact.policy_show) addUrl(url);
     }
 
-    ["cart", "checkout", "done", "review", "search", "gift", "fav", "points"].forEach((route) => {
+    // صفحة «نقاطي» انحذفت مع نقاط الولاء
+    fs.rmSync(path.join(OUT, "points"), { recursive: true, force: true });
+    ["cart", "checkout", "done", "review", "search", "gift", "fav"].forEach((route) => {
         // بطاقة الإهداء: معاينة جميلة عند إرسال رابطها في واتساب
         const giftHead = route === "gift" ? {
             og: true,

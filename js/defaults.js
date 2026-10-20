@@ -67,7 +67,7 @@ const ATHR_DEFAULTS = {
         hero_title: "كاسات تترك أثراً",
         hero_text: "أكواب ومجات ومحافظ بتصاميم الأندية والجامعات والشخصيات. اختر تصميمك ويوصلك أينما كنت في الخليج.",
         hero_button: "تصفّح المنتجات",
-        hero_features: ["توصيل لكل دول الخليج", "مجاني داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
+        hero_features: ["توصيل لكل دول الخليج", "توصيل مجاني للمكتب داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
         search_placeholder: "ابحث",
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
@@ -106,11 +106,12 @@ const ATHR_DEFAULTS = {
         auto_rates: true,
         decimals: 3,
         delivery: [
-            { id: "home", enabled: true, name: "توصيل إلى البيت", type: "home", pricing: "fixed", price: 2, countries: ["OM"], note: "يصلك الطلب إلى باب بيتك.", duration: "2 إلى 4 أيام" },
-            { id: "office", enabled: true, name: "استلام من مكتب جيناكم", type: "office", pricing: "fixed", price: 1, countries: ["OM"], note: "تستلم طلبك من أقرب مكتب لك.", duration: "2 إلى 3 أيام" }
+            { id: "home", enabled: true, name: "توصيل إلى البيت", type: "home", pricing: "fixed", price: 2, countries: ["OM"], note: "يصلك الطلب إلى باب بيتك." },
+            { id: "office", enabled: true, name: "استلام من مكتب جيناكم", type: "office", pricing: "fixed", price: 1, countries: ["OM"], note: "تستلم طلبك من أقرب مكتب لك." }
         ],
         free_enabled: true,
         free_min: 20,
+        free_scope: "office",
         free_countries: ["OM"],
         countries: ATHR_COUNTRIES.map((c) => ({ ...c })),
         default_weight_g: 400,
@@ -133,7 +134,7 @@ const ATHR_DEFAULTS = {
         low_stock_show: true,
         // نقاط الولاء: نقاط لكل 1 ر.ع من الطلبات المسلّمة، وكل {reward_points} نقطة = كود خصم {reward_value}
         loyalty: {
-            enabled: true,
+            enabled: false,
             per_omr: 1,
             reward_points: 50,
             reward_value: 2,
@@ -143,9 +144,9 @@ const ATHR_DEFAULTS = {
         restock: true,
         coupons: true,
         free_bar_show: true,
-        free_before: "توصيل مجاني داخل عُمان للطلبات من {free} أو أكثر",
-        free_during: "أضف {left} أخرى للحصول على توصيل مجاني",
-        free_done: "مبروك! توصيل طلبك مجاني",
+        free_before: "توصيل مجاني للمكتب داخل عُمان للطلبات من {free} أو أكثر",
+        free_during: "أضف {left} أخرى للحصول على توصيل مجاني للمكتب",
+        free_done: "مبروك! التوصيل للمكتب مجاني",
         bundles: [],
         related_show: true,
         related_title: "منتجات قد تعجبك",
@@ -217,7 +218,7 @@ const ATHR_DEFAULTS = {
 
     gift: {
         kicker: "هدية خاصة لك",
-        title: "{to}، وصلتك هدية!",
+        title: "وصلتك هدية!",
         button: "افتح هديتك",
         hint: "اضغط على الصندوق لتفتحها",
         closing: "مع خالص المحبة،",
@@ -230,7 +231,7 @@ const ATHR_DEFAULTS = {
         confetti: true,
         tag: true,
         vibrate: true,
-        wa: "🎁✨ *{to}، وصلتك هدية!* ✨🎁\n\nهدية مختارة لك بكل حب من *{from}* 💝\n{occasion}\n\n💌 *رسالة لك:*\n«{message}»\n\n👇 افتح بطاقة هديتك:\n{link}\n\n🚚 هديتك في الطريق إليك من {store}",
+        wa: "🎁✨ *وصلتك هدية!* ✨🎁\n\nهدية مختارة لك بكل حب 💝\n{occasion}\n\n💌 *رسالة لك:*\n«{message}»\n\n👇 افتح بطاقة هديتك:\n{link}\n\n🚚 هديتك في الطريق إليك من {store}",
         banner_title: "أرسلها هدية لمن تحب",
         banner_text: "نوصلها لمن تحب مع بطاقة إهداء رقمية فيها رسالتك، وبدون ذكر السعر.",
         banner_button: "ابدأ",
@@ -405,7 +406,11 @@ ATHR.fill = function (text, config, extra = {}) {
         phone: ATHR.localPhone(config.order.whatsapp),
         ...extra
     };
-    return String(text ?? "").replace(/\{(\w+)\}/g, (match, key) => (key in tokens ? tokens[key] : match));
+    return String(text ?? "").replace(/(\s*)\{(\w+)\}/g, (match, space, key) => {
+        if (!(key in tokens)) return match;
+        const value = tokens[key] === null || tokens[key] === undefined ? "" : String(tokens[key]);
+        return value === "" ? "" : space + value;
+    });
 };
 
 ATHR.waLink = function (number, text) {
@@ -494,7 +499,7 @@ ATHR.computeCart = function (cartItems, products, config, country = "OM") {
 
     return {
         lines, subtotal, discount, discountType, discountLabel, discountPct: discountType === "volume" ? volume.tier.pct : 0, afterDiscount,
-        freeEligible, freeShipping, leftForFree,
+        freeEligible, freeShipping, leftForFree, freeOffice: ATHR.freeOfficeOnly(config),
         savings: discountType === "bundle" ? savings : [], hints: bundleHints,
         volume, count
     };
@@ -591,9 +596,15 @@ ATHR.deliveriesFor = (config, code) => (config.order.delivery || []).filter((d) 
 
 ATHR.paymentsFor = (config, code) => (config.order.payments || []).filter((p) => p.enabled && ATHR.inCountries(p, code));
 
+// التوصيل المجاني يشمل: order.free_scope = "office" (الاستلام من المكتب فقط) أو "all" (البيت والمكتب)
+ATHR.freeOfficeOnly = (config) => Boolean(config && config.order && config.order.free_scope === "office");
+ATHR.freeForDelivery = (config, d) => Boolean(d) && (!ATHR.freeOfficeOnly(config) || d.type === "office");
+
 ATHR.freeAppliesTo = (config, code) => {
     const list = config.order.free_countries;
-    return !Array.isArray(list) || !list.length || list.includes(code);
+    if (Array.isArray(list) && list.length && !list.includes(code)) return false;
+    // المكتب فقط: الدولة لازم يكون فيها توصيل للمكتب
+    return !ATHR.freeOfficeOnly(config) || ATHR.deliveriesFor(config, code).some((d) => ATHR.freeForDelivery(config, d));
 };
 
 // المبلغ بعملة الدولة (التحويل من الريال العماني)
@@ -726,7 +737,9 @@ ATHR.giftColors = function (config, gender) {
 };
 
 // تعبئة نص البطاقة: {to} {from} {store}
-ATHR.giftFill = (text, vars) => String(text ?? "").replace(/\{(to|from|store)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
+ATHR.giftFill = (text, vars) => String(text ?? "")
+    .replace(/\{(to|from|store)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m))
+    .replace(/^[\s،,:\-–]+/, "").replace(/\s+([،,!.؟?])/g, "$1").replace(/\s{2,}/g, " ").trim();
 
 function athrB64url(text) {
     const bytes = new TextEncoder().encode(text);
@@ -781,7 +794,7 @@ ATHR.giftWhatsApp = function ({ to, from, msg, occasion, occasionText, link, sto
             if (out.length && /[:：]\**\s*$/.test(out[out.length - 1])) out.pop();
             return;
         }
-        out.push(filled.replace(/\*\s*\*/g, "").replace(/(من|by)\s+💝/, "💝"));
+        out.push(filled.replace(/\*\s*\*/g, "").replace(/\*\s*[،,]\s*/g, "*").replace(/(من|by)\s+💝/, "💝"));
     });
     return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 };
@@ -898,8 +911,8 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
         const occ = ATHR.giftOccasion(order.gift_occasion, cfg, order.gift_occasion_text);
         const gfor = order.gift ? ATHR.giftFor(order.gift_for, cfg) : null;
         block([
-            `👤 ${giftTo ? "من: " : ""}${order.customer_name || ""}${order.phone ? ` · ${phone(order.phone)}` : ""}`,
-            giftTo ? `🎁 إلى: ${order.gift_name || ""}${order.gift_phone ? ` · ${phone(order.gift_phone)}` : ""}` : order.gift ? "🎁 الطلب هدية" : "",
+            `👤 ${giftTo ? "من: " : ""}${[order.customer_name, order.phone ? phone(order.phone) : ""].filter(Boolean).join(" · ")}`,
+            giftTo ? `🎁 إلى: ${[order.gift_name, order.gift_phone ? phone(order.gift_phone) : ""].filter(Boolean).join(" · ")}` : order.gift ? "🎁 الطلب هدية" : "",
             gfor ? `${gfor.emoji} الهدية لـ: ${gfor.label} ${gfor.heart}` : "",
             order.gift && order.gift_occasion && occ.id !== "other" ? `🎉 المناسبة: ${occ.emoji} ${occ.name}` : "",
             order.gift && order.gift_message ? `💬 رسالة الهدية: ${order.gift_message}` : "",
@@ -1010,7 +1023,8 @@ ATHR.absUrl = function (config, path) {
 // المخزون: الكمية المتوفرة (null = بدون حد)
 ATHR.stockOf = (p) => (p && p.stock !== null && p.stock !== undefined && p.stock !== "" && Number.isFinite(Number(p.stock)) ? Math.max(0, Math.floor(Number(p.stock))) : null);
 // نقاط الولاء لمبلغ معيّن (بالريال العماني)
-ATHR.loyaltyOn = (config) => Boolean(config && config.sales && config.sales.loyalty && config.sales.loyalty.enabled && Number(config.sales.loyalty.per_omr) > 0);
+// نقاط الولاء محذوفة من المتجر ولوحة التحكم بطلب صاحب المتجر (كل ما يتعلق بها يبقى مخفي)
+ATHR.loyaltyOn = () => false;
 // «نقطة واحدة / نقطتان / 3 نقاط / 11 نقطة» و «1 point / 5 points»
 ATHR.pointsText = (n) => {
     const k = Math.round(Number(n) || 0);

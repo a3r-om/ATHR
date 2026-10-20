@@ -2395,3 +2395,4 @@ textarea.input { min-height: 62px; line-height: 1.5; }
 html.owner-boot #view, html.owner-boot #footer, html.owner-boot .bars { display: none !important; }
 html.owner-boot body::before { content: ""; position: fixed; inset: 0; z-index: 94; background: var(--bg); }
 html.owner-boot body::after { content: ""; position: fixed; top: calc(50% - 38px); left: calc(50% - 20px); z-index: 94; width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--primary) 18%, transparent); border-top-color: var(--primary); animation: ol-spin .8s linear infinite; }
+.free-miss { margin: 6px 0 0; padding: 8px 10px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--ok) 10%, var(--surface)); color: var(--text); font-size: 13px; line-height: 1.6; }

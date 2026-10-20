@@ -1929,3 +1929,32 @@ select private.backup_take('manual', 'أول نسخة بعد تفعيل النس
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('athr-private', 'athr-private', false, 1048576, array['application/json'])
 on conflict (id) do nothing;
+
+-- =====================================================
+-- v29 (2026-10-21): الاسم اختياري في الطلب، والتوصيل المجاني ممكن يكون للمكتب فقط
+-- =====================================================
+-- 1) طلبات المتجر بدون اسم (صفحة الطلب ما تطلب الاسم)
+alter policy "visitors place web orders" on public.orders
+with check (
+  (source = 'web') and (status = 'new') and (hidden = false) and (admin_note is null)
+  and (jsonb_array_length(items) >= 1) and (jsonb_array_length(items) <= 100)
+  and (char_length(coalesce(customer_name, '')) <= 120)
+  and (char_length(coalesce(phone, '')) >= 8) and (char_length(coalesce(phone, '')) <= 30)
+);
+
+-- 2) order.free_scope = 'office': حد التوصيل المجاني وأكواد «توصيل مجاني» للاستلام من المكتب بس
+do $do$
+declare
+  d text;
+  scope_ok text := $s$(coalesce(cfg #>> '{order,free_scope}', 'all') <> 'office' or m ->> 'type' = 'office')$s$;
+begin
+  select pg_get_functiondef(p.oid) into d from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where p.proname = 'athr_recompute_order' and n.nspname = 'private';
+  if position('free_scope' in d) > 0 then
+    return;  -- مطبّق من قبل
+  end if;
+  d := replace(d, 'and v_after >= free_min;', 'and ' || scope_ok || E'\n               and v_after >= free_min;');
+  d := replace(d, $s$elsif k.kind = 'ship' then$s$, $s$elsif k.kind = 'ship' and $s$ || scope_ok || ' then');
+  execute d;
+end
+$do$;

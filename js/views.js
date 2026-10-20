@@ -517,7 +517,9 @@
         const enabled = ATHR.countries(cfg).filter((c) => c.enabled);
         const list = enabled.filter((c) => ATHR.freeAppliesTo(cfg, c.code));
         const where = list.length === 1 && list[0].code === "OM" ? t("داخل عُمان") : list.length < enabled.length ? t("إلى {countries}", { countries: V.countriesText(list) }) : "";
-        return t("التوصيل مجاني {where} للطلبات من {free} أو أكثر.", { where, free: money(v, cfg.order.free_min) }).replace(/\s+/g, " ");
+        return (ATHR.freeOfficeOnly(cfg)
+            ? t("التوصيل للمكتب مجاني {where} للطلبات من {free} أو أكثر.", { where, free: money(v, cfg.order.free_min) })
+            : t("التوصيل مجاني {where} للطلبات من {free} أو أكثر.", { where, free: money(v, cfg.order.free_min) })).replace(/\s+/g, " ");
     };
 
     V.deliveryLines = function (v) {
@@ -525,7 +527,7 @@
         const lines = (v.cfg.order.delivery || []).filter((d) => d.enabled).map((d) => {
             const list = V.flagsFor(v, d);
             const where = list.length && list.length < enabledCount ? ` — ${list.map((c) => c.flag).join(" ")}` : "";
-            return `${L(d, "name")}: ${V.deliveryPriceLabel(v, d)}${d.duration ? ` (${ATHR.duration(d.duration)})` : ""}${where}`;
+            return `${L(d, "name")}: ${V.deliveryPriceLabel(v, d)}${where}`;
         });
         const free = V.freeLine(v);
         if (free) lines.push(free);
@@ -549,13 +551,13 @@
                 const s = ATHR.shippingFor(d, [{ product: p, qty: 1 }], cfg);
                 price = t("{price} لكل كيلو (هذا المنتج {cost})", { price: money(v, d.price), cost: money(v, s.cost) });
             }
-            return `<span>${esc(L(d, "name"))}: <b>${esc(price)}</b>${d.duration ? ` · ${esc(ATHR.duration(d.duration))}` : ""}</span>`;
+            return `<span>${esc(L(d, "name"))}: <b>${esc(price)}</b></span>`;
         });
         return `<div class="info-box">
             <div class="info-row">${ICON.truck}<div>
                 <b>${esc(t("التوصيل إلى {flag} {country}", { flag: c.flag, country: V.countryName(c) }))}</b>
                 ${lines.length ? lines.join("") : `<span>${esc(t("غير متاح حاليًا، تواصل معنا عبر واتساب."))}</span>`}
-                ${free ? `<span class="ok">${esc(t("مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))}</span>` : ""}
+                ${free ? `<span class="ok">${esc(ATHR.freeOfficeOnly(cfg) ? t("التوصيل للمكتب مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }) : t("مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))}</span>` : ""}
             </div></div>
             ${pays.length ? `<div class="info-row">${ICON.card}<div><b>${esc(t("الدفع"))}</b><span>${esc(pays.map((x) => L(x, "name")).join(sep()))}</span></div></div>` : ""}
             ${multi ? `<button class="link-btn" type="button" data-open-currency>${esc(t("لست في {country}؟ غيّر الدولة", { country: V.countryName(c) }))}</button>` : ""}
@@ -638,7 +640,7 @@
         const free = cfg.order.free_enabled && Number(cfg.order.free_min) > 0;
         const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
         return [
-            free ? [V.icon.tag, t("توصيل مجاني فوق {amount}", { amount: ATHR.trimZeros(money(v, cfg.order.free_min)) })] : null,
+            free ? [V.icon.tag, ATHR.freeOfficeOnly(cfg) ? t("توصيل مجاني للمكتب فوق {amount}", { amount: ATHR.trimZeros(money(v, cfg.order.free_min)) }) : t("توصيل مجاني فوق {amount}", { amount: ATHR.trimZeros(money(v, cfg.order.free_min)) })] : null,
             [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")],
             [V.icon.truck, gulf ? t("توصيل للخليج") : t("توصيل لكل عُمان")]
         ].filter(Boolean);
@@ -797,7 +799,7 @@
         const cfg = v.cfg;
         const g = cfg.gift || {};
         const store = ATHR.storeName(cfg);
-        if (!card || !card.to) {
+        if (!card) {
             return `<div class="wrap empty page"><p>${esc(t("رابط بطاقة الإهداء غير صحيح."))}</p><a class="btn btn-primary" href="${ATHR.base()}">${esc(t("العودة للمتجر"))}</a></div>`;
         }
         const vars = { to: card.to, from: card.from || "", store };
@@ -814,13 +816,13 @@
             <section class="gx" id="giftStage">
                 ${stars ? `<div class="gx-stars" aria-hidden="true">${stars}</div>` : ""}
                 <p class="gx-kicker">${esc(txt("kicker", t("هدية خاصة لك")))}</p>
-                <h1 class="gx-title">${esc(txt("title", t("{name}، وصلتك هدية!", { name: card.to })))}</h1>
+                <h1 class="gx-title">${esc(txt("title", card.to ? t("{name}، وصلتك هدية!", { name: card.to }) : t("وصلتك هدية!")))}</h1>
                 <button class="gx-box" type="button" data-gift-open aria-label="${esc(txt("button", t("افتح هديتك")))}">
                     <span class="gx-shadow" aria-hidden="true"></span>
                     <span class="gx-burst" aria-hidden="true">${burst}</span>
                     <span class="gx-body" aria-hidden="true"></span>
                     <span class="gx-lid" aria-hidden="true"><span class="gx-bow"><i></i><i></i><b></b></span></span>
-                    ${g.tag === false ? "" : `<span class="gx-tag" aria-hidden="true">${esc(card.to)}</span>`}
+                    ${g.tag === false || !card.to ? "" : `<span class="gx-tag" aria-hidden="true">${esc(card.to)}</span>`}
                 </button>
                 <button class="gx-cta" type="button" data-gift-open>${esc(txt("button", t("افتح هديتك")))}</button>
                 <p class="gx-hint">${esc(txt("hint", t("اضغط على الصندوق لتفتحها")))}</p>
@@ -830,8 +832,8 @@
                 ${confetti ? `<div class="confetti" aria-hidden="true">${confetti}</div>` : ""}
                 <article class="gcard">
                     <div class="gc-seal" aria-hidden="true">${V.icon.gift}</div>
-                    <p class="gc-to">${esc(t("إلى"))}</p>
-                    <h2 class="gc-name">${esc(card.to)}</h2>
+                    ${card.to ? `<p class="gc-to">${esc(t("إلى"))}</p>
+                    <h2 class="gc-name">${esc(card.to)}</h2>` : ""}
                     <p class="gc-occ">${esc(L(o, "title"))}</p>
                     <div class="gc-line" aria-hidden="true"><span></span></div>
                     <blockquote class="gc-msg">${esc(msg)}</blockquote>
@@ -1111,7 +1113,9 @@
         const items = [];
         const min = Number(cfg.order.free_min) || 0;
         if (cfg.order.free_enabled && min > 0 && ATHR.freeAppliesTo(cfg, v.country)) {
-            items.push([Number(p.price) >= min ? t("الشحن مجاناً") : t("شحن مجاني فوق {amount}", { amount: ATHR.trimZeros(local(v, min)) }), true]);
+            items.push([ATHR.freeOfficeOnly(cfg)
+                ? (Number(p.price) >= min ? t("التوصيل للمكتب مجاناً") : t("توصيل مجاني للمكتب فوق {amount}", { amount: ATHR.trimZeros(local(v, min)) }))
+                : (Number(p.price) >= min ? t("الشحن مجاناً") : t("شحن مجاني فوق {amount}", { amount: ATHR.trimZeros(local(v, min)) })), true]);
         }
         const pays = ATHR.paymentsFor(cfg, v.country);
         if (pays.some((x) => x.type === "cod")) items.push([t("الدفع عند الاستلام")]);
@@ -1255,7 +1259,7 @@
                 ${delivery.map((d) => {
                     const list = V.flagsFor(v, d);
                     const note = L(d, "note");
-                    return `<p><b>${esc(L(d, "name"))}</b>: ${esc(V.deliveryPriceLabel(v, d))}${d.duration ? esc(t("، المدة {d}", { d: ATHR.duration(d.duration) })) : ""}${list.length && list.length < enabledCount ? `<br><span class="muted">${esc(t("إلى: {countries}", { countries: V.countriesText(list) }))}</span>` : ""}${note ? `<br><span class="muted">${esc(note)}</span>` : ""}</p>`;
+                    return `<p><b>${esc(L(d, "name"))}</b>: ${esc(V.deliveryPriceLabel(v, d))}${list.length && list.length < enabledCount ? `<br><span class="muted">${esc(t("إلى: {countries}", { countries: V.countriesText(list) }))}</span>` : ""}${note ? `<br><span class="muted">${esc(note)}</span>` : ""}</p>`;
                 }).join("")}
                 ${free ? `<p>${esc(free)}</p>` : ""}
                 <p class="muted">${esc(t("نوصّل لكل ولايات سلطنة عُمان."))}</p>
@@ -1286,7 +1290,7 @@
         const own = String(ct(v, "texts.footer_delivery_text") || "").trim();
         if (own) return own.split("\n").filter(Boolean).map((line) => fill(v, line));
         const lines = (cfg.order.delivery || []).filter((d) => d.enabled)
-            .map((d) => `${L(d, "name")} · ${V.deliveryPriceLabel(v, d)}${d.duration ? ` · ${ATHR.duration(d.duration)}` : ""}`);
+            .map((d) => `${L(d, "name")} · ${V.deliveryPriceLabel(v, d)}`);
         const free = V.freeLine(v);
         if (free) lines.push(free);
         V.paymentGroups(v).forEach((g, i, all) => {
@@ -1309,8 +1313,8 @@
         const points = [
             [V.icon.truck, gulf ? t("توصيل لكل دول الخليج") : t("توصيل لكل ولايات عُمان")],
             free ? [V.icon.tag, gulf && enabled.filter((c) => ATHR.freeAppliesTo(cfg, c.code)).every((c) => c.code === ATHR.BASE_COUNTRY)
-                ? t("توصيل مجاني في عُمان فوق {amount}", { amount: money(v, cfg.order.free_min) })
-                : t("توصيل مجاني فوق {amount}", { amount: money(v, cfg.order.free_min) })] : null,
+                ? (ATHR.freeOfficeOnly(cfg) ? t("توصيل مجاني للمكتب في عُمان فوق {amount}", { amount: money(v, cfg.order.free_min) }) : t("توصيل مجاني في عُمان فوق {amount}", { amount: money(v, cfg.order.free_min) }))
+                : (ATHR.freeOfficeOnly(cfg) ? t("توصيل مجاني للمكتب فوق {amount}", { amount: money(v, cfg.order.free_min) }) : t("توصيل مجاني فوق {amount}", { amount: money(v, cfg.order.free_min) }))] : null,
             [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
         ].filter(Boolean);
         const socials = (cfg.texts.socials || []).filter((x) => ATHR.isUrl(x.url));
