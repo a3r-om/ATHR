@@ -262,7 +262,7 @@
         const [s, c, p, m] = await Promise.all([
             sb.from("store_settings").select("config,updated_at").eq("id", 1).maybeSingle(),
             sb.from("categories").select("id,name,name_en,slug,sort_order,description,description_en,image_url").order("sort_order", { ascending: true }),
-            sb.from("products").select("id,name,name_en,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at").order("sort_order", { ascending: true }),
+            sb.from("products").select("id,name,name_en,slug,price,old_price,category_id,image_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at,story").order("sort_order", { ascending: true }),
             sb.from("product_media").select("product_id,media_type,media_url,sort_order").order("sort_order", { ascending: true })
         ]);
         const failed = [s, c, p, m].find((r) => r.error);
@@ -294,6 +294,7 @@
                 description: x.description || "",
                 description_en: x.description_en || "",
                 color_id: x.color_id || "",
+                story: x.story || "",
                 video_url: x.video_url || "",
                 weight_g: x.weight_g === null || x.weight_g === undefined ? null : Number(x.weight_g),
                 stock: x.stock === null || x.stock === undefined ? null : Number(x.stock),
@@ -691,8 +692,9 @@
                 </div>
                 <div class="two">
                     ${select(`${base}.category_id`, "القسم", cats)}
-                    ${select(`${base}.color_id`, "لون الكاسة", colors)}
+                    ${cfg().colors.length ? select(`${base}.color_id`, "لون الكاسة", colors) : select(`${base}.story`, "قصة باسم الطفل", [["", "لا (ملف عادي)"], ...STORY_OPTS])}
                 </div>
+                ${cfg().colors.length ? select(`${base}.story`, "قصة باسم الطفل", [["", "لا (ملف عادي)"], ...STORY_OPTS], { help: "إذا اخترت قصة: الزبون يكتب اسم طفله في صفحة المنتج، وتصنع الملف من الطلب." }) : `<small class="adm-muted">قصة باسم الطفل: الزبون يكتب اسم طفله وعمره في صفحة المنتج، وتصنع ملف القصة PDF من الطلب بضغطة.</small>`}
                 ${area(`${base}.description`, "الوصف", { rows: 3, placeholder: (A.draft.categories.find((c) => c.id === p.category_id) || {}).description ? `إذا تركته فارغاً يظهر وصف القسم: ${(A.draft.categories.find((c) => c.id === p.category_id) || {}).description}` : "" })}
                 <button class="ab ab-soft ab-sm ai-btn" type="button" data-ai-desc="${esc(p.id)}">✨ اكتب الوصف بالذكاء الاصطناعي</button>
                 ${area(`${base}.description_en`, "الوصف بالإنجليزي (اختياري)", { rows: 2 })}
@@ -4547,6 +4549,7 @@
             case "orders-close": close(); return;
             case "orders-paste": openPaste(); return;
             case "orders-manual": openOrderForm(null); return;
+            case "story-maker": openStoryMaker(null, -1); return;
             case "orders-sheet-close": closeOrderSheet(); return;
             case "paste-import": importPasted(); return;
             case "open-panel": location.hash = "#admin"; open("admin"); return;
@@ -4679,6 +4682,7 @@
         if (d.orderWaGift) { const o = A.orders.find((x) => x.id === d.orderWaGift); if (o && o.gift_phone) window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), ""), "_blank", "noopener"); return; }
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
         if (d.orderCopy) { const o = A.orders.find((x) => x.id === d.orderCopy); if (o) ATHR.store.copyText(orderText(o), "نُسخ الطلب"); return; }
+        if (d.storyMake) { const o = A.orders.find((x) => x.id === d.storyMake); if (o) openStoryMaker(o, Number(d.storyI)); return; }
         if (d.orderHide) { const o = A.orders.find((x) => x.id === d.orderHide); if (o) updateOrderField(o.id, "hidden", !o.hidden); return; }
         if (d.orderDelete) { await deleteOrder(d.orderDelete); return; }
     }
@@ -5225,6 +5229,7 @@
                 is_new_arrival: p.is_new_arrival === true,
                 description: p.description || null,
                 color_id: p.color_id || null,
+                story: p.story || null,
                 video_url: p.video_url || null,
                 weight_g: Number(p.weight_g) > 0 ? Math.round(Number(p.weight_g)) : null,
                 stock: ATHR.stockOf(p),
@@ -5335,6 +5340,7 @@
                 </div>` : ""}
                 <main class="adm-body" id="ordersBody"></main>
                 ${A.book === "orders" ? `<footer class="adm-foot ob-foot">
+                    <button class="ab ab-ghost" type="button" data-a="story-maker">📖 صانع القصص</button>
                     <button class="ab ab-ghost" type="button" data-a="orders-paste">لصق رسالة طلب من واتساب</button>
                     <button class="ab ab-primary" type="button" data-a="orders-manual">+ طلب يدوي</button>
                 </footer>` : ""}
@@ -6026,6 +6032,12 @@
                     ${o.address || o.office ? `<span>${o.office ? `المكتب: ${esc(o.office)}` : esc(o.address)}</span>` : ""}
                 </div>
                 <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
+                ${storyItems(o).map(({ it, i }) => `<div class="oc-story">
+                    <div><b>📖 ${esc(it.label || it.name)}</b>
+                    <span>👶 ${esc(it.custom.name)} · ${it.custom.g === "f" ? "بنت" : "ولد"}${it.custom.age ? ` · ${esc(ATHR.ageText(it.custom.age))}` : ""}${it.custom.photo ? " · 📷 بيرسل صورة للغلاف" : ""}</span>
+                    ${it.custom.ded ? `<small>💌 ${esc(it.custom.ded)}</small>` : ""}</div>
+                    <button type="button" class="ab ab-primary ab-sm" data-story-make="${esc(o.id)}" data-story-i="${i}">📖 اصنع ملف القصة</button>
+                </div>`).join("")}
                 <div class="oc-sum">
                     ${Number(o.discount) > 0 ? `<span>${esc(o.discount_label || "الخصم")}: -${money(o.discount)}</span>` : ""}
                     ${o.coupon ? `<span>🎟️ كود ${esc(o.coupon)}${Number(o.coupon_discount) > 0 ? `: -${money(o.coupon_discount)}` : Number(o.delivery_price) === 0 ? " (توصيل مجاني)" : ""}</span>` : ""}
@@ -6139,6 +6151,215 @@
     function orderText(o) {
         const card = giftTo(o) && cfg().sales.gift_card !== false;
         return ATHR.orderText(o, cfg(), { cardUrl: card ? siteLink(ATHR.giftCardPath(o)) : "" });
+    }
+
+    // =====================================================
+    // القصص الشخصية: صنع ملف القصة PDF من بيانات الطفل في الطلب
+    // كل شي يصير في جوالك: الصفحات تُرسم هنا، والصورة لا تُرفع لأي مكان
+    // =====================================================
+    const STORY_OPTS = [["letters", "حديقة الحروف"], ["space", "رحلة إلى الفضاء"], ["school", "أول يوم في المدرسة"], ["turtle", "السلحفاة الصغيرة"]];
+    const SM = { order: null, index: -1, photo: null, pdf: null, url: "", busy: false, timer: 0, seq: 0 };
+    let storiesLib = null;
+
+    function loadStoriesLib() {
+        if (window.HUROOF_STORIES) return Promise.resolve(window.HUROOF_STORIES);
+        if (!storiesLib) {
+            const own = $$("script[src*='admin-panel.js']")[0] || $$("script[src*='store.js']")[0];
+            const ver = (own && (own.src.match(/[?&]v=([^&]+)/) || [])[1]) || "1";
+            storiesLib = new Promise((resolve, reject) => {
+                const el = document.createElement("script");
+                el.src = `${ATHR.base()}js/stories.js?v=${ver}`;
+                el.onload = () => (window.HUROOF_STORIES ? resolve(window.HUROOF_STORIES) : reject(new Error("stories")));
+                el.onerror = () => { storiesLib = null; reject(new Error("stories")); };
+                document.head.appendChild(el);
+            });
+        }
+        return storiesLib;
+    }
+
+    function storyItems(o) {
+        return (o.items || []).map((it, i) => ({ it, i })).filter(({ it }) => it && it.custom && it.custom.name);
+    }
+
+    function storyIdOf(it) {
+        const list = (A.draft && A.draft.products) || (A.server && A.server.products) || [];
+        const p = list.find((x) => x.id === it.id);
+        if (p && p.story) return p.story;
+        const name = String(it.name || it.label || "");
+        const hit = STORY_OPTS.find(([, label]) => name.includes(label));
+        return hit ? hit[0] : "letters";
+    }
+
+    function smValues() {
+        return {
+            story: $("#smStory") ? $("#smStory").value : "letters",
+            custom: {
+                name: $("#smName") ? $("#smName").value : "",
+                g: $("#smG") ? $("#smG").value : "m",
+                age: $("#smAge") ? $("#smAge").value : "",
+                ded: $("#smDed") ? $("#smDed").value : "",
+                photo: Boolean(SM.photo)
+            }
+        };
+    }
+
+    function smReset() {
+        if (SM.url) URL.revokeObjectURL(SM.url);
+        SM.pdf = null;
+        SM.url = "";
+        const act = $("#smActions");
+        if (act) act.innerHTML = `<button class="ab ab-primary ab-block" type="button" data-sm="make">📖 اصنع ملف القصة PDF</button>`;
+    }
+
+    function openStoryMaker(o, i) {
+        const it = o && Array.isArray(o.items) ? o.items[i] : null;
+        const c = (it && it.custom) || {};
+        SM.order = o;
+        SM.index = i;
+        SM.photo = null;
+        smReset();
+        const story = it ? storyIdOf(it) : "letters";
+        const ages = ATHR.STORY_AGES.map((a) => `<option value="${a}"${Number(c.age) === a ? " selected" : ""}>${esc(ATHR.ageText(a))}</option>`).join("");
+        openOrderSheet(`${offerSheetHead("📖 صانع القصص")}
+            <div class="sm-body" id="storyMaker">
+                <p class="adm-muted">${it ? `طلب <b dir="ltr">${esc(o.order_no || "")}</b> · ${esc(o.customer_name || "")}. راجع البيانات وصحّح الاسم إذا لزم.` : "اصنع قصة لأي طفل، مثل طلب وصلك على واتساب."}</p>
+                <label class="af"><span>القصة</span><select class="ai" id="smStory">${STORY_OPTS.map(([v, l]) => `<option value="${v}"${v === story ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+                <label class="af"><span>اسم الطفل</span><input class="ai" id="smName" maxlength="22" autocomplete="off" value="${esc(c.name || "")}"></label>
+                <div class="two">
+                    <label class="af"><span>ولد أو بنت</span><select class="ai" id="smG"><option value="m"${c.g === "f" ? "" : " selected"}>ولد</option><option value="f"${c.g === "f" ? " selected" : ""}>بنت</option></select></label>
+                    <label class="af"><span>العمر</span><select class="ai" id="smAge"><option value="">اختر</option>${ages}</select></label>
+                </div>
+                <label class="af"><span>الإهداء (أول صفحة)</span><textarea class="ai" id="smDed" rows="2" maxlength="220" placeholder="إذا تركته فارغاً نكتب إهداءً جميلاً تلقائياً">${esc(c.ded || "")}</textarea></label>
+                <div class="sm-photo">
+                    <label class="ab ab-ghost ab-sm" for="smPhoto">📷 ${c.photo ? "اختر صورة الطفل اللي أرسلها العميل" : "صورة الطفل للغلاف (اختياري)"}</label>
+                    <input type="file" id="smPhoto" accept="image/*" hidden>
+                    <span class="adm-muted" id="smPhotoName"></span>
+                    <button class="ab-mini danger" type="button" data-sm="photo-clear" id="smPhotoClear" hidden>إزالة الصورة</button>
+                </div>
+                <small class="adm-muted">الصورة تبقى في جوالك فقط ولا تُرفع لأي مكان.</small>
+                <div class="sm-prev"><canvas id="smCover" width="300" height="424"></canvas><canvas id="smPage" width="300" height="424"></canvas></div>
+                <p class="sm-err" id="smErr" hidden></p>
+                <div class="sm-progress" id="smProgress" hidden><span class="sm-bar"><i id="smBar"></i></span><small id="smStep"></small></div>
+                <div class="sm-actions" id="smActions"></div>
+            </div>`);
+        smReset();
+        const box = $("#storyMaker");
+        box.addEventListener("input", (e) => { e.stopPropagation(); smReset(); smPreview(400); });
+        box.addEventListener("change", async (e) => {
+            e.stopPropagation();
+            if (e.target.id === "smPhoto") {
+                const f = e.target.files && e.target.files[0];
+                if (f) {
+                    try {
+                        const lib = await loadStoriesLib();
+                        SM.photo = await lib.readPhoto(f);
+                        $("#smPhotoName").textContent = "✓ الصورة جاهزة على الغلاف";
+                        $("#smPhotoClear").hidden = false;
+                    } catch { toast("تعذر فتح الصورة. جرّب صورة ثانية."); }
+                }
+                e.target.value = "";
+            }
+            smReset();
+            smPreview(80);
+        });
+        box.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-sm]");
+            if (!b) return;
+            e.stopPropagation();
+            const k = b.dataset.sm;
+            if (k === "photo-clear") { SM.photo = null; $("#smPhotoName").textContent = ""; b.hidden = true; smReset(); smPreview(0); }
+            if (k === "make") smMake();
+            if (k === "share") smShare();
+            if (k === "wa") smWa();
+            if (k === "done" && SM.order) { updateOrderField(SM.order.id, "status", "delivered"); b.disabled = true; b.textContent = "✓ تم التسليم"; }
+        });
+        smPreview(0);
+    }
+
+    function smPreview(delay = 300) {
+        clearTimeout(SM.timer);
+        SM.timer = setTimeout(async () => {
+            const seq = ++SM.seq;
+            let lib;
+            try { lib = await loadStoriesLib(); } catch { $("#smErr").textContent = "تعذر تحميل أداة القصص. تأكد من الإنترنت."; $("#smErr").hidden = false; return; }
+            const { story, custom } = smValues();
+            const pages = lib.bookPages(story);
+            const data = { ...custom, age: custom.age || 5, name: ATHR.storyClean(custom).name || (custom.g === "f" ? "سارة" : "سالم") };
+            const targets = [["smCover", pages[0]], ["smPage", pages[2]]];
+            for (const [id, pg] of targets) {
+                const tmp = document.createElement("canvas");
+                await lib.renderPage(story, data, pg, { width: 300, canvas: tmp, photo: SM.photo });
+                if (seq !== SM.seq) return;
+                const c = $(`#${id}`);
+                if (!c) return;
+                c.width = tmp.width; c.height = tmp.height;
+                c.getContext("2d").drawImage(tmp, 0, 0);
+            }
+        }, delay);
+    }
+
+    async function smMake() {
+        if (SM.busy) return;
+        const { story, custom } = smValues();
+        const issue = ATHR.storyIssue(custom);
+        const err = $("#smErr");
+        if (issue) {
+            err.textContent = issue === "age" ? "اختر عمر الطفل." : issue === "g" ? "اختر ولد أو بنت." : "اكتب اسم الطفل بالحروف (حرفين على الأقل).";
+            err.hidden = false;
+            return;
+        }
+        err.hidden = true;
+        SM.busy = true;
+        const prog = $("#smProgress");
+        prog.hidden = false;
+        $("#smActions").innerHTML = "";
+        try {
+            const lib = await loadStoriesLib();
+            const blob = await lib.buildPDF(story, custom, {
+                photo: SM.photo,
+                onProgress: (i, n) => {
+                    const bar = $("#smBar"), step = $("#smStep");
+                    if (bar) bar.style.width = `${Math.round((i / n) * 100)}%`;
+                    if (step) step.textContent = i < n ? `نرسم الصفحة ${i + 1} من ${n}...` : "جاهز ✓";
+                }
+            });
+            SM.pdf = new File([blob], lib.fileName(story, custom), { type: "application/pdf" });
+            SM.url = URL.createObjectURL(SM.pdf);
+            const canShare = Boolean(navigator.canShare && navigator.canShare({ files: [SM.pdf] }));
+            const o = SM.order;
+            $("#smActions").innerHTML = `
+                <p class="sm-ready">✓ ملف «${esc(SM.pdf.name)}» جاهز (${(SM.pdf.size / 1048576).toFixed(1)} م.ب، ${lib.bookPages(story).length} صفحة)</p>
+                ${canShare ? `<button class="ab ab-primary ab-block" type="button" data-sm="share">📤 أرسل الملف (اختر واتساب ثم العميل)</button>` : ""}
+                <a class="ab ${canShare ? "ab-ghost" : "ab-primary"} ab-block" href="${SM.url}" download="${esc(SM.pdf.name)}">⬇️ تنزيل الملف</a>
+                ${o && o.phone ? `<button class="ab ab-ghost ab-block" type="button" data-sm="wa">💬 رسالة للعميل على واتساب</button>` : ""}
+                ${o && o.status !== "delivered" ? `<button class="ab-mini" type="button" data-sm="done">✓ علّم الطلب «تم التسليم»</button>` : ""}`;
+        } catch (e) {
+            console.error("Story PDF:", e);
+            err.textContent = "تعذر صنع الملف. حاول مرة ثانية.";
+            err.hidden = false;
+            smReset();
+        } finally {
+            SM.busy = false;
+            setTimeout(() => { if (prog) prog.hidden = true; }, 600);
+        }
+    }
+
+    async function smShare() {
+        if (!SM.pdf) return;
+        try {
+            await navigator.share({ files: [SM.pdf], title: SM.pdf.name.replace(/\.pdf$/, "") });
+        } catch (e) {
+            if (e && e.name !== "AbortError") toast("تعذرت المشاركة. استخدم «تنزيل الملف» ثم أرسله من واتساب.");
+        }
+    }
+
+    function smWa() {
+        const o = SM.order;
+        if (!o || !o.phone) return;
+        const { custom } = smValues();
+        const first = String(o.customer_name || "").trim().split(/\s+/)[0];
+        const text = `هلا ${first} 🌟\n\nقصة *${ATHR.storyClean(custom).name}* جاهزة 📖✨\nأرسلت لك الملف هنا، تقدر تطبعه على ورق A4 أو تقرأه من الجوال.\n\nشكراً لثقتك في ${ATHR.storeName(cfg())} 🤍`;
+        window.open(customerWa(o, text), "_blank", "noopener");
     }
 
     // ---------- order sheet (manual / edit / paste) ----------
