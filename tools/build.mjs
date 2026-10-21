@@ -576,11 +576,12 @@ async function main() {
             const codes = enabled.filter((c) => ATHR.inCountries(d, c.code)).map((c) => c.code);
             if (!codes.length) return;
             const cost = ATHR.shippingFor(d, [{ product: p, qty: 1 }], cfg).cost;
-            const free = cfg.order.free_enabled && freeMin > 0 && Number(p.price) >= freeMin && ATHR.freeForDelivery(cfg, d) && codes.every((c) => ATHR.freeAppliesTo(cfg, c));
+            const reached = cfg.order.free_enabled && freeMin > 0 && Number(p.price) >= freeMin && codes.every((c) => ATHR.freeAppliesTo(cfg, c));
+            const rate = reached ? ATHR.shipAfterFree(cfg, d, cost) : cost;
             out.push({
                 "@type": "OfferShippingDetails",
                 shippingLabel: d.name,
-                shippingRate: { "@type": "MonetaryAmount", value: free ? 0 : Number(cost.toFixed(3)), currency: "OMR" },
+                shippingRate: { "@type": "MonetaryAmount", value: Number(rate.toFixed(3)), currency: "OMR" },
                 shippingDestination: codes.map((c) => ({ "@type": "DefinedRegion", addressCountry: c }))
             });
         });

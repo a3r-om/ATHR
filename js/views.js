@@ -517,8 +517,11 @@
         const enabled = ATHR.countries(cfg).filter((c) => c.enabled);
         const list = enabled.filter((c) => ATHR.freeAppliesTo(cfg, c.code));
         const where = list.length === 1 && list[0].code === "OM" ? t("داخل عُمان") : list.length < enabled.length ? t("إلى {countries}", { countries: V.countriesText(list) }) : "";
+        const home = ATHR.freeHomePrice(cfg);
         return (ATHR.freeOfficeOnly(cfg)
-            ? t("التوصيل للمكتب مجاني {where} للطلبات من {free} أو أكثر.", { where, free: money(v, cfg.order.free_min) })
+            ? (home !== null
+                ? t("التوصيل للمكتب مجاني {where} للطلبات من {free} أو أكثر، وللبيت بـ{home}.", { where, free: money(v, cfg.order.free_min), home: money(v, home) })
+                : t("التوصيل للمكتب مجاني {where} للطلبات من {free} أو أكثر.", { where, free: money(v, cfg.order.free_min) }))
             : t("التوصيل مجاني {where} للطلبات من {free} أو أكثر.", { where, free: money(v, cfg.order.free_min) })).replace(/\s+/g, " ");
     };
 
@@ -557,7 +560,11 @@
             <div class="info-row">${ICON.truck}<div>
                 <b>${esc(t("التوصيل إلى {flag} {country}", { flag: c.flag, country: V.countryName(c) }))}</b>
                 ${lines.length ? lines.join("") : `<span>${esc(t("غير متاح حاليًا، تواصل معنا عبر واتساب."))}</span>`}
-                ${free ? `<span class="ok">${esc(ATHR.freeOfficeOnly(cfg) ? t("التوصيل للمكتب مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }) : t("مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))}</span>` : ""}
+                ${free ? `<span class="ok">${esc(ATHR.freeOfficeOnly(cfg)
+                    ? (ATHR.freeHomePrice(cfg) !== null
+                        ? t("للطلبات من {free} أو أكثر: المكتب مجاني والبيت بـ{home}", { free: money(v, cfg.order.free_min), home: money(v, ATHR.freeHomePrice(cfg)) })
+                        : t("التوصيل للمكتب مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))
+                    : t("مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))}</span>` : ""}
             </div></div>
             ${pays.length ? `<div class="info-row">${ICON.card}<div><b>${esc(t("الدفع"))}</b><span>${esc(pays.map((x) => L(x, "name")).join(sep()))}</span></div></div>` : ""}
             ${multi ? `<button class="link-btn" type="button" data-open-currency>${esc(t("لست في {country}؟ غيّر الدولة", { country: V.countryName(c) }))}</button>` : ""}

@@ -1790,7 +1790,12 @@
                                 <div class="row"><span>${esc(t("المنتجات ({n})", { n: totals.count }))}</span><span>${money(totals.subtotal)}</span></div>
                                 ${totals.discount > 0 ? `<div class="row ok"><span>${esc(ATHR.discountName(totals))}</span><span>-${money(totals.discount)}</span></div>` : ""}
                                 <div class="row"><span>${esc(t("التوصيل إلى {flag} {country}", { flag: c.flag, country: L(c, "name") }))}</span><span class="muted">${esc(totals.freeShipping && delivery.every((d) => ATHR.freeForDelivery(C(), d)) ? t("مجاني") : delivery.length ? t("يُحدَّد في الخطوة التالية") : t("غير متاح حاليًا"))}</span></div>
-                                ${(totals.freeShipping && delivery.every((d) => ATHR.freeForDelivery(C(), d))) || !delivery.length ? "" : `<ul class="ship-list">${delivery.map((d) => `<li><span class="muted">${esc(L(d, "name"))}</span><span${totals.freeShipping && ATHR.freeForDelivery(C(), d) ? ' class="ok"' : ""}>${esc(totals.freeShipping && ATHR.freeForDelivery(C(), d) ? t("مجاني") : V.deliveryPriceLabel(v(), d))}</span></li>`).join("")}</ul>`}
+                                ${(totals.freeShipping && delivery.every((d) => ATHR.freeForDelivery(C(), d))) || !delivery.length ? "" : `<ul class="ship-list">${delivery.map((d) => `<li><span class="muted">${esc(L(d, "name"))}</span>${(() => {
+                                    const cost = totals.freeShipping && d.pricing !== "per_kg" ? ATHR.shipAfterFree(C(), d, Number(d.price) || 0) : null;
+                                    if (cost === null) return `<span>${esc(V.deliveryPriceLabel(v(), d))}</span>`;
+                                    if (!(cost > 0)) return `<span class="ok">${esc(t("مجاني"))}</span>`;
+                                    return cost < Number(d.price) ? `<span class="ok"><s class="muted">${money(Number(d.price))}</s> ${money(cost)}</span>` : `<span>${money(cost)}</span>`;
+                                })()}</li>`).join("")}</ul>`}
                                 <div class="row total"><span>${esc(t("المجموع"))}</span><span>${money(totals.afterDiscount)}</span></div>
                                 ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(totals.afterDiscount)}</span></div>`}
                             </div>
@@ -2097,10 +2102,11 @@
         const coupon = C().sales.coupons === false ? null : S.coupon;
         const eff = ATHR.couponEffect(coupon, totals.afterDiscount);
         const freeWanted = totals.freeShipping || eff.freeShip;
-        const freeShip = freeWanted && ATHR.freeForDelivery(C(), d);
-        const ship = freeShip ? 0 : shipping.cost;
+        // بعد الحد: المكتب مجاني، والبيت بالسعر المخفّض (مثل 1 ر.ع)
+        const ship = freeWanted ? ATHR.shipAfterFree(C(), d, shipping.cost) : shipping.cost;
         return {
-            ...totals, ship, kg: freeShip ? 0 : shipping.kg, delivery: d, freeMissed: freeWanted && !freeShip && shipping.cost > 0,
+            ...totals, ship, kg: ship === shipping.cost ? shipping.kg : 0, delivery: d,
+            freeMissed: freeWanted && ship > 0, shipFull: shipping.cost,
             coupon: coupon && coupon.code ? coupon : null, couponAmount: eff.amount, couponFree: eff.freeShip, couponShort: eff.short,
             total: Math.round((totals.afterDiscount - eff.amount + ship) * 1000) / 1000
         };
@@ -2117,7 +2123,8 @@
         $$("[data-ship-price]").forEach((el) => {
             const d = ATHR.deliveriesFor(C(), S.country).find((x) => x.id === el.dataset.shipPrice);
             const s = ATHR.shippingFor(d, tt.lines, C());
-            el.textContent = ((tt.freeShipping || tt.couponFree) && ATHR.freeForDelivery(C(), d)) || !(s.cost > 0) ? t("مجاني") : money(s.cost);
+            const cost = tt.freeShipping || tt.couponFree ? ATHR.shipAfterFree(C(), d, s.cost) : s.cost;
+            el.innerHTML = !(cost > 0) ? esc(t("مجاني")) : cost < s.cost ? `<s>${money(s.cost)}</s> ${money(cost)}` : money(cost);
         });
         const html = `<div class="rows">
             ${tt.lines.map((l) => `<div class="row"><span>${esc(V.label(v(), l.product))} × ${l.qty}</span><span>${money(l.total)}</span></div>`).join("")}
@@ -2128,7 +2135,9 @@
             ${isBase() ? "" : `<div class="row muted"><span>${esc(t("بعملتك تقريبًا"))}</span><span>≈ ${local(tt.total)}</span></div>`}
             ${ATHR.pointsFor(tt.total - tt.ship, C()) > 0 ? `<div class="row pts"><span>⭐ ${esc(t("نقاط الولاء من هذا الطلب"))}</span><span>+${ATHR.pointsFor(tt.total - tt.ship, C())}</span></div>` : ""}
             ${tt.kg ? `<p class="muted small" style="margin:4px 0 0">${esc(t("سعر التوصيل حسب الوزن التقريبي، ونؤكد لك الوزن النهائي قبل الشحن."))}</p>` : ""}
-            ${tt.freeMissed ? `<p class="free-miss">💡 ${esc(t("التوصيل المجاني للاستلام من المكتب فقط. اختر المكتب ويصير التوصيل مجاني."))}</p>` : ""}
+            ${tt.freeMissed ? `<p class="free-miss">💡 ${esc(tt.ship < tt.shipFull
+                ? t("وصلت للحد: التوصيل للبيت صار بـ{home} بدل {full}، والاستلام من المكتب مجاني.", { home: money(tt.ship), full: money(tt.shipFull) })
+                : t("التوصيل المجاني للاستلام من المكتب فقط. اختر المكتب ويصير التوصيل مجاني."))}</p>` : ""}
         </div>`;
         box.innerHTML = html;
         if (S.coupon && $("#couponBox .coupon-on")) renderCouponBox();

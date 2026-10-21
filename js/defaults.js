@@ -112,6 +112,7 @@ const ATHR_DEFAULTS = {
         free_enabled: true,
         free_min: 20,
         free_scope: "office",
+        free_home_price: 1,
         free_countries: ["OM"],
         countries: ATHR_COUNTRIES.map((c) => ({ ...c })),
         default_weight_g: 400,
@@ -144,9 +145,9 @@ const ATHR_DEFAULTS = {
         restock: true,
         coupons: true,
         free_bar_show: true,
-        free_before: "توصيل مجاني للمكتب داخل عُمان للطلبات من {free} أو أكثر",
-        free_during: "أضف {left} أخرى للحصول على توصيل مجاني للمكتب",
-        free_done: "مبروك! التوصيل للمكتب مجاني",
+        free_before: "للطلبات من {free} أو أكثر: التوصيل للمكتب مجاني وللبيت بـ{home}",
+        free_during: "أضف {left} أخرى: التوصيل للمكتب يصير مجاني وللبيت بـ{home}",
+        free_done: "مبروك! التوصيل للمكتب مجاني وللبيت بـ{home}",
         bundles: [],
         related_show: true,
         related_title: "منتجات قد تعجبك",
@@ -401,6 +402,7 @@ ATHR.lowestShipping = function (config) {
 ATHR.fill = function (text, config, extra = {}) {
     const tokens = {
         free: ATHR.money(config.order.free_min, config),
+        home: ATHR.freeHomePrice(config) !== null ? ATHR.trimZeros(ATHR.money(ATHR.freeHomePrice(config), config)) : "",
         ship: ATHR.money(ATHR.lowestShipping(config), config),
         name: ATHR.storeName(config),
         phone: ATHR.localPhone(config.order.whatsapp),
@@ -599,6 +601,18 @@ ATHR.paymentsFor = (config, code) => (config.order.payments || []).filter((p) =>
 // التوصيل المجاني يشمل: order.free_scope = "office" (الاستلام من المكتب فقط) أو "all" (البيت والمكتب)
 ATHR.freeOfficeOnly = (config) => Boolean(config && config.order && config.order.free_scope === "office");
 ATHR.freeForDelivery = (config, d) => Boolean(d) && (!ATHR.freeOfficeOnly(config) || d.type === "office");
+// التوصيل للبيت بعد الوصول للحد (لما المجاني للمكتب فقط): سعر مخفّض، مثل 1 ر.ع (order.free_home_price، فاضي = سعره العادي)
+ATHR.freeHomePrice = (config) => {
+    const raw = config && config.order ? config.order.free_home_price : null;
+    const v = Number(raw);
+    return ATHR.freeOfficeOnly(config) && raw !== null && raw !== undefined && raw !== "" && Number.isFinite(v) && v >= 0 ? v : null;
+};
+// سعر التوصيل بعد الوصول للحد: المكتب مجاني، والبيت بالسعر المخفّض لو أقل من سعره
+ATHR.shipAfterFree = (config, d, cost) => {
+    if (ATHR.freeForDelivery(config, d)) return 0;
+    const home = ATHR.freeHomePrice(config);
+    return home === null ? cost : Math.min(cost, home);
+};
 
 ATHR.freeAppliesTo = (config, code) => {
     const list = config.order.free_countries;

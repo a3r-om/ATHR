@@ -1464,7 +1464,8 @@
                 <hr>
                 ${toggle("config.order.free_enabled", "توصيل مجاني عند حد معيّن", { rerender: true })}
                 ${o.free_enabled ? number("config.order.free_min", "حد التوصيل المجاني (قيمة الطلب)")
-                    + select("config.order.free_scope", "التوصيل المجاني يشمل", [["office", "الاستلام من المكتب فقط"], ["all", "البيت والمكتب"]], { help: o.free_scope === "office" ? "التوصيل للبيت يبقى بسعره حتى لو وصل الطلب للحد. ونفس الشي لأكواد «توصيل مجاني»." : "يُطبَّق على كل طرق التوصيل في الدول المختارة." , rerender: true })
+                    + select("config.order.free_scope", "التوصيل المجاني يشمل", [["office", "الاستلام من المكتب فقط"], ["all", "البيت والمكتب"]], { help: o.free_scope === "office" ? "ونفس الشي لأكواد «توصيل مجاني»." : "يُطبَّق على كل طرق التوصيل في الدول المختارة.", rerender: true })
+                    + (o.free_scope === "office" ? number("config.order.free_home_price", "سعر التوصيل للبيت بعد الوصول للحد", { help: "مثال: 1 = التوصيل للبيت بريال بدل سعره. اتركه فاضي ليبقى البيت بسعره العادي." }) : "")
                     + countryChecks("config.order.free_countries", "التوصيل المجاني متاح لـ") : ""}
 `)
             + card("نموذج الطلب", `
@@ -3290,6 +3291,7 @@
             store: {
                 free_delivery_from: c.order.free_enabled ? Number(c.order.free_min) || 0 : 0,
                 free_delivery_office_only: ATHR.freeOfficeOnly(c),
+                home_delivery_after_free: ATHR.freeHomePrice(c),
                 delivery: (c.order.delivery || []).filter((d) => d.enabled !== false).map((d) => ({ name: d.name, price: Number(d.price) || 0 })),
                 payments: (c.order.payments || []).filter((p) => p.enabled !== false).map((p) => p.name)
             },

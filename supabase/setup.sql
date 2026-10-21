@@ -1958,3 +1958,32 @@ begin
   execute d;
 end
 $do$;
+
+-- =====================================================
+-- v30 (2026-10-21): بعد الوصول لحد التوصيل المجاني (للمكتب فقط) يصير التوصيل للبيت بسعر مخفّض
+-- order.free_home_price (مثل 1)، ونفس الشي لكود «توصيل مجاني» على البيت
+-- =====================================================
+do $do$
+declare
+  d text;
+  home_ok text := $s$(cfg #>> '{order,free_home_price}') ~ '^[0-9]+(\.[0-9]+)?$'$s$;
+begin
+  select pg_get_functiondef(p.oid) into d from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where p.proname = 'athr_recompute_order' and n.nspname = 'private';
+  if position('free_home_price' in d) > 0 then
+    return;  -- مطبّق من قبل
+  end if;
+  d := replace(d, '    select x.v into pay',
+    E'    if not is_free and coalesce(cfg #>> ''{order,free_scope}'', ''all'') = ''office''\n'
+    || E'       and coalesce(m ->> ''type'', ''home'') <> ''office''\n'
+    || E'       and coalesce((cfg #>> ''{order,free_enabled}'')::boolean, false) and free_min > 0\n'
+    || E'       and (jsonb_array_length(free_list) = 0 or free_list ? new.country) and v_after >= free_min\n'
+    || '       and ' || home_ok || E' then\n'
+    || E'        ship := least(ship, (cfg #>> ''{order,free_home_price}'')::numeric);\n'
+    || E'    end if;\n\n'
+    || '    select x.v into pay');
+  d := replace(d, E'ship := 0;\n                end if;',
+    E'ship := 0;\n                elsif k.kind = ''ship'' and ' || home_ok || E' then\n                    ship := least(ship, (cfg #>> ''{order,free_home_price}'')::numeric);\n                end if;');
+  execute d;
+end
+$do$;
