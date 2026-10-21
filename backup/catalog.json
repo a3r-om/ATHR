@@ -426,6 +426,7 @@
    "free_countries": [
     "OM"
    ],
+   "free_home_price": 1,
    "wilaya_required": true,
    "default_weight_g": 400
   },
@@ -540,7 +541,7 @@
    "restock": true,
    "wa_quick": false,
    "favorites": true,
-   "free_done": "مبروك! التوصيل للمكتب صار مجاني",
+   "free_done": "مبروك! التوصيل للمكتب مجاني وللبيت بـ{home}",
    "gift_card": true,
    "low_stock": 3,
    "new_title": "وصل حديثاً",
@@ -549,8 +550,8 @@
    "cart_float": true,
    "sets_title": "أطقم وهدايا بسعر أقل",
    "trust_show": true,
-   "free_before": "توصيل مجاني للمكتب للطلبات من {free} أو أكثر",
-   "free_during": "أضف {left} أخرى للحصول على توصيل مجاني للمكتب",
+   "free_before": "للطلبات من {free} أو أكثر: التوصيل للمكتب مجاني وللبيت بـ{home}",
+   "free_during": "أضف {left} أخرى: التوصيل للمكتب يصير مجاني وللبيت بـ{home}",
    "gift_banner": true,
    "gift_button": true,
    "upsell_show": false,
