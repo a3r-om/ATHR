@@ -100,7 +100,7 @@
 
     // خطوط بسيطة وواضحة ومشهورة تدعم العربي والإنجليزي
     const SIMPLE_FONTS = ["IBM Plex Sans Arabic", "Cairo", "Tajawal", "Almarai", "Rubik", "Alexandria", "Vazirmatn", "Noto Sans Arabic", "Noto Kufi Arabic", "Noto Naskh Arabic", "Readex Pro", "Mada", "Changa", "Zain", "Baloo Bhaijaan 2"];
-    const HEAD_FONTS = [...SIMPLE_FONTS, "Reem Kufi", "El Messiri", "Amiri", "Lalezar"];
+    const HEAD_FONTS = [...SIMPLE_FONTS, "Reem Kufi", "El Messiri", "Amiri", "Lalezar", "system"];
     const BODY_FONTS = [...SIMPLE_FONTS, "system"];
 
     const storage = {
@@ -1222,7 +1222,7 @@
                     <div class="tpl-info">
                         <h3>${esc(tp.name)}${on ? ` <span class="tag ok">${edited ? "الحالي (معدّل)" : "الحالي"}</span>` : ""}</h3>
                         <p>${esc(tp.desc)}</p>
-                        <div class="tpl-meta">${[t.primary, t.hero, t.bg].map((x) => `<span class="tpl-dot" style="background:${esc(x)}"></span>`).join("")}<small>${esc(t.font_head)}</small></div>
+                        <div class="tpl-meta">${[t.primary, t.hero, t.bg].map((x) => `<span class="tpl-dot" style="background:${esc(x)}"></span>`).join("")}<small>${esc(t.font_head === "system" ? "خط الجهاز" : t.font_head)}</small></div>
                         <div class="inline">
                             ${on && !edited
                                 ? `<button class="ab ab-soft ab-sm" type="button" disabled>✓ مطبّق</button>`
@@ -1303,7 +1303,7 @@
                 ${toggle("config.theme.home_filter", "أزرار الأقسام السريعة فوق المنتجات في الرئيسية", { help: "الزائر يضغط على القسم فتظهر منتجاته فوراً بدون ما يتنقل." })}
                 ${select("config.theme.page_size", "عدد المنتجات قبل زر «عرض المزيد»", [["8", "8 منتجات"], ["12", "12 منتجاً"], ["16", "16 منتجاً"], ["24", "24 منتجاً"], ["0", "الكل بدون زر (صفحة طويلة)"]], { type: "number", help: "صفحة أخف وأسرع على الجوال. الزائر يضغط «عرض المزيد» ليكمل." })}`)
             + card("الخطوط", `
-                ${select("config.theme.font_head", "خط العناوين", HEAD_FONTS.map((f) => [f, f]), { rerender: true })}
+                ${select("config.theme.font_head", "خط العناوين", HEAD_FONTS.map((f) => [f, f === "system" ? "خط الجهاز" : f]), { rerender: true })}
                 ${select("config.theme.font_body", "خط النصوص", BODY_FONTS.map((f) => [f, f === "system" ? "خط الجهاز" : f]), { rerender: true })}
                 ${fontSample()}`, "كلها خطوط مجانية من Google تدعم العربي والإنجليزي. الأولى في القائمة هي الأبسط والأوضح للقراءة.")
             + card("الواجهة الرئيسية", `

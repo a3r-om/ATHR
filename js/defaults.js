@@ -1199,6 +1199,12 @@ ATHR.themeVars = function (config) {
 
 ATHR.TEMPLATES = [
     {
+        id: "apple",
+        name: "ستايل Apple",
+        desc: "مثل أنظمة آيفون: خط الجهاز، شريط زجاجي شفاف، أزرار وخانات وقوائم ومفاتيح بنفس أسلوب iOS، وبطاقات بيضاء ناعمة.",
+        theme: { primary: "#570418", hero: "#45030F", bg: "#F2F2F7", text: "#1C1C1E", font_head: "system", font_body: "system", radius: "round", header: "light", hero_pattern: false }
+    },
+    {
         id: "classic",
         name: "أثر الكلاسيكي",
         desc: "الشكل الأصلي: برغندي وبيج مع زخرفة عربية، وأقسام بصور مستطيلة.",
@@ -1244,7 +1250,7 @@ ATHR.TEMPLATES = [
 
 ATHR.template = function (config) {
     const id = config && config.theme && config.theme.template;
-    return ATHR.TEMPLATES.find((x) => x.id === id) || ATHR.TEMPLATES[0];
+    return ATHR.TEMPLATES.find((x) => x.id === id) || ATHR.TEMPLATES.find((x) => x.id === "classic");
 };
 
 // هل غيّر صاحب المتجر شيئاً من ألوان/خطوط القالب بعد تطبيقه؟

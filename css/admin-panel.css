@@ -1136,3 +1136,26 @@ html.theme-dark .bp-warn { color: #F2B866; }
 .adm-loading::before { content: ""; width: 40px; height: 40px; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--a-primary) 18%, transparent); border-top-color: var(--a-primary); animation: ol-spin .8s linear infinite; }
 @keyframes ol-spin { to { transform: rotate(360deg); } }
 .adm-loading:has(button)::before { display: none; }
+
+/* v31 — معاينة قالب «ستايل Apple» */
+.tm-apple { --rr: 14px; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Arabic", system-ui, sans-serif; }
+.tm-apple .tm-top { background: rgba(250, 250, 252, .92); color: var(--p); box-shadow: inset 0 -.5px 0 rgba(60, 60, 67, .3); }
+.tm-apple .tm-ic { background: none; box-shadow: inset 0 0 0 1.6px currentColor; opacity: .7; }
+.tm-apple .tm-search { height: 16px; border-radius: 6px; background: rgba(118, 118, 128, .12); box-shadow: none; }
+.tm-apple .tm-hero { background: transparent; color: var(--p); }
+.tm-apple .tm-ht b { font-size: 19px; letter-spacing: -.02em; }
+.tm-apple .tm-chips i { background: rgba(118, 118, 128, .18); }
+.tm-apple .tm-tile img { border-radius: 10px; box-shadow: none; }
+.tm-apple .tm-card { border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, .06); }
+.tm-apple .tm-price { color: var(--t); font-weight: 600; }
+.tm-apple .tm-add { border-radius: 99px; }
+
+/* لوحة التحكم مع «ستايل Apple»: خط الجهاز ومفاتيح iOS */
+html.tpl-apple .adm { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Arabic", "Segoe UI", system-ui, sans-serif; --a-line: rgba(60, 60, 67, .16); }
+html.tpl-apple .adm .adm-card { border: 0; border-radius: 14px; }
+html.tpl-apple .adm .at input:checked + .at-ui, html.tpl-apple .adm .vis-switch[aria-checked="true"] { background: #34C759; }
+html.tpl-apple .adm .ai { border: 0; background: rgba(118, 118, 128, .12); border-radius: 10px; }
+html.tpl-apple .adm .ai:focus { background: var(--a-surface); box-shadow: 0 0 0 2px var(--a-primary); }
+html.tpl-apple .adm .ab { border-radius: 999px; }
+html.tpl-apple .adm-top { -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+html.tpl-apple.theme-dark .adm .ai { background: rgba(118, 118, 128, .24); }

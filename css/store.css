@@ -2396,3 +2396,286 @@ html.owner-boot #view, html.owner-boot #footer, html.owner-boot .bars { display:
 html.owner-boot body::before { content: ""; position: fixed; inset: 0; z-index: 94; background: var(--bg); }
 html.owner-boot body::after { content: ""; position: fixed; top: calc(50% - 38px); left: calc(50% - 20px); z-index: 94; width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--primary) 18%, transparent); border-top-color: var(--primary); animation: ol-spin .8s linear infinite; }
 .free-miss { margin: 6px 0 0; padding: 8px 10px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--ok) 10%, var(--surface)); color: var(--text); font-size: 13px; line-height: 1.6; }
+
+/* =====================================================
+   v31 — ستايل Apple: خط الجهاز، شريط زجاجي، وأزرار وخانات وقوائم ومفاتيح بأسلوب iOS
+   (الألوان من هوية المتجر: البرغندي هو لون التمييز)
+===================================================== */
+html.tpl-apple {
+    --font-head: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Arabic", "Segoe UI", system-ui, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Arabic", "Segoe UI", system-ui, sans-serif;
+    --r: 18px;
+    --r-sm: 12px;
+    --muted: rgba(60, 60, 67, .62);
+    --line: rgba(60, 60, 67, .14);
+    --hair: rgba(60, 60, 67, .26);
+    --fill: rgba(118, 118, 128, .12);
+    --fill-2: rgba(118, 118, 128, .08);
+    --soft: color-mix(in srgb, var(--primary) 7%, var(--surface));
+    --img-bg: #F5F5F7;
+    --ok: #248A3D;
+    --ios-green: #34C759;
+    --deal: #FF3B30;
+    --cart-red: #FF3B30;
+    --shadow: 0 2px 10px rgba(0, 0, 0, .05), 0 10px 30px rgba(0, 0, 0, .05);
+    --shadow-up: 0 -1px 0 var(--hair);
+    --head-bg: rgba(250, 250, 252, .78);
+    --head-ink: var(--text);
+    --glass: saturate(180%) blur(20px);
+    --spring: cubic-bezier(.2, .8, .2, 1);
+}
+html.tpl-apple[data-mode="dark"] {
+    --bg: #000000; --surface: #1C1C1E; --text: #FFFFFF;
+    --muted: rgba(235, 235, 245, .6); --line: rgba(84, 84, 88, .42); --hair: rgba(84, 84, 88, .65);
+    --fill: rgba(118, 118, 128, .24); --fill-2: rgba(118, 118, 128, .16);
+    --soft: color-mix(in srgb, var(--primary) 30%, var(--surface)); --img-bg: #2C2C2E;
+    --ok: #30D158; --ios-green: #30D158; --deal: #FF453A; --cart-red: #FF453A;
+    --head-bg: rgba(22, 22, 24, .78);
+    --shadow: none;
+}
+@media (prefers-color-scheme: dark) {
+    html.tpl-apple[data-mode="auto"] {
+        --bg: #000000; --surface: #1C1C1E; --text: #FFFFFF;
+        --muted: rgba(235, 235, 245, .6); --line: rgba(84, 84, 88, .42); --hair: rgba(84, 84, 88, .65);
+        --fill: rgba(118, 118, 128, .24); --fill-2: rgba(118, 118, 128, .16);
+        --soft: color-mix(in srgb, var(--primary) 30%, var(--surface)); --img-bg: #2C2C2E;
+        --ok: #30D158; --ios-green: #30D158; --deal: #FF453A; --cart-red: #FF453A;
+        --head-bg: rgba(22, 22, 24, .78);
+        --shadow: none;
+    }
+}
+html.tpl-apple body { font-size: 16px; line-height: 1.55; letter-spacing: -.003em; -webkit-font-smoothing: antialiased; }
+html.tpl-apple h1, html.tpl-apple h2, html.tpl-apple h3 { letter-spacing: -.02em; font-weight: 700; }
+
+/* ----- الشريط العلوي: زجاج شفاف وأيقونات بلون التمييز ----- */
+html.tpl-apple .top { background: var(--head-bg); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); border-bottom: .5px solid var(--hair); color: var(--text); }
+html.tpl-apple .top-row { padding: 6px 0 8px; }
+html.tpl-apple .icon-btn { width: 40px; height: 40px; background: transparent; color: var(--accent); }
+html.tpl-apple .icon-btn:hover { background: var(--fill-2); }
+html.tpl-apple .icon-btn svg { width: 24px; height: 24px; stroke-width: 1.6; }
+html.tpl-apple .cur-btn, html.tpl-apple .lang-btn { height: 32px; padding: 0 10px; background: var(--fill); color: var(--text); font-weight: 600; font-size: 13px; }
+html.tpl-apple .cart-count { top: 0; inset-inline-end: 0; min-width: 18px; height: 18px; line-height: 18px; font-size: 11px; background: var(--cart-red); color: #fff; box-shadow: 0 0 0 2px var(--head-bg); }
+html.tpl-apple .brand-name { font-weight: 700; letter-spacing: -.02em; }
+html.tpl-apple .search { height: 38px; padding: 0 10px; gap: 6px; border-radius: 11px; background: var(--fill); box-shadow: none; color: var(--text); }
+html.tpl-apple .search svg { width: 18px; height: 18px; stroke: var(--muted); stroke-width: 2.1; }
+html.tpl-apple .search:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+
+/* ----- الأشرطة ----- */
+html.tpl-apple .bar { font-weight: 500; font-size: 13px; }
+html.tpl-apple .bar-ship { background: var(--surface); border-bottom: .5px solid var(--hair); color: var(--text); }
+html.tpl-apple .bar-ship.done { color: var(--ok); }
+html.tpl-apple .meter { height: 4px; background: var(--fill); }
+html.tpl-apple .meter span { background: var(--accent); }
+html.tpl-apple .done .meter span { background: var(--ios-green); }
+html.tpl-apple .bar-announce { background: var(--primary); }
+
+/* ----- الأزرار: كبسولة، ضغطة ناعمة ----- */
+html.tpl-apple .btn { border: 0; border-radius: 999px; font-weight: 600; letter-spacing: -.01em; min-height: 50px; font-size: 16px; transition: transform .25s var(--spring), opacity .2s, background .2s; }
+html.tpl-apple .btn:active { transform: scale(.96); opacity: .82; }
+html.tpl-apple .btn-primary:hover { filter: none; opacity: .92; }
+html.tpl-apple .btn-ghost { background: var(--fill); color: var(--accent); }
+html.tpl-apple .btn-ghost:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+html.tpl-apple .btn-gift, html.tpl-apple .buy .btn-gift { background: var(--soft); color: var(--accent); border: 0; }
+html.tpl-apple .btn-sm { min-height: 36px; font-size: 14px; padding: 6px 16px; }
+html.tpl-apple .link-btn { text-decoration: none; font-weight: 500; color: var(--accent); }
+html.tpl-apple .link-btn:active { opacity: .5; }
+html.tpl-apple .select { border: 0; background: var(--fill); border-radius: 9px; height: 34px; font-weight: 500; }
+
+/* ----- الإعلان والواجهة ----- */
+html.tpl-apple .ad-media, html.tpl-apple .ad-text { border-radius: var(--r); }
+html.tpl-apple .hero:not(.has-image) { background: transparent; color: var(--text); }
+html.tpl-apple .hero.pattern::before { display: none; }
+html.tpl-apple .hero:not(.has-image) h1 { color: var(--heading, var(--accent)); font-size: clamp(28px, 8vw, 40px); letter-spacing: -.03em; }
+html.tpl-apple .hero:not(.has-image) .hero-inner { padding: 18px 0 6px; }
+html.tpl-apple .hero:not(.has-image) p { color: var(--muted); opacity: 1; }
+html.tpl-apple .hero:not(.has-image) .hero-features li, html.tpl-apple .hero:not(.has-image) .hero-points li { background: var(--surface); color: var(--text); box-shadow: none; }
+html.tpl-apple .hero:not(.has-image) svg { stroke: var(--accent); color: var(--accent); }
+
+/* ----- الأقسام ----- */
+html.tpl-apple .tile-img { border-radius: 16px; box-shadow: none; background: var(--surface); }
+html.tpl-apple .tile.on .tile-img, html.tpl-apple .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--accent); }
+html.tpl-apple .tile-name { font-weight: 500; font-size: 12.5px; color: var(--text); }
+html.tpl-apple .tile.on .tile-name { color: var(--accent); font-weight: 600; }
+html.tpl-apple .section-head h1, html.tpl-apple .section-head h2 { font-size: 22px; }
+html.tpl-apple .section-head .more { font-weight: 500; }
+html.tpl-apple .chip { border: 0; background: var(--surface); font-weight: 500; min-height: 34px; padding: 0 14px; }
+html.tpl-apple .chip.on { background: var(--text); color: var(--bg); }
+html.tpl-apple[data-mode="dark"] .chip.on { background: #fff; color: #000; }
+
+/* ----- بطاقة المنتج: بيضاء بدون إطار، وزر كبسولة ----- */
+html.tpl-apple .card { border: 0; border-radius: var(--r); box-shadow: var(--shadow); transition: transform .3s var(--spring); }
+html.tpl-apple .card:active { transform: scale(.985); }
+html.tpl-apple .card-img { background: var(--img-bg); }
+html.tpl-apple .card-body { padding: 10px 12px 10px; gap: 3px; }
+html.tpl-apple .card-name { font-weight: 600; font-size: 14.5px; letter-spacing: -.01em; }
+html.tpl-apple .price b { color: var(--text); font-weight: 600; }
+html.tpl-apple .price s { color: var(--muted); }
+html.tpl-apple .card-action { padding: 0 12px 12px; }
+html.tpl-apple .card-action .btn { min-height: 38px; font-size: 14px; }
+html.tpl-apple .stepper { background: var(--fill); border-radius: 999px; }
+html.tpl-apple .stepper button { color: var(--accent); font-weight: 500; font-size: 22px; }
+html.tpl-apple .stepper output { font-weight: 600; }
+html.tpl-apple .badge { border-radius: 999px; font-weight: 600; font-size: 11px; padding: 2px 9px; box-shadow: none; background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); color: var(--text); }
+html.tpl-apple .badge.hot { color: #BF4800; }
+html.tpl-apple .badge.sale { background: var(--deal); color: #fff; }
+html.tpl-apple .fav-btn { background: rgba(255, 255, 255, .78); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); box-shadow: none; color: #1C1C1E; }
+html.tpl-apple .fav-btn.on { color: #FF2D55; }
+html.tpl-apple .sw.on { box-shadow: 0 0 0 1.5px var(--accent); }
+
+/* ----- صفحة المنتج ----- */
+html.tpl-apple .stage { background: var(--img-bg); }
+html.tpl-apple .stage-nav { background: rgba(255, 255, 255, .72); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); box-shadow: none; }
+html.tpl-apple .thumbs button { border-radius: 10px; }
+html.tpl-apple .pdp h1 { letter-spacing: -.03em; }
+html.tpl-apple .pp-now { color: var(--text); font-weight: 700; letter-spacing: -.02em; }
+html.tpl-apple .pp-was { font-weight: 500; color: var(--muted); }
+html.tpl-apple .pchip { border: 0; border-radius: 999px; font-weight: 600; font-size: 13px; padding: 3px 11px; }
+html.tpl-apple .perks { background: var(--surface); border-radius: 0; }
+@media (min-width: 860px) { html.tpl-apple .perks { border-radius: var(--r-sm); } }
+html.tpl-apple .perk svg { stroke: var(--ios-green); }
+html.tpl-apple .variant { border: 0; border-radius: 14px; box-shadow: inset 0 0 0 .5px var(--hair); }
+html.tpl-apple .variant.on { box-shadow: inset 0 0 0 2px var(--accent); }
+html.tpl-apple .info-box, html.tpl-apple .offer, html.tpl-apple .review-product { border: 0; border-radius: var(--r); background: var(--surface); }
+html.tpl-apple .offer { border: 0; }
+html.tpl-apple .volume, html.tpl-apple .vol-hint, html.tpl-apple .hint, html.tpl-apple .out-note, html.tpl-apple .saved-note { border-radius: var(--r-sm); }
+html.tpl-apple .pdp-details { border-top: .5px solid var(--hair); }
+html.tpl-apple .trust svg { stroke: var(--ios-green); }
+html.tpl-apple .buybar { background: var(--head-bg); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); border-top: .5px solid var(--hair); box-shadow: none; }
+html.tpl-apple .bb-info b { color: var(--text); }
+
+/* ----- السلة والطلب: مجموعات بيضاء مدوّرة (مثل الإعدادات) ----- */
+html.tpl-apple .page-title { font-size: 32px; letter-spacing: -.03em; margin: 16px 2px 12px; }
+html.tpl-apple .panel, html.tpl-apple .sum-mobile { border: 0; border-radius: var(--r); }
+html.tpl-apple .panel h2 { font-size: 20px; }
+html.tpl-apple .cart-line { border-bottom: .5px solid var(--hair); }
+html.tpl-apple .cart-line img { border-radius: 12px; }
+html.tpl-apple .cart-line .name { font-weight: 600; }
+html.tpl-apple .row.total { border-top: .5px solid var(--hair); }
+html.tpl-apple .cl-del:hover, html.tpl-apple .cl-del:focus-visible { color: var(--deal); }
+
+/* الخانات */
+html.tpl-apple .field > span:first-child { font-weight: 500; font-size: 13px; color: var(--muted); padding-inline-start: 4px; }
+html.tpl-apple .input { border: 0; background: var(--fill); border-radius: 12px; min-height: 46px; padding: 10px 14px; font-size: 17px; transition: box-shadow .2s, background .2s; }
+html.tpl-apple .input::placeholder { color: rgba(60, 60, 67, .4); }
+html.tpl-apple[data-mode="dark"] .input::placeholder { color: rgba(235, 235, 245, .35); }
+html.tpl-apple .input:focus { background: var(--surface); box-shadow: 0 0 0 2px var(--accent); }
+html.tpl-apple .field.invalid .input { box-shadow: 0 0 0 2px var(--deal); background: color-mix(in srgb, var(--deal) 6%, var(--surface)); }
+html.tpl-apple select.input { appearance: none; -webkit-appearance: none; padding-inline-end: 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%238E8E93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 14px center; background-size: 10px 14px; }
+html.tpl-apple[dir="ltr"] select.input { background-position: right 14px center; }
+html.tpl-apple .phone-wrap .dial { border: 0; background: var(--fill); border-radius: 12px 0 0 12px; color: var(--muted); }
+html.tpl-apple .phone-wrap .input { border-radius: 0 12px 12px 0; border-left: .5px solid var(--hair); }
+html.tpl-apple .phone-wrap select.dial-pick { background-color: var(--fill); }
+html.tpl-apple .err { font-weight: 500; }
+
+/* اختيار التوصيل والدفع: قائمة iOS بعلامة صح */
+html.tpl-apple .choice { gap: 0; border-radius: 14px; overflow: hidden; background: var(--fill-2); }
+html.tpl-apple .option { border: 0; border-radius: 0; background: transparent; padding: 13px 14px; grid-template-columns: 24px 1fr auto; align-items: center; }
+html.tpl-apple .option + .option { box-shadow: inset 0 .5px 0 var(--hair); }
+html.tpl-apple .option:has(input:checked) { background: transparent; }
+html.tpl-apple .option b { font-weight: 600; }
+html.tpl-apple .option input { appearance: none; -webkit-appearance: none; width: 24px; height: 24px; margin: 0; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(60, 60, 67, .3); background: var(--surface) no-repeat center / 13px 13px; transition: background-color .2s, box-shadow .2s; }
+html.tpl-apple .option input:checked { background-color: var(--accent); box-shadow: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M2.5 7.4 5.6 10.4 11.5 3.8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+html.tpl-apple .option .opt-price { font-weight: 600; }
+
+/* المفاتيح (بدل مربعات الاختيار): مثل iOS */
+html.tpl-apple .check-line { justify-content: space-between; flex-direction: row-reverse; gap: 12px; font-weight: 500; padding: 6px 0; }
+html.tpl-apple .check-line > span { flex: 1; min-width: 0; }
+html.tpl-apple .check-line input { appearance: none; -webkit-appearance: none; position: relative; flex-shrink: 0; width: 51px; height: 31px; margin: 0; border-radius: 999px; background: rgba(120, 120, 128, .16); cursor: pointer; transition: background-color .25s; }
+html.tpl-apple[data-mode="dark"] .check-line input { background: rgba(120, 120, 128, .32); }
+html.tpl-apple .check-line input::after { content: ""; position: absolute; top: 2px; inset-inline-start: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .15), 0 3px 1px rgba(0, 0, 0, .06); transition: inset-inline-start .28s var(--spring); }
+html.tpl-apple .check-line input:checked { background: var(--ios-green); }
+html.tpl-apple .check-line input:checked::after { inset-inline-start: 22px; }
+html.tpl-apple .check-line input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* أزرار التبديل (لي / هدية): مثل Segmented Control */
+html.tpl-apple .seg2 { gap: 2px; padding: 2px; border: 0; border-radius: 10px; background: var(--fill); }
+html.tpl-apple .seg2 span { min-height: 36px; border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--text); }
+html.tpl-apple .seg2 svg { width: 18px; height: 18px; }
+html.tpl-apple .seg2 input:checked + span { background: var(--surface); color: var(--text); box-shadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04); }
+html.tpl-apple[data-mode="dark"] .seg2 input:checked + span { background: #636366; }
+html.tpl-apple .mini-seg { border: 0; background: var(--fill); padding: 2px; border-radius: 9px; }
+html.tpl-apple .mini-seg button { border-radius: 7px; color: var(--text); font-weight: 600; }
+html.tpl-apple .mini-seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04); }
+html.tpl-apple .occ span, html.tpl-apple .occ-chips label span { border-radius: 999px; }
+
+html.tpl-apple .coupon-box { border: 0; background: var(--fill-2); border-radius: var(--r-sm); }
+html.tpl-apple .coupon-box summary { font-weight: 600; color: var(--accent); }
+html.tpl-apple .bank-row { border: 0; background: var(--fill-2); border-radius: var(--r-sm); }
+html.tpl-apple .copy { border: 0; background: var(--fill); color: var(--accent); border-radius: 999px; font-weight: 600; }
+html.tpl-apple .gift-panel { border: 0; }
+html.tpl-apple .free-miss { border-radius: var(--r-sm); }
+
+/* صفحة الشكر */
+html.tpl-apple .thanks-head .check { background: var(--ios-green); width: 72px; height: 72px; }
+html.tpl-apple .thanks-head .check svg { stroke: #fff; width: 36px; height: 36px; stroke-width: 3; }
+html.tpl-apple .step { border: 0; border-radius: var(--r); }
+html.tpl-apple .order-no { font-family: var(--font-body); font-weight: 600; letter-spacing: .02em; }
+
+/* ----- القوائم والنوافذ: ورقة iOS بمقبض، ومجموعات مثل الإعدادات ----- */
+html.tpl-apple .sheet-backdrop { background: rgba(0, 0, 0, .32); }
+html.tpl-apple .sheet-panel { background: var(--bg); }
+html.tpl-apple .sheet.modal .sheet-panel { border-radius: 14px 14px 0 0; padding-top: 22px; animation: sheetUp .38s var(--spring); }
+html.tpl-apple .sheet.modal .sheet-panel::before { content: ""; position: absolute; top: 7px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: 3px; background: rgba(60, 60, 67, .3); }
+@media (min-width: 760px) { html.tpl-apple .sheet.modal .sheet-panel { border-radius: 14px; } html.tpl-apple .sheet.modal .sheet-panel::before { display: none; } }
+@keyframes sheetUp { from { transform: translateY(100%); } }
+html.tpl-apple .sheet-head h2 { font-size: 20px; }
+html.tpl-apple .close { width: 30px; height: 30px; background: var(--fill); color: var(--muted); font-size: 18px; font-weight: 600; }
+html.tpl-apple .cur-list { gap: 0; border-radius: 14px; overflow: hidden; background: var(--surface); }
+html.tpl-apple .cur-list button { border: 0; border-radius: 0; background: transparent; }
+html.tpl-apple .cur-list li + li button { box-shadow: inset 0 .5px 0 var(--hair); }
+html.tpl-apple .cur-list button[aria-pressed="true"] { background: transparent; }
+html.tpl-apple .cur-list button[aria-pressed="true"] .cur-rate::after { content: " ✓"; color: var(--accent); font-weight: 700; font-size: 16px; }
+html.tpl-apple .sheet-added .sheet-head h2 svg { stroke: var(--ios-green); }
+html.tpl-apple .added-actions { background: var(--bg); }
+html.tpl-apple .notify-item, html.tpl-apple .added-offer { border: 0; background: var(--surface); border-radius: var(--r-sm); }
+
+/* القائمة الجانبية: مجموعات بيضاء وأيقونات في مربعات ملوّنة */
+html.tpl-apple .menu-head { border-bottom: 0; }
+html.tpl-apple .menu-logo { border-radius: 12px; }
+html.tpl-apple .mgroup { background: var(--surface); border-radius: 14px; padding: 0 14px; margin-top: 10px; }
+html.tpl-apple .mgroup > .mrow + .mrow, html.tpl-apple .mgroup > .menu-cats + .mrow { border-top: .5px solid var(--hair); }
+html.tpl-apple .mrow { font-weight: 500; font-size: 16px; min-height: 50px; }
+html.tpl-apple .mi { width: 30px; height: 30px; border-radius: 8px; background: var(--primary); color: #fff; }
+html.tpl-apple .mi svg { width: 18px; height: 18px; stroke-width: 1.9; }
+html.tpl-apple .mi.flag { background: var(--fill); }
+html.tpl-apple .mrow-gift .mi.gift { color: #fff; background: #FF2D55; }
+html.tpl-apple .mrow-gift .ml { color: var(--text); font-weight: 500; }
+html.tpl-apple .mchev { color: rgba(60, 60, 67, .3); }
+html.tpl-apple .mgroup .menu-cat { background: var(--fill-2); }
+html.tpl-apple .menu .menu-label { margin: 20px 16px 4px; font-size: 13px; font-weight: 400; color: var(--muted); }
+html.tpl-apple .mf { border: 0; background: var(--surface); border-radius: 14px; font-weight: 600; }
+html.tpl-apple .mgroup.owner { border: 0; }
+
+/* الإشعار: مثل HUD في iOS */
+html.tpl-apple .toast { background: rgba(28, 28, 30, .88); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); color: #fff; font-weight: 500; border-radius: 14px; padding: 10px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+
+/* زر السلة العائم وزر واتساب */
+html.tpl-apple .cf-ring { box-shadow: 0 8px 24px rgba(0, 0, 0, .14); background: conic-gradient(var(--accent) var(--p, 0%), var(--fill) 0); }
+html.tpl-apple .cf-in { background: rgba(255, 255, 255, .92); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); color: var(--accent); }
+html.tpl-apple[data-mode="dark"] .cf-in { background: rgba(44, 44, 46, .92); }
+html.tpl-apple .cf-pill.ok { background: var(--ios-green); }
+html.tpl-apple .wa-float { box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+
+/* ----- الذيل: رمادي فاتح مثل مواقع Apple ----- */
+html.tpl-apple .footer { background: var(--surface); color: var(--muted); border-top: .5px solid var(--hair); font-size: 13px; }
+html.tpl-apple .footer h2 { color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: 0; }
+html.tpl-apple .footer a, html.tpl-apple .footer-brand strong { color: var(--text); }
+html.tpl-apple .footer-brand img { filter: brightness(0); }
+html.tpl-apple[data-mode="dark"] .footer-brand img { filter: none; }
+html.tpl-apple .footer-links a { border: 0; background: var(--fill); }
+html.tpl-apple .footer-bottom { border-top: .5px solid var(--hair); opacity: 1; }
+
+/* بنر الهدية والبطاقات الأخرى */
+html.tpl-apple .gp { border-radius: var(--r); }
+html.tpl-apple .preview-flag { background: var(--head-bg); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass); color: var(--text); border-bottom: .5px solid var(--hair); }
+html.tpl-apple .hero.hero-compact:not(.has-image) h1 { font-size: clamp(26px, 7.6vw, 38px); line-height: 1.2; letter-spacing: -.03em; }
+html.tpl-apple .hero-mini li { opacity: 1; color: var(--muted); font-size: 12.5px; }
+html.tpl-apple .gift-cta { border: 0; border-radius: var(--r); background: var(--surface); }
+html.tpl-apple .gift-cta::after { display: none; }
+html.tpl-apple .gift-cta:active { transform: scale(.985); }
+html.tpl-apple .gcta-go { color: rgba(60, 60, 67, .3); }
+html.tpl-apple .gfor-opt > span { border: 0; border-radius: 14px; background: var(--fill-2); }
+html.tpl-apple .gfor-opt input:checked + span { box-shadow: inset 0 0 0 2px var(--gf); transform: none; }
+html.tpl-apple .occ span { border: 0; background: var(--fill); font-weight: 500; }
+html.tpl-apple .occ input:checked + span { background: var(--accent); color: #fff; }
+html.tpl-apple .msg-sugs button, html.tpl-apple .sug { border: 0; background: var(--fill); border-radius: 999px; }
