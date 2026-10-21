@@ -149,6 +149,26 @@
         }
     };
 
+    // ---------- القصص المصوّرة (رسومات ثلاثية الأبعاد) ----------
+    // ready: تصير true لما تكتمل رسومات الولد والبنت، وقبلها تبقى القصة بالرسومات القديمة
+    // side: مكان مربع النص فوق الصورة (right / left)
+    STORIES.space.book = {
+        ready: false,
+        badge: "مغامرة بين الكواكب",
+        pages: [
+            ["p1", "right", "{name} في {age} من [عمره|عمرها]، [ويحب|وتحب] النجوم كثيراً. في ليلةٍ هادئة [جلس|جلست] عند النافذة [وهمس|وهمست]: «ليتني أطيرُ إلى القمر!»"],
+            ["p2", "left", "فجأةً… طَق طَق! روبوتٌ صغير يلوّح من النافذة. قال: «أنا بيبو! سمعتُ أمنيتك يا {name}. هل [تأتي|تأتين] معي إلى الفضاء؟»"],
+            ["p3", "right", "في الصباح [لبس|لبست] {name} بدلة الفضاء، [ووقف|ووقفت] أمام صاروخٍ عملاق. [وعدّ|وعدّت] مع بيبو: «ثلاثة… اثنان… واحد… انطلِق!»"],
+            ["p4", "left", "طار الصاروخ عالياً… عالياً! ومن النافذة [رأى|رأت] {name} الأرض كرةً زرقاء جميلة، [فقال|فقالت]: «هناك عُمان… هناك بيتي!»"],
+            ["p5", "right", "هبطا على القمر. [قفز|قفزت] {name} قفزةً عالية… ثم أعلى… ثم أعلى! [وضحك|وضحكت]: «أنا [خفيفٌ|خفيفةٌ] مثل الريشة!»"],
+            ["p6", "left", "ثم طارا إلى كوكب زُحل. [تزلّج|تزلّجت] {name} على حلقاته الملوّنة: وِيييي! وبيبو يصفّق ويضيء من الفرح."],
+            ["p7", "right", "وفي كوكبٍ ملوّن [قابل|قابلت] {name} مخلوقاً صغيراً لطيفاً اسمه زوزو. قال زوزو: «أهلاً يا {name}! [هل تلعب معي؟|هل تلعبين معي؟]»"],
+            ["p8", "left", "في طريق العودة [سمع|سمعت] {name} بكاءً خفيفاً. نجمةٌ صغيرة ضلّت طريقها! [فقال|فقالت] {name}: «لا تخافي، سنوصلك إلى بيتك.»"],
+            ["p9", "right", "[حمل|حملت] {name} النجمة بلطف حتى [أعادها|أعادتها] إلى أخواتها، فأضاءت السماء كلها وقالت النجوم: «شكراً يا {name}!»"],
+            ["p10", "left", "عاد الصاروخ إلى البيت، [ونام|ونامت] {name} [سعيداً|سعيدةً]. وفي السماء نجمةٌ صغيرة تلمع وتهمس: «[تصبح|تصبحين] على خير يا {name}.»"]
+        ]
+    };
+
     const DEFAULT_DED = "إلى [حبيبنا|حبيبتنا] {name}: نحبك كثيراً، ونفخر بك كل يوم. هذه القصة كُتبت لك وحدك.";
 
     // =====================================================
@@ -1414,12 +1434,206 @@
         crayonStripe(ctx, H - 22, 22);
     }
 
+    // =====================================================
+    // الكتاب المصوّر: صفحات عرضية A4 بصورة كاملة ومربع نص ناعم فوقها
+    // =====================================================
+    const BW = 1754, BH = 1240;
+    const imgCache = new Map();
+
+    function artUrl(storyId, g, key, small) {
+        const base = root.HUROOF_ART_BASE || `${ASSETS}images/stories/`;
+        return `${base}${storyId}/${g === "f" ? "f" : "m"}/${small ? "s/" : ""}${key}.jpg`;
+    }
+
+    function artImage(url) {
+        if (!imgCache.has(url)) {
+            const p = loadImage(url).catch((e) => { imgCache.delete(url); throw e; });
+            imgCache.set(url, p);
+        }
+        return imgCache.get(url);
+    }
+
+    function drawCoverImage(ctx, img, x, y, w, h) {
+        const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+        const sc = Math.max(w / iw, h / ih);
+        const dw = iw * sc, dh = ih * sc;
+        ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    }
+
+    function glowText(ctx, text, x, y, { size, weight = 700, fill = "#FFFFFF", stroke = "#1A2250", line = 12, shadow = true, gradient = null }) {
+        ctx.save();
+        ctx.font = font(size, weight);
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.textBaseline = "alphabetic";
+        ctx.lineJoin = "round";
+        if (shadow) {
+            ctx.fillStyle = "rgba(10,14,40,.35)";
+            ctx.fillText(text, x, y + size * 0.06);
+        }
+        ctx.lineWidth = line;
+        ctx.strokeStyle = stroke;
+        ctx.strokeText(text, x, y);
+        if (gradient) {
+            const g = ctx.createLinearGradient(0, y - size * 0.8, 0, y + size * 0.15);
+            gradient.forEach(([o, c]) => g.addColorStop(o, c));
+            ctx.fillStyle = g;
+        } else ctx.fillStyle = fill;
+        ctx.fillText(text, x, y);
+        ctx.restore();
+    }
+
+    function softCard(ctx, x, y, w, h) {
+        ctx.save();
+        ctx.shadowColor = "rgba(20,20,50,.28)";
+        ctx.shadowBlur = 40;
+        ctx.shadowOffsetY = 10;
+        roundRect(ctx, x, y, w, h, 46);
+        ctx.fillStyle = "rgba(255,252,246,.9)";
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        roundRect(ctx, x + 10, y + 10, w - 20, h - 20, 38);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(126,98,181,.25)";
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function measureParagraph(ctx, text, size, maxW, lh) {
+        const lay = layoutWords(ctx, text, size, maxW);
+        return { lay, height: lay.lines.length * size * lh };
+    }
+
+    async function drawBookPage(ctx, storyId, st, d, page, small) {
+        const img = await artImage(artUrl(storyId, d.g, page.key, small));
+        drawCoverImage(ctx, img, 0, 0, BW, BH);
+        const text = fill(page.text, d, { mark: true });
+        const cardW = 720, pad = 58;
+        let size = 58;
+        let m = measureParagraph(ctx, text, size, cardW - pad * 2, 1.78);
+        while (m.height > BH - 300 && size > 38) { size -= 2; m = measureParagraph(ctx, text, size, cardW - pad * 2, 1.78); }
+        const cardH = m.height + pad * 2;
+        const x = page.side === "left" ? 70 : BW - 70 - cardW;
+        const y = Math.max(70, Math.min((BH - cardH) / 2 - 40, BH - 110 - cardH));
+        softCard(ctx, x, y, cardW, cardH);
+        drawParagraph(ctx, text, { cx: x + cardW / 2, top: y + pad, bottom: y + cardH - pad, maxW: cardW - pad * 2, size, minSize: size, lh: 1.78, color: "#2B2620", hi: "#D2614A" });
+        // رقم الصفحة
+        const nx = page.side === "left" ? BW - 90 : 90;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(nx, BH - 80, 34, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,252,246,.92)";
+        ctx.fill();
+        ctx.font = font(32, 700);
+        ctx.fillStyle = "#7E62B5";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(page.n), nx, BH - 78);
+        ctx.restore();
+    }
+
+    async function drawBookCover(ctx, storyId, st, d, photo, small) {
+        const img = await artImage(artUrl(storyId, d.g, "cover", small));
+        drawCoverImage(ctx, img, 0, 0, BW, BH);
+        const g = ctx.createLinearGradient(0, 0, 0, BH * 0.5);
+        g.addColorStop(0, "rgba(12,16,48,.62)");
+        g.addColorStop(1, "rgba(12,16,48,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, BW, BH * 0.5);
+        const nameSize = fitText(ctx, d.name, BW * 0.7, 200, 700, 90);
+        glowText(ctx, d.name, BW / 2, 70 + nameSize * 0.95, { size: nameSize, line: 20, gradient: [[0, "#FFF3A6"], [0.55, "#FFD23F"], [1, "#F59E0B"]] });
+        const subY = 70 + nameSize * 0.95 + 100;
+        glowText(ctx, st.title, BW / 2, subY, { size: fitText(ctx, st.title, BW * 0.75, 84, 700, 50), line: 12 });
+        // الشارة
+        const badge = st.book.badge;
+        ctx.save();
+        ctx.font = font(40, 700);
+        const bw = ctx.measureText(badge).width + 90;
+        const bx = BW / 2 - bw / 2, by = subY + 30;
+        const bg = ctx.createLinearGradient(0, by, 0, by + 74);
+        bg.addColorStop(0, "#6FB7F2");
+        bg.addColorStop(1, "#3C7DD6");
+        roundRect(ctx, bx, by, bw, 74, 37);
+        ctx.fillStyle = bg;
+        ctx.shadowColor = "rgba(10,14,40,.35)";
+        ctx.shadowBlur = 18;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgba(255,255,255,.7)";
+        ctx.stroke();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.direction = "rtl";
+        ctx.fillText(badge, BW / 2, by + 39);
+        ctx.restore();
+        if (photo) drawPhoto(ctx, photo, BW - 250, BH - 250, 170);
+        glowText(ctx, "حروف وألوان", photo ? 220 : BW / 2, BH - 52, { size: 40, line: 8 });
+    }
+
+    async function drawBookEnd(ctx, storyId, st, d, small) {
+        const img = await artImage(artUrl(storyId, d.g, "end", small));
+        drawCoverImage(ctx, img, 0, 0, BW, BH);
+        const cw = 760, ch = 420, x = (BW - cw) / 2, y = 60;
+        softCard(ctx, x, y, cw, ch);
+        glowText(ctx, "النهاية", BW / 2, y + 170, { size: 130, line: 14, stroke: "#2B2620", gradient: [[0, "#FFB199"], [1, "#D2614A"]], shadow: false });
+        ctx.save();
+        ctx.font = font(52, 700);
+        ctx.fillStyle = "#2B2620";
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.fillText(fill("[بطل|بطلة] هذه القصة", d), BW / 2, y + 265);
+        ctx.font = font(fitText(ctx, d.name, cw - 120, 96), 700);
+        ctx.fillStyle = "#7E62B5";
+        ctx.fillText(d.name, BW / 2, y + 370);
+        ctx.restore();
+    }
+
+    async function drawBookColoring(ctx, storyId, st, d, small) {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, BW, BH);
+        const img = await artImage(artUrl(storyId, d.g, "color", small));
+        drawCoverImage(ctx, img, 0, 0, BW, BH);
+        const bandY = BH - 330;
+        const fade = ctx.createLinearGradient(0, bandY - 60, 0, bandY + 40);
+        fade.addColorStop(0, "rgba(255,255,255,0)");
+        fade.addColorStop(1, "rgba(255,255,255,1)");
+        ctx.fillStyle = fade;
+        ctx.fillRect(0, bandY - 60, BW, 100);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, bandY + 40, BW, BH - bandY);
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.font = font(46, 700);
+        ctx.fillStyle = "#2B2620";
+        ctx.fillText(fill("لوّن الصورة واسمك يا {name}", d), BW / 2, bandY + 70);
+        const size = fitText(ctx, d.name, BW - 400, 200, 700, 100);
+        ctx.font = font(size, 700);
+        ctx.lineWidth = 8;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#2B2620";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(d.name, BW / 2, BH - 70);
+        ctx.strokeText(d.name, BW / 2, BH - 70);
+        ctx.restore();
+    }
+
     // ---------- ترتيب صفحات الكتاب ----------
     function bookPages(storyId) {
         const st = STORIES[storyId];
         if (!st) return [];
+        if (st.book && st.book.ready) {
+            return [
+                { kind: "bcover" },
+                ...st.book.pages.map(([key, side, text], i) => ({ kind: "bpage", key, side, text, n: i + 1 })),
+                { kind: "bend" }, { kind: "bcolor" }
+            ];
+        }
         return [
-            { kind: "cover" }, { kind: "ded" },
+            { kind: "cover" },
             ...st.pages.map(([scene, text], i) => ({ kind: "page", scene, text, n: i + 1 })),
             { kind: "end" }, { kind: "color" }
         ];
@@ -1433,6 +1647,19 @@
         if (!d.age) d.age = 5;
         uidN = 0;
         const cv = canvas || document.createElement("canvas");
+        if (page.kind && page.kind[0] === "b") {
+            const sc = width / BW;
+            cv.width = Math.round(BW * sc);
+            cv.height = Math.round(BH * sc);
+            const bctx = cv.getContext("2d");
+            bctx.setTransform(sc, 0, 0, sc, 0, 0);
+            const small = width <= 900;
+            if (page.kind === "bcover") await drawBookCover(bctx, storyId, st, d, photo, small);
+            else if (page.kind === "bend") await drawBookEnd(bctx, storyId, st, d, small);
+            else if (page.kind === "bcolor") await drawBookColoring(bctx, storyId, st, d, small);
+            else await drawBookPage(bctx, storyId, st, d, page, small);
+            return cv;
+        }
         const scale = width / W;
         cv.width = Math.round(W * scale);
         cv.height = Math.round(H * scale);
@@ -1471,7 +1698,7 @@
         let len = 0;
         const offsets = [];
         const push = (x) => { const b = typeof x === "string" ? enc.encode(x) : x; chunks.push(b); len += b.length; };
-        const pw = 595.28, ph = 841.89;
+        const A4 = [595.28, 841.89];
         const n = images.length;
         // 1: الكتالوج، 2: الصفحات، 3: المعلومات، ثم لكل صفحة: صفحة + محتوى + صورة
         const pageId = (i) => 4 + i * 3;
@@ -1482,6 +1709,7 @@
         obj(3, `<< /Title <${utf16Hex(title)}> /Producer (Huroof wa Alwan) /Creator (Huroof wa Alwan) >>`);
         images.forEach((img, i) => {
             const p = pageId(i);
+            const [pw, ph] = img.w > img.h ? [A4[1], A4[0]] : A4;
             obj(p, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im${i} ${p + 2} 0 R >> /ProcSet [/PDF /ImageC] >> /Contents ${p + 1} 0 R >>`);
             const content = `q\n${pw} 0 0 ${ph} 0 0 cm\n/Im${i} Do\nQ\n`;
             obj(p + 1, `<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream`);
@@ -1505,7 +1733,7 @@
         const images = [];
         for (let i = 0; i < pages.length; i++) {
             if (onProgress) onProgress(i, pages.length);
-            await renderPage(storyId, custom, pages[i], { canvas, photo });
+            await renderPage(storyId, custom, pages[i], { canvas, photo, width: pages[i].kind[0] === "b" ? BW : W });
             images.push({ bytes: await toJpeg(canvas, quality), w: canvas.width, h: canvas.height });
             await new Promise((r) => setTimeout(r, 0));
         }
@@ -1532,7 +1760,13 @@
         try { return await loadImage(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 2000); }
     }
 
+    function isIllustrated(storyId) {
+        const st = STORIES[storyId];
+        return Boolean(st && st.book && st.book.ready);
+    }
+
     root.HUROOF_STORIES = {
+        isIllustrated,
         STORIES, AGES, ORD,
         list: () => Object.values(STORIES).map((s) => ({ id: s.id, title: s.title, product: s.product, color: s.color })),
         get: (id) => STORIES[id] || null,

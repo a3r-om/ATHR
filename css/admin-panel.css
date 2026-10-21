@@ -1145,7 +1145,7 @@ html.theme-dark .bp-warn { color: #F2B866; }
 .sm-body { display: grid; gap: 10px; padding: 4px 2px 12px; }
 .sm-photo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .sm-prev { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.sm-prev canvas { width: 100%; height: auto; aspect-ratio: 1240 / 1754; border-radius: 8px; border: 1px solid #E3D8C8; background: #FFFCF6; box-shadow: 0 2px 10px rgba(43, 38, 32, .08); }
+.sm-prev canvas { width: 100%; height: auto; border-radius: 8px; border: 1px solid #E3D8C8; background: #FFFCF6; box-shadow: 0 2px 10px rgba(43, 38, 32, .08); }
 .sm-err { margin: 0; color: #B3261E; font-weight: 700; }
 .sm-progress { display: grid; gap: 4px; }
 .sm-bar { display: block; height: 8px; border-radius: 99px; background: #EFE4D6; overflow: hidden; }

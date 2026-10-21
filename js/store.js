@@ -285,7 +285,6 @@
             name: box.querySelector('[name="st_name"]').value,
             g: g ? g.value : "",
             age: box.querySelector('[name="st_age"]').value,
-            ded: box.querySelector('[name="st_ded"]').value,
             photo: box.querySelector('[name="st_photo"]').checked
         };
     }
@@ -322,7 +321,7 @@
                 return { ok: false };
             }
             const custom = ATHR.storyClean(raw);
-            storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age, ded: custom.ded });
+            storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age });
             return { ok: true, custom };
         }
         const have = cartCustom(id);
@@ -362,9 +361,10 @@
             const g = raw.g === "f" ? "f" : "m";
             const data = { ...clean, g, age: clean.age || 5, name: sample ? (g === "f" ? t("سارة") : t("سالم")) : clean.name };
             const pages = lib.bookPages(p.story);
-            const pick = [0, 2, 5, pages.length - 1].filter((i) => pages[i]);
+            const pick = (lib.isIllustrated && lib.isIllustrated(p.story) ? [0, 1, 5, pages.length - 1] : [0, 2, 5, pages.length - 1]).filter((i) => pages[i]);
             const note = $("#stPrevNote");
             if (note) note.textContent = sample ? t("مثال باسم «{name}»، اكتب اسم طفلك وتتغير القصة", { name: data.name }) : t("{n} صفحة A4 جاهزة للطباعة", { n: pages.length });
+            box.classList.toggle("wide", Boolean(lib.isIllustrated && lib.isIllustrated(p.story)));
             if (box.children.length !== pick.length) box.innerHTML = pick.map(() => `<div class="sf-page"><canvas width="420" height="594"></canvas></div>`).join("");
             box.classList.add("busy");
             const canvases = box.querySelectorAll("canvas");
@@ -391,7 +391,6 @@
             const g = box.querySelector(`input[name="st_g"][value="${saved.g === "f" ? "f" : "m"}"]`);
             if (g) g.checked = true;
             if (saved.age) box.querySelector('[name="st_age"]').value = String(saved.age);
-            if (saved.ded) box.querySelector('[name="st_ded"]').value = saved.ded;
             if (cartCustom(p.id)) box.querySelector('[name="st_photo"]').checked = Boolean(saved.photo);
         }
         const clearErr = () => {
@@ -401,7 +400,7 @@
         };
         box.addEventListener("input", (e) => {
             clearErr();
-            if (e.target.name === "st_name" || e.target.name === "st_ded") storyPreview(p, 500);
+            if (e.target.name === "st_name") storyPreview(p, 500);
             else storyPreview(p, 120);
         });
         box.addEventListener("change", () => { clearErr(); storyPreview(p, 120); });

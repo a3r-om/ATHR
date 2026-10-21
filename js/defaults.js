@@ -47,8 +47,8 @@ const ATHR_DEFAULTS = {
         mode: "light",
         radius: "medium",
         grid_mobile: 2,
-        show_search: true,
-        show_sort: true,
+        show_search: false,
+        show_sort: false,
         font_head: "Amiri",
         font_body: "Amiri",
         hero_show: true,
@@ -59,26 +59,26 @@ const ATHR_DEFAULTS = {
         template: "huroof",
         header: "light",
         page_size: 12,
-        home_filter: true
+        home_filter: false
     },
 
     texts: {
         announce_show: false,
         announce_text: "",
-        hero_title: "ملفات تعليمية جاهزة للطباعة",
-        hero_text: "تلوين وقصص وأنشطة للأطفال، وأوراق عمل للمواد الدراسية من الصف الأول إلى الرابع مع الحلول، ومواد وعروض تقديمية للمعلمات. اختر الملف، يصلك على واتساب، واطبعه أو اعرضه في الفصل.",
-        hero_button: "تصفّح الملفات",
-        hero_features: ["PDF وPowerPoint بمقاس A4", "يصلك على واتساب", "تطبعه أكثر من مرة", "حزم بسعر أقل"],
+        hero_title: "قصة يكون طفلك بطلها",
+        hero_text: "نكتب اسم طفلك في كل صفحة، برسومات ملوّنة تبهره، ويوصلك الملف على واتساب جاهزاً للطباعة.",
+        hero_button: "اختر قصة طفلك",
+        hero_features: ["اسم طفلك في كل صفحة", "ولد أو بنت", "يصلك على واتساب", "جاهزة للطباعة"],
         search_placeholder: "ابحث",
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
         sold_out: "غير متاح حالياً",
-        about: "حروف وألوان متجر عُماني لملفات تعليمية جاهزة للطباعة: تلوين وقصص وأنشطة للأطفال، وأوراق عمل لطلاب الابتدائي، ومواد وعروض تقديمية للمعلمات. كل الرسومات أصلية، والملفات تصلك على واتساب.",
+        about: "حروف وألوان متجر عُماني لقصص الأطفال الشخصية: نكتب اسم طفلك في القصة برسومات ملوّنة ساحرة، ويصلك الملف PDF على واتساب جاهزاً للطباعة.",
         footer_delivery_title: "الاستلام والدفع",
         footer_delivery_text: "",
         footer_contact_title: "تواصل معنا",
         socials: [],
-        thanks_text: "أرسل طلبك عبر واتساب بالضغط على الزر بالأسفل، وبعد تأكيد الدفع نرسل لك الملفات في نفس المحادثة.",
+        thanks_text: "أرسل طلبك عبر واتساب بالضغط على الزر بالأسفل، وبعد تأكيد الدفع نرسل لك القصة في نفس المحادثة.",
         wa_first_line: "طلب جديد من متجر {name}",
         wa_last_line: ""
     },
@@ -109,7 +109,7 @@ const ATHR_DEFAULTS = {
         // ملفات رقمية: لا شحن ولا عنوان، والملفات تصل للزبون على واتساب بعد تأكيد الدفع
         digital: true,
         delivery: [
-            { id: "wa", enabled: true, name: "استلام الملفات على واتساب", name_en: "Files on WhatsApp", type: "digital", pricing: "fixed", price: 0, countries: ["OM", "AE", "SA", "KW", "QA", "BH"], note: "نرسل لك الملفات في محادثة واتساب بعد تأكيد الدفع.", note_en: "We send your files in a WhatsApp chat once payment is confirmed.", duration: "خلال ساعات" }
+            { id: "wa", enabled: true, name: "استلام الملفات على واتساب", name_en: "Files on WhatsApp", type: "digital", pricing: "fixed", price: 0, countries: ["OM", "AE", "SA", "KW", "QA", "BH"], note: "نرسل لك القصة في محادثة واتساب بعد تأكيد الدفع.", note_en: "We send your story in a WhatsApp chat once payment is confirmed.", duration: "خلال ساعات" }
         ],
         free_enabled: false,
         free_min: 0,
@@ -122,20 +122,20 @@ const ATHR_DEFAULTS = {
         wilaya_required: false,
         show_notes: true,
         payments: [
-            { id: "bank", enabled: true, name: "تحويل بنكي", name_en: "Bank transfer", type: "bank", countries: ["OM", "AE", "SA", "KW", "QA", "BH"], note: "حوّل المبلغ ثم أرسل صورة الإيصال على واتساب، ونرسل لك الملفات.", note_en: "Transfer the amount, then send the receipt on WhatsApp and we send your files.", bank: { number: "", bank: "", holder: "", account: "", swift: "", iban: "" } }
+            { id: "bank", enabled: true, name: "تحويل بنكي", name_en: "Bank transfer", type: "bank", countries: ["OM", "AE", "SA", "KW", "QA", "BH"], note: "حوّل المبلغ ثم أرسل صورة الإيصال على واتساب، ونرسل لك القصة.", note_en: "Transfer the amount, then send the receipt on WhatsApp and we send your story.", bank: { number: "", bank: "", holder: "", account: "", swift: "", iban: "" } }
         ]
     },
 
     sales: {
         favorites: true,
         pdp_perks: true,
-        cart_float: true,
+        cart_float: false,
         // المخزون: «باقي N فقط» للزبون وتنبيه في اللوحة عند هذا الحد
         low_stock: 3,
         low_stock_show: false,
         // نقاط الولاء: نقاط لكل 1 ر.ع من الطلبات المسلّمة، وكل {reward_points} نقطة = كود خصم {reward_value}
         loyalty: {
-            enabled: true,
+            enabled: false,
             per_omr: 2,
             reward_points: 30,
             reward_value: 1,
@@ -150,21 +150,21 @@ const ATHR_DEFAULTS = {
         free_done: "",
         bundles: [],
         related_show: true,
-        related_title: "ملفات قد تعجبك",
+        related_title: "قصص أخرى لطفلك",
         related_count: 4,
-        buy_now: true,
+        buy_now: false,
         wa_quick: true,
         remember_customer: true,
         abandoned_show: true,
         abandoned_text: "لديك {n} في سلتك. أكمل طلبك قبل أن يفوتك.",
         reminder_msg: "السلام عليكم {client}، نذكّرك بطلبك رقم {no} من متجر {name} بمبلغ {total}. هل ترغب في إتمامه؟ نحن بخدمتك.",
         trust_show: true,
-        trust_custom: ["تطبعه أكثر من مرة لك ولطلابك"],
+        trust_custom: ["تطبعها أكثر من مرة"],
         volume: { enabled: false, tiers: [{ min: 2, pct: 5 }, { min: 3, pct: 10 }] },
         gift_enabled: true,
-        gift_button: true,
+        gift_button: false,
         gift_prepaid: true,
-        gift_banner: true,
+        gift_banner: false,
         marketing_default: true,
         gift_card: true,
         best_title: "الأكثر طلباً",
@@ -464,7 +464,6 @@ ATHR.storyClean = function (c) {
         name,
         g: x.g === "f" ? "f" : "m",
         age: age >= 1 && age <= 12 ? age : 0,
-        ded: String(x.ded || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, 220),
         photo: Boolean(x.photo)
     };
 };
@@ -481,7 +480,6 @@ ATHR.storyLines = function (c, indent = "   ") {
     if (!c || !c.name) return [];
     return [
         `${indent}👶 اسم الطفل: ${c.name} (${c.g === "f" ? "بنت" : "ولد"}${c.age ? `، ${ATHR.ageText(c.age)}` : ""})`,
-        c.ded ? `${indent}💌 الإهداء: ${c.ded}` : "",
         c.photo ? `${indent}📷 سأرسل صورة الطفل للغلاف` : ""
     ].filter(Boolean);
 };
@@ -574,8 +572,8 @@ ATHR.volumeFor = function (config, count, subtotal) {
 
 // «قطعة واحدة» «قطعتين» «3 قطع»
 ATHR.piecesText = (n) => {
-    if (ATHR.lang === "en") return n === 1 ? "1 file" : `${n} files`;
-    return n === 1 ? "ملف واحد" : n === 2 ? "ملفان" : n <= 10 ? `${n} ملفات` : `${n} ملفاً`;
+    if (ATHR.lang === "en") return n === 1 ? "1 story" : `${n} stories`;
+    return n === 1 ? "قصة واحدة" : n === 2 ? "قصتان" : n <= 10 ? `${n} قصص` : `${n} قصة`;
 };
 
 // اسم الخصم للعرض بلغة الزائر (discountLabel يبقى بالعربي للطلب ورسالة واتساب)

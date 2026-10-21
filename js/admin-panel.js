@@ -6035,7 +6035,7 @@
                 ${storyItems(o).map(({ it, i }) => `<div class="oc-story">
                     <div><b>📖 ${esc(it.label || it.name)}</b>
                     <span>👶 ${esc(it.custom.name)} · ${it.custom.g === "f" ? "بنت" : "ولد"}${it.custom.age ? ` · ${esc(ATHR.ageText(it.custom.age))}` : ""}${it.custom.photo ? " · 📷 بيرسل صورة للغلاف" : ""}</span>
-                    ${it.custom.ded ? `<small>💌 ${esc(it.custom.ded)}</small>` : ""}</div>
+                    </div>
                     <button type="button" class="ab ab-primary ab-sm" data-story-make="${esc(o.id)}" data-story-i="${i}">📖 اصنع ملف القصة</button>
                 </div>`).join("")}
                 <div class="oc-sum">
@@ -6197,7 +6197,6 @@
                 name: $("#smName") ? $("#smName").value : "",
                 g: $("#smG") ? $("#smG").value : "m",
                 age: $("#smAge") ? $("#smAge").value : "",
-                ded: $("#smDed") ? $("#smDed").value : "",
                 photo: Boolean(SM.photo)
             }
         };
@@ -6229,7 +6228,6 @@
                     <label class="af"><span>ولد أو بنت</span><select class="ai" id="smG"><option value="m"${c.g === "f" ? "" : " selected"}>ولد</option><option value="f"${c.g === "f" ? " selected" : ""}>بنت</option></select></label>
                     <label class="af"><span>العمر</span><select class="ai" id="smAge"><option value="">اختر</option>${ages}</select></label>
                 </div>
-                <label class="af"><span>الإهداء (أول صفحة)</span><textarea class="ai" id="smDed" rows="2" maxlength="220" placeholder="إذا تركته فارغاً نكتب إهداءً جميلاً تلقائياً">${esc(c.ded || "")}</textarea></label>
                 <div class="sm-photo">
                     <label class="ab ab-ghost ab-sm" for="smPhoto">📷 ${c.photo ? "اختر صورة الطفل اللي أرسلها العميل" : "صورة الطفل للغلاف (اختياري)"}</label>
                     <input type="file" id="smPhoto" accept="image/*" hidden>
