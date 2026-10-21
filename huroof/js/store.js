@@ -361,9 +361,10 @@
             const g = raw.g === "f" ? "f" : "m";
             const data = { ...clean, g, age: clean.age || 5, name: sample ? (g === "f" ? t("سارة") : t("سالم")) : clean.name };
             const pages = lib.bookPages(p.story);
-            const pick = [0, 2, 5, pages.length - 1].filter((i) => pages[i]);
+            const pick = (lib.isIllustrated && lib.isIllustrated(p.story) ? [0, 1, 5, pages.length - 1] : [0, 2, 5, pages.length - 1]).filter((i) => pages[i]);
             const note = $("#stPrevNote");
             if (note) note.textContent = sample ? t("مثال باسم «{name}»، اكتب اسم طفلك وتتغير القصة", { name: data.name }) : t("{n} صفحة A4 جاهزة للطباعة", { n: pages.length });
+            box.classList.toggle("wide", Boolean(lib.isIllustrated && lib.isIllustrated(p.story)));
             if (box.children.length !== pick.length) box.innerHTML = pick.map(() => `<div class="sf-page"><canvas width="420" height="594"></canvas></div>`).join("");
             box.classList.add("busy");
             const canvases = box.querySelectorAll("canvas");
