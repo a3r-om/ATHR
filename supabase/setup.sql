@@ -1987,3 +1987,298 @@ begin
   execute d;
 end
 $do$;
+
+-- =====================================================
+-- v31 (2026-10-22): وكيل واتساب بالذكاء الاصطناعي
+-- - يرد على الزبائن في واتساب (واتساب الرسمي من Meta) ويعرف المنتجات والأسعار والتوصيل
+-- - يسجّل الطلبات (نفس فحوصات المتجر: السعر والمخزون والتوصيل والدفع)، ويتابع حالة الطلب
+-- - يحوّل المحادثة لصاحب المتجر عند الحاجة، ويسكت لما يرد صاحب المتجر بنفسه
+-- الدالة: supabase/functions/wa-agent (تُنشر بدون verify_jwt لأن Meta تتصل بها، وتتحقق من التوقيع والمدير بنفسها)
+-- =====================================================
+
+-- 1) طلبات الوكيل تُحفظ بمصدر manual وقناة wa_agent (تظهر في اللوحة «من وكيل واتساب»)
+
+-- 2) إعدادات الوكيل: للمدير فقط، ولا تُنشر مع المتجر
+create table if not exists public.wa_settings (
+    id int primary key default 1 check (id = 1),
+    config jsonb not null default '{}'::jsonb check (jsonb_typeof(config) = 'object' and pg_column_size(config) < 60000),
+    updated_at timestamptz not null default now()
+);
+insert into public.wa_settings (id) values (1) on conflict (id) do nothing;
+alter table public.wa_settings enable row level security;
+revoke all on public.wa_settings from anon;
+grant select, update on public.wa_settings to authenticated;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_settings' and policyname = 'admin reads wa settings') then
+        create policy "admin reads wa settings" on public.wa_settings for select to authenticated using ((select public.is_admin()));
+    end if;
+end $p$;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_settings' and policyname = 'admin updates wa settings') then
+        create policy "admin updates wa settings" on public.wa_settings for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+    end if;
+end $p$;
+
+-- 3) المحادثات والرسائل (يكتبها الخادم فقط، والمدير يقرأ)
+create table if not exists public.wa_chats (
+    phone text primary key check (phone ~ '^[0-9]{8,15}$'),
+    name text check (name is null or char_length(name) <= 120),
+    paused_until timestamptz,            -- الوكيل ساكت لين هذا الوقت (صاحب المتجر يرد)
+    needs_owner boolean not null default false,
+    note text check (note is null or char_length(note) <= 300),
+    last_in_at timestamptz,              -- آخر رسالة من الزبون (نافذة 24 ساعة)
+    last_at timestamptz not null default now(),
+    last_text text check (last_text is null or char_length(last_text) <= 300),
+    last_by text check (last_by is null or last_by ~ '^[a-z]{2,10}$'),
+    unread int not null default 0,
+    created_at timestamptz not null default now()
+);
+create index if not exists wa_chats_last_idx on public.wa_chats(last_at desc);
+
+create table if not exists public.wa_messages (
+    id bigserial primary key,
+    phone text not null references public.wa_chats(phone) on delete cascade,
+    dir text not null check (dir in ('in', 'out')),
+    by text not null check (by in ('customer', 'ai', 'owner', 'panel', 'offer', 'system')),
+    kind text not null default 'text' check (kind ~ '^[a-z_]{2,20}$'),
+    body text check (body is null or char_length(body) <= 4000),
+    wa_id text unique check (wa_id is null or char_length(wa_id) <= 200),
+    status text check (status is null or status ~ '^[a-z_]{2,20}$'),
+    meta jsonb,
+    created_at timestamptz not null default now()
+);
+create index if not exists wa_messages_phone_idx on public.wa_messages(phone, id desc);
+
+alter table public.wa_chats enable row level security;
+alter table public.wa_messages enable row level security;
+revoke all on public.wa_chats from anon;
+revoke all on public.wa_messages from anon;
+grant select, update, delete on public.wa_chats to authenticated;
+grant select, delete on public.wa_messages to authenticated;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_chats' and policyname = 'admin reads wa chats') then
+        create policy "admin reads wa chats" on public.wa_chats for select to authenticated using ((select public.is_admin()));
+    end if;
+end $p$;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_chats' and policyname = 'admin updates wa chats') then
+        create policy "admin updates wa chats" on public.wa_chats for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+    end if;
+end $p$;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_chats' and policyname = 'admin deletes wa chats') then
+        create policy "admin deletes wa chats" on public.wa_chats for delete to authenticated using ((select public.is_admin()));
+    end if;
+end $p$;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_messages' and policyname = 'admin reads wa messages') then
+        create policy "admin reads wa messages" on public.wa_messages for select to authenticated using ((select public.is_admin()));
+    end if;
+end $p$;
+do $p$ begin
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'wa_messages' and policyname = 'admin deletes wa messages') then
+        create policy "admin deletes wa messages" on public.wa_messages for delete to authenticated using ((select public.is_admin()));
+    end if;
+end $p$;
+
+-- 4) أسرار واتساب: المدير يحفظها ولا يقرأها، والخادم فقط يقرأ
+create or replace function public.set_wa_secret(k text, v text)
+returns void
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    val text := btrim(coalesce(v, ''));
+begin
+    if not public.is_admin() then
+        raise exception 'not allowed' using errcode = '42501';
+    end if;
+    if k is null or k not in ('token', 'app_secret') then
+        raise exception 'unknown secret' using errcode = '22023';
+    end if;
+    if val = '' then
+        delete from private.app_secrets where name = 'wa_' || k;
+        return;
+    end if;
+    if k = 'token' and (char_length(val) not between 40 and 400 or val !~ '^[A-Za-z0-9_\-\.]+$') then
+        raise exception 'invalid token' using errcode = '22023';
+    end if;
+    if k = 'app_secret' and val !~ '^[A-Za-z0-9]{16,64}$' then
+        raise exception 'invalid app secret' using errcode = '22023';
+    end if;
+    insert into private.app_secrets (name, value) values ('wa_' || k, val)
+    on conflict (name) do update set value = excluded.value, updated_at = now();
+end;
+$$;
+revoke execute on function public.set_wa_secret(text, text) from public, anon;
+grant execute on function public.set_wa_secret(text, text) to authenticated;
+
+-- الحالة بدون كشف الأسرار، ورمز التحقق (يلصقه المدير في Meta)
+create or replace function public.wa_status()
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public, private
+as $$
+declare
+    t record;
+    has_secret boolean;
+    vt text;
+begin
+    if not public.is_admin() then
+        raise exception 'not allowed' using errcode = '42501';
+    end if;
+    select value into vt from private.app_secrets where name = 'wa_verify';
+    if vt is null then
+        vt := 'athr-' || substr(md5(random()::text || clock_timestamp()::text), 1, 20);
+        insert into private.app_secrets (name, value) values ('wa_verify', vt) on conflict (name) do nothing;
+        select value into vt from private.app_secrets where name = 'wa_verify';
+    end if;
+    select right(value, 4) as last4, updated_at into t from private.app_secrets where name = 'wa_token';
+    select exists (select 1 from private.app_secrets where name = 'wa_app_secret') into has_secret;
+    return jsonb_build_object(
+        'token', case when t.last4 is null then null else jsonb_build_object('last4', t.last4, 'updated_at', t.updated_at) end,
+        'app_secret', has_secret,
+        'verify', vt,
+        'ai', exists (select 1 from private.app_secrets where name in ('gemini_key') and value not like 'removed-%')
+    );
+end;
+$$;
+revoke execute on function public.wa_status() from public, anon;
+grant execute on function public.wa_status() to authenticated;
+
+create or replace function public.wa_secret(p text)
+returns text
+language sql
+stable
+security definer
+set search_path = public, private
+as $$
+    select value from private.app_secrets where name = 'wa_' || p and p in ('token', 'app_secret', 'verify');
+$$;
+revoke execute on function public.wa_secret(text) from public, anon, authenticated;
+grant execute on function public.wa_secret(text) to service_role;
+
+-- 5) تسجيل رسالة في المحادثة (يتجاهل تكرار نفس رسالة واتساب)
+create or replace function public.wa_log(p jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    ph text := regexp_replace(coalesce(p ->> 'phone', ''), '\D', '', 'g');
+    is_in boolean := p ->> 'dir' = 'in';
+    who text := coalesce(p ->> 'by', case when p ->> 'dir' = 'in' then 'customer' else 'ai' end);
+    mid bigint;
+    c public.wa_chats;
+begin
+    if ph !~ '^[0-9]{8,15}$' then
+        return jsonb_build_object('error', 'phone');
+    end if;
+    if nullif(p ->> 'wa_id', '') is not null and exists (select 1 from public.wa_messages where wa_id = p ->> 'wa_id') then
+        return jsonb_build_object('dup', true);
+    end if;
+    insert into public.wa_chats as w (phone, name, last_at, last_text, last_by, last_in_at, unread)
+    values (ph, nullif(left(btrim(coalesce(p ->> 'name', '')), 120), ''), now(), left(coalesce(p ->> 'body', ''), 300), who,
+            case when is_in then now() end, case when is_in then 1 else 0 end)
+    on conflict (phone) do update set
+        name       = coalesce(excluded.name, w.name),
+        last_at    = now(),
+        last_text  = excluded.last_text,
+        last_by    = excluded.last_by,
+        last_in_at = coalesce(excluded.last_in_at, w.last_in_at),
+        unread     = case when is_in then w.unread + 1 when who in ('owner', 'panel') then 0 else w.unread end
+    returning * into c;
+    insert into public.wa_messages (phone, dir, by, kind, body, wa_id, status, meta)
+    values (ph, case when is_in then 'in' else 'out' end, who, coalesce(nullif(p ->> 'kind', ''), 'text'),
+            left(p ->> 'body', 4000), nullif(p ->> 'wa_id', ''), nullif(p ->> 'status', ''), p -> 'meta')
+    on conflict (wa_id) do nothing
+    returning id into mid;
+    if mid is null then
+        return jsonb_build_object('dup', true);
+    end if;
+    return jsonb_build_object('id', mid, 'paused_until', c.paused_until, 'needs_owner', c.needs_owner, 'name', c.name, 'last_in_at', c.last_in_at);
+end;
+$$;
+revoke execute on function public.wa_log(jsonb) from public, anon, authenticated;
+grant execute on function public.wa_log(jsonb) to service_role;
+
+-- 6) طلب من الوكيل: حساب فقط (يتراجع بدون أثر) أو تسجيل فعلي — نفس فحوصات طلب المتجر
+create or replace function public.wa_order(o jsonb, do_save boolean default false)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+    r   public.orders;
+    res jsonb;
+    no  text;
+begin
+    loop
+        no := 'WA-' || (10000 + floor(random() * 90000))::int::text;
+        exit when not exists (select 1 from public.orders where order_no = no);
+    end loop;
+    begin
+        insert into public.orders (order_no, source, channel, country, customer_name, phone, governorate, wilaya, address, office, notes,
+                                   delivery_name, payment_name, items, coupon, marketing_ok, gift, status, hidden, total)
+        values (no, 'manual', 'wa_agent', coalesce(nullif(o ->> 'country', ''), 'OM'),
+                nullif(left(btrim(coalesce(o ->> 'name', '')), 120), ''),
+                left(coalesce(o ->> 'phone', ''), 30),
+                nullif(left(btrim(coalesce(o ->> 'governorate', '')), 60), ''),
+                nullif(left(btrim(coalesce(o ->> 'wilaya', '')), 60), ''),
+                nullif(left(btrim(coalesce(o ->> 'address', '')), 400), ''),
+                nullif(left(btrim(coalesce(o ->> 'office', '')), 120), ''),
+                nullif(left(btrim(coalesce(o ->> 'notes', '')), 1000), ''),
+                o ->> 'delivery_name', o ->> 'payment_name',
+                coalesce(o -> 'items', '[]'::jsonb),
+                nullif(upper(btrim(coalesce(o ->> 'coupon', ''))), ''),
+                coalesce((o ->> 'marketing_ok')::boolean, false), false, 'new', false, 0)
+        returning * into r;
+        res := jsonb_build_object(
+            'order_no', r.order_no, 'items', r.items, 'subtotal', r.subtotal, 'discount', r.discount,
+            'discount_label', r.discount_label, 'coupon', r.coupon, 'coupon_discount', r.coupon_discount,
+            'delivery_name', r.delivery_name, 'delivery_type', r.delivery_type, 'delivery_price', r.delivery_price,
+            'payment_name', r.payment_name, 'payment_type', r.payment_type, 'total', r.total, 'saved', do_save);
+        if not do_save then
+            raise exception 'athr_wa_quote';
+        end if;
+    exception when others then
+        if sqlerrm = 'athr_wa_quote' then
+            return res;
+        end if;
+        return jsonb_build_object('error', regexp_replace(sqlerrm, '^athr: ', ''));
+    end;
+    return res;
+end;
+$$;
+revoke execute on function public.wa_order(jsonb, boolean) from public, anon, authenticated;
+grant execute on function public.wa_order(jsonb, boolean) to service_role;
+
+-- 7) آخر طلبات الزبون برقم واتساب (للرد على «وين طلبي؟») — طلباته هو فقط
+create or replace function public.wa_customer_orders(p text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, private
+as $$
+    select coalesce(jsonb_agg(x order by x ->> 'at' desc), '[]'::jsonb)
+      from (
+        select jsonb_build_object(
+                 'order_no', o.order_no, 'status', o.status, 'total', o.total, 'at', o.ordered_at,
+                 'delivery', o.delivery_name, 'payment', o.payment_name,
+                 'items', (select string_agg(coalesce(i ->> 'label', i ->> 'name') || ' ×' || coalesce(i ->> 'qty', '1'), '، ')
+                             from jsonb_array_elements(o.items) as e(i))) as x
+          from public.orders o
+         where not o.hidden
+           and private.athr_phone_intl(o.phone, o.country) = regexp_replace(coalesce(p, ''), '\D', '', 'g')
+         order by o.ordered_at desc
+         limit 5
+      ) s;
+$$;
+revoke execute on function public.wa_customer_orders(text) from public, anon, authenticated;
+grant execute on function public.wa_customer_orders(text) to service_role;

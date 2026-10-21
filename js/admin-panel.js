@@ -472,6 +472,11 @@
                 <span class="aot-txt"><b>مساعدك الذكي</b><small>اسأل متجرك: كم بعت؟ مين أفضل عملائك؟ ويسوّي لك أكواد الخصم</small></span>
                 <span class="aot-go">${icon("back")}</span>
             </button>
+            <button class="adm-orders-tile alt wa-tile" type="button" data-a="wa-open">
+                <span class="aot-ico" aria-hidden="true">🤖</span>
+                <span class="aot-txt"><b>وكيل واتساب</b><small id="homeWa">يرد على زبائنك 24 ساعة ويسجّل طلباتهم</small></span>
+                <span class="aot-go">${icon("back")}</span>
+            </button>
             <button class="adm-orders-tile alt fin-tile" type="button" data-a="fin-open">
                 <span class="aot-ico" aria-hidden="true">💰</span>
                 <span class="aot-txt"><b>المبيعات والمصاريف</b><small>ربحك لكل شهر تلقائياً، وسجّل مصاريفك</small></span>
@@ -506,6 +511,7 @@
     }
 
     async function loadHomeCounts() {
+        loadWaHome();
         try {
             const { data, error } = await sb.from("orders").select("id,status,hidden").eq("status", "new").limit(500);
             const el = $("#homeOrders");
@@ -2382,7 +2388,7 @@
                 return [o.order_no, when.date, when.time, o.customer_name || "", o.phone ? `+${ATHR.customerWhatsapp(o.phone, o.country || "OM")}` : "", countryLabel(o.country).replace(/^\S+\s/, ""),
                     o.governorate || "", o.wilaya || "", items, (o.items || []).reduce((n, it) => n + (Number(it.qty) || 0), 0),
                     Number(o.subtotal) || 0, Number(o.discount) || 0, o.coupon || "", Number(o.coupon_discount) || 0, Number(o.delivery_price) || 0, Number(o.total) || 0,
-                    pay[o.payment_type] || o.payment_name || "", status[o.status] || o.status || "", o.source === "web" ? (CHANNELS[o.channel] || "المتجر") : o.source === "paste" ? "واتساب" : "يدوي", o.gift ? "نعم" : ""];
+                    pay[o.payment_type] || o.payment_name || "", status[o.status] || o.status || "", o.source === "web" ? (CHANNELS[o.channel] || "المتجر") : o.source === "paste" ? "واتساب" : o.channel === "wa_agent" ? "وكيل واتساب" : "يدوي", o.gift ? "نعم" : ""];
             })
         ];
     }
@@ -4276,6 +4282,7 @@
     async function onChange(e) {
         const t = e.target;
         if (bulkInput(t, true)) return;
+        if (t.closest && t.closest("#waBody") && await waChange(t)) return;
         if (t.dataset.pixel) {
             setPixel(t);
             return;
@@ -4466,6 +4473,7 @@
         }
         if ((d.custOffer || d.offerProduct || d.offerTpl !== undefined || d.offerEnds !== undefined || d.offerAud) && offerOptionClick(d)) return;
         if (((d.a && /^fin-/.test(d.a)) || d.finEdit) && await financeClick(d)) return;
+        if (((d.a && /^wa-/.test(d.a)) || d.waChat || d.waFilter || d.waCountry || d.waQ || d.waTpl || d.waAud || d.copyWa !== undefined) && await waClick(d)) return;
         if (((d.a && /^(asst|prof)-/.test(d.a)) || d.asstQ || d.asstAct || d.asstNo || d.custOpen || d.profSuggest) && await insightsClick(d)) return;
         if (((d.a && /^backup-/.test(d.a)) || d.bkGet || d.bkRestore || d.bkScope) && await backupClick(d)) return;
         if ((d.a && /^bulk-/.test(d.a)) || d.bpMode || d.bpPct !== undefined) { bulkClick(d); return; }
@@ -4684,6 +4692,7 @@
 
     function onSubmit(e) {
         e.preventDefault();
+        if (waSubmit(e.target)) return;
         if (e.target.id === "loginForm") doLogin();
         if (e.target.id === "passwordForm") changePassword(e.target);
         if (e.target.id === "orderForm") saveOrderForm(e.target);
@@ -6007,7 +6016,7 @@
             const when = ATHR.muscatParts(o.ordered_at);
             return `<article class="oc${o.status === "delivered" ? " delivered" : ""}${o.hidden ? " is-hidden" : ""}">
                 <header class="oc-head">
-                    <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : "يدوي"}</span>${o.source === "web" && o.channel && o.channel !== "direct" ? ` <span class="tag ch">عبر ${esc(CHANNELS[o.channel] || o.channel)}</span>` : ""}${o.gift ? ` <span class="tag gift">🎁 هدية</span>` : ""}${o.coupon ? ` <span class="tag cp" dir="ltr">🎟️ ${esc(o.coupon)}</span>` : ""}</div>
+                    <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag${o.channel === "wa_agent" ? " wa" : ""}">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : o.channel === "wa_agent" ? "🤖 من وكيل واتساب" : "يدوي"}</span>${o.source === "web" && o.channel && o.channel !== "direct" ? ` <span class="tag ch">عبر ${esc(CHANNELS[o.channel] || o.channel)}</span>` : ""}${o.gift ? ` <span class="tag gift">🎁 هدية</span>` : ""}${o.coupon ? ` <span class="tag cp" dir="ltr">🎟️ ${esc(o.coupon)}</span>` : ""}</div>
                     <span class="oc-wait${o.status === "new" ? " new" : ""}">${esc(waiting(o))}</span>
                 </header>
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
@@ -6418,6 +6427,643 @@
         closeOrderSheet();
         renderOrdersList();
         toast(`أُضيف ${added} طلب${skipped ? `، و${skipped} موجود مسبقاً` : ""}`);
+    }
+
+    // =====================================================
+    // v32 — وكيل واتساب بالذكاء الاصطناعي
+    // الإعدادات في wa_settings (ما تنشر مع المتجر)، والمحادثات في wa_chats و wa_messages
+    // والإرسال والتجربة والقوالب عبر دالة الخادم wa-agent (المفاتيح ما توصل للمتصفح أبداً)
+    // =====================================================
+    const WA_DEF = {
+        enabled: false, phone_number_id: "", waba_id: "", agent_name: "", tone: "gulf", extra: "",
+        handoff_text: "أبشر، حوّلت محادثتك لصاحب المتجر ويرد عليك بأقرب وقت 🙏",
+        pause_hours: 12, handoff_hours: 24, take_orders: true, track_orders: true, send_photos: true, voice: true
+    };
+    const WA_COUNTRIES = [["OM", "🇴🇲 عُمان"], ["AE", "🇦🇪 الإمارات"], ["SA", "🇸🇦 السعودية"]];
+    const WA_CHIPS = ["السلام عليكم، عندكم كوب الهلال؟", "عطني صورة أكواب الأندية", "أبي اطلب كوبين للبيت", "وين طلبي؟", "أبي أكلم صاحب المحل"];
+
+    function waState() {
+        if (!A.wa) A.wa = { screen: "home", status: null, conn: null, cfg: { ...WA_DEF }, loaded: false, chats: [], filter: "all", chat: null, msgs: [], tryMsgs: [], tryBusy: false, tryCountry: "OM", tpls: null, tplSel: null, sending: null, err: "" };
+        return A.wa;
+    }
+
+    async function waCall(body) {
+        const { data } = await sb.auth.getSession();
+        const token = data && data.session && data.session.access_token;
+        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/wa-agent`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
+            body: JSON.stringify(body)
+        });
+        let out = {};
+        try { out = await res.json(); } catch { /* رد غير متوقع */ }
+        if (!res.ok && !out.error) out.error = `http_${res.status}`;
+        return out;
+    }
+
+    function waErr(out) {
+        const e = out && out.error;
+        const map = {
+            no_token: "احفظ رمز الوصول (Access Token) أول.",
+            no_phone_id: "اكتب معرّف رقم الهاتف (Phone number ID).",
+            no_waba: "اكتب معرّف حساب واتساب للأعمال (WABA ID).",
+            window: "مرّت 24 ساعة على آخر رسالة من الزبون. واتساب يسمح بالرد الحر خلال 24 ساعة فقط؛ رد عليه من تطبيق واتساب أو أرسل له عرض بقالب.",
+            no_key: "الوكيل يحتاج مفتاح Gemini (فيه استخدام مجاني).",
+            bad_key: "مفتاح Gemini غير صالح. غيّره من «النصوص».",
+            rate_limit: "انتهى حد الاستخدام المجاني للذكاء الاصطناعي مؤقتاً. جرّب بعد شوي.",
+            not_admin: "سجّل دخولك من جديد.",
+            send: "ما انرسلت الرسالة",
+            graph: "رد Meta"
+        };
+        const base = map[e] || "صار خطأ. تأكد من الاتصال وحاول مرة ثانية.";
+        return out && out.detail ? `${base}: ${out.detail}` : base;
+    }
+
+    async function waLoad({ chats = true } = {}) {
+        const w = waState();
+        const jobs = [
+            sb.from("wa_settings").select("config").eq("id", 1).maybeSingle().then(({ data }) => { w.cfg = { ...WA_DEF, ...((data && data.config) || {}) }; }),
+            sb.rpc("wa_status").then(({ data }) => { w.status = data || {}; })
+        ];
+        if (chats) jobs.push(waLoadChats());
+        await Promise.allSettled(jobs);
+        w.loaded = true;
+    }
+
+    async function waLoadChats() {
+        const w = waState();
+        const { data, error } = await sb.from("wa_chats").select("*").order("last_at", { ascending: false }).limit(200);
+        if (!error) w.chats = data || [];
+    }
+
+    async function waSaveCfg(patch) {
+        const w = waState();
+        const next = { ...w.cfg, ...patch };
+        const { error } = await sb.from("wa_settings").update({ config: next, updated_at: new Date().toISOString() }).eq("id", 1);
+        if (error) throw error;
+        w.cfg = next;
+    }
+
+    const waPaused = (c) => Boolean(c && c.paused_until && new Date(c.paused_until).getTime() > Date.now());
+    const waConnected = () => { const w = waState(); return Boolean(w.status && w.status.token && w.cfg.phone_number_id); };
+    const waPhone = (p) => (p ? `+${String(p).replace(/^(\d{3})(\d+)$/, "$1 $2")}` : "");
+    function waTime(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        const opts = { timeZone: "Asia/Muscat" };
+        const day = (x) => x.toLocaleDateString("en-CA", opts);
+        if (day(d) === day(new Date())) return d.toLocaleTimeString("ar-OM-u-nu-latn", { ...opts, hour: "numeric", minute: "2-digit" });
+        return d.toLocaleDateString("ar-OM-u-nu-latn", { ...opts, day: "numeric", month: "short" });
+    }
+    const waWithin24h = (c) => Boolean(c && c.last_in_at && Date.now() - new Date(c.last_in_at).getTime() < 24 * 3600e3 - 60e3);
+    const waFmt = (s) => esc(String(s || "")).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+
+    // ---------- الهيكل ----------
+    async function openWa() {
+        const w = waState();
+        w.screen = "home";
+        openSheet(`<div class="wa" id="waBody"><p class="adm-muted">جاري التحميل…</p></div>`);
+        const panel = $("#admSheet .adm-sheet-panel");
+        if (panel) panel.classList.add("wa-panel");
+        await waLoad();
+        renderWa();
+        waTimer();
+        if (!A.ai) loadAiStatus();
+    }
+
+    function waTimer() {
+        clearInterval(waTimer.id);
+        waTimer.id = setInterval(async () => {
+            const w = waState();
+            if (!$("#waBody")) { clearInterval(waTimer.id); return; }
+            if (document.hidden || w.busy) return;
+            if (w.screen === "home") { await waLoadChats(); if (w.screen === "home" && $("#waChats")) $("#waChats").outerHTML = waChatsList(); }
+            if (w.screen === "chat" && w.chat) await waRefreshChat(true);
+        }, 12000);
+    }
+
+    function waHead(title, back = true) {
+        return `<div class="adm-sheet-head wa-head">
+            ${back ? `<button class="wa-back" type="button" data-a="wa-home" aria-label="رجوع">${icon("back")}</button>` : ""}
+            <h2>${title}</h2>
+            <button class="adm-icon" type="button" data-a="close-sheet" aria-label="إغلاق">×</button>
+        </div>`;
+    }
+
+    function renderWa(keepScroll) {
+        const box = $("#waBody");
+        if (!box) return;
+        const w = waState();
+        const panel = $("#admSheet .adm-sheet-panel");
+        const top = keepScroll && panel ? panel.scrollTop : 0;
+        const screens = { home: waHome, chat: waChatView, try: waTryView, settings: waSettingsView, setup: waSetupView, offers: waOffersView };
+        box.innerHTML = (screens[w.screen] || waHome)();
+        if (panel) panel.classList.toggle("wa-chatmode", w.screen === "chat" || w.screen === "try");
+        if (panel && !(w.screen === "chat" || w.screen === "try")) panel.scrollTop = keepScroll ? top : 0;
+        if (w.screen === "chat" || w.screen === "try") { const log = $("#waLog"); if (log) log.scrollTop = log.scrollHeight; }
+    }
+
+    // ---------- الرئيسية ----------
+    function waHome() {
+        const w = waState();
+        const st = w.status || {};
+        const connected = waConnected();
+        const needs = w.chats.filter((c) => c.needs_owner).length;
+        const statusLine = connected
+            ? `<span class="wa-dot ok"></span> مربوط${w.cfg.display_phone ? ` بالرقم <b dir="ltr">${esc(w.cfg.display_phone)}</b>` : ""}`
+            : `<span class="wa-dot"></span> غير مربوط بواتساب بعد`;
+        const rows = [
+            ["wa-try", "🧪", "جرّب الوكيل", "كلّمه كأنك زبون، بدون ما يوصل شي لأحد", "t1"],
+            ["wa-settings", "⚙️", "إعدادات الوكيل", "الأسلوب، معلومات إضافية، الطلبات والصور", "t2"],
+            ["wa-offers", "📣", "إرسال عرض للعملاء", "قوالب واتساب المعتمدة وإرسالها دفعة وحدة", "t3"],
+            ["wa-setup", "🔗", "الربط مع واتساب", connected ? "مربوط ✓ — تقدر تختبر الاتصال" : "خطوات الربط مع Meta (مرة وحدة)", "t4"]
+        ];
+        return `${waHead("🤖 وكيل واتساب", false)}
+            <section class="wa-hero">
+                <div class="wa-hero-top">
+                    <div><b>${connected ? "وكيلك جاهز" : "وكيل يرد على زبائنك 24 ساعة"}</b><small>${statusLine}</small></div>
+                    <label class="at wa-master"><input type="checkbox" id="waEnabled"${w.cfg.enabled ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="sr">الوكيل يرد</span></label>
+                </div>
+                <p class="wa-hero-note">${w.cfg.enabled ? (connected ? "شغّال: يرد على رسائل الزبائن، يرسل الصور، يسجّل الطلبات، ويحوّل لك اللي يحتاجك." : "مفعّل، لكن يبدأ يرد بعد ما تربطه بواتساب.") : "موقّف: الرسائل تنحفظ هنا، لكنه ما يرد على أحد."}</p>
+                ${st.ai === false ? `<p class="wa-warn">يحتاج مفتاح Gemini حتى يرد (فيه استخدام مجاني). <button class="link-mini" type="button" data-a="asst-key">فعّله من هنا</button></p>` : ""}
+                ${!connected ? `<button class="ab ab-primary ab-block" type="button" data-a="wa-setup">🔗 اربطه بواتساب</button>` : ""}
+            </section>
+            <div class="wa-menu">${rows.map(([a, ic, t, s, c]) => `<button type="button" class="wa-row" data-a="${a}"><span class="wa-ico ${c}">${ic}</span><span class="wa-row-t"><b>${t}</b><small>${s}</small></span>${icon("back")}</button>`).join("")}</div>
+            <div class="wa-sec"><h3>المحادثات${needs ? ` <span class="wa-badge red">${needs} تحتاجك</span>` : ""}</h3>
+                <div class="wa-seg" role="group" aria-label="تصفية المحادثات">
+                    <button type="button" data-wa-filter="all" aria-pressed="${w.filter === "all"}">الكل</button>
+                    <button type="button" data-wa-filter="needs" aria-pressed="${w.filter === "needs"}">تحتاجك</button>
+                    <button type="button" data-wa-filter="owner" aria-pressed="${w.filter === "owner"}">أنت ترد</button>
+                </div>
+            </div>
+            ${waChatsList()}`;
+    }
+
+    function waChatsList() {
+        const w = waState();
+        let list = w.chats;
+        if (w.filter === "needs") list = list.filter((c) => c.needs_owner);
+        if (w.filter === "owner") list = list.filter((c) => waPaused(c));
+        if (!list.length) {
+            return `<div id="waChats" class="wa-empty">${w.chats.length ? "ما فيه محادثات هنا." : "لما يراسلك زبون على واتساب تظهر محادثته هنا، وتشوف رد الوكيل عليه."}</div>`;
+        }
+        return `<div id="waChats" class="wa-chats">${list.slice(0, 80).map((c) => {
+            const name = c.name || waPhone(c.phone);
+            const who = c.last_by === "customer" ? "" : c.last_by === "ai" ? "🤖 " : c.last_by === "offer" ? "📣 " : c.last_by === "system" ? "" : "أنت: ";
+            return `<button type="button" class="wa-chat" data-wa-chat="${esc(c.phone)}">
+                <span class="wa-av">${esc((c.name || "؟").trim().charAt(0) || "؟")}</span>
+                <span class="wa-chat-t"><b>${esc(name)}</b><small>${esc(who)}${esc(c.last_text || "")}</small></span>
+                <span class="wa-chat-m"><small>${esc(waTime(c.last_at))}</small>
+                    ${c.needs_owner ? `<span class="wa-badge red">يحتاجك</span>` : waPaused(c) ? `<span class="wa-badge">أنت ترد</span>` : c.unread ? `<span class="wa-badge green">${c.unread}</span>` : ""}</span>
+            </button>`;
+        }).join("")}</div>`;
+    }
+
+    // ---------- محادثة ----------
+    async function waOpenChat(phone) {
+        const w = waState();
+        w.chat = phone;
+        w.msgs = [];
+        w.screen = "chat";
+        renderWa();
+        await waRefreshChat(false);
+        const c = w.chats.find((x) => x.phone === phone);
+        if (c && c.unread) {
+            c.unread = 0;
+            sb.from("wa_chats").update({ unread: 0 }).eq("phone", phone).then(() => {}, () => {});
+        }
+    }
+
+    async function waRefreshChat(quiet) {
+        const w = waState();
+        const phone = w.chat;
+        const [m, c] = await Promise.all([
+            sb.from("wa_messages").select("id,dir,by,kind,body,status,meta,created_at").eq("phone", phone).order("id", { ascending: false }).limit(120),
+            sb.from("wa_chats").select("*").eq("phone", phone).maybeSingle()
+        ]);
+        if (w.chat !== phone || w.screen !== "chat") return;
+        const before = w.msgs.length ? w.msgs[w.msgs.length - 1].id : null;
+        if (!m.error) w.msgs = (m.data || []).reverse();
+        if (!c.error && c.data) {
+            const i = w.chats.findIndex((x) => x.phone === phone);
+            if (i >= 0) w.chats[i] = c.data; else w.chats.unshift(c.data);
+        }
+        const after = w.msgs.length ? w.msgs[w.msgs.length - 1].id : null;
+        if (!quiet || before !== after) {
+            const draft = $("#waReply") ? $("#waReply").value : "";
+            renderWa();
+            if (draft && $("#waReply")) $("#waReply").value = draft;
+        }
+    }
+
+    function waMsgHTML(m) {
+        const label = { ai: "🤖 الوكيل", owner: "أنت (من التطبيق)", panel: "أنت", offer: "📣 عرض", system: "رد تلقائي" }[m.by] || "";
+        const img = m.meta && m.meta.image ? `<span class="wa-img">🖼️ صورة منتج</span>` : "";
+        const failed = m.status === "failed" ? `<em class="wa-fail">ما انرسلت${m.meta && m.meta.error ? `: ${esc(String(m.meta.error).slice(0, 120))}` : ""}</em>` : "";
+        const ticks = m.dir === "out" && m.status ? (m.status === "read" ? "✓✓" : m.status === "delivered" ? "✓✓" : m.status === "sent" ? "✓" : "") : "";
+        return `<div class="am ${m.dir === "in" ? "wa-in" : "wa-out"}${m.by === "ai" ? " by-ai" : ""}">
+            ${m.dir === "out" && label ? `<small class="wa-by">${label}</small>` : ""}${img}<div>${waFmt(m.body)}</div>${failed}
+            <small class="wa-meta">${esc(waTime(m.created_at))}${ticks ? ` <span class="${m.status === "read" ? "rd" : ""}">${ticks}</span>` : ""}</small>
+        </div>`;
+    }
+
+    function waChatView() {
+        const w = waState();
+        const c = w.chats.find((x) => x.phone === w.chat) || { phone: w.chat };
+        const paused = waPaused(c);
+        const open = waWithin24h(c);
+        const until = paused ? new Date(c.paused_until).toLocaleString("ar-OM-u-nu-latn", { timeZone: "Asia/Muscat", weekday: "short", hour: "numeric", minute: "2-digit" }) : "";
+        return `${waHead(esc(c.name || waPhone(c.phone)))}
+            <div class="wa-chat-bar">
+                <a class="ab ab-ghost ab-sm" href="https://wa.me/${esc(c.phone)}" target="_blank" rel="noopener"><span dir="ltr">${esc(waPhone(c.phone))}</span> ↗</a>
+                ${paused || c.needs_owner
+                    ? `<button class="ab ab-soft ab-sm" type="button" data-a="wa-resume">🤖 رجّعها للوكيل</button>`
+                    : `<button class="ab ab-ghost ab-sm" type="button" data-a="wa-pause">✋ أوقف الوكيل هنا</button>`}
+            </div>
+            ${c.needs_owner ? `<p class="wa-flag">يحتاجك: ${esc(c.note || "الزبون يحتاج صاحب المتجر")}</p>` : paused ? `<p class="wa-flag soft">الوكيل ساكت في هذي المحادثة لين ${esc(until)} لأنك ترد بنفسك.</p>` : ""}
+            <div class="asst-log wa-log" id="waLog" aria-live="polite">${w.msgs.length ? w.msgs.map(waMsgHTML).join("") : `<p class="adm-muted" style="text-align:center">جاري التحميل…</p>`}</div>
+            ${open
+                ? `<form class="asst-form" id="waSendForm" autocomplete="off"><textarea class="ai" id="waReply" rows="1" maxlength="3500" placeholder="اكتب ردك… (يوقف الوكيل هنا ${esc(String(w.cfg.pause_hours || 12))} ساعة)"></textarea><button class="ab ab-primary" type="submit">إرسال</button></form>`
+                : `<p class="wa-closed">مرّت 24 ساعة على آخر رسالة من الزبون، فواتساب ما يسمح بالرد الحر من هنا. رد عليه من تطبيق واتساب، أو أرسل له عرض بقالب.</p>`}`;
+    }
+
+    async function waSendReply(form) {
+        const w = waState();
+        const input = $("#waReply");
+        const text = String(input.value || "").trim();
+        if (!text) return;
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        const out = await waCall({ task: "send", phone: w.chat, text });
+        btn.disabled = false;
+        if (out.error) { toast(waErr(out)); return; }
+        input.value = "";
+        toast("انرسل ✓ والوكيل ساكت في هذي المحادثة");
+        await waRefreshChat(false);
+    }
+
+    async function waSetPause(on) {
+        const w = waState();
+        const until = on ? new Date(Date.now() + 7 * 864e5).toISOString() : null;
+        const { error } = await sb.from("wa_chats").update({ paused_until: until, needs_owner: false, note: null }).eq("phone", w.chat);
+        if (error) { toast("تعذّر الحفظ. حاول مرة ثانية."); return; }
+        toast(on ? "وقف الوكيل في هذي المحادثة (7 أيام أو لين ترجعها)" : "رجعت للوكيل ✓ يرد على رسالة الزبون الجاية");
+        await waRefreshChat(false);
+    }
+
+    // ---------- تجربة الوكيل ----------
+    function waTryView() {
+        const w = waState();
+        const msgs = w.tryMsgs.map((m) => {
+            if (m.role === "user") return `<div class="am wa-in">${waFmt(m.text)}</div>`;
+            const photos = (m.photos || []).map((p) => `<figure class="wa-photo"><img src="${esc(p.url)}" alt="" loading="lazy"><figcaption>${waFmt(p.caption)}</figcaption></figure>`).join("");
+            const after = (m.after || []).map((t) => `<div class="am wa-out by-ai">${waFmt(t)}</div>`).join("");
+            return `${photos}${m.text ? `<div class="am wa-out by-ai${m.err ? " err" : ""}">${waFmt(m.text)}${m.actions && m.actions.length ? `<small class="wa-acts">${m.actions.map((a) => `⚙︎ ${esc(a)}`).join("<br>")}</small>` : ""}</div>` : ""}${after}`;
+        }).join("") + (w.tryBusy ? `<div class="am am-bot am-typing"><span></span><span></span><span></span></div>` : "");
+        return `${waHead("🧪 جرّب الوكيل")}
+            <div class="wa-try-bar">
+                <div class="wa-seg" role="group" aria-label="دولة الزبون">${WA_COUNTRIES.map(([c, l]) => `<button type="button" data-wa-country="${c}" aria-pressed="${w.tryCountry === c}">${l}</button>`).join("")}</div>
+                <button class="ab-mini" type="button" data-a="wa-try-reset">محادثة جديدة</button>
+            </div>
+            <div class="asst-log wa-log" id="waLog" aria-live="polite">${msgs || `<p class="wa-try-note">كلّم الوكيل كأنك زبون. التجربة ما ترسل شي لأحد ولا تسجّل طلبات حقيقية، وتستخدم إعداداتك الحالية.</p>`}</div>
+            <div class="asst-chips">${WA_CHIPS.map((q) => `<button type="button" class="chip-q" data-wa-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+            <form class="asst-form" id="waTryForm" autocomplete="off"><input class="ai" id="waTryInput" maxlength="600" placeholder="اكتب رسالة زبون…"><button class="ab ab-primary" type="submit">إرسال</button></form>`;
+    }
+
+    async function waTryAsk(text) {
+        const w = waState();
+        if (w.tryBusy || !text) return;
+        const history = w.tryMsgs.filter((m) => !m.err).slice(-16).map((m) => ({ role: m.role === "user" ? "user" : "bot", text: m.text || (m.photos || []).map((p) => p.caption).join("\n"), quote: m.quote || null }));
+        w.tryMsgs.push({ role: "user", text });
+        w.tryBusy = true;
+        renderWa();
+        const out = await waCall({ task: "simulate", text, history, country: w.tryCountry });
+        w.tryBusy = false;
+        if (out.error) w.tryMsgs.push({ role: "bot", err: true, text: waErr(out) });
+        else w.tryMsgs.push({ role: "bot", text: out.reply || "", photos: out.photos || [], after: out.after || [], actions: out.actions || [], quote: out.quote || null });
+        if (w.screen === "try") renderWa();
+    }
+
+    // ---------- الإعدادات ----------
+    function waSettingsView() {
+        const c = waState().cfg;
+        const tg = (k, label, help) => `<label class="at"><input type="checkbox" name="${k}"${c[k] !== false ? " checked" : ""}><span class="at-ui" aria-hidden="true"></span><span class="at-text"><b>${label}</b><small>${help}</small></span></label>`;
+        return `${waHead("⚙️ إعدادات الوكيل")}
+            <form id="waSetForm" class="af-stack wa-form" autocomplete="off">
+                <section class="adm-card"><h2>الأسلوب</h2><div class="af-stack">
+                    <label class="af"><span>اسم الوكيل (اختياري)</span><input class="ai" name="agent_name" maxlength="30" value="${esc(c.agent_name || "")}" placeholder="مثال: مساعد أثر"><small>يعرّف نفسه به إذا انسأل.</small></label>
+                    <label class="af"><span>طريقة الكلام</span><select class="ai" name="tone"><option value="gulf"${c.tone !== "formal" ? " selected" : ""}>خليجي ودود (هلا، أبشر، حياك)</option><option value="formal"${c.tone === "formal" ? " selected" : ""}>فصحى سهلة ورسمية</option></select></label>
+                </div></section>
+                <section class="adm-card"><h2>معلومات يعرفها الوكيل</h2><p class="adm-muted">المنتجات والأسعار والتوصيل والدفع ياخذها من المتجر تلقائياً. اكتب هنا أي شي ثاني تبيه يعرفه.</p><div class="af-stack">
+                    <label class="af"><textarea class="ai" name="extra" rows="5" maxlength="3000" placeholder="مثال:&#10;- البيع أونلاين فقط، ما عندنا محل.&#10;- نجهّز الطلب خلال يوم أو يومين.&#10;- التغليف للهدايا مجاني.">${esc(c.extra || "")}</textarea></label>
+                </div></section>
+                <section class="adm-card"><h2>وش يسوي الوكيل</h2><div class="af-stack">
+                    ${tg("take_orders", "يسجّل الطلبات", "يجمع الطلب، يعرض الإجمالي من نظام المتجر، ويسجله بعد موافقة الزبون")}
+                    ${tg("track_orders", "يرد على «وين طلبي؟»", "يشوف طلبات الزبون برقمه ويقول له حالتها")}
+                    ${tg("send_photos", "يرسل صور المنتجات", "مع الاسم والسعر والرابط")}
+                    ${tg("voice", "يفهم الرسائل الصوتية", "يحوّل الفويس لنص ويرد عليه")}
+                </div></section>
+                <section class="adm-card"><h2>التحويل لك</h2><p class="adm-muted">يحوّل لك المحادثة إذا الزبون طلب يكلم شخص، أو عنده شكوى أو استرجاع، أو طلب خاص، أو سؤال ما يعرف جوابه.</p><div class="af-stack">
+                    <label class="af"><span>رسالته للزبون عند التحويل</span><input class="ai" name="handoff_text" maxlength="200" value="${esc(c.handoff_text || WA_DEF.handoff_text)}"></label>
+                    <div class="wa-2">
+                        <label class="af"><span>يسكت بعد ردك (ساعات)</span><input class="ai" name="pause_hours" type="number" inputmode="numeric" min="1" max="72" value="${esc(String(c.pause_hours || 12))}"><small>لما ترد بنفسك من التطبيق أو من هنا.</small></label>
+                        <label class="af"><span>يسكت بعد التحويل (ساعات)</span><input class="ai" name="handoff_hours" type="number" inputmode="numeric" min="1" max="168" value="${esc(String(c.handoff_hours || 24))}"><small>أو لين ترجعها له.</small></label>
+                    </div>
+                </div></section>
+                <p class="adm-errors-inline" id="waSetErr"></p>
+                <button class="ab ab-primary ab-block" type="submit">حفظ الإعدادات</button>
+            </form>`;
+    }
+
+    async function waSaveSettings(form) {
+        const f = new FormData(form);
+        const num = (k, min, max, def) => { const v = Math.round(Number(ATHR.digits(String(f.get(k) || "")))); return v >= min && v <= max ? v : def; };
+        const patch = {
+            agent_name: String(f.get("agent_name") || "").trim().slice(0, 30),
+            tone: f.get("tone") === "formal" ? "formal" : "gulf",
+            extra: String(f.get("extra") || "").trim().slice(0, 3000),
+            handoff_text: String(f.get("handoff_text") || "").trim().slice(0, 200) || WA_DEF.handoff_text,
+            pause_hours: num("pause_hours", 1, 72, 12),
+            handoff_hours: num("handoff_hours", 1, 168, 24),
+            take_orders: f.get("take_orders") === "on",
+            track_orders: f.get("track_orders") === "on",
+            send_photos: f.get("send_photos") === "on",
+            voice: f.get("voice") === "on"
+        };
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        try {
+            await waSaveCfg(patch);
+            toast("انحفظت إعدادات الوكيل ✓");
+            waState().screen = "home";
+            renderWa();
+        } catch {
+            btn.disabled = false;
+            $("#waSetErr").textContent = "تعذّر الحفظ. تأكد من الاتصال وحاول مرة ثانية.";
+        }
+    }
+
+    // ---------- الربط مع Meta ----------
+    function waSetupView() {
+        const w = waState();
+        const st = w.status || {};
+        const hook = `${window.ATHR_SUPABASE_URL}/functions/v1/wa-agent`;
+        const conn = w.conn;
+        const copyRow = (label, value) => `<div class="wa-copy"><small>${label}</small><code dir="ltr">${esc(value || "…")}</code><button class="ab-mini" type="button" data-copy-wa="${esc(value || "")}">نسخ</button></div>`;
+        return `${waHead("🔗 الربط مع واتساب")}
+            ${conn ? `<section class="wa-result ${conn.connected ? "ok" : "bad"}">${conn.connected
+                ? `<b>✅ مربوط: ${esc(conn.info.verified_name || "")} <span dir="ltr">${esc(conn.info.display_phone || "")}</span></b><small>${conn.subscribed ? "الرسائل توصل للوكيل ✓" : `⚠️ ما قدرت أشترك برسائل الحساب${conn.subscribe_error ? `: ${esc(conn.subscribe_error)}` : ""} — تأكد من WABA ID وصلاحيات الرمز.`}${conn.info.quality ? ` · الجودة: ${esc(conn.info.quality)}` : ""}</small>`
+                : `<b>❌ ما اكتمل الربط</b><small>${esc(waErr(conn))}</small>`}</section>` : ""}
+            <section class="adm-card"><h2>الخطوة 1: في Meta</h2>
+                <ol class="wa-steps">
+                    <li>افتح <b dir="ltr">developers.facebook.com</b> من المتصفح وسجّل دخول بفيسبوك، وسوّ تطبيق نوعه <b>Business</b> وأضف له <b>WhatsApp</b>.</li>
+                    <li>في <b>WhatsApp ← API Setup</b> أضف رقم المتجر. إذا الرقم على تطبيق واتساب للأعمال اختر ربطه مع التطبيق (تبقى تستخدم التطبيق).</li>
+                    <li>انسخ <b>Phone number ID</b> و <b>WhatsApp Business Account ID</b>.</li>
+                    <li>من <b>Business Settings ← System users</b> سوّ رمز دائم (Token) بصلاحيات <code>whatsapp_business_messaging</code> و <code>whatsapp_business_management</code>.</li>
+                    <li>من <b>App settings ← Basic</b> انسخ <b>App secret</b>.</li>
+                </ol>
+            </section>
+            <section class="adm-card"><h2>الخطوة 2: الصق هنا</h2>
+                <form id="waConnForm" class="af-stack" autocomplete="off">
+                    <label class="af"><span>Phone number ID</span><input class="ai" name="phone_number_id" dir="ltr" inputmode="numeric" maxlength="30" value="${esc(w.cfg.phone_number_id || "")}" placeholder="123456789012345"></label>
+                    <label class="af"><span>WhatsApp Business Account ID</span><input class="ai" name="waba_id" dir="ltr" inputmode="numeric" maxlength="30" value="${esc(w.cfg.waba_id || "")}" placeholder="123456789012345"></label>
+                    <label class="af"><span>Access Token</span><input class="ai" name="token" type="password" dir="ltr" autocomplete="off" maxlength="400" placeholder="${st.token ? `محفوظ ••••${esc(st.token.last4)} — اتركه فاضي إذا ما تبي تغيّره` : "EAAG…"}"></label>
+                    <label class="af"><span>App secret</span><input class="ai" name="app_secret" type="password" dir="ltr" autocomplete="off" maxlength="64" placeholder="${st.app_secret ? "محفوظ ✓ — اتركه فاضي إذا ما تبي تغيّره" : "32 حرف ورقم"}"></label>
+                    <small class="adm-muted">الرمز والسر ينحفظون في الخادم فقط، وما ينعرضون مرة ثانية.</small>
+                    <p class="adm-errors-inline" id="waConnErr"></p>
+                    <button class="ab ab-primary ab-block" type="submit">حفظ واختبار الربط</button>
+                </form>
+            </section>
+            <section class="adm-card"><h2>الخطوة 3: Webhook في Meta</h2>
+                <p class="adm-muted">في <b>WhatsApp ← Configuration ← Webhook</b> اضغط Edit والصق القيمتين، ثم اشترك في <b dir="ltr">messages</b>${" "}و <b dir="ltr">smb_message_echoes</b> (عشان يعرف الوكيل لما ترد بنفسك).</p>
+                ${copyRow("Callback URL", hook)}
+                ${copyRow("Verify token", st.verify)}
+            </section>`;
+    }
+
+    async function waSaveConn(form) {
+        const w = waState();
+        const f = new FormData(form);
+        const err = $("#waConnErr");
+        const pid = ATHR.digits(String(f.get("phone_number_id") || "")).replace(/\D/g, "");
+        const waba = ATHR.digits(String(f.get("waba_id") || "")).replace(/\D/g, "");
+        const token = String(f.get("token") || "").trim();
+        const secret = String(f.get("app_secret") || "").trim();
+        if (pid && pid.length < 8) { err.textContent = "Phone number ID أرقام فقط (عادة 15 رقم)."; return; }
+        if (waba && waba.length < 8) { err.textContent = "WABA ID أرقام فقط (عادة 15 رقم)."; return; }
+        if (token && (token.length < 40 || /\s/.test(token))) { err.textContent = "الرمز قصير أو فيه مسافات. انسخه كامل."; return; }
+        if (secret && !/^[A-Za-z0-9]{16,64}$/.test(secret)) { err.textContent = "App secret حروف إنجليزية وأرقام فقط (عادة 32)."; return; }
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        btn.textContent = "جاري الاختبار…";
+        err.textContent = "";
+        try {
+            await waSaveCfg({ phone_number_id: pid, waba_id: waba });
+            if (token) { const { error } = await sb.rpc("set_wa_secret", { k: "token", v: token }); if (error) throw new Error("token"); }
+            if (secret) { const { error } = await sb.rpc("set_wa_secret", { k: "app_secret", v: secret }); if (error) throw new Error("secret"); }
+            await waLoad({ chats: false });
+            w.conn = await waCall({ task: "connect" });
+            if (w.conn.connected) await waLoad({ chats: false });
+            renderWa();
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = "حفظ واختبار الربط";
+            err.textContent = e && e.message === "token" ? "الرمز ما انحفظ. تأكد إنه كامل." : e && e.message === "secret" ? "السر ما انحفظ. تأكد إنه كامل." : "تعذّر الحفظ. تأكد من الاتصال وحاول مرة ثانية.";
+        }
+    }
+
+    // ---------- العروض بقوالب واتساب ----------
+    function waOffersView() {
+        const w = waState();
+        const connected = waConnected();
+        const tpls = w.tpls;
+        const sel = w.tplSel && tpls ? tpls.find((t) => t.name === w.tplSel) : null;
+        const statusChip = (s) => s === "APPROVED" ? `<span class="wa-badge green">معتمد</span>` : s === "REJECTED" ? `<span class="wa-badge red">مرفوض</span>` : `<span class="wa-badge">قيد المراجعة</span>`;
+        const marketing = A.customers.filter((c) => c.marketing);
+        const audience = waAudience();
+        return `${waHead("📣 إرسال عرض")}
+            <p class="wa-note">واتساب يسمح برسائل العروض فقط عن طريق <b>قوالب</b> توافق عليها Meta (عادةً خلال دقائق)، وكل رسالة عرض عليها رسوم من Meta حسب دولة الزبون. الرسائل توصل فقط للعملاء اللي وافقوا على العروض.</p>
+            ${!connected ? `<p class="wa-warn">اربط الوكيل بواتساب أول. <button class="link-mini" type="button" data-a="wa-setup">الربط</button></p>` : ""}
+            <section class="adm-card"><h2>1) اكتب قالب جديد</h2>
+                <form id="waTplForm" class="af-stack" autocomplete="off">
+                    <label class="af"><span>نص الرسالة</span><textarea class="ai" name="body" id="waTplBody" rows="5" maxlength="1000" placeholder="هلا {name} 🎉&#10;وصلت تصاميم جديدة لأكواب الأندية، وعليها *خصم 15%* لين نهاية الأسبوع."></textarea><small>اكتب <code>{name}</code> مكان اسم العميل. بدون أرقام هواتف.</small></label>
+                    <div class="asst-acts"><button class="ab-mini" type="button" data-a="wa-tpl-name">+ اسم العميل</button><button class="ab-mini" type="button" data-a="wa-tpl-ai">✨ اقترح لي نص</button></div>
+                    <div class="wa-2">
+                        <label class="af"><span>نص الزر</span><input class="ai" name="button_text" maxlength="25" value="تسوّق الآن"></label>
+                        <label class="af"><span>رابط الزر</span><input class="ai" name="button_url" dir="ltr" maxlength="400" value="${esc(siteLink(ATHR.base()))}"></label>
+                    </div>
+                    <label class="af"><span>تذييل (اختياري)</span><input class="ai" name="footer" maxlength="60" value="${esc(ATHR.storeName(cfg()) || "أثر")}"></label>
+                    <button class="ab ab-soft ab-block" type="submit"${connected ? "" : " disabled"}>أرسل القالب لمراجعة Meta</button>
+                </form>
+            </section>
+            <section class="adm-card"><h2>2) اختر قالب معتمد</h2>
+                ${tpls === null ? `<p class="adm-muted">${connected ? "جاري تحميل القوالب…" : "تظهر القوالب بعد الربط."}</p>`
+                    : tpls.error ? `<p class="wa-warn">${esc(tpls.error)}</p>`
+                    : !tpls.length ? `<p class="adm-muted">ما فيه قوالب بعد. اكتب أول قالب فوق.</p>`
+                    : `<div class="wa-tpls">${tpls.map((t) => `<button type="button" class="wa-tpl${t.name === w.tplSel ? " on" : ""}" data-wa-tpl="${esc(t.name)}"${t.status !== "APPROVED" ? " disabled" : ""}><span>${statusChip(t.status)} <small dir="ltr">${esc(t.name)}</small></span><span class="wa-tpl-b">${waFmt(t.body).replace(/\{\{\s*(\d+)\s*\}\}/g, '<span class="wa-var">$1</span>')}</span></button>`).join("")}</div>`}
+                ${connected ? `<button class="ab-mini" type="button" data-a="wa-tpl-reload">تحديث القوالب</button>` : ""}
+            </section>
+            ${sel ? `<section class="adm-card"><h2>3) أرسل</h2><div class="af-stack">
+                ${Array.from({ length: sel.body_params }, (_, i) => `<label class="af"><span>المتغير {{${i + 1}}}</span><input class="ai" data-wa-var="${i}" maxlength="200" value="${esc((w.sending && w.sending.vars && w.sending.vars[i]) ?? (i === 0 ? "{name}" : ""))}"><small>${i === 0 ? "<code>{name}</code> = الاسم الأول للعميل (أو «عميلنا»)" : "النص اللي يظهر مكانه"}</small></label>`).join("")}
+                ${sel.header && sel.header.format === "IMAGE" ? `<label class="af"><span>رابط صورة الرأس</span><input class="ai" data-wa-headimg dir="ltr" value="${esc((w.sending && w.sending.headerImage) || "")}" placeholder="https://…jpg"></label>` : ""}
+                ${sel.buttons.some((b) => b.dynamic) || (sel.header && ["VIDEO", "DOCUMENT"].includes(sel.header.format)) ? `<p class="wa-warn">هذا القالب فيه أجزاء ما تنرسل من هنا (فيديو أو ملف أو رابط متغير). اختر قالب ثاني.</p>` : ""}
+                <div class="wa-seg" role="group" aria-label="من يوصله العرض">
+                    <button type="button" data-wa-aud="all" aria-pressed="${waAudKind() === "all"}">كل الموافقين (${marketing.length})</button>
+                    <button type="button" data-wa-aud="fresh" aria-pressed="${waAudKind() === "fresh"}">ما وصلهم عرض من أسبوع</button>
+                </div>
+                <p class="adm-muted">بيوصل لـ <b>${audience.length}</b> عميل.${A.customersLoaded ? "" : " (جاري تحميل العملاء…)"}</p>
+                ${w.sending && w.sending.progress ? `<p class="wa-progress">${esc(w.sending.progress)}</p>` : ""}
+                <button class="ab ab-primary ab-block" type="button" data-a="wa-broadcast"${audience.length && !(w.sending && w.sending.busy) ? "" : " disabled"}>إرسال العرض لـ ${audience.length} عميل</button>
+            </div></section>` : ""}`;
+    }
+
+    const waAudKind = () => (waState().sending && waState().sending.aud) || "all";
+    function waAudience() {
+        const fresh = waAudKind() === "fresh";
+        return A.customers.filter((c) => c.marketing && /^[0-9]{8,15}$/.test(String(c.phone || "")) && (!fresh || daysSince(c.last_offer_at) >= 7));
+    }
+
+    async function waLoadTpls() {
+        const w = waState();
+        const out = await waCall({ task: "templates" });
+        w.tpls = out.error ? { error: waErr(out) } : out.templates || [];
+        if (Array.isArray(w.tpls)) w.tpls.sort((a, b) => (a.status === "APPROVED" ? 0 : 1) - (b.status === "APPROVED" ? 0 : 1));
+        if (w.screen === "offers") renderWa(true);
+    }
+
+    async function waCreateTpl(form) {
+        const f = new FormData(form);
+        const body = String(f.get("body") || "").trim();
+        if (body.length < 10) { toast("اكتب نص القالب (10 أحرف على الأقل)."); return; }
+        if (/(\+?968|\b9\d{7}\b|\b7\d{7}\b)/.test(ATHR.digits(body))) { toast("شيل أرقام الهواتف من نص القالب."); return; }
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        const out = await waCall({ task: "create_template", body, footer: f.get("footer"), button_text: f.get("button_text"), button_url: f.get("button_url") });
+        btn.disabled = false;
+        if (out.error) { toast(waErr(out)); return; }
+        toast("انرسل القالب للمراجعة ✓ يظهر «معتمد» عادة خلال دقائق");
+        form.reset();
+        await waLoadTpls();
+    }
+
+    async function waAiTpl() {
+        const box = $("#waTplBody");
+        if (!box) return;
+        try {
+            const out = await aiCall({ task: "offer", note: "رسالة عرض عامة للعملاء", style: "عرض خاص" });
+            box.value = String(out.text || "").replace(/\{link\}/g, "").replace(/\{(product|price|old|pct|ends)\}/g, "").replace(/\n{3,}/g, "\n\n").trim();
+        } catch (e) {
+            toast(e && e.code === "no_key" ? "فعّل مفتاح Gemini أول من «النصوص»." : "تعذّر الاقتراح الآن.");
+        }
+    }
+
+    async function waBroadcast() {
+        const w = waState();
+        const sel = (w.tpls || []).find((t) => t.name === w.tplSel);
+        if (!sel) return;
+        const s = w.sending || (w.sending = {});
+        s.vars = $$("[data-wa-var]").map((i) => i.value.trim());
+        s.headerImage = $("[data-wa-headimg]") ? $("[data-wa-headimg]").value.trim() : "";
+        if (s.vars.some((v) => !v)) { toast("عبّ كل المتغيرات."); return; }
+        if (sel.header && sel.header.format === "IMAGE" && !/^https:\/\//.test(s.headerImage)) { toast("الصق رابط صورة الرأس (يبدأ بـ https)."); return; }
+        const list = waAudience();
+        if (!list.length) return;
+        if (!confirm(`بترسل العرض لـ ${list.length} عميل على واتساب.\nMeta تحسب رسوم على كل رسالة عرض.\nمتأكد؟`)) return;
+        s.busy = true;
+        let sent = 0;
+        const failed = [];
+        for (let i = 0; i < list.length; i += 25) {
+            s.progress = `جاري الإرسال… ${Math.min(i, list.length)} من ${list.length}`;
+            renderWa(true);
+            const batch = list.slice(i, i + 25).map((c) => ({ phone: c.phone, name: c.name || "" }));
+            const out = await waCall({ task: "broadcast", template: { name: sel.name, language: sel.language, body: sel.body }, vars: s.vars, header_image: s.headerImage, recipients: batch });
+            if (out.error) { failed.push(...batch.map((b) => ({ phone: b.phone, error: waErr(out) }))); break; }
+            sent += out.sent || 0;
+            failed.push(...(out.failed || []));
+            batch.forEach((b) => { const c = A.customers.find((x) => x.phone === b.phone); if (c && !(out.failed || []).some((f) => f.phone === b.phone)) c.last_offer_at = new Date().toISOString(); });
+        }
+        s.busy = false;
+        s.progress = `✅ انرسل لـ ${sent} عميل${failed.length ? ` · ما وصل لـ ${failed.length}${failed[0] && failed[0].error ? ` (${failed[0].error.slice(0, 80)})` : ""}` : ""}`;
+        renderWa(true);
+        toast(`انرسل العرض لـ ${sent} عميل`);
+    }
+
+    // ---------- الأحداث ----------
+    async function waClick(d) {
+        const w = waState();
+        if (d.a === "wa-open") { await openWa(); return true; }
+        if (!$("#waBody")) return false;
+        if (d.a === "wa-home") { w.screen = "home"; w.chat = null; renderWa(); waLoadChats().then(() => { if (w.screen === "home") renderWa(true); }); return true; }
+        if (d.a === "wa-try") { w.screen = "try"; renderWa(); setTimeout(() => $("#waTryInput")?.focus(), 50); return true; }
+        if (d.a === "wa-settings") { w.screen = "settings"; renderWa(); return true; }
+        if (d.a === "wa-setup") { w.screen = "setup"; w.conn = null; renderWa(); if (waConnected()) { w.conn = await waCall({ task: "status" }); if (w.screen === "setup") renderWa(true); } return true; }
+        if (d.a === "wa-offers") {
+            w.screen = "offers";
+            renderWa();
+            if (!A.customersLoaded) loadCustomers().then(() => { if (w.screen === "offers") renderWa(true); }).catch(() => {});
+            if (waConnected() && !Array.isArray(w.tpls)) await waLoadTpls();
+            return true;
+        }
+        if (d.a === "wa-tpl-reload") { w.tpls = null; renderWa(true); await waLoadTpls(); return true; }
+        if (d.a === "wa-tpl-name") { const b = $("#waTplBody"); if (b) { const p = b.selectionStart ?? b.value.length; b.value = b.value.slice(0, p) + "{name}" + b.value.slice(p); b.focus(); } return true; }
+        if (d.a === "wa-tpl-ai") { await waAiTpl(); return true; }
+        if (d.a === "wa-broadcast") { await waBroadcast(); return true; }
+        if (d.a === "wa-resume") { await waSetPause(false); return true; }
+        if (d.a === "wa-pause") { await waSetPause(true); return true; }
+        if (d.a === "wa-try-reset") { w.tryMsgs = []; renderWa(); return true; }
+        if (d.waChat) { await waOpenChat(d.waChat); return true; }
+        if (d.waFilter) { w.filter = d.waFilter; renderWa(true); return true; }
+        if (d.waCountry) { w.tryCountry = d.waCountry; w.tryMsgs = []; renderWa(); return true; }
+        if (d.waQ) { await waTryAsk(d.waQ); return true; }
+        if (d.waTpl) { w.tplSel = d.waTpl; w.sending = { aud: waAudKind() }; renderWa(true); return true; }
+        if (d.waAud) { w.sending = { ...(w.sending || {}), aud: d.waAud, vars: $$("[data-wa-var]").map((i) => i.value) }; renderWa(true); return true; }
+        if (d.copyWa !== undefined) {
+            try { await navigator.clipboard.writeText(d.copyWa); toast("انسخ ✓"); } catch { toast(d.copyWa); }
+            return true;
+        }
+        return false;
+    }
+
+    async function waChange(t) {
+        if (t.id === "waEnabled") {
+            const on = t.checked;
+            try {
+                await waSaveCfg({ enabled: on });
+                toast(on ? (waConnected() ? "الوكيل شغّال ✓ يرد على زبائنك" : "تفعّل ✓ يبدأ يرد بعد الربط") : "وقف الوكيل. الرسائل تنحفظ بدون رد.");
+                renderWa(true);
+            } catch {
+                t.checked = !on;
+                toast("تعذّر الحفظ. حاول مرة ثانية.");
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function waSubmit(form) {
+        if (form.id === "waSendForm") { waSendReply(form); return true; }
+        if (form.id === "waTryForm") { const i = $("#waTryInput"); const v = String(i.value || "").trim(); i.value = ""; waTryAsk(v); return true; }
+        if (form.id === "waSetForm") { waSaveSettings(form); return true; }
+        if (form.id === "waConnForm") { waSaveConn(form); return true; }
+        if (form.id === "waTplForm") { waCreateTpl(form); return true; }
+        return false;
+    }
+
+    async function loadWaHome() {
+        try {
+            const el = $("#homeWa");
+            if (!el) return;
+            const [{ data: s }, { data: needs }] = await Promise.all([
+                sb.from("wa_settings").select("config").eq("id", 1).maybeSingle(),
+                sb.from("wa_chats").select("phone").eq("needs_owner", true).limit(100)
+            ]);
+            const c = (s && s.config) || {};
+            const count = (needs || []).length;
+            if (count) { el.textContent = count === 1 ? "محادثة وحدة تحتاجك" : `${count} محادثات تحتاجك`; el.classList.add("hot"); }
+            else el.textContent = c.enabled && c.phone_number_id ? "شغّال: يرد على زبائنك الحين" : c.phone_number_id ? "موقّف — شغّله بضغطة" : "يرد على زبائنك 24 ساعة ويسجّل طلباتهم";
+        } catch {
+            /* اختياري */
+        }
     }
 
     window.ATHR_ADMIN = { open, close };
