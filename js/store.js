@@ -623,6 +623,7 @@
             case "cart":
             case "checkout":
             case "shipping":
+            case "privacy":
                 return { name: a };
             case "done": return { name: "done", no: params.get("no") || "" };
             case "review": return { name: "review", p: params.get("p") || "", o: params.get("o") || "" };
@@ -702,6 +703,7 @@
             case "fav": renderFav(); break;
             case "points": navigate(BASE, { replace: true }); return;
             case "shipping": view.innerHTML = V.shipping(v()); break;
+            case "privacy": view.innerHTML = V.privacy(v()); break;
             case "cart": renderCart(); break;
             case "checkout": renderCheckout(); break;
             case "done": renderDone(route.no); break;

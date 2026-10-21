@@ -6814,14 +6814,30 @@
             ${conn ? `<section class="wa-result ${conn.connected ? "ok" : "bad"}">${conn.connected
                 ? `<b>✅ مربوط: ${esc(conn.info.verified_name || "")} <span dir="ltr">${esc(conn.info.display_phone || "")}</span></b><small>${conn.subscribed ? "الرسائل توصل للوكيل ✓" : `⚠️ ما قدرت أشترك برسائل الحساب${conn.subscribe_error ? `: ${esc(conn.subscribe_error)}` : ""} — تأكد من WABA ID وصلاحيات الرمز.`}${conn.info.quality ? ` · الجودة: ${esc(conn.info.quality)}` : ""}</small>`
                 : `<b>❌ ما اكتمل الربط</b><small>${esc(waErr(conn))}</small>`}</section>` : ""}
-            <section class="adm-card"><h2>الخطوة 1: في Meta</h2>
+            <section class="adm-card"><h2>قبل ما تبدأ: أي رقم؟</h2>
+                <ul class="wa-steps">
+                    <li><b>للتجربة الحين:</b> Meta تعطيك رقم تجريبي مجاني، يراسل لين 5 أرقام تحددها أنت (مثل رقمك).</li>
+                    <li><b>للزبائن:</b> رقم جديد ما عليه واتساب (شريحة أو eSIM). رقمك الحالي يبقى في تطبيقك مثل ما هو، وترد على محادثات الوكيل من هنا.</li>
+                    <li><b>نفس رقمك الحالي مع التطبيق والوكيل مع بعض:</b> Meta تسمح فيه فقط عن طريق شركة وسيطة معتمدة (اشتراك شهري).</li>
+                </ul>
+            </section>
+            <section class="adm-card"><h2>الخطوة 1: سوّ التطبيق في Meta</h2>
+                <p class="adm-muted">من سفاري في الآيفون: اضغط <b>aA</b> بجانب الرابط ← «طلب موقع سطح المكتب»، لأن صفحات Meta للمطورين تشتغل أحسن كذا.</p>
                 <ol class="wa-steps">
-                    <li>افتح <b dir="ltr">developers.facebook.com</b> من المتصفح وسجّل دخول بفيسبوك، وسوّ تطبيق نوعه <b>Business</b> وأضف له <b>WhatsApp</b>.</li>
-                    <li>في <b>WhatsApp ← API Setup</b> أضف رقم المتجر. إذا الرقم على تطبيق واتساب للأعمال اختر ربطه مع التطبيق (تبقى تستخدم التطبيق).</li>
-                    <li>انسخ <b>Phone number ID</b> و <b>WhatsApp Business Account ID</b>.</li>
-                    <li>من <b>Business Settings ← System users</b> سوّ رمز دائم (Token) بصلاحيات <code>whatsapp_business_messaging</code> و <code>whatsapp_business_management</code>.</li>
-                    <li>من <b>App settings ← Basic</b> انسخ <b>App secret</b>.</li>
+                    <li>افتح <b dir="ltr">developers.facebook.com</b> وسجّل دخول بفيسبوك ← <b>My Apps ← Create App</b> ← اختر <b>Business</b> وسمّه مثلاً <span dir="ltr">Athr Agent</span>.</li>
+                    <li>في صفحة التطبيق اضغط <b>WhatsApp ← Set up</b> واختر حسابك التجاري (أو سوّ واحد جديد).</li>
+                    <li>من <b>WhatsApp ← API Setup</b>: تلقى الرقم التجريبي. في خانة <b>To</b> أضف رقمك وأكّده بالكود. وللرقم الحقيقي اضغط <b>Add phone number</b> واكتب اسم العرض «${esc(ATHR.storeName(cfg()) || "أثر")}» والرقم الجديد.</li>
+                    <li>من نفس الصفحة انسخ <b>Phone number ID</b> و <b>WhatsApp Business Account ID</b>.</li>
                 </ol>
+            </section>
+            <section class="adm-card"><h2>رمز دائم (Token) و App secret</h2>
+                <ol class="wa-steps">
+                    <li>افتح <b dir="ltr">business.facebook.com/settings</b> ← <b>Users ← System users ← Add</b>، الاسم <span dir="ltr">agent</span> والدور <b>Admin</b>.</li>
+                    <li><b>Assign assets</b>: اختر تطبيقك (Full control) وحساب واتساب (Full control).</li>
+                    <li><b>Generate new token</b> ← اختر التطبيق ← المدة <b>Never</b> ← فعّل <code>whatsapp_business_messaging</code> و <code>whatsapp_business_management</code> ← انسخ الرمز.</li>
+                    <li>في صفحة التطبيق: <b>App settings ← Basic</b> ← <b>App secret ← Show</b> وانسخه، وفي نفس الصفحة الصق رابط سياسة الخصوصية (تحت) في خانة <b>Privacy Policy URL</b>.</li>
+                </ol>
+                ${copyRow("رابط سياسة الخصوصية", `${ATHR.siteUrl(cfg())}privacy/`)}
             </section>
             <section class="adm-card"><h2>الخطوة 2: الصق هنا</h2>
                 <form id="waConnForm" class="af-stack" autocomplete="off">
@@ -6835,9 +6851,17 @@
                 </form>
             </section>
             <section class="adm-card"><h2>الخطوة 3: Webhook في Meta</h2>
-                <p class="adm-muted">في <b>WhatsApp ← Configuration ← Webhook</b> اضغط Edit والصق القيمتين، ثم اشترك في <b dir="ltr">messages</b>${" "}و <b dir="ltr">smb_message_echoes</b> (عشان يعرف الوكيل لما ترد بنفسك).</p>
+                <p class="adm-muted">في <b>WhatsApp ← Configuration ← Webhook ← Edit</b> الصق القيمتين واضغط <b>Verify and save</b>، ثم من <b>Webhook fields</b> اشترك في <b dir="ltr">messages</b>.</p>
                 ${copyRow("Callback URL", hook)}
                 ${copyRow("Verify token", st.verify)}
+            </section>
+            <section class="adm-card"><h2>الخطوة 4: التشغيل للزبائن</h2>
+                <ol class="wa-steps">
+                    <li>فوق في صفحة التطبيق حوّل <b>App Mode</b> من Development إلى <b>Live</b> (يحتاج رابط سياسة الخصوصية اللي فوق).</li>
+                    <li>في <b>WhatsApp Manager ← Payment methods</b> أضف بطاقة: أول 1,000 رد بالشهر مجانية، ورسائل العروض لها رسوم.</li>
+                    <li>إذا ربطت رقم جديد، غيّر رقم واتساب المتجر من «الطلب والتوصيل» عشان الزبائن يراسلون الوكيل.</li>
+                    <li>ارجع فوق وشغّل مفتاح «الوكيل يرد».</li>
+                </ol>
             </section>`;
     }
 

@@ -789,6 +789,15 @@ async function main() {
         }));
         if (cfg.contact.policy_show) addUrl(url);
     }
+    {
+        const url = abs(ATHR.url.page("privacy"));
+        writeFile("privacy/index.html", page({
+            route: "privacy",
+            headHTML: head({ title: V.titles(v, { name: "privacy" }), description: clamp(`سياسة الخصوصية في متجر ${name}: البيانات اللي نحتاجها للطلب والتوصيل، والمساعد الآلي في واتساب، وكيف تطلب حذف بياناتك.`), canonical: url, jsonld: [crumbsLd([{ name, url: SITE }, { name: "سياسة الخصوصية", url }])] }),
+            view: V.privacy(v)
+        }));
+        addUrl(url);
+    }
 
     // صفحة «نقاطي» انحذفت مع نقاط الولاء
     fs.rmSync(path.join(OUT, "points"), { recursive: true, force: true });
