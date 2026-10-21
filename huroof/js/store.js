@@ -285,7 +285,6 @@
             name: box.querySelector('[name="st_name"]').value,
             g: g ? g.value : "",
             age: box.querySelector('[name="st_age"]').value,
-            ded: box.querySelector('[name="st_ded"]').value,
             photo: box.querySelector('[name="st_photo"]').checked
         };
     }
@@ -322,7 +321,7 @@
                 return { ok: false };
             }
             const custom = ATHR.storyClean(raw);
-            storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age, ded: custom.ded });
+            storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age });
             return { ok: true, custom };
         }
         const have = cartCustom(id);
@@ -391,7 +390,6 @@
             const g = box.querySelector(`input[name="st_g"][value="${saved.g === "f" ? "f" : "m"}"]`);
             if (g) g.checked = true;
             if (saved.age) box.querySelector('[name="st_age"]').value = String(saved.age);
-            if (saved.ded) box.querySelector('[name="st_ded"]').value = saved.ded;
             if (cartCustom(p.id)) box.querySelector('[name="st_photo"]').checked = Boolean(saved.photo);
         }
         const clearErr = () => {
@@ -401,7 +399,7 @@
         };
         box.addEventListener("input", (e) => {
             clearErr();
-            if (e.target.name === "st_name" || e.target.name === "st_ded") storyPreview(p, 500);
+            if (e.target.name === "st_name") storyPreview(p, 500);
             else storyPreview(p, 120);
         });
         box.addEventListener("change", () => { clearErr(); storyPreview(p, 120); });

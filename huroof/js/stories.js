@@ -1419,7 +1419,7 @@
         const st = STORIES[storyId];
         if (!st) return [];
         return [
-            { kind: "cover" }, { kind: "ded" },
+            { kind: "cover" },
             ...st.pages.map(([scene, text], i) => ({ kind: "page", scene, text, n: i + 1 })),
             { kind: "end" }, { kind: "color" }
         ];

@@ -594,7 +594,7 @@
         if (pays.some((p) => p.type === "bank")) items.push(pays.some((p) => p.type === "bank" && /دولي/.test(p.name)) ? t("تحويل بنكي دولي") : t("تحويل بنكي مباشر"));
         if (pays.some((p) => p.type === "online")) items.push(t("دفع إلكتروني آمن"));
         const gulf = (cfg.order.delivery || []).some((d) => d.enabled && Array.isArray(d.countries) && d.countries.some((x) => x !== "OM"));
-        if (ATHR.isDigital(cfg)) items.push(t("تصلك الملفات على واتساب"));
+        if (ATHR.isDigital(cfg)) items.push(t("تصلك القصة على واتساب"));
         else items.push(gulf ? t("توصيل لكل دول الخليج") : t("توصيل داخل سلطنة عُمان"));
         if (ATHR.isValidWhatsapp(cfg.order.whatsapp)) items.push(t("تواصل مباشر عبر واتساب"));
         return `<ul class="trust">${items.map((x) => `<li>${ICON.check}${esc(x)}</li>`).join("")}</ul>`;
@@ -662,7 +662,7 @@
         const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
         if (ATHR.isDigital(cfg)) {
             return [
-                [V.icon.file, t("ملفات PDF جاهزة للطباعة")],
+                [V.icon.file, t("قصص PDF جاهزة للطباعة")],
                 [V.icon.inbox, t("تصلك على واتساب")],
                 [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
             ];
@@ -916,7 +916,56 @@
             <div id="gridBox">${V.limitedGrid(v, all, shown)}</div>`;
     };
 
+    // متجر القصص الشخصية: واجهة بسيطة (العنوان، 3 خطوات، القصص، ليش بيحبها طفلك، الأسئلة)
+    V.isStoryStore = (v) => v.products.length > 0 && v.products.every((p) => ATHR.isStory(p));
+
+    V.storyHome = function (v) {
+        const list = V.listings(v, v.products.filter((p) => p.is_available !== false));
+        const books = list.filter((p) => V.img(p)).slice(0, 3);
+        const steps = [
+            [t("اختر القصة"), t("مغامرة يحبها طفلك")],
+            [t("اكتب اسم طفلك"), t("وشوف القصة باسمه فوراً")],
+            [t("تصلك على واتساب"), t("ملف PDF جاهز للطباعة")]
+        ];
+        const why = [
+            ["❤️", t("يكون هو البطل"), t("اسمه في كل صفحة")],
+            ["⭐", t("يحب القراءة"), t("جمل قصيرة وسهلة")],
+            ["🎨", t("رسومات ساحرة"), t("ملوّنة ومليانة حياة")],
+            ["🎁", t("هدية لا تُنسى"), t("يحتفظ فيها سنين")]
+        ];
+        return `<section class="sh-hero">
+                <div class="wrap sh-inner">
+                    <div class="sh-text">
+                        <span class="sh-kicker">✨ ${esc(t("قصص مخصّصة باسم طفلك"))}</span>
+                        <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
+                        <p>${esc(fill(v, ct(v, "texts.hero_text")))}</p>
+                        <a class="btn btn-primary sh-cta" href="#stories">${esc(ct(v, "texts.hero_button") || t("اختر قصة طفلك"))}</a>
+                    </div>
+                    ${books.length ? `<div class="sh-books" aria-hidden="true">${books.map((p, i) => `<span class="shb shb${i + 1}"><img src="${esc(V.img(p))}" alt="" width="300" height="375"${i ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async"></span>`).join("")}</div>` : ""}
+                </div>
+            </section>
+            <section class="sh-steps" aria-label="${esc(t("طريقة الطلب"))}">
+                <ol class="wrap sh-steps-list">${steps.map(([b, s], i) => `<li><span class="sh-n">${i + 1}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ol>
+            </section>
+            <section class="section sh-stories" id="stories" aria-labelledby="stories-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="stories-t">${esc(t("اختر مغامرة طفلك"))}</h2></div>
+                    ${V.curNote(v)}
+                    ${V.grid(v, list, { eagerCount: 4 })}
+                </div>
+            </section>
+            <section class="section sh-why" aria-labelledby="why-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="why-t">${esc(t("ليش بيحبها طفلك؟"))}</h2></div>
+                    <ul class="sh-why-list">${why.map(([e, b, s]) => `<li><span class="sh-e" aria-hidden="true">${e}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ul>
+                </div>
+            </section>
+            ${V.storeReviews(v)}
+            ${V.homeFaq(v)}`;
+    };
+
     V.home = function (v, { sort = "default", cat = "", shown = 0 } = {}) {
+        if (V.isStoryStore(v)) return V.storyHome(v);
         const best = V.bestSellers(v);
         const sets = V.setCards(v);
         const fresh = V.newArrivals(v);
@@ -1213,7 +1262,6 @@
                 </div>
                 <label class="sf-field"><span>${esc(t("العمر"))}</span><select class="input" name="st_age"><option value="">${esc(t("اختر"))}</option>${ages}</select></label>
             </div>
-            <label class="sf-field"><span>${esc(t("إهداء من الأهل"))} <small>(${esc(t("اختياري"))})</small></span><textarea class="input" name="st_ded" rows="2" maxlength="220" placeholder="${esc(t("مثال: إلى بطلنا سالم، نحبك كثيراً. ماما وبابا"))}"></textarea></label>
             <label class="sf-check"><input type="checkbox" name="st_photo"><span><b>${esc(t("أبي صورة طفلي على الغلاف"))}</b><small>${esc(t("ترسلها لنا على واتساب بعد الطلب، ونستخدمها للغلاف فقط."))}</small></span></label>
             <p class="sf-err" id="stErr" role="alert" hidden></p>
             <div class="sf-prev" id="storyPrev">
@@ -1267,12 +1315,13 @@
         const list = (v.reviewsByProduct.get(p.id) || []).slice()
             .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
         const stats = V.reviewStats(list);
+        if (!stats && ATHR.isStory(p)) return "";
         const writeHref = ATHR.url.page("review", `p=${encodeURIComponent(p.slug || p.id)}`);
         return `<section class="section reviews-block" id="reviews" aria-labelledby="pr-t">
             <div class="section-head"><h2 id="pr-t">${esc(t("تقييمات العملاء"))}</h2></div>
             ${stats ? `<div class="rate-summary"><b>${stats.avg.toFixed(1)}</b>${V.stars(stats.avg)}<span>${esc(V.reviewCount(stats.count))}</span></div>
                 <div class="review-list">${list.slice(0, 6).map((r) => V.reviewCard(v, r)).join("")}</div>`
-            : `<p class="muted">${esc(ATHR.isDigital(v.cfg) ? t("لا توجد تقييمات لهذا الملف بعد. اشتريته؟ شاركنا رأيك.") : t("لا توجد تقييمات لهذا التصميم بعد. اشتريته؟ شاركنا رأيك."))}</p>`}
+            : `<p class="muted">${esc(ATHR.isDigital(v.cfg) ? t("لا توجد تقييمات لهذه القصة بعد. اشتريتها؟ شاركنا رأيك.") : t("لا توجد تقييمات لهذا التصميم بعد. اشتريته؟ شاركنا رأيك."))}</p>`}
             <a class="btn btn-ghost btn-sm" href="${writeHref}" rel="nofollow">${esc(t("اكتب تقييمك"))}</a>
         </section>`;
     };
@@ -1349,16 +1398,16 @@
                     return `<p><b>${esc(L(d, "name"))}</b>: ${esc(V.deliveryPriceLabel(v, d))}${d.duration ? esc(t("، المدة {d}", { d: ATHR.duration(d.duration) })) : ""}${list.length && list.length < enabledCount ? `<br><span class="muted">${esc(t("إلى: {countries}", { countries: V.countriesText(list) }))}</span>` : ""}${note ? `<br><span class="muted">${esc(note)}</span>` : ""}</p>`;
                 }).join("")}
                 ${free ? `<p>${esc(free)}</p>` : ""}
-                ${digital ? `<p class="muted">${esc(t("ملفات PDF بمقاس A4 تفتح على أي جوال أو كمبيوتر، والعروض التقديمية بصيغة PowerPoint."))}</p>` : `<p class="muted">${esc(t("نوصّل لكل ولايات سلطنة عُمان."))}</p>`}
+                ${digital ? `<p class="muted">${esc(t("القصة ملف PDF يفتح على أي جوال أو كمبيوتر، وتطبعه في البيت أو في أي مكتبة."))}</p>` : `<p class="muted">${esc(t("نوصّل لكل ولايات سلطنة عُمان."))}</p>`}
                 <h2>${esc(t("طرق الدفع"))}</h2>
                 ${V.paymentGroups(v).map((g) => `<p>${g.countries.length < enabledCount ? `<b>${esc(V.countriesText(g.countries))}:</b> ` : ""}${esc(g.names)}</p>`).join("")}
                 ${(cfg.order.payments || []).filter((p) => p.enabled && L(p, "note")).map((p) => `<p class="muted">${esc(L(p, "name"))}: ${esc(fill(v, L(p, "note")))}</p>`).join("")}
                 ${custom.length ? `<h2>${esc(t("ضماننا لك"))}</h2>${custom.map((x) => `<p>${esc(fill(v, x))}</p>`).join("")}` : ""}
                 <h2>${esc(t("كيف أطلب؟"))}</h2>
                 <ol>
-                    <li>${esc(digital ? t("اختر الملف وأضفه للسلة.") : t("اختر تصميمك وأضفه للسلة."))}</li>
+                    <li>${esc(digital ? t("اختر القصة واكتب اسم طفلك، وأضفها للسلة.") : t("اختر تصميمك وأضفه للسلة."))}</li>
                     <li>${esc(digital ? t("اكتب اسمك ورقم واتساب واختر طريقة الدفع، بدون تسجيل حساب.") : t("اكتب اسمك ورقمك وعنوانك واختر طريقة التوصيل والدفع، بدون تسجيل حساب."))}</li>
-                    <li>${esc(digital ? t("أرسل الطلب عبر واتساب بضغطة، وبعد تأكيد الدفع نرسل لك الملفات في نفس المحادثة.") : t("أرسل الطلب عبر واتساب بضغطة، ونؤكده ونجهّزه لك."))}</li>
+                    <li>${esc(digital ? t("أرسل الطلب عبر واتساب بضغطة، وبعد تأكيد الدفع نرسل لك القصة في نفس المحادثة.") : t("أرسل الطلب عبر واتساب بضغطة، ونؤكده ونجهّزه لك."))}</li>
                 </ol>
                 ${faq.length ? `<h2>${esc(t("أسئلة متكررة"))}</h2><div class="faq-list">${faq.map((x) => `<details class="faq-item"><summary>${esc(x.q)}</summary><p>${esc(fill(v, x.a))}</p></details>`).join("")}</div>` : ""}
                 <h2>${esc(t("العملات"))}</h2>
@@ -1399,7 +1448,7 @@
         const free = cfg.order.free_enabled && Number(cfg.order.free_min) > 0;
         const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
         const points = ATHR.isDigital(cfg) ? [
-            [V.icon.file, t("ملفات PDF جاهزة للطباعة")],
+            [V.icon.file, t("قصص PDF جاهزة للطباعة")],
             [V.icon.inbox, t("تصلك على واتساب")],
             [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
         ] : [
