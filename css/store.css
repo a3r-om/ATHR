@@ -2840,3 +2840,46 @@ html.tpl-huroof .foot .footer-bottom a { color: var(--text); }
 html.tpl-huroof .seo-intro { display: none; }
 html.tpl-huroof .footer-bottom { border-color: var(--line); opacity: .85; }
 html.tpl-huroof .footer-brand img { width: 52px; height: 52px; border-radius: 12px; }
+
+/* ===== القصص الشخصية: نموذج بيانات الطفل والمعاينة ===== */
+.story-form { display: grid; gap: 12px; padding: 14px; border: 1.5px dashed color-mix(in srgb, var(--coral, var(--accent)) 55%, var(--line)); border-radius: var(--r); background: var(--surface); scroll-margin-top: 90px; }
+.sf-head { display: grid; gap: 2px; scroll-margin-top: 90px; }
+.sf-head b { font-size: 1.12rem; color: var(--text); }
+.sf-head small { color: var(--muted); }
+.sf-field { display: grid; gap: 5px; min-width: 0; }
+.sf-field > span { font-weight: 700; font-size: .95rem; }
+.sf-field > span small { font-weight: 400; color: var(--muted); }
+.sf-field .input { width: 100%; }
+.sf-field input[name="st_name"] { font-size: 1.2rem; font-weight: 700; }
+.sf-field textarea.input { min-height: 64px; }
+.sf-field.bad .input, .sf-field.bad .sf-seg { border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 16%, transparent); }
+.sf-row { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; }
+.sf-seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; background: var(--bg); }
+.sf-seg label { position: relative; display: block; cursor: pointer; }
+.sf-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.sf-seg span { display: flex; align-items: center; justify-content: center; min-height: 44px; font-weight: 700; color: var(--muted); transition: background .15s, color .15s; }
+.sf-seg label + label span { border-inline-start: 1px solid var(--line); }
+.sf-seg input:checked + span { background: var(--primary); color: var(--on-primary); }
+.sf-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -3px; }
+.sf-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); background: var(--soft); cursor: pointer; }
+.sf-check input { width: 20px; height: 20px; margin-top: 3px; flex-shrink: 0; accent-color: var(--primary); }
+.sf-check span { display: grid; gap: 2px; }
+.sf-check small { color: var(--muted); }
+.sf-err { margin: 0; color: var(--danger); font-weight: 700; }
+.sf-prev { display: grid; gap: 8px; }
+.sf-prev-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; }
+.sf-prev-head small { color: var(--muted); }
+.sf-pages { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 8px; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.sf-pages:empty::before { content: ""; display: block; width: 46%; aspect-ratio: 1240 / 1754; flex-shrink: 0; border-radius: 8px; background: var(--img-bg, var(--soft)); }
+.sf-page { flex: 0 0 46%; max-width: 230px; scroll-snap-align: start; }
+.sf-page canvas { display: block; width: 100%; height: auto; aspect-ratio: 1240 / 1754; border-radius: 8px; border: 1px solid var(--line); background: #FFFCF6; box-shadow: var(--shadow); }
+.sf-pages.busy canvas { opacity: .75; transition: opacity .2s; }
+.buy.has-story .stepper { display: none; }
+.story-cta { white-space: nowrap; }
+.cl-story { display: block; font-size: .88rem; color: var(--muted); }
+.cl-story a { color: var(--accent); font-weight: 700; margin-inline-start: 4px; }
+.cl-story.warn { color: var(--danger); font-weight: 700; }
+.d-block { display: block; }
+.story-done h2 { margin-bottom: 4px; }
+.story-done p { margin: 6px 0 0; }
+@media (min-width: 900px) { .sf-page { flex-basis: 30%; } }

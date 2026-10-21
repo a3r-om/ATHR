@@ -441,6 +441,51 @@ ATHR.newOrderNo = () => "HW-" + String(Math.floor(10000 + Math.random() * 90000)
 ATHR.isDigital = (config) => Boolean(config && config.order && config.order.digital);
 ATHR.isDigitalDelivery = (d) => Boolean(d && d.type === "digital");
 
+// =====================================================
+// القصص الشخصية: بيانات الطفل (الاسم، ولد/بنت، العمر، الإهداء، صورة الغلاف)
+// =====================================================
+ATHR.isStory = (p) => Boolean(p && p.story);
+ATHR.STORY_AGES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+ATHR.ageText = (n) => {
+    const a = Math.round(Number(n)) || 0;
+    if (!a) return "";
+    if (a === 1) return "سنة واحدة";
+    if (a === 2) return "سنتان";
+    return a <= 10 ? `${a} سنوات` : `${a} سنة`;
+};
+ATHR.storyClean = function (c) {
+    const x = c || {};
+    const age = Math.round(Number(x.age));
+    const name = String(x.name || "").normalize("NFC")
+        .replace(/[\u0000-\u001F\u007F[\]{}<>|\\/"`~@#$%^&*=+_;:!?؟.,،٫0-9\u0660-\u0669\u06F0-\u06F9]/g, "")
+        .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+        .replace(/\s+/g, " ").trim().slice(0, 22).trim();
+    return {
+        name,
+        g: x.g === "f" ? "f" : "m",
+        age: age >= 1 && age <= 12 ? age : 0,
+        ded: String(x.ded || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, 220),
+        photo: Boolean(x.photo)
+    };
+};
+// أول خانة ناقصة: name | g | age، أو "" إذا البيانات كاملة
+ATHR.storyIssue = function (raw) {
+    const c = ATHR.storyClean(raw);
+    if (!c.name || c.name.replace(/\s/g, "").length < 2 || !/^[\u0621-\u064A\u0671\u067E\u0686\u06A4\u06AF\u06CCa-zA-Z ]+$/.test(c.name)) return "name";
+    if (!raw || (raw.g !== "m" && raw.g !== "f")) return "g";
+    if (!c.age) return "age";
+    return "";
+};
+// أسطر بيانات الطفل في رسالة الطلب
+ATHR.storyLines = function (c, indent = "   ") {
+    if (!c || !c.name) return [];
+    return [
+        `${indent}👶 اسم الطفل: ${c.name} (${c.g === "f" ? "بنت" : "ولد"}${c.age ? `، ${ATHR.ageText(c.age)}` : ""})`,
+        c.ded ? `${indent}💌 الإهداء: ${c.ded}` : "",
+        c.photo ? `${indent}📷 سأرسل صورة الطفل للغلاف` : ""
+    ].filter(Boolean);
+};
+
 // حساب السلة: المجموع، خصم الباقات، التوصيل المجاني
 ATHR.computeCart = function (cartItems, products, config, country = "OM") {
     const byId = new Map(products.map((p) => [p.id, p]));
@@ -449,7 +494,7 @@ ATHR.computeCart = function (cartItems, products, config, country = "OM") {
         const product = byId.get(item.id);
         if (!product) return;
         const qty = Math.max(1, Math.min(Number(item.qty) || 1, Number(config.order.max_qty) || 99));
-        lines.push({ product, qty, total: Number(product.price) * qty });
+        lines.push({ product, qty, total: Number(product.price) * qty, custom: ATHR.isStory(product) && item.custom ? item.custom : null });
     });
 
     const subtotal = lines.reduce((sum, line) => sum + line.total, 0);
@@ -927,7 +972,7 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
         ]);
 
         const items = Array.isArray(order.items) && order.items.length
-            ? order.items.map((it) => `• ${it.label || it.name}${Number(it.qty) > 1 ? ` ×${it.qty}` : ""} · ${num(it.total)}`)
+            ? order.items.flatMap((it) => [`• ${it.label || it.name}${Number(it.qty) > 1 ? ` ×${it.qty}` : ""} · ${num(it.total)}`, ...ATHR.storyLines(it.custom)])
             : String(order.items_text || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => (l.startsWith("•") ? l : `• ${l}`));
         const local = isBaseCountry ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, c.code)})`;
         block([

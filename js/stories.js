@@ -1,0 +1,1542 @@
+/* =====================================================
+   حروف وألوان — القصص الشخصية للأطفال
+   قصص جاهزة يدخل فيها اسم الطفل (ولد أو بنت) وعمره والإهداء،
+   وتُرسم صفحاتها في المتصفح ويُصنع منها ملف PDF جاهز للطباعة.
+   صورة الطفل (إن وُجدت) تُقرأ من جهاز صاحب المتجر فقط ولا تُرفع لأي مكان.
+===================================================== */
+(function (root) {
+    "use strict";
+
+    const SCRIPT = document.currentScript && document.currentScript.src;
+    const ASSETS = SCRIPT ? new URL("../", SCRIPT).href : new URL(root.ATHR_BASE || "/", location.href).href;
+
+    const P = {
+        ink: "#2B2620", paper: "#FFFCF6", beige: "#F3E9D9", coral: "#D2614A", sky: "#3C7DAE",
+        leaf: "#4C8A5C", sun: "#C98A1E", plum: "#7E62B5", teal: "#2E9C8F",
+        skin: "#E9B78F", skinD: "#D49B70", white: "#FFFFFF", cream: "#FCFAF5",
+        grass: "#8DBE7C", grassD: "#6FA463", sand: "#F2DCAE", sandD: "#E4C487",
+        sea: "#4E9CC8", seaD: "#2F78A8", night: "#22325C", nightD: "#17213F", gold: "#F2B731"
+    };
+
+    // =====================================================
+    // النص: اسم الطفل، ولد أو بنت، والعمر
+    // =====================================================
+
+    const ORD = ["", "الأولى", "الثانية", "الثالثة", "الرابعة", "الخامسة", "السادسة", "السابعة", "الثامنة", "التاسعة", "العاشرة", "الحادية عشرة", "الثانية عشرة"];
+    const AGES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const NAME_ON = "\u0001", NAME_OFF = "\u0002";
+
+    function cleanName(v) {
+        return String(v || "")
+            .normalize("NFC")
+            .replace(/[\u0000-\u001F\u007F[\]{}<>|\\/"`~@#$%^&*=+_;:!?؟.,،٫0-9٠-٩۰-۹]/g, "")
+            .replace(/[ً-ٰٟـ]/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 22)
+            .trim();
+    }
+
+    function normalize(c) {
+        const x = c || {};
+        const age = Math.round(Number(x.age));
+        return {
+            name: cleanName(x.name),
+            g: x.g === "f" ? "f" : "m",
+            age: age >= 1 && age <= 12 ? age : 0,
+            ded: String(x.ded || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, 220),
+            photo: Boolean(x.photo)
+        };
+    }
+
+    // رسالة الخطأ للزبون، أو "" إذا البيانات كاملة
+    function problem(c) {
+        const d = normalize(c);
+        if (!d.name) return "name";
+        if (d.name.replace(/\s/g, "").length < 2) return "name";
+        if (!/^[ء-يٱپچڤگیa-zA-Z ]+$/.test(d.name)) return "name";
+        if (!d.age) return "age";
+        return "";
+    }
+
+    function letters(name) {
+        return Array.from(cleanName(name)).filter((ch) => /[ء-يٱپچڤگیa-zA-Z]/.test(ch));
+    }
+
+    function friendName(d) {
+        if (d.g === "f") return d.name === "ريم" ? "مريم" : "ريم";
+        return d.name === "حمد" ? "سالم" : "حمد";
+    }
+
+    function fill(text, d, { mark = false } = {}) {
+        const name = mark ? NAME_ON + d.name.replace(/ /g, " ") + NAME_OFF : d.name;
+        return String(text || "")
+            .replace(/\[([^\]|]*)\|([^\]]*)\]/g, (_, m, f) => (d.g === "f" ? f : m))
+            .replace(/\{age\}/g, ORD[d.age] || ORD[5])
+            .replace(/\{friend\}/g, friendName(d))
+            .replace(/\{letters\}/g, letters(d.name).join(" - "))
+            .replace(/\{name\}/g, () => name);
+    }
+
+    // =====================================================
+    // القصص
+    // =====================================================
+
+    const STORIES = {
+        letters: {
+            id: "letters", title: "في حديقة الحروف", product: "قصة باسم طفلك: حديقة الحروف",
+            color: P.leaf, tint: "#E7F1E2", cover: "lettersCover",
+            pages: [
+                ["l1", "{name} [طفلٌ|طفلةٌ] في {age} من [عمره|عمرها]، [يحب|تحب] الألوان والرسم. وفي صباحٍ مشمس، [استيقظ|استيقظت] على صوت عصفورٍ صغيرٍ يغرّد عند النافذة."],
+                ["l2", "قال العصفور: «[تعالَ|تعالي] معي يا {name}، عندي لك مفاجأة!» [فتبعه|فتبعته] {name} إلى حديقةٍ عجيبة، أشجارها ملوّنة، وعلى أغصانها حروفٌ تلمع مثل النجوم."],
+                ["l3", "قال العصفور: «هذه حديقة الحروف، وكل حرفٍ فيها يبحث عن صديق. هل [تعرف|تعرفين] الحروف التي يُكتب بها اسمك؟»"],
+                ["l4", "[فكّر|فكّرت] {name} قليلاً، ثم [ابتسم|ابتسمت] [وقال|وقالت]: «طبعاً! اسمي يتكوّن من هذه الحروف: {letters}»"],
+                ["l5", "وفجأةً قفزت الحروف من الأشجار، ووقف كل حرفٍ بجانب أخيه، حتى صار الاسم كاملاً أمام [عينيه|عينيها]: {name}!"],
+                ["l6", "أعطى العصفور {name} علبة ألوانٍ كبيرة، [فلوّن|فلوّنت] كل حرفٍ بلونٍ مختلف: الأحمر والأزرق والأخضر والأصفر. ما أجمل الحروف حين تلبس الألوان!"],
+                ["l7", "ثم [لعب|لعبت] {name} مع الحروف لعبة الغميضة بين الزهور، [وتعلّم|وتعلّمت] اسم كل حرفٍ وصوته، وضحك الجميع كثيراً."],
+                ["l8", "وحين مالت الشمس للغروب، لوّحت الحروف بأيديها الصغيرة وقالت: «[عُد|عودي] إلينا كلما أردت أن [تكتب|تكتبي] كلمةً جديدة، فنحن أصدقاؤك.»"],
+                ["l9", "[رجع|رجعت] {name} إلى البيت، [وأمسك|وأمسكت] القلم، [وكتب|وكتبت] [اسمه|اسمها] على الورقة بخطٍّ جميل، حرفاً حرفاً، كما [تعلّم|تعلّمت] في الحديقة."],
+                ["l10", "ومنذ ذلك اليوم [صار|صارت] {name} [يحب|تحب] القراءة والكتابة، لأن كل كلمةٍ جديدة تعني صديقاً جديداً من حديقة الحروف."]
+            ]
+        },
+        space: {
+            id: "space", title: "في رحلة إلى الفضاء", product: "قصة باسم طفلك: رحلة إلى الفضاء",
+            color: P.plum, tint: "#E8E4F4", cover: "spaceCover",
+            pages: [
+                ["s1", "{name} في {age} من [عمره|عمرها]، [ينظر|تنظر] كل ليلةٍ إلى السماء، [ويعدّ|وتعدّ] النجوم، [ويحلم|وتحلم] أن [يسافر|تسافر] يوماً إلى الفضاء."],
+                ["s2", "وفي ليلةٍ هادئة، هبط صاروخٌ صغيرٌ في حديقة البيت، وخرج منه روبوتٌ لطيفٌ اسمه «بيبو» وقال: «هل [تريد|تريدين] أن [تسافر|تسافري] معي يا {name}؟»"],
+                ["s3", "[لبس|لبست] {name} خوذة الفضاء، [وجلس|وجلست] بجانب بيبو، وعدّا معاً: ثلاثة... اثنان... واحد... انطلق الصاروخ!"],
+                ["s4", "ارتفع الصاروخ عالياً، ومن النافذة [رأى|رأت] {name} الأرض كرةً زرقاء جميلة، [فأشار|فأشارت] إليها [وقال|وقالت]: «هناك عُمان... هناك بيتي!»"],
+                ["s5", "هبط الصاروخ على سطح القمر. [قفز|قفزت] {name} قفزاتٍ عالية، فالأشياء على القمر خفيفةٌ جداً، [وترك|وتركت] آثار [قدميه|قدميها] على الغبار الفضي."],
+                ["s6", "ثم طارا إلى كوكب زُحل، صاحب الحلقات الملوّنة. [ضحك|ضحكت] {name} [وقال|وقالت]: «إنه يلبس قبعةً كبيرة!» فضحك بيبو حتى دارت أضواؤه."],
+                ["s7", "وفي طريق العودة، [سمع|سمعت] {name} صوت بكاءٍ صغير. كانت نجمةً صغيرةً ضلّت طريقها، ولا تعرف كيف ترجع إلى أخواتها في السماء."],
+                ["s8", "[قال|قالت] {name}: «لا تخافي، سنساعدك!» [وحملها|وحملتها] بلطفٍ حتى [أعادها|أعادتها] إلى مكانها، فأضاءت النجوم كلها فرحاً وقالت: شكراً يا {name}!"],
+                ["s9", "عاد الصاروخ إلى الأرض، [ونام|ونامت] {name} في [سريره|سريرها] [سعيداً|سعيدةً]، وفي السماء كانت نجمةٌ صغيرةٌ تلمع أكثر من كل النجوم."],
+                ["s10", "وفي الصباح [وجد|وجدت] {name} عند النافذة نجمةً من ورقٍ مكتوباً عليها: «إلى [صديقي الشجاع|صديقتي الشجاعة] {name}». [فعرف|فعرفت] أن الشجاعة جميلة، وأن مساعدة الآخرين أجمل."]
+            ]
+        },
+        school: {
+            id: "school", title: "وأول يوم في المدرسة", product: "قصة باسم طفلك: أول يوم في المدرسة",
+            color: P.coral, tint: "#FBE9DC", cover: "schoolCover",
+            pages: [
+                ["c1", "{name} في {age} من [عمره|عمرها]، واليوم يومٌ مهمٌّ جداً: إنه أول يومٍ في المدرسة! حقيبةٌ جديدة، وأقلامٌ ملوّنة، ودفترٌ ينتظر أول كلمة."],
+                ["c2", "لكنّ [قلبه|قلبها] كان يدقّ بسرعة، [فسأل|فسألت] {name}: «ماذا لو لم أجد [صديقاً|صديقة]؟ وماذا لو تُهتُ في المدرسة الكبيرة؟»"],
+                ["c3", "أمسكت ماما [يده|يدها] وقالت: «كل الأطفال يشعرون بهذا في اليوم الأول، وسوف [تكتشف|تكتشفين] أن المدرسة مكانٌ جميلٌ ومليءٌ بالأصدقاء.»"],
+                ["c4", "عند باب المدرسة، استقبلت المعلمة الأطفال بابتسامةٍ كبيرة وقالت: «أهلاً بك يا {name}، كنّا ننتظرك!» [فشعر|فشعرت] {name} بالدفء والأمان."],
+                ["c5", "[دخل|دخلت] {name} الفصل، [فرأى|فرأت] على الجدران حروفاً ملوّنةً وصوراً جميلة، ومقعداً صغيراً مكتوباً عليه [اسمه|اسمها]: {name}."],
+                ["c6", "وبجانب [مقعده|مقعدها] [جلس طفلٌ خجولٌ لا يتكلم|جلست طفلةٌ خجولةٌ لا تتكلم]. [تذكّر|تذكّرت] {name} [كيف كان يشعر|كيف كانت تشعر] في الصباح، [فابتسم|فابتسمت] [وقال|وقالت]: «اسمي {name}، ما اسمك؟»"],
+                ["c7", "[فأجاب|فأجابت]: «اسمي {friend}». وبعد قليلٍ [صار الاثنان يرسمان|صارت الاثنتان ترسمان] معاً، [ويضحكان|وتضحكان]، [ويتشاركان|وتتشاركان] الألوان كأنهما [صديقان|صديقتان] منذ زمنٍ بعيد."],
+                ["c8", "وفي وقت الفسحة لعب الأطفال جميعاً في الساحة، [وتعلّم|وتعلّمت] {name} لعبةً جديدة، [وكسب|وكسبت] أصدقاء جدداً."],
+                ["c9", "وفي الحصة الأخيرة [رفع|رفعت] {name} [يده|يدها] [وأجاب|وأجابت] عن سؤال المعلمة، فصفّق الجميع، [وحصل|وحصلت] على نجمةٍ ذهبيةٍ لامعة!"],
+                ["c10", "[عاد|عادت] {name} إلى البيت [يركض|تركض] من الفرح [وقال|وقالت]: «ماما! المدرسة رائعة، وعندي [صديقٌ جديد|صديقةٌ جديدة]، وغداً أريد أن أذهب مبكراً!»"]
+            ]
+        },
+        turtle: {
+            id: "turtle", title: "والسلحفاة الصغيرة", product: "قصة باسم طفلك: السلحفاة الصغيرة",
+            color: P.teal, tint: "#DCEFEA", cover: "turtleCover",
+            pages: [
+                ["t1", "{name} في {age} من [عمره|عمرها]، [ذهب|ذهبت] مع [عائلته|عائلتها] في رحلةٍ إلى شاطئ رأس الجنز في عُمان، حيث تأتي السلاحف كل عامٍ لتضع بيضها على الرمال."],
+                ["t2", "في الليل جلس الجميع بهدوءٍ على الرمل، فالسلاحف تحب الهدوء والظلام. وكان القمر يضيء البحر مثل مصباحٍ كبيرٍ في السماء."],
+                ["t3", "وفجأةً تحرّك الرمل... وخرجت سلاحف صغيرةٌ جداً من بيضها، وبدأت تمشي نحو البحر بخطواتٍ صغيرةٍ مضحكة. [همس|همست] {name}: ما أجملها!"],
+                ["t4", "لكنّ {name} [لاحظ|لاحظت] سلحفاةً صغيرةً عالقةً خلف علبةٍ بلاستيكيةٍ تركها أحدهم على الشاطئ، لا تستطيع أن تصل إلى البحر."],
+                ["t5", "[اقترب|اقتربت] {name} بهدوء، [ورفع|ورفعت] العلبة برفقٍ دون أن [يلمس|تلمس] السلحفاة، فقد [تعلّم|تعلّمت] أن صغار السلاحف لا نلمسها بأيدينا."],
+                ["t6", "انطلقت السلحفاة الصغيرة نحو الموج، ثم التفتت كأنها تقول: «شكراً يا {name}!» وغاصت في البحر الكبير."],
+                ["t7", "[قرّر|قرّرت] {name} أن [يساعد|تساعد] كل السلاحف، [فأخذ|فأخذت] كيساً [وجمع|وجمعت] البلاستيك من الشاطئ مع [أهله|أهلها]."],
+                ["t8", "[ورآه|ورآها] الأطفال الآخرون [فانضموا إليه|فانضموا إليها]، وفي دقائق قليلة صار الشاطئ نظيفاً ولامعاً، وصار البحر أكثر أماناً."],
+                ["t9", "قالت المرشدة: «هذه السلحفاة ستكبر، وبعد سنواتٍ طويلة ستعود إلى هذا الشاطئ نفسه لتضع بيضها. وأنتم اليوم ساعدتموها لتبدأ رحلتها.»"],
+                ["t10", "[عاد|عادت] {name} إلى البيت، [ورسم|ورسمت] سلحفاةً كبيرةً، [وكتب|وكتبت] تحتها: «البحر بيتها... فلنحافظ عليه.»"]
+            ]
+        }
+    };
+
+    const DEFAULT_DED = "إلى [حبيبنا|حبيبتنا] {name}: نحبك كثيراً، ونفخر بك كل يوم. هذه القصة كُتبت لك وحدك.";
+
+    // =====================================================
+    // أدوات الرسم (SVG)
+    // =====================================================
+
+    const INK = P.ink;
+    const sw = (w = 5) => `stroke="${INK}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+    const f1 = (n) => Math.round(n * 10) / 10;
+    const nf = (ex) => String(ex || "").replace(/(^|\s)fill="[^"]*"/g, "$1");
+    const R = (x, y, w, h, fill, rx = 0, ex = "") => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" rx="${rx}" fill="${fill}" ${nf(ex)}/>`;
+    const C = (x, y, r, fill, ex = "") => `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="${fill}" ${nf(ex)}/>`;
+    const E = (x, y, rx, ry, fill, ex = "") => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${fill}" ${nf(ex)}/>`;
+    const Pth = (d, fill, ex = "") => `<path d="${d}" fill="${fill}" ${nf(ex)}/>`;
+    const L = (x1, y1, x2, y2, color = INK, w = 5, ex = "") => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" stroke="${color}" stroke-width="${w}" stroke-linecap="round" ${ex}/>`;
+    const G = (t, inner) => `<g transform="${t}">${inner}</g>`;
+    const at = (x, y, s = 1, extra = "") => `translate(${f1(x)},${f1(y)}) scale(${s})${extra ? " " + extra : ""}`;
+
+    let uidN = 0;
+    const uid = (p) => `${p}${++uidN}`;
+
+    // عشوائي ثابت (نفس الرسمة في كل مرة)
+    function rng(seed) {
+        let s = seed >>> 0 || 1;
+        return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+    }
+
+    function grad(top, bottom, x2 = 0, y2 = 1) {
+        const id = uid("g");
+        return { id, def: `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>` };
+    }
+
+    function sky(top, bottom) {
+        const g = grad(top, bottom);
+        return `<defs>${g.def}</defs>${R(-10, -10, 1020, 780, `url(#${g.id})`)}`;
+    }
+
+    function sun(x, y, r = 54) {
+        let rays = "";
+        for (let i = 0; i < 12; i++) {
+            const a = (i / 12) * Math.PI * 2;
+            rays += L(x + Math.cos(a) * (r + 14), y + Math.sin(a) * (r + 14), x + Math.cos(a) * (r + 34), y + Math.sin(a) * (r + 34), P.sun, 8);
+        }
+        return rays + C(x, y, r, P.gold, sw(5)) + C(x - r * 0.3, y - r * 0.3, r * 0.22, "#FFE08A");
+    }
+
+    function cloud(x, y, s = 1) {
+        return G(at(x, y, s), Pth("M -62,22 Q -78,-6 -46,-14 Q -38,-48 -4,-40 Q 18,-64 46,-36 Q 80,-36 72,0 Q 82,22 56,24 Z", P.white, sw(4)));
+    }
+
+    function star(x, y, r = 14, color = P.gold, stroke = true) {
+        const k = r * 0.32;
+        return Pth(`M ${f1(x)},${f1(y - r)} Q ${f1(x + k)},${f1(y - k)} ${f1(x + r)},${f1(y)} Q ${f1(x + k)},${f1(y + k)} ${f1(x)},${f1(y + r)} Q ${f1(x - k)},${f1(y + k)} ${f1(x - r)},${f1(y)} Q ${f1(x - k)},${f1(y - k)} ${f1(x)},${f1(y - r)} Z`, color, stroke ? sw(3) : "");
+    }
+
+    function star5(x, y, r, color = P.gold, ex = sw(5)) {
+        let d = "";
+        for (let i = 0; i < 10; i++) {
+            const a = -Math.PI / 2 + (i * Math.PI) / 5;
+            const rr = i % 2 ? r * 0.48 : r;
+            d += `${i ? "L" : "M"} ${f1(x + Math.cos(a) * rr)},${f1(y + Math.sin(a) * rr)} `;
+        }
+        return Pth(d + "Z", color, ex);
+    }
+
+    function starField(n, seed, area = [0, 0, 1000, 520], colors = ["#FFF6D6", "#FFE08A", "#FFFFFF"]) {
+        const r = rng(seed);
+        let out = "";
+        for (let i = 0; i < n; i++) {
+            const x = area[0] + r() * area[2], y = area[1] + r() * area[3];
+            const big = r() > 0.8;
+            out += big ? star(x, y, 9 + r() * 7, colors[i % colors.length], false) : C(x, y, 1.6 + r() * 2.4, colors[i % colors.length]);
+        }
+        return out;
+    }
+
+    function moon(x, y, r = 46) {
+        return C(x, y, r * 1.6, "#FFF1BF", "opacity=\".12\"") + Pth(`M ${x},${y - r} A ${r},${r} 0 1,0 ${x},${y + r} A ${f1(r * 1.25)},${f1(r * 1.25)} 0 0,1 ${x},${y - r} Z`, "#FFF1BF", sw(4)) + C(x - r * 0.62, y + r * 0.12, 4, "#EBD48F") + C(x - r * 0.5, y - r * 0.42, 3, "#EBD48F");
+    }
+
+    function ground(y, color, colorD, wave = 26) {
+        return Pth(`M -10,${y} Q 160,${y - wave} 330,${y} T 670,${y} T 1010,${y} L 1010,770 L -10,770 Z`, color, sw(5)) +
+            Pth(`M -10,${y + 70} Q 200,${y + 40} 420,${y + 72} T 1010,${y + 62} L 1010,770 L -10,770 Z`, colorD, "opacity=\".45\"");
+    }
+
+    function hills(y, c1 = "#A9D08F", c2 = "#BFDDA6") {
+        return Pth(`M -10,${y} Q 200,${y - 120} 430,${y - 10} Q 620,${y - 110} 1010,${y - 20} L 1010,${y + 80} L -10,${y + 80} Z`, c2, sw(4)) +
+            Pth(`M -10,${y + 20} Q 260,${y - 70} 560,${y + 30} Q 800,${y - 60} 1010,${y + 10} L 1010,${y + 80} L -10,${y + 80} Z`, c1, sw(4));
+    }
+
+    function tree(x, y, s = 1, canopy = P.leaf, fruit = "") {
+        const blobs = [[0, -210, 80], [-62, -170, 60], [62, -170, 62], [0, -150, 64]];
+        return G(at(x, y, s),
+            Pth("M -18,0 L -12,-150 L 12,-150 L 18,0 Z", "#9C6B45", sw(5)) +
+            blobs.map(([bx, by, br]) => C(bx, by, br, INK, `stroke="${INK}" stroke-width="10"`)).join("") +
+            blobs.map(([bx, by, br]) => C(bx, by, br, canopy)).join("") +
+            C(-30, -228, 16, "#FFFFFF", "opacity=\".25\"") + fruit);
+    }
+
+    function palm(x, y, s = 1) {
+        const leaves = [[-110, -30], [-90, 30], [-30, -70], [40, -70], [100, -20], [90, 34]];
+        return G(at(x, y, s),
+            Pth("M -14,0 Q -24,-150 8,-300 L 26,-298 Q 2,-150 14,0 Z", "#A47447", sw(5)) +
+            leaves.map(([lx, ly]) => Pth(`M 16,-300 Q ${16 + lx * 0.5},${-300 + ly - 40} ${16 + lx},${-300 + ly + 30} Q ${16 + lx * 0.45},${-300 + ly - 6} 16,-300 Z`, P.leaf, sw(4))).join("") +
+            C(4, -292, 10, "#7A4F2E", sw(3)) + C(26, -288, 10, "#7A4F2E", sw(3)));
+    }
+
+    function flower(x, y, s = 1, color = P.coral) {
+        let petals = "";
+        for (let i = 0; i < 5; i++) {
+            const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+            petals += C(Math.cos(a) * 15, -62 + Math.sin(a) * 15, 13, color, sw(3.5));
+        }
+        return G(at(x, y, s), L(0, 0, 0, -56, P.leaf, 6) + Pth("M 0,-24 Q 18,-40 30,-30 Q 18,-18 0,-24 Z", P.leaf, sw(3)) + petals + C(0, -62, 10, P.gold, sw(3.5)));
+    }
+
+    function grassTufts(y, n, seed, color = P.grassD) {
+        const r = rng(seed);
+        let out = "";
+        for (let i = 0; i < n; i++) {
+            const x = 20 + r() * 960, yy = y + r() * 90;
+            out += Pth(`M ${f1(x - 10)},${f1(yy)} Q ${f1(x - 6)},${f1(yy - 16)} ${f1(x - 2)},${f1(yy - 22)} M ${f1(x)},${f1(yy)} Q ${f1(x + 2)},${f1(yy - 18)} ${f1(x + 8)},${f1(yy - 24)}`, "none", `stroke="${color}" stroke-width="4" stroke-linecap="round"`);
+        }
+        return out;
+    }
+
+    function confetti(n, seed, area = [40, 40, 920, 520]) {
+        const r = rng(seed);
+        const colors = [P.coral, P.sky, P.leaf, P.gold, P.plum, P.teal];
+        let out = "";
+        for (let i = 0; i < n; i++) {
+            const x = area[0] + r() * area[2], y = area[1] + r() * area[3];
+            out += r() > 0.5
+                ? `<rect x="${f1(x)}" y="${f1(y)}" width="16" height="9" rx="2" fill="${colors[i % 6]}" transform="rotate(${Math.round(r() * 180)} ${f1(x)} ${f1(y)})"/>`
+                : C(x, y, 5 + r() * 3, colors[i % 6]);
+        }
+        return out;
+    }
+
+    function hearts(list) {
+        return list.map(([x, y, s, c]) => G(at(x, y, s), Pth("M 0,14 C -30,-8 -18,-32 0,-18 C 18,-32 30,-8 0,14 Z", c || P.coral, sw(3.5)))).join("");
+    }
+
+    // ---------- الطفل ----------
+    const POSES = {
+        stand: [14, 14], wave: [14, 158], cheer: [148, 148], reach: [14, 84], hold: [58, 58], point: [14, 122],
+        up: [14, 172], run: [-38, 44], hipL: [14, 30], bothUp: [165, 165], carry: [62, 14], lift: [120, 120]
+    };
+
+    function handPos(o, side) {
+        const s = o.s || 1, flip = o.flip ? -1 : 1;
+        const ang = (POSES[o.pose || "stand"] || POSES.stand)[side > 0 ? 1 : 0];
+        const a = (ang * Math.PI) / 180;
+        const hx = side * 36 + side * Math.sin(a) * 92, hy = -188 + Math.cos(a) * 92;
+        return [o.x + hx * s * flip, o.y + hy * s];
+    }
+
+    function arm(side, ang, color, len = 92, sx0 = 36, sy0 = -188, wid = 24) {
+        const sx = side * sx0, sy = sy0;
+        const a = (ang * Math.PI) / 180;
+        const hx = sx + side * Math.sin(a) * len, hy = sy + Math.cos(a) * len;
+        return L(sx, sy, hx, hy, INK, wid + 10) + L(sx, sy, hx, hy, color, wid) + C(hx, hy, wid * 0.58, P.skin, sw(4));
+    }
+
+    function eyesMouth(o) {
+        let out = "";
+        [-21, 21].forEach((x) => {
+            if (o.eyes === "closed") out += Pth(`M ${x - 9},6 Q ${x},14 ${x + 9},6`, "none", sw(4));
+            else if (o.eyes === "happy") out += Pth(`M ${x - 9},10 Q ${x},0 ${x + 9},10`, "none", sw(4));
+            else out += E(x, 6, 6.8, 8.8, INK) + C(x + 2.2, 2.6, 2.6, "#FFFFFF");
+            out += Pth(`M ${x - 9},-11 Q ${x},${o.mouth === "worried" ? -9 : -16} ${x + 9},-11`, "none", sw(3.5));
+        });
+        if (o.g === "f" && o.eyes !== "closed") out += L(-29, 0, -34, -4, INK, 3) + L(29, 0, 34, -4, INK, 3);
+        out += Pth("M -3,19 Q 0,23 3,19", "none", sw(3));
+        const m = o.mouth || "smile";
+        if (m === "open") out += Pth("M -16,29 Q 0,54 16,29 Z", "#9C3B2C", sw(4)) + Pth("M -8,42 Q 0,48 8,42", "#E9858A");
+        else if (m === "worried") out += Pth("M -12,40 Q 0,31 12,40", "none", sw(4));
+        else if (m === "o") out += E(0, 36, 8, 10, "#9C3B2C", sw(3.5));
+        else if (m === "sleep") out += Pth("M -8,35 Q 0,39 8,35", "none", sw(3.5));
+        else out += Pth("M -16,30 Q 0,46 16,30", "none", sw(4));
+        out += C(-35, 23, 10, P.coral, "opacity=\".32\"") + C(35, 23, 10, P.coral, "opacity=\".32\"");
+        if (o.tear) out += Pth("M 30,18 Q 36,30 30,34 Q 24,30 30,18 Z", "#7CC4EA", sw(2.5));
+        return out;
+    }
+
+    // الرأس: المركز (0,0)
+    function head(o) {
+        const g = o.g === "f" ? "f" : "m";
+        let out = "";
+        if (g === "m") {
+            out += C(-55, 6, 11, P.skin, sw(4)) + C(55, 6, 11, P.skin, sw(4));
+            out += C(0, 0, 58, P.skin, sw(5));
+            out += Pth("M -56,-6 Q -60,-22 -50,-30 L -44,-14 Z", INK) + Pth("M 56,-6 Q 60,-22 50,-30 L 44,-14 Z", INK);
+            if (!o.noCap) {
+                const cap = o.cap || P.white;
+                out += Pth("M -61,-12 C -64,-86 64,-86 61,-12 Q 0,-30 -61,-12 Z", cap, sw(5));
+                const cols = [P.coral, P.teal, P.gold, P.plum];
+                for (let i = -4; i <= 4; i++) {
+                    const x = i * 12.5;
+                    const y = -22 - (1 - (i / 4.6) ** 2) * 6;
+                    out += C(x, y, 3.6, cols[(i + 8) % 4]);
+                }
+                out += Pth("M -46,-40 L -34,-52 L -22,-40 L -10,-52 L 2,-40 L 14,-52 L 26,-40 L 38,-52 L 48,-42", "none", `stroke="${o.capLine || P.teal}" stroke-width="3" fill="none" stroke-linejoin="round"`);
+            }
+        } else {
+            const sc = o.scarf || P.plum;
+            out += Pth("M -70,0 C -74,-80 74,-80 70,0 C 74,52 60,86 0,90 C -60,86 -74,52 -70,0 Z", sc, sw(5));
+            out += E(0, 6, 52, 54, P.skin, sw(5));
+            out += Pth("M -53,-2 C -50,-60 50,-60 53,-2 C 30,-32 -30,-32 -53,-2 Z", sc, sw(4));
+            out += C(-62, 30, 4, "#FFFFFF", "opacity=\".6\"") + C(-58, 52, 4, "#FFFFFF", "opacity=\".6\"") + C(62, 30, 4, "#FFFFFF", "opacity=\".6\"") + C(58, 52, 4, "#FFFFFF", "opacity=\".6\"") + C(-30, -44, 4, "#FFFFFF", "opacity=\".6\"") + C(30, -44, 4, "#FFFFFF", "opacity=\".6\"");
+        }
+        out += eyesMouth({ ...o, g });
+        if (o.helmet) out += C(0, 0, 84, "#CBEAF8", `opacity=".28" ${sw(4)}`) + Pth("M -58,-40 Q -40,-66 -6,-72", "none", `stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity=".8"`);
+        return out;
+    }
+
+    // الطفل كاملاً: القدمان عند (x,y)
+    function kid(o) {
+        const g = o.g === "f" ? "f" : "m";
+        const s = o.s || 1;
+        const pose = POSES[o.pose || "stand"] || POSES.stand;
+        const dress = o.dress || (g === "f" ? P.coral : P.cream);
+        const sleeve = o.sleeve || dress;
+        let out = "";
+        const running = o.pose === "run";
+        const feetY = o.jump ? -18 : 2;
+        const shoe = g === "f" ? "#A9412F" : "#8E6340";
+        out += running ? E(-34, feetY - 6, 21, 10, shoe, sw(4)) + E(30, feetY, 21, 10, shoe, sw(4)) : E(-24, feetY, 21, 10, shoe, sw(4)) + E(24, feetY, 21, 10, shoe, sw(4));
+        if (o.bag) out += R(-62, -206, 124, 132, o.bag, 26, sw(5));
+        if (g === "m") {
+            out += Pth("M -38,-206 Q -52,-204 -54,-176 L -68,-16 Q -68,-4 -56,-4 L 56,-4 Q 68,-4 68,-16 L 54,-176 Q 52,-204 38,-206 Z", dress, sw(5));
+            out += Pth("M -16,-205 Q 0,-193 16,-205", "none", sw(3.5));
+            out += L(0, -196, 0, -150, P.coral, 3.5) + Pth("M -5,-152 L 5,-152 L 3,-130 L -3,-130 Z", P.coral);
+            out += Pth("M -40,-30 L 40,-30", "none", `stroke="${INK}" stroke-width="2.5" opacity=".18"`);
+        } else {
+            out += Pth("M -36,-206 Q -50,-204 -52,-176 L -72,-22 Q -60,-8 -46,-14 Q -34,-4 -22,-14 Q -10,-4 2,-14 Q 14,-4 26,-14 Q 38,-4 50,-14 Q 62,-8 72,-22 L 52,-176 Q 50,-204 36,-206 Z", dress, sw(5));
+            [[-30, -120], [10, -150], [32, -96], [-12, -70], [-40, -46], [40, -44], [6, -104]].forEach(([dx, dy]) => { out += C(dx, dy, 6, "#FFFFFF", "opacity=\".5\""); });
+        }
+        out += arm(-1, pose[0], sleeve) + arm(1, pose[1], sleeve);
+        if (g === "f") out += Pth("M -66,-234 Q -80,-198 -60,-176 Q 0,-160 60,-176 Q 80,-198 66,-234 Z", o.scarf || P.plum, sw(5));
+        if (o.bag) out += L(-30, -200, -34, -120, o.bag, 9) + L(30, -200, 34, -120, o.bag, 9);
+        if (o.medal) out += L(-24, -200, 0, -150, P.coral, 8) + L(24, -200, 0, -150, P.sky, 8) + C(0, -142, 20, P.gold, sw(4)) + star5(0, -142, 11, "#FFF3C4", "");
+        out += G("translate(0,-262)", head({ ...o, g }));
+        const t = `translate(${f1(o.x)},${f1(o.y)}) scale(${o.flip ? -s : s},${s})${o.tilt ? ` rotate(${o.tilt})` : ""}`;
+        return `<g transform="${t}">${out}</g>`;
+    }
+
+    // الكبار: الأم والمعلمة والمرشدة
+    function adult(o) {
+        const s = o.s || 1;
+        const abaya = o.abaya || "#3B332D";
+        const sh = o.sheila || P.plum;
+        const pose = POSES[o.pose || "stand"] || POSES.stand;
+        let out = E(-30, 2, 24, 11, "#2B2620", sw(4)) + E(30, 2, 24, 11, "#2B2620", sw(4));
+        out += Pth("M -50,-330 Q -70,-326 -74,-290 L -92,-14 Q -92,-2 -80,-2 L 80,-2 Q 92,-2 92,-14 L 74,-290 Q 70,-326 50,-330 Z", abaya, sw(5));
+        out += L(0, -300, 0, -8, o.trim || P.gold, 4, `stroke-dasharray="2 12"`);
+        out += arm(-1, pose[0], abaya, 128, 46, -306, 28) + arm(1, pose[1], abaya, 128, 46, -306, 28);
+        out += Pth("M -84,-362 Q -100,-300 -78,-282 Q 0,-262 78,-282 Q 100,-300 84,-362 Z", sh, sw(5));
+        if (o.book) out += G("translate(-60,-210) rotate(-12)", R(-34, -26, 68, 52, o.book, 6, sw(4)) + L(0, -26, 0, 26, INK, 3));
+        out += G("translate(0,-392) scale(1.02)", head({ g: "f", scarf: sh, mouth: o.mouth || "smile", eyes: o.eyes }));
+        return `<g transform="translate(${f1(o.x)},${f1(o.y)}) scale(${o.flip ? -s : s},${s})">${out}</g>`;
+    }
+
+    function bird(x, y, s = 1, flip = false, color = P.sky) {
+        const inner =
+            Pth("M 34,4 L 66,-8 L 60,18 Z", color, sw(4)) +
+            E(0, 0, 40, 32, color, sw(5)) +
+            E(-8, 12, 22, 14, "#CFE8F7") +
+            Pth("M 4,-6 Q 30,-34 40,2 Q 22,10 4,-6 Z", "#2D6A96", sw(4)) +
+            C(-20, -10, 6, INK) + C(-18, -12, 2, "#FFFFFF") +
+            Pth("M -38,-6 L -60,0 L -38,8 Z", P.gold, sw(3.5)) +
+            C(-14, 4, 6, P.coral, "opacity=\".4\"") +
+            L(-6, 30, -10, 46, INK, 4) + L(8, 30, 6, 46, INK, 4);
+        return G(`translate(${f1(x)},${f1(y)}) scale(${flip ? -s : s},${s})`, inner);
+    }
+
+    function robot(x, y, s = 1, flip = false, pose = "wave") {
+        const armR = pose === "wave" ? L(56, -150, 104, -214, INK, 22) + L(56, -150, 104, -214, "#B9C4CC", 14) + C(106, -218, 15, P.coral, sw(4)) : L(56, -150, 86, -96, INK, 22) + L(56, -150, 86, -96, "#B9C4CC", 14) + C(88, -92, 15, P.coral, sw(4));
+        const inner =
+            R(-40, -24, 30, 24, "#7E8A92", 8, sw(4)) + R(10, -24, 30, 24, "#7E8A92", 8, sw(4)) +
+            L(-56, -150, -86, -96, INK, 22) + L(-56, -150, -86, -96, "#B9C4CC", 14) + C(-88, -92, 15, P.coral, sw(4)) +
+            armR +
+            R(-58, -176, 116, 152, P.teal, 26, sw(5)) +
+            R(-30, -140, 60, 46, "#E7F6F3", 10, sw(4)) + C(-12, -117, 7, P.coral) + C(12, -117, 7, P.gold) + C(0, -70, 9, P.gold, sw(3)) +
+            L(0, -250, 0, -286, INK, 5) + C(0, -292, 12, P.coral, sw(4)) +
+            R(-66, -268, 132, 96, "#DCE3E8", 30, sw(5)) +
+            R(-48, -252, 96, 62, "#26364F", 18, sw(4)) +
+            E(-20, -224, 9, 12, "#8FF0E0") + E(20, -224, 9, 12, "#8FF0E0") + Pth("M -16,-206 Q 0,-196 16,-206", "none", `stroke="#8FF0E0" stroke-width="5" stroke-linecap="round" fill="none"`) +
+            C(-70, -220, 10, P.gold, sw(4)) + C(70, -220, 10, P.gold, sw(4));
+        return G(`translate(${f1(x)},${f1(y)}) scale(${flip ? -s : s},${s})`, inner);
+    }
+
+    function rocket(x, y, s = 1, rot = 0, o = {}) {
+        let inner =
+            (o.flame ? Pth("M -34,150 Q 0,300 34,150 Z", P.gold, sw(4)) + Pth("M -18,150 Q 0,240 18,150 Z", P.coral) : "") +
+            Pth("M -58,110 L -110,170 L -96,96 Z", P.coral, sw(5)) + Pth("M 58,110 L 110,170 L 96,96 Z", P.coral, sw(5)) +
+            Pth("M 0,-210 C 92,-120 74,60 58,150 L -58,150 C -74,60 -92,-120 0,-210 Z", "#F6F2EA", sw(5)) +
+            Pth("M 0,-210 C 40,-172 58,-140 64,-110 L -64,-110 C -58,-140 -40,-172 0,-210 Z", P.coral, sw(5)) +
+            R(-62, 118, 124, 18, P.sky, 6, sw(4)) +
+            C(0, -30, 46, P.sky, sw(6)) + C(0, -30, 34, "#BFE4F7", sw(3)) +
+            (o.door ? R(-30, 40, 60, 74, "#FFD98A", 10, sw(4)) : C(0, 70, 14, "#E6DCCB", sw(3)));
+        if (o.window) inner += G("translate(0,-30) scale(.5)", o.window);
+        return G(`translate(${f1(x)},${f1(y)}) rotate(${rot}) scale(${s})`, inner);
+    }
+
+    function planet(x, y, r, color, ring) {
+        let out = "";
+        if (ring) out += E(x, y, r * 1.9, r * 0.42, "none", `stroke="${ring}" stroke-width="${f1(r * 0.16)}" transform="rotate(-14 ${x} ${y})"`);
+        out += C(x, y, r, color, sw(5)) + Pth(`M ${x - r * 0.85},${y - r * 0.2} Q ${x},${y - r * 0.45} ${x + r * 0.85},${y - r * 0.2}`, "none", `stroke="#FFFFFF" stroke-width="${f1(r * 0.12)}" opacity=".35" fill="none"`);
+        if (ring) out += Pth(`M ${f1(x - r * 1.84)},${f1(y + r * 0.34)} Q ${x},${f1(y + r * 0.98)} ${f1(x + r * 1.84)},${f1(y - r * 0.6)}`, "none", `stroke="${ring}" stroke-width="${f1(r * 0.16)}" stroke-linecap="round"`) ;
+        return out;
+    }
+
+    function earth(x, y, r) {
+        return C(x, y, r, "#4C9AD2", sw(6)) +
+            Pth(`M ${x - r * 0.6},${y - r * 0.5} q ${r * 0.3},-${r * 0.25} ${r * 0.55},${r * 0.05} q ${r * 0.1},${r * 0.35} -${r * 0.25},${r * 0.45} q -${r * 0.35},${r * 0.05} -${r * 0.3},-${r * 0.5} Z`, P.grass, sw(4)) +
+            Pth(`M ${x + r * 0.15},${y + r * 0.05} q ${r * 0.35},-${r * 0.2} ${r * 0.55},${r * 0.1} q -${r * 0.05},${r * 0.45} -${r * 0.35},${r * 0.55} q -${r * 0.3},-${r * 0.2} -${r * 0.2},-${r * 0.65} Z`, "#E2C27A", sw(4)) +
+            C(x + r * 0.42, y + r * 0.26, r * 0.07, P.coral, sw(3));
+    }
+
+    function starFace(x, y, r, o = {}) {
+        let out = (o.glow ? C(x, y, r * 1.6, "#FFD54A", "opacity=\".18\"") + C(x, y, r * 1.25, "#FFE27A", "opacity=\".22\"") : "") + star5(x, y, r, P.gold, sw(5));
+        const ey = y - r * 0.05;
+        if (o.sad) out += Pth(`M ${x - r * 0.3},${ey} q ${r * 0.08},${r * 0.1} ${r * 0.16},0`, "none", sw(3.5)) + Pth(`M ${x + r * 0.14},${ey} q ${r * 0.08},${r * 0.1} ${r * 0.16},0`, "none", sw(3.5)) + Pth(`M ${x - r * 0.14},${y + r * 0.3} q ${r * 0.14},-${r * 0.12} ${r * 0.28},0`, "none", sw(3.5)) + Pth(`M ${x + r * 0.32},${y + r * 0.08} q ${r * 0.08},${r * 0.16} 0,${r * 0.22} q -${r * 0.08},-${r * 0.06} 0,-${r * 0.22} Z`, "#7CC4EA", sw(2.5));
+        else out += C(x - r * 0.2, ey, r * 0.08, INK) + C(x + r * 0.2, ey, r * 0.08, INK) + Pth(`M ${x - r * 0.18},${y + r * 0.2} q ${r * 0.18},${r * 0.18} ${r * 0.36},0`, "none", sw(3.5)) + C(x - r * 0.36, y + r * 0.16, r * 0.08, P.coral, "opacity=\".4\"") + C(x + r * 0.36, y + r * 0.16, r * 0.08, P.coral, "opacity=\".4\"");
+        return out;
+    }
+
+    function turtle(x, y, s = 1, rot = 0, o = {}) {
+        const fl = (dx, dy, r) => G(`translate(${dx},${dy}) rotate(${r})`, E(0, 0, 22, 9, "#7FA35A", sw(4)));
+        const inner =
+            fl(-34, -18, -40) + fl(34, -18, 40) + fl(-30, 22, 30) + fl(30, 22, -30) +
+            C(0, -44, 16, "#7FA35A", sw(4)) + C(-6, -48, 3, INK) + C(6, -48, 3, INK) + (o.smile ? Pth("M -6,-38 Q 0,-33 6,-38", "none", sw(2.5)) : "") +
+            E(0, 0, 36, 40, P.leaf, sw(5)) +
+            Pth("M 0,-22 L 16,-10 L 16,10 L 0,22 L -16,10 L -16,-10 Z", "#63A06D", sw(3)) +
+            L(0, -22, 0, -40, INK, 3) + L(16, -10, 32, -18, INK, 3) + L(-16, -10, -32, -18, INK, 3) + L(16, 10, 30, 22, INK, 3) + L(-16, 10, -30, 22, INK, 3);
+        return G(`translate(${f1(x)},${f1(y)}) rotate(${rot}) scale(${s})`, inner);
+    }
+
+    function egg(x, y, s = 1, broken = false) {
+        return G(at(x, y, s), broken
+            ? Pth("M -20,0 Q -22,-24 -10,-26 L -4,-16 L 4,-26 L 10,-16 L 18,-24 Q 22,-12 20,0 Q 0,10 -20,0 Z", "#FFF8EA", sw(3.5))
+            : E(0, -16, 18, 22, "#FFF8EA", sw(3.5)));
+    }
+
+    function bottle(x, y, s = 1, rot = 0) {
+        return G(`translate(${f1(x)},${f1(y)}) rotate(${rot}) scale(${s})`,
+            Pth("M -26,0 L -26,-110 Q -26,-136 -12,-146 L -12,-166 L 12,-166 L 12,-146 Q 26,-136 26,-110 L 26,0 Q 26,10 16,10 L -16,10 Q -26,10 -26,0 Z", "#BFE4F2", `opacity=".9" ${sw(4)}`) +
+            R(-15, -184, 30, 20, P.coral, 4, sw(4)) + R(-26, -84, 52, 34, "#F5F0E6", 2, sw(3)) + L(-14, -128, -14, -20, "#FFFFFF", 5, "opacity=\".7\""));
+    }
+
+    function trashBag(x, y, s = 1, color = "#6E8FA6") {
+        return G(at(x, y, s),
+            Pth("M -40,0 Q -58,-50 -30,-86 L -12,-96 L -20,-112 Q 0,-104 20,-112 L 12,-96 L 30,-86 Q 58,-50 40,0 Q 0,12 -40,0 Z", color, sw(5)) +
+            Pth("M -18,-60 Q 0,-48 18,-60", "none", `stroke="#FFFFFF" stroke-width="4" opacity=".4" fill="none" stroke-linecap="round"`));
+    }
+
+    function crayon(x, y, len, rot, color) {
+        return G(`translate(${f1(x)},${f1(y)}) rotate(${rot})`,
+            R(0, -10, len, 20, color, 4, sw(4)) + Pth(`M ${len},-10 L ${len + 22},0 L ${len},10 Z`, "#F3D9B5", sw(4)) + Pth(`M ${len + 12},-5 L ${len + 22},0 L ${len + 12},5 Z`, color) + R(10, -10, 10, 20, "#FFFFFF", 0, "opacity=\".35\""));
+    }
+
+    function balloon(x, y, r, color, tx, ty) {
+        return Pth(`M ${f1(x)},${f1(y + r * 1.12)} Q ${f1((x + tx) / 2 + 18)},${f1((y + ty) / 2)} ${f1(tx)},${f1(ty)}`, "none", `stroke="${INK}" stroke-width="2.5" fill="none"`) +
+            E(x, y, r * 0.9, r, color, sw(4.5)) + Pth(`M ${f1(x - 8)},${f1(y + r + 10)} L ${f1(x)},${f1(y + r - 2)} L ${f1(x + 8)},${f1(y + r + 10)} Z`, color, sw(3)) +
+            E(x - r * 0.35, y - r * 0.4, r * 0.16, r * 0.26, "#FFFFFF", "opacity=\".45\"");
+    }
+
+    function room(wall = "#F7E6CC", floor = "#E3C79A", floorY = 590) {
+        return R(-10, -10, 1020, floorY + 10, wall) + R(-10, floorY, 1020, 200, floor, 0, sw(5)) +
+            Pth(`M -10,${floorY + 60} L 1010,${floorY + 60} M -10,${floorY + 120} L 1010,${floorY + 120}`, "none", `stroke="${INK}" stroke-width="2.5" opacity=".14"`) +
+            (() => { let d = ""; for (let i = 0; i < 9; i++) d += C(60 + i * 115, 70 + (i % 2) * 40, 7, "#FFFFFF", "opacity=\".5\""); return d; })();
+    }
+
+    function windowBox(x, y, w, h, inside, curtain = P.coral) {
+        const id = uid("w");
+        return `<defs><clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/></clipPath></defs>` +
+            R(x - 14, y - 14, w + 28, h + 28, "#FFFDF8", 20, sw(5)) +
+            `<g clip-path="url(#${id})">${inside}</g>` +
+            R(x, y, w, h, "none", 14, sw(5)) + L(x + w / 2, y, x + w / 2, y + h, INK, 5) + L(x, y + h / 2, x + w, y + h / 2, INK, 5) +
+            Pth(`M ${x - 30},${y - 30} L ${x + w * 0.22},${y - 30} Q ${x + w * 0.12},${y + h * 0.5} ${x - 6},${y + h + 40} L ${x - 30},${y + h + 40} Z`, curtain, sw(5)) +
+            Pth(`M ${x + w + 30},${y - 30} L ${x + w * 0.78},${y - 30} Q ${x + w * 0.88},${y + h * 0.5} ${x + w + 6},${y + h + 40} L ${x + w + 30},${y + h + 40} Z`, curtain, sw(5)) +
+            R(x - 40, y - 46, w + 80, 18, "#9C6B45", 8, sw(4));
+    }
+
+    function bed(x, y, w = 420, blanket = P.sky, kidHead = "") {
+        return R(x - 18, y - 170, 30, 230, "#9C6B45", 10, sw(5)) + R(x + w - 12, y - 110, 30, 170, "#9C6B45", 10, sw(5)) +
+            R(x, y - 60, w, 70, "#FFFFFF", 16, sw(5)) +
+            E(x + 80, y - 74, 70, 34, "#FFFFFF", sw(5)) +
+            kidHead +
+            Pth(`M ${x + 120},${y - 70} Q ${x + w * 0.6},${y - 120} ${x + w + 6},${y - 66} L ${x + w + 6},${y + 20} L ${x + 110},${y + 20} Z`, blanket, sw(5)) +
+            Pth(`M ${x + 150},${y - 52} L ${x + w - 20},${y - 52}`, "none", `stroke="#FFFFFF" stroke-width="6" stroke-dasharray="14 16" opacity=".5"`);
+    }
+
+    function desk(x, y, w = 360, top = "#B9835A") {
+        return R(x + 20, y, 18, 120, "#8E6340", 4, sw(4)) + R(x + w - 38, y, 18, 120, "#8E6340", 4, sw(4)) + R(x, y - 26, w, 34, top, 10, sw(5));
+    }
+
+    function houses(y, color = "#E9D2AE", night = false) {
+        const list = [[60, 150, 120], [200, 190, 160], [380, 130, 110], [520, 210, 180], [720, 150, 130], [870, 180, 150]];
+        return list.map(([x, w, h]) => {
+            let d = R(x - w / 2, y - h, w, h + 20, color, 4, sw(5));
+            for (let i = 0; i < Math.floor(w / 30); i++) d += R(x - w / 2 + 8 + i * 30, y - h - 16, 18, 18, color, 2, sw(4));
+            d += R(x - 16, y - h * 0.55, 32, 40, night ? "#FFD772" : "#7FB8DC", 14, sw(4));
+            return d;
+        }).join("");
+    }
+
+    function bunting(x1, y1, x2, y2, n = 9) {
+        let out = Pth(`M ${x1},${y1} Q ${(x1 + x2) / 2},${(y1 + y2) / 2 + 50} ${x2},${y2}`, "none", `stroke="${INK}" stroke-width="3" fill="none"`);
+        const cols = [P.coral, P.gold, P.leaf, P.sky, P.plum, P.teal];
+        for (let i = 0; i < n; i++) {
+            const t = (i + 0.5) / n;
+            const x = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * ((x1 + x2) / 2) + t * t * x2;
+            const yy = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * ((y1 + y2) / 2 + 50) + t * t * y2;
+            out += Pth(`M ${f1(x - 20)},${f1(yy)} L ${f1(x + 20)},${f1(yy)} L ${f1(x)},${f1(yy + 40)} Z`, cols[i % 6], sw(3.5));
+        }
+        return out;
+    }
+
+    function school(cx, y, w = 640, h = 300) {
+        const x = cx - w / 2;
+        let out = R(x, y - h, w, h, "#F4E3C4", 8, sw(5)) + R(x - 16, y - h - 30, w + 32, 34, P.coral, 8, sw(5));
+        for (let i = 0; i < 4; i++) {
+            const ax = x + 50 + i * ((w - 100) / 3);
+            if (i === 1 || i === 2) continue;
+            out += Pth(`M ${ax - 40},${y - 90} L ${ax - 40},${y - 170} A 40,40 0 0,1 ${ax + 40},${y - 170} L ${ax + 40},${y - 90} Z`, "#7FB8DC", sw(4));
+        }
+        out += Pth(`M ${cx - 70},${y} L ${cx - 70},${y - 150} A 70,70 0 0,1 ${cx + 70},${y - 150} L ${cx + 70},${y} Z`, "#B9835A", sw(5)) + L(cx, y - 214, cx, y, INK, 4) + C(cx - 16, y - 80, 5, P.gold) + C(cx + 16, y - 80, 5, P.gold);
+        out += R(cx - 110, y - h + 22, 220, 54, "#FFFDF8", 12, sw(4));
+        return out;
+    }
+
+    function board(x, y, w, h) {
+        return R(x - 14, y - 14, w + 28, h + 28, "#B9835A", 12, sw(5)) + R(x, y, w, h, "#3F6B57", 6, sw(4)) + R(x + w * 0.1, y + h + 10, w * 0.2, 10, "#FFFFFF", 3, sw(2));
+    }
+
+    function bookshelf(x, y) {
+        let out = R(x, y - 300, 170, 300, "#B9835A", 10, sw(5)) + R(x + 14, y - 286, 142, 80, "#F7E6CC", 4, sw(3)) + R(x + 14, y - 186, 142, 80, "#F7E6CC", 4, sw(3)) + R(x + 14, y - 92, 142, 80, "#F7E6CC", 4, sw(3));
+        const cols = [P.coral, P.sky, P.leaf, P.gold, P.plum, P.teal];
+        [-286, -186, -92].forEach((sy, row) => {
+            for (let i = 0; i < 5; i++) out += R(x + 20 + i * 27, y + sy + 14 + ((i + row) % 2) * 8, 22, 66 - ((i + row) % 2) * 8, cols[(i + row * 2) % 6], 3, sw(3));
+        });
+        return out;
+    }
+
+    function sea(y, night = false) {
+        const top = night ? "#2E4F86" : P.sea, deep = night ? "#1F3A68" : P.seaD;
+        return Pth(`M -10,${y} Q 120,${y - 18} 250,${y} T 500,${y} T 750,${y} T 1010,${y} L 1010,${y + 160} L -10,${y + 160} Z`, top, sw(5)) +
+            Pth(`M -10,${y + 50} Q 120,${y + 34} 250,${y + 50} T 500,${y + 50} T 750,${y + 50} T 1010,${y + 50} L 1010,${y + 160} L -10,${y + 160} Z`, deep, "opacity=\".55\"") +
+            Pth(`M 60,${y + 22} q 20,-10 40,0 M 380,${y + 30} q 20,-10 40,0 M 700,${y + 24} q 20,-10 40,0`, "none", `stroke="#FFFFFF" stroke-width="4" opacity=".55" fill="none" stroke-linecap="round"`);
+    }
+
+    function beach(y, night = false) {
+        return Pth(`M -10,${y} Q 250,${y - 30} 500,${y} T 1010,${y - 10} L 1010,770 L -10,770 Z`, night ? "#D9C094" : P.sand, sw(5)) +
+            Pth(`M -10,${y} Q 250,${y - 30} 500,${y} T 1010,${y - 10}`, "none", `stroke="#FFFFFF" stroke-width="8" opacity=".55" fill="none"`) +
+            (() => { const r = rng(y); let d = ""; for (let i = 0; i < 30; i++) d += C(r() * 1000, y + 30 + r() * 140, 2.4, night ? "#B79D6C" : P.sandD); return d; })();
+    }
+
+    function telescope(x, y, s = 1) {
+        return G(at(x, y, s), L(0, 0, -50, 120, INK, 7) + L(0, 0, 50, 120, INK, 7) + L(0, 0, 0, 124, INK, 7) +
+            G("rotate(-28)", R(-70, -20, 150, 40, P.sky, 12, sw(5)) + R(70, -26, 30, 52, P.coral, 8, sw(5)) + R(-86, -14, 20, 28, P.gold, 6, sw(4))));
+    }
+
+    function carCar(x, y, s = 1) {
+        return G(at(x, y, s), R(-120, -70, 240, 60, P.coral, 22, sw(5)) + Pth("M -70,-70 L -40,-120 L 50,-120 L 86,-70 Z", P.coral, sw(5)) + Pth("M -56,-74 L -34,-110 L 0,-110 L 0,-74 Z", "#BFE4F7", sw(4)) + Pth("M 10,-74 L 10,-110 L 44,-110 L 70,-74 Z", "#BFE4F7", sw(4)) + C(-70, -10, 26, "#3C3C3C", sw(5)) + C(70, -10, 26, "#3C3C3C", sw(5)) + C(-70, -10, 10, "#CCCCCC") + C(70, -10, 10, "#CCCCCC") + R(110, -58, 14, 14, P.gold, 4, sw(3)));
+    }
+
+    function signPost(x, y, w = 220) {
+        return R(x - 10, y - 220, 20, 220, "#9C6B45", 4, sw(5)) + R(x - w / 2, y - 260, w, 76, "#C99666", 12, sw(5)) + Pth(`M ${x - w / 2 + 14},${y - 246} L ${x + w / 2 - 14},${y - 246}`, "none", `stroke="#FFFFFF" stroke-width="3" opacity=".3"`);
+    }
+
+    function thought(x, y, w, h) {
+        return C(x - w * 0.35, y + h * 0.72, 10, "#FFFFFF", sw(4)) + C(x - w * 0.28, y + h * 0.56, 16, "#FFFFFF", sw(4)) +
+            Pth(`M ${x - w / 2},${y} Q ${x - w / 2},${y - h / 2} ${x - w * 0.2},${y - h / 2} Q ${x},${y - h * 0.72} ${x + w * 0.22},${y - h / 2} Q ${x + w / 2},${y - h / 2} ${x + w / 2},${y} Q ${x + w / 2},${y + h / 2} ${x + w * 0.1},${y + h * 0.42} Q ${x - w * 0.3},${y + h / 2} ${x - w / 2},${y} Z`, "#FFFFFF", sw(4));
+    }
+
+    function slide(x, y) {
+        return R(x, y - 260, 16, 260, P.sky, 4, sw(4)) + R(x + 70, y - 260, 16, 260, P.sky, 4, sw(4)) +
+            [0, 1, 2, 3].map((i) => L(x + 8, y - 50 - i * 52, x + 78, y - 50 - i * 52, INK, 6)).join("") +
+            R(x - 6, y - 276, 98, 22, P.coral, 8, sw(4)) +
+            Pth(`M ${x + 86},${y - 270} Q ${x + 170},${y - 200} ${x + 230},${y - 20} L ${x + 270},${y - 20} Q ${x + 200},${y - 230} ${x + 86},${y - 236} Z`, P.gold, sw(5));
+    }
+
+    function ball(x, y, r = 30) {
+        return C(x, y, r, P.coral, sw(5)) + Pth(`M ${x - r},${y} Q ${x},${y - r * 0.5} ${x + r},${y}`, "none", `stroke="#FFFFFF" stroke-width="6" fill="none"`) + Pth(`M ${x},${y - r} Q ${x + r * 0.5},${y} ${x},${y + r}`, "none", `stroke="#FFFFFF" stroke-width="6" fill="none"`);
+    }
+
+    function paper(x, y, w, h, rot = 0, inner = "") {
+        return G(`translate(${f1(x)},${f1(y)}) rotate(${rot})`, R(-w / 2, -h / 2, w, h, "#FFFFFF", 6, sw(4)) + inner);
+    }
+
+    function lamp(x, y) {
+        return R(x - 40, y - 12, 80, 14, "#7E8A92", 6, sw(4)) + L(x, y - 12, x + 30, y - 110, INK, 7) + L(x + 30, y - 110, x - 10, y - 160, INK, 7) + Pth(`M ${x - 60},${y - 130} L ${x + 20},${y - 190} L ${x + 30},${y - 150} Z`, P.gold, sw(4));
+    }
+
+    function nameColors(i) { return [P.coral, P.sky, P.leaf, P.gold, P.plum, P.teal][i % 6]; }
+
+    // =====================================================
+    // المشاهد — كل مشهد يعيد { svg, marks, photo }
+    // marks: حروف وكلمات تُكتب فوق الرسمة بخط أميري
+    // =====================================================
+
+    const SCENES = {};
+    const mk = (t, x, y, size, color = INK, extra = {}) => ({ t, x, y, size, color, ...extra });
+
+    // ---------- حديقة الحروف ----------
+    function letterTrees(list) {
+        return list.map(([x, y, s, color, ch]) => ({ svg: tree(x, y, s, color), mark: mk(ch, x, y - 190 * s, 70 * s, "#FFFFFF", { stroke: INK, w: 700 }) }));
+    }
+
+    SCENES.lettersCover = (d, o) => {
+        const tr = letterTrees([[140, 560, 1.05, P.leaf, "أ"], [870, 560, 1.1, P.teal, "ب"]]);
+        const k = { g: d.g, x: 500, y: 650, s: 1.25, pose: "cheer", mouth: "open" };
+        let svg = sky("#BFE2F3", "#F3FAEA") + sun(830, 110, 52) + cloud(220, 110, 1) + cloud(560, 80, 0.8) + hills(520) + tr.map((t) => t.svg).join("") + ground(610, P.grass, P.grassD, 20) +
+            flower(260, 700, 1, P.coral) + flower(330, 720, 0.8, P.plum) + flower(700, 705, 1, P.gold) + flower(770, 725, 0.8, P.sky) + grassTufts(640, 14, 7);
+        const ls = letters(d.name).slice(0, 8);
+        const marks = tr.map((t) => t.mark);
+        ls.forEach((ch, i) => {
+            const n = ls.length, x = 500 + ((n - 1) / 2 - i) * 84, y = 170 + Math.abs(i - (n - 1) / 2) * 14;
+            svg += balloon(x, y, 38, nameColors(i), 500, 330);
+            marks.push(mk(ch, x, y + 4, 46, "#FFFFFF", { w: 700 }));
+        });
+        svg += o.photo ? "" : kid(k);
+        svg += bird(700, 330, 0.9, true);
+        return { svg, marks, photo: o.photo ? { x: 500, y: 470, r: 150 } : null };
+    };
+
+    SCENES.l1 = (d) => {
+        const inside = sky("#9FD3F0", "#E8F6FD") + sun(790, 190, 40) + cloud(650, 290, 0.6);
+        const svg = room("#F8E4C8", "#E1C08F", 600) + windowBox(560, 120, 300, 250, inside, P.coral) + bird(700, 380, 0.8, true) +
+            R(520, 390, 380, 26, "#B9835A", 8, sw(4)) +
+            bed(90, 600, 380, P.leaf) + kid({ g: d.g, x: 500, y: 690, s: 1.05, pose: "cheer", mouth: "open", eyes: "happy" }) +
+            Pth("M 650,330 q 14,-14 28,0 M 640,300 q 14,-14 28,0", "none", `stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"`);
+        return { svg, marks: [mk("♪", 640, 270, 40, P.plum), mk("♪", 760, 300, 34, P.sky)] };
+    };
+
+    SCENES.l2 = (d) => {
+        const tr = letterTrees([[150, 560, 0.9, P.teal, "ج"], [860, 570, 0.95, P.leaf, "د"]]);
+        const svg = sky("#BFE2F3", "#F1FAEA") + cloud(780, 100, 0.9) + hills(500) + tr.map((t) => t.svg).join("") +
+            Pth("M 330,610 L 330,300 Q 500,120 670,300 L 670,610 L 610,610 L 610,310 Q 500,200 390,310 L 390,610 Z", P.leaf, sw(5)) +
+            [[350, 400], [380, 280], [470, 220], [560, 225], [640, 290], [652, 420], [345, 520], [650, 530]].map(([x, y], i) => flower(x, y + 28, 0.7, nameColors(i + 1))).join("") +
+            ground(610, P.grass, P.grassD, 16) + Pth("M 430,770 Q 470,680 480,612 L 520,612 Q 540,680 600,770 Z", "#E8CFA0", sw(4)) +
+            kid({ g: d.g, x: 470, y: 720, s: 0.95, pose: "run", mouth: "open", tilt: 6 }) + bird(560, 240, 0.8, false);
+        return { svg, marks: tr.map((t) => t.mark) };
+    };
+
+    SCENES.l3 = (d) => {
+        const tr = letterTrees([[170, 600, 1.1, P.leaf, "س"], [500, 560, 1.25, P.teal, "م"], [840, 600, 1.1, "#6BA45A", "ر"]]);
+        const svg = sky("#C6E6F5", "#F5FBEC") + hills(540) + tr.map((t) => t.svg).join("") + ground(630, P.grass, P.grassD, 14) +
+            flower(90, 720, 0.8, P.coral) + flower(930, 720, 0.8, P.gold) +
+            bird(640, 330, 0.85, true) + kid({ g: d.g, x: 330, y: 730, s: 0.95, pose: "point", flip: true, mouth: "smile" });
+        return { svg, marks: tr.map((t) => t.mark).concat([mk("؟", 700, 250, 70, P.coral, { w: 700 })]) };
+    };
+
+    SCENES.l4 = (d) => {
+        const ls = letters(d.name).slice(0, 9);
+        const n = Math.max(1, ls.length);
+        const k = { g: d.g, x: 500, y: 720, s: 0.95, pose: "lift", mouth: "open" };
+        const [hx, hy] = handPos(k, 1);
+        let svg = sky("#C6E6F5", "#F6FBEA") + sun(880, 100, 40) + hills(560) + ground(640, P.grass, P.grassD, 14) + grassTufts(650, 12, 3);
+        const marks = [];
+        const span = Math.min(110, 820 / n);
+        ls.forEach((ch, i) => {
+            const x = 500 + ((n - 1) / 2 - i) * span;
+            const y = 170 + Math.abs(i - (n - 1) / 2) * 22 + (i % 2) * 26;
+            const r = Math.min(54, span * 0.46);
+            svg += balloon(x, y, r, nameColors(i), hx - 4 + ((n - 1) / 2 - i) * 3, hy - 6);
+            marks.push(mk(ch, x, y + 6, r * 1.25, "#FFFFFF", { w: 700 }));
+        });
+        svg += kid(k) + flower(200, 720, 0.9, P.plum) + flower(800, 720, 0.9, P.coral);
+        return { svg, marks };
+    };
+
+    SCENES.l5 = (d) => {
+        const ls = letters(d.name).slice(0, 10);
+        const n = Math.max(1, ls.length);
+        const size = Math.min(104, 860 / n);
+        let svg = sky("#C6E6F5", "#F6FBEA") + hills(540) + tree(90, 600, 0.8, P.leaf) + tree(920, 600, 0.8, P.teal) + ground(630, P.grass, P.grassD, 14) + confetti(40, 11, [60, 40, 880, 260]);
+        const marks = [];
+        ls.forEach((ch, i) => {
+            const x = 500 + ((n - 1) / 2 - i) * size;
+            const y = 230 + (i % 2 ? -14 : 10);
+            svg += G(`rotate(${i % 2 ? -6 : 5} ${f1(x)} ${f1(y)})`, R(x - size * 0.44, y - size * 0.44, size * 0.88, size * 0.88, nameColors(i), 16, sw(5)) + R(x - size * 0.34, y - size * 0.36, size * 0.3, size * 0.12, "#FFFFFF", 6, "opacity=\".35\""));
+            marks.push(mk(ch, x, y + 4, size * 0.66, "#FFFFFF", { w: 700 }));
+        });
+        svg += kid({ g: d.g, x: 500, y: 690, s: 0.9, pose: "cheer", mouth: "open", jump: true }) + Pth("M 430,700 q 70,24 140,0", "none", `stroke="${INK}" stroke-width="3" opacity=".25" fill="none"`);
+        return { svg, marks };
+    };
+
+    SCENES.l6 = (d) => {
+        const k = { g: d.g, x: 300, y: 700, s: 0.95, pose: "reach" };
+        const [hx, hy] = handPos(k, 1);
+        const svg = sky("#D2ECF8", "#FAFCEE") + hills(560) + ground(640, P.grass, P.grassD, 12) +
+            R(500, 250, 380, 300, "#FFFFFF", 18, sw(5)) + R(520, 270, 340, 260, "#FFFDF6", 12, "opacity=\".9\"") +
+            R(470, 560, 220, 70, P.coral, 10, sw(5)) + R(480, 540, 200, 30, "#F6D9B0", 8, sw(4)) +
+            crayon(490, 548, 60, -70, P.sky) + crayon(520, 548, 70, -80, P.leaf) + crayon(560, 548, 64, -95, P.gold) + crayon(600, 548, 70, -100, P.plum) + crayon(640, 548, 60, -110, P.coral) +
+            crayon(760, 640, 90, -20, P.teal) + crayon(820, 690, 80, 10, P.coral) +
+            kid(k) + crayon(hx - 6, hy - 4, 60, -30, P.coral) + bird(880, 200, 0.7, true);
+        return { svg, marks: [mk("أ", 590, 400, 120, P.coral, { w: 700 }), mk("ب", 700, 400, 120, P.sky, { w: 700 }), mk("ت", 800, 400, 120, P.leaf, { w: 700 })] };
+    };
+
+    SCENES.l7 = (d) => {
+        const bush = (x, y, s, c) => G(at(x, y, s), C(-50, -30, 50, INK, `stroke="${INK}" stroke-width="10"`) + C(30, -50, 60, INK, `stroke="${INK}" stroke-width="10"`) + C(80, -20, 44, INK, `stroke="${INK}" stroke-width="10"`) + C(-50, -30, 50, c) + C(30, -50, 60, c) + C(80, -20, 44, c) + C(0, -60, 8, P.coral) + C(60, -80, 8, P.gold) + C(-60, -50, 8, P.plum));
+        const svg = sky("#C6E6F5", "#F6FBEA") + hills(520) + ground(600, P.grass, P.grassD, 14) +
+            bush(150, 560, 1.1, "#6BA45A") + bush(680, 580, 1.2, "#5E9A55") + flower(420, 640, 1, P.coral) + flower(480, 660, 0.8, P.gold) + flower(900, 640, 1, P.plum) +
+            kid({ g: d.g, x: 400, y: 740, s: 0.9, pose: "cheer", mouth: "open", eyes: "happy" }) + bird(520, 200, 0.7);
+        return { svg, marks: [mk("ك", 120, 430, 90, P.sky, { w: 700, stroke: INK }), mk("ل", 250, 420, 90, P.coral, { w: 700, stroke: INK }), mk("ن", 690, 420, 90, P.gold, { w: 700, stroke: INK }), mk("هـ", 830, 450, 84, P.plum, { w: 700, stroke: INK })] };
+    };
+
+    SCENES.l8 = (d) => {
+        const lettersLine = [["و", 170, P.coral], ["ي", 300, P.sky], ["ف", 700, P.gold], ["ق", 830, P.plum]];
+        let svg = sky("#F7B477", "#FCE7C6") + C(500, 470, 110, "#FFD27A", sw(5)) + hills(500, "#9CBF7C", "#B6CF92") + ground(600, "#86B06F", P.grassD, 12);
+        lettersLine.forEach(([, x]) => { svg += L(x - 40, 440, x - 74, 400, INK, 6) + L(x + 40, 440, x + 74, 396, INK, 6) + C(x - 76, 396, 9, P.skin, sw(3)) + C(x + 76, 392, 9, P.skin, sw(3)); });
+        svg += kid({ g: d.g, x: 500, y: 730, s: 0.95, pose: "wave", mouth: "smile" });
+        return { svg, marks: lettersLine.map(([ch, x, c]) => mk(ch, x, 450, 120, c, { w: 700, stroke: INK })) };
+    };
+
+    SCENES.l9 = (d) => {
+        const k = { g: d.g, x: 520, y: 640, s: 1, pose: "hold", mouth: "smile" };
+        const svg = room("#F6E2C3", "#E1C08F", 560) + windowBox(110, 110, 240, 200, sky("#A7D6F0", "#EAF7FD") + sun(290, 170, 30), P.leaf) + bookshelf(800, 560) +
+            kid(k) + desk(270, 520, 480) + lamp(330, 494) + paper(560, 470, 300, 76, -3) + crayon(690, 488, 70, -160, P.coral);
+        return { svg, marks: [mk(d.name, 560, 480, Math.min(58, 420 / Math.max(2, d.name.length)), P.coral, { w: 700 })] };
+    };
+
+    SCENES.l10 = (d) => {
+        const svg = room("#F3E2C8", "#DDBE90", 600) + bookshelf(60, 600) + bookshelf(780, 600) + confetti(14, 5, [260, 60, 480, 200]) +
+            kid({ g: d.g, x: 500, y: 700, s: 1.05, pose: "hold", mouth: "open", eyes: "happy" }) +
+            G("translate(500,520)", Pth("M -120,-10 Q -60,-40 0,-14 Q 60,-40 120,-10 L 120,70 Q 60,44 0,70 Q -60,44 -120,70 Z", "#FFFFFF", sw(5)) + L(0, -14, 0, 70, INK, 4) + Pth("M -96,8 L -24,8 M -96,28 L -30,28 M 24,8 L 96,8 M 30,28 L 96,28", "none", `stroke="${INK}" stroke-width="3" opacity=".35"`));
+        return { svg, marks: [mk("ع", 300, 180, 80, P.sky, { w: 700, stroke: INK }), mk("ح", 420, 120, 80, P.coral, { w: 700, stroke: INK }), mk("ص", 590, 120, 80, P.leaf, { w: 700, stroke: INK }), mk("ط", 710, 190, 80, P.plum, { w: 700, stroke: INK })] };
+    };
+
+    // ---------- رحلة إلى الفضاء ----------
+    SCENES.spaceCover = (d, o) => {
+        let svg = sky(P.nightD, "#3A3F7A") + starField(70, 21) + planet(170, 160, 70, P.gold, P.plum) + planet(860, 560, 46, P.coral) + earth(840, 150, 70) +
+            rocket(220, 520, 0.85, 24, { flame: true });
+        svg += o.photo ? "" : kid({ g: d.g, x: 560, y: 690, s: 1.15, pose: "cheer", mouth: "open", helmet: true, tilt: -8 });
+        svg += robot(820, 720, 0.75, true, "wave");
+        return { svg, marks: [], photo: o.photo ? { x: 560, y: 430, r: 150 } : null };
+    };
+
+    SCENES.s1 = (d) => {
+        const k = { g: d.g, x: 610, y: 690, s: 0.95, pose: "reach", flip: true };
+        const svg = sky(P.nightD, "#32467C") + starField(80, 31, [0, 0, 1000, 440]) + moon(820, 120, 50) +
+            houses(560, "#4A5A86", true) + R(-10, 560, 1020, 220, "#C9A779", 0, sw(5)) + R(-10, 560, 1020, 26, "#B08D62", 0, sw(4)) +
+            telescope(420, 560, 1) + kid(k);
+        return { svg, marks: [] };
+    };
+
+    SCENES.s2 = (d) => {
+        const svg = sky(P.night, "#3B5288") + starField(50, 41, [0, 0, 1000, 380]) + moon(150, 110, 40) +
+            Pth("M -10,560 Q 500,520 1010,560 L 1010,770 L -10,770 Z", "#3E7A57", sw(5)) + palm(110, 600, 0.9) +
+            rocket(560, 470, 0.85, 0, { door: true }) + Pth("M 420,600 Q 560,560 700,600", "none", `stroke="#FFF2B0" stroke-width="10" opacity=".35" fill="none"`) +
+            robot(760, 690, 0.65, true, "wave") + kid({ g: d.g, x: 270, y: 720, s: 0.95, pose: "hold", mouth: "o" });
+        return { svg, marks: [] };
+    };
+
+    SCENES.s3 = (d) => {
+        const win = G("translate(0,0) scale(.86)", head({ g: d.g, helmet: true, mouth: "open" }));
+        const svg = sky("#1C2A52", "#5A4E8E") + starField(50, 51) + cloud(150, 640, 1.8) + cloud(820, 660, 1.6) + cloud(480, 700, 1.5) +
+            rocket(500, 360, 1.3, 0, { flame: true, window: win });
+        return { svg, marks: [mk("3", 170, 200, 110, P.gold, { w: 700, stroke: INK, dir: "ltr" }), mk("2", 300, 120, 90, P.coral, { w: 700, stroke: INK, dir: "ltr" }), mk("1", 800, 180, 110, P.teal, { w: 700, stroke: INK, dir: "ltr" })] };
+    };
+
+    SCENES.s4 = (d) => {
+        const win = G("scale(.86)", head({ g: d.g, helmet: true, mouth: "open" }));
+        const svg = sky(P.nightD, "#2A3466") + starField(90, 61) + earth(330, 480, 250) +
+            Pth("M 432,480 C 432,458 460,450 470,470 C 480,450 508,458 508,480 C 508,500 470,520 470,520 C 470,520 432,500 432,480 Z", P.coral, sw(4)) +
+            rocket(780, 270, 0.9, 30, { flame: true, window: win });
+        return { svg, marks: [] };
+    };
+
+    SCENES.s5 = (d) => {
+        const svg = sky("#0F1734", "#2A2F5C") + starField(70, 71, [0, 0, 1000, 420]) + earth(840, 130, 56) +
+            Pth("M -10,560 Q 260,520 500,560 T 1010,550 L 1010,770 L -10,770 Z", "#C9C6D6", sw(5)) +
+            E(200, 640, 70, 18, "#AEABC0", sw(4)) + E(760, 690, 90, 22, "#AEABC0", sw(4)) + E(560, 600, 40, 10, "#AEABC0", sw(3)) +
+            [[300, 700], [360, 680], [420, 704], [480, 684]].map(([x, y]) => E(x, y, 16, 7, "#9C99B0")).join("") +
+            rocket(150, 420, 0.6, -6, {}) + robot(860, 640, 0.5, true, "wave") +
+            kid({ g: d.g, x: 560, y: 520, s: 0.95, pose: "cheer", mouth: "open", helmet: true, tilt: 8, jump: true }) + Pth("M 500,560 q 60,20 120,0", "none", `stroke="#FFFFFF" stroke-width="4" opacity=".35" fill="none"`);
+        return { svg, marks: [] };
+    };
+
+    SCENES.s6 = (d) => {
+        const svg = sky(P.nightD, "#40306E") + starField(70, 81) + planet(560, 370, 180, P.gold, P.coral) + planet(140, 130, 40, P.teal) + planet(900, 640, 50, P.sky) +
+            kid({ g: d.g, x: 190, y: 700, s: 0.8, pose: "point", mouth: "open", helmet: true, tilt: -10 }) + robot(880, 330, 0.55, true, "wave");
+        return { svg, marks: [] };
+    };
+
+    SCENES.s7 = (d) => {
+        const svg = sky("#13204A", "#2C3A72") + starField(60, 91) + starFace(220, 160, 50, {}) + starFace(360, 110, 40, {}) + starFace(120, 300, 34, {}) +
+            starFace(700, 430, 70, { sad: true }) +
+            kid({ g: d.g, x: 360, y: 720, s: 0.9, pose: "reach", mouth: "worried", helmet: true }) + robot(130, 720, 0.5, false, "stand");
+        return { svg, marks: [] };
+    };
+
+    SCENES.s8 = (d) => {
+        const k = { g: d.g, x: 480, y: 720, s: 0.95, pose: "bothUp", mouth: "open", helmet: true };
+        const [hx, hy] = handPos(k, 1);
+        const [gx, gy] = handPos(k, -1);
+        const svg = sky("#13204A", "#3A3F7E") + starField(60, 101) +
+            [[160, 150, 46], [300, 90, 40], [700, 100, 42], [840, 170, 48], [120, 330, 36], [880, 350, 38]].map(([x, y, r]) => starFace(x, y, r, { glow: true })).join("") +
+            kid(k) + starFace((hx + gx) / 2, Math.min(hy, gy) - 50, 62, { glow: true });
+        return { svg, marks: [] };
+    };
+
+    SCENES.s9 = (d) => {
+        const inside = sky(P.nightD, "#33467C") + starField(20, 111, [560, 100, 300, 240]) + starFace(770, 170, 38, { glow: true });
+        const svg = room("#3E4C78", "#30395E", 610) + windowBox(560, 100, 300, 240, inside, P.plum) +
+            bed(110, 610, 440, P.plum, G("translate(200,522) rotate(-10) scale(.78)", head({ g: d.g, eyes: "closed", mouth: "sleep" })));
+        return { svg, marks: [mk("z", 330, 410, 44, "#FFF3C4", { w: 700, dir: "ltr" }), mk("z", 370, 360, 56, "#FFF3C4", { w: 700, dir: "ltr" }), mk("z", 420, 300, 70, "#FFF3C4", { w: 700, dir: "ltr" })] };
+    };
+
+    SCENES.s10 = (d) => {
+        const k = { g: d.g, x: 360, y: 720, s: 1, pose: "hold", mouth: "open", eyes: "happy" };
+        const [hx, hy] = handPos(k, 1);
+        const [gx] = handPos(k, -1);
+        const svg = room("#F8E4C8", "#E1C08F", 600) + windowBox(560, 110, 300, 250, sky("#9FD3F0", "#EAF7FD") + sun(790, 190, 40), P.plum) + robot(830, 600, 0.45, true, "wave") +
+            R(520, 380, 380, 26, "#B9835A", 8, sw(4)) + kid(k) + star5((hx + gx) / 2, hy - 30, 70, "#FFE9A6", sw(5)) + star5((hx + gx) / 2, hy - 30, 46, "none", `stroke="${P.sun}" stroke-width="3" stroke-dasharray="6 8" fill="none"`);
+        return { svg, marks: [] };
+    };
+
+    // ---------- أول يوم في المدرسة ----------
+    SCENES.schoolCover = (d, o) => {
+        let svg = sky("#BFE2F3", "#FDF2E2") + sun(140, 110, 50) + cloud(820, 110, 1) + school(500, 600, 760, 330) + bunting(80, 200, 920, 200, 11) +
+            R(-10, 600, 1020, 170, "#E8D3AE", 0, sw(5)) + tree(70, 620, 0.75, P.leaf) + tree(930, 620, 0.75, P.teal);
+        svg += o.photo ? "" : kid({ g: d.g, x: 500, y: 730, s: 1.15, pose: "wave", mouth: "open", bag: P.sky });
+        return { svg, marks: [mk("مدرستي", 500, 318, 46, P.coral, { w: 700 })], photo: o.photo ? { x: 500, y: 520, r: 150 } : null };
+    };
+
+    SCENES.c1 = (d) => {
+        const k = { g: d.g, x: 640, y: 700, s: 1.02, pose: "hold", mouth: "open", eyes: "happy" };
+        const svg = room("#FAE5CC", "#E3C79A", 600) + windowBox(110, 110, 260, 220, sky("#A7D6F0", "#EAF7FD") + sun(300, 180, 34), P.coral) +
+            bed(80, 620, 380, P.sky) + G("translate(330,520) rotate(-8)", R(-60, -70, 120, 120, P.coral, 26, sw(5)) + R(-40, -40, 80, 50, "#F7B9A8", 12, sw(4)) + L(-30, -70, -30, -96, INK, 6) + L(30, -70, 30, -96, INK, 6) + Pth("M -30,-96 Q 0,-120 30,-96", "none", sw(6))) +
+            crayon(170, 540, 70, -10, P.sky) + crayon(200, 560, 70, -16, P.gold) + R(220, 520, 70, 50, P.leaf, 6, sw(4)) +
+            kid(k) + G("translate(640,520)", R(-50, -40, 100, 80, P.gold, 10, sw(5)) + L(0, -40, 0, 40, INK, 4));
+        return { svg, marks: [] };
+    };
+
+    SCENES.c2 = (d) => {
+        const svg = room("#F5E3C9", "#DFC195", 600) + R(620, 160, 220, 440, "#B9835A", 12, sw(5)) + C(800, 400, 10, P.gold, sw(3)) + R(640, 180, 180, 160, "#C99666", 8, sw(3)) + R(640, 360, 180, 220, "#C99666", 8, sw(3)) +
+            thought(330, 190, 300, 170) + kid({ g: d.g, x: 400, y: 710, s: 1.05, pose: "stand", mouth: "worried", bag: P.sky });
+        return { svg, marks: [mk("؟", 270, 190, 90, P.coral, { w: 700 }), mk("؟", 340, 170, 70, P.sky, { w: 700 }), mk("؟", 400, 200, 80, P.plum, { w: 700 })] };
+    };
+
+    SCENES.c3 = (d) => {
+        const kidO = { g: d.g, x: 560, y: 720, s: 0.9, pose: "point", mouth: "smile", bag: P.sky };
+        const [hx, hy] = handPos(kidO, 1);
+        const svg = sky("#BFE2F3", "#FDF2E2") + sun(880, 100, 44) + houses(560, "#EBD3AE") + R(-10, 560, 1020, 210, "#D9C3A0", 0, sw(5)) + R(-10, 640, 1020, 140, "#9FA3A8", 0, sw(5)) +
+            Pth("M 0,700 L 120,700 M 220,700 L 340,700 M 440,700 L 560,700 M 660,700 L 780,700 M 880,700 L 1000,700", "none", `stroke="#FFFFFF" stroke-width="8"`) +
+            palm(110, 620, 0.85) + adult({ x: hx + 90, y: 740, s: 0.92, pose: "point", flip: true, sheila: P.plum }) + kid(kidO) + C(hx, hy, 14, P.skin, sw(4));
+        return { svg, marks: [] };
+    };
+
+    SCENES.c4 = (d) => {
+        const svg = sky("#BFE2F3", "#FDF2E2") + cloud(160, 100, 0.9) + school(500, 600, 820, 340) + bunting(60, 210, 940, 210, 12) + R(-10, 600, 1020, 170, "#E8D3AE", 0, sw(5)) +
+            adult({ x: 700, y: 720, s: 0.95, pose: "wave", sheila: P.teal, book: P.coral }) + kid({ g: d.g, x: 330, y: 730, s: 0.92, pose: "wave", mouth: "smile", bag: P.sky }) +
+            kid({ g: d.g === "f" ? "m" : "f", x: 120, y: 700, s: 0.7, pose: "stand", dress: d.g === "f" ? "#DCEBF5" : P.gold, scarf: P.teal, bag: P.leaf });
+        return { svg, marks: [mk("مدرستي", 500, 312, 50, P.coral, { w: 700 })] };
+    };
+
+    SCENES.c5 = (d) => {
+        const cards = [["أ", P.coral], ["ب", P.sky], ["ت", P.leaf], ["ث", P.gold], ["ج", P.plum]];
+        let svg = room("#F6E6CC", "#DDBF92", 590) + board(260, 90, 480, 230);
+        const marks = [mk("أهلاً بكم", 500, 205, 72, "#FFFFFF", { w: 700 })];
+        [[110, 120], [110, 260], [890, 120], [890, 260]].forEach(([x, y], i) => { svg += R(x - 50, y - 50, 100, 100, "#FFFFFF", 12, sw(4)) + R(x - 50, y - 50, 100, 20, cards[i][1], 8); marks.push(mk(cards[i][0], x, y + 14, 64, cards[i][1], { w: 700 })); });
+        svg += kid({ g: d.g, x: 300, y: 700, s: 0.95, pose: "wave", mouth: "open", bag: P.sky }) + desk(500, 560, 380) + R(560, 500, 260, 44, "#FFFFFF", 8, sw(4));
+        marks.push(mk(d.name, 690, 525, Math.min(40, 360 / Math.max(2, d.name.length)), P.coral, { w: 700 }));
+        return { svg, marks };
+    };
+
+    SCENES.c6 = (d) => {
+        const fg = d.g;
+        const svg = room("#F6E6CC", "#DDBF92", 590) + board(320, 80, 360, 170) +
+            kid({ g: fg, x: 700, y: 650, s: 0.88, pose: "stand", mouth: "worried", dress: fg === "f" ? P.teal : "#BFDDF2", scarf: P.gold, capLine: P.coral, flip: true }) +
+            kid({ g: d.g, x: 300, y: 650, s: 0.9, pose: "wave", mouth: "open" }) + desk(160, 570, 280) + desk(560, 570, 280);
+        return { svg, marks: [] };
+    };
+
+    SCENES.c7 = (d) => {
+        const fg = d.g;
+        const svg = room("#F6E6CC", "#DDBF92", 590) +
+            kid({ g: d.g, x: 330, y: 640, s: 0.9, pose: "hold", mouth: "open", eyes: "happy" }) + kid({ g: fg, x: 670, y: 640, s: 0.88, pose: "hold", mouth: "open", eyes: "happy", dress: fg === "f" ? P.teal : "#BFDDF2", scarf: P.gold, capLine: P.coral, flip: true }) +
+            desk(170, 560, 660, "#C99666") + paper(500, 520, 300, 90, -2, C(-90, -6, 22, P.gold, sw(3)) + R(-20, -16, 60, 36, P.coral, 4, sw(3)) + Pth("M -26,-16 L 10,-38 L 46,-16 Z", P.sky, sw(3)) + Pth("M 70,20 q 20,-30 40,0", "none", `stroke="${P.leaf}" stroke-width="6" fill="none"`)) +
+            crayon(260, 548, 50, -20, P.coral) + crayon(700, 552, 50, -170, P.sky) + hearts([[500, 140, 1.4, P.coral], [430, 200, 0.9, P.plum], [570, 210, 0.9, P.gold]]);
+        return { svg, marks: [] };
+    };
+
+    SCENES.c8 = (d) => {
+        const svg = sky("#BFE2F3", "#FDF2E2") + sun(880, 90, 40) + R(-10, 520, 1020, 250, "#E7CFA6", 0, sw(5)) + slide(90, 600) + tree(900, 560, 0.8, P.leaf) +
+            kid({ g: "m", x: 220, y: 440, s: 0.6, pose: "cheer", mouth: "open", dress: "#DCEBF5", cap: P.white }) +
+            ball(640, 690, 34) + kid({ g: d.g, x: 520, y: 720, s: 0.92, pose: "run", mouth: "open" }) + kid({ g: "f", x: 760, y: 700, s: 0.78, pose: "cheer", mouth: "open", dress: P.gold, scarf: P.teal }) + confetti(18, 13, [300, 60, 600, 200]);
+        return { svg, marks: [] };
+    };
+
+    SCENES.c9 = (d) => {
+        const svg = room("#F6E6CC", "#DDBF92", 590) + board(380, 70, 440, 210) + adult({ x: 860, y: 640, s: 0.85, pose: "point", flip: true, sheila: P.teal }) +
+            kid({ g: d.g, x: 330, y: 680, s: 0.92, pose: "up", mouth: "open", eyes: "happy" }) + desk(170, 590, 320) + star5(560, 400, 70, P.gold, sw(6)) + star5(560, 400, 40, "#FFF0B8", "") + confetti(16, 17, [420, 300, 300, 200]);
+        return { svg, marks: [mk("2 + 3 = ?", 600, 185, 70, "#FFFFFF", { w: 700, dir: "ltr" })] };
+    };
+
+    SCENES.c10 = (d) => {
+        const k = { g: d.g, x: 360, y: 730, s: 0.95, pose: "cheer", mouth: "open", eyes: "happy", bag: P.sky };
+        const svg = sky("#BFE2F3", "#FDF2E2") + R(560, 180, 420, 440, "#F4E3C4", 8, sw(5)) + R(540, 150, 460, 40, P.coral, 8, sw(5)) + R(700, 380, 130, 240, "#B9835A", 10, sw(5)) + C(805, 500, 8, P.gold, sw(3)) +
+            R(-10, 600, 1020, 170, "#E8D3AE", 0, sw(5)) + palm(120, 620, 0.8) +
+            adult({ x: 640, y: 730, s: 0.92, pose: "lift", flip: true, sheila: P.plum }) + kid(k) + hearts([[500, 220, 1.3, P.coral], [440, 160, 0.8, P.plum], [560, 150, 0.8, P.gold]]);
+        return { svg, marks: [] };
+    };
+
+    // ---------- السلحفاة الصغيرة ----------
+    SCENES.turtleCover = (d, o) => {
+        let svg = sky(P.nightD, "#3C5B93") + starField(50, 121, [0, 0, 1000, 330]) + moon(820, 110, 50) + sea(330, true) + beach(470, true) +
+            Pth("M 730,352 h 70 M 700,374 h 120 M 745,396 h 50 M 712,418 h 90", "none", `stroke="#FFF1BF" stroke-width="6" stroke-linecap="round" opacity=".55"`);
+        svg += turtle(240, 560, 0.9, -20, { smile: true }) + turtle(380, 520, 0.7, -10, { smile: true }) + turtle(760, 560, 0.8, 15, { smile: true }) + turtle(640, 640, 0.65, 10, { smile: true }) + egg(150, 690) + egg(190, 700, 1, true) + egg(880, 700, 1, true);
+        svg += o.photo ? "" : kid({ g: d.g, x: 500, y: 740, s: 1.1, pose: "stand", mouth: "open", eyes: "happy" });
+        return { svg, marks: [], photo: o.photo ? { x: 500, y: 520, r: 150 } : null };
+    };
+
+    SCENES.t1 = (d) => {
+        const svg = sky("#F6A56F", "#FCE3C2") + C(500, 330, 90, "#FFCF73", sw(5)) + sea(330) + beach(450) + palm(110, 560, 0.9) + palm(900, 560, 0.85) +
+            signPost(780, 650, 240) + carCar(240, 700, 0.9) +
+            adult({ x: 620, y: 740, s: 0.82, pose: "point", flip: true, sheila: P.plum }) + kid({ g: d.g, x: 480, y: 740, s: 0.85, pose: "wave", mouth: "open" });
+        return { svg, marks: [mk("رأس الجنز", 780, 432, 44, "#FFFFFF", { w: 700, stroke: INK })] };
+    };
+
+    SCENES.t2 = (d) => {
+        const svg = sky(P.nightD, "#3C5B93") + starField(60, 131, [0, 0, 1000, 320]) + moon(500, 120, 58) + sea(320, true) +
+            Pth("M 470,342 h 60 M 440,364 h 120 M 476,386 h 48 M 452,408 h 96", "none", `stroke="#FFF1BF" stroke-width="6" stroke-linecap="round" opacity=".55"`) + beach(470, true) +
+            adult({ x: 650, y: 720, s: 0.85, pose: "stand", sheila: P.plum }) + kid({ g: d.g, x: 420, y: 730, s: 0.9, pose: "stand", mouth: "smile", eyes: "happy" });
+        return { svg, marks: [] };
+    };
+
+    SCENES.t3 = () => {
+        const svg = sky("#1E2E5A", "#3C5B93") + starField(40, 141, [0, 0, 1000, 260]) + moon(150, 100, 40) + sea(270, true) + beach(400, true) +
+            E(500, 640, 260, 60, "#C9AE7E", sw(4)) + egg(380, 640) + egg(430, 660, 1, true) + egg(560, 650, 1, true) + egg(620, 630) + egg(470, 620, 1, true) +
+            turtle(500, 590, 0.75, -10, { smile: true }) + turtle(640, 520, 0.7, -20, { smile: true }) + turtle(330, 520, 0.7, 20, { smile: true }) + turtle(760, 450, 0.6, -25, { smile: true }) + turtle(220, 460, 0.6, 15, { smile: true });
+        return { svg, marks: [] };
+    };
+
+    SCENES.t4 = (d) => {
+        const svg = sky("#1E2E5A", "#3C5B93") + starField(40, 151, [0, 0, 1000, 260]) + moon(840, 100, 40) + sea(270, true) + beach(400, true) +
+            bottle(640, 640, 1.2, 82) + turtle(560, 560, 0.7, 0, {}) + turtle(860, 470, 0.6, -10, { smile: true }) +
+            kid({ g: d.g, x: 300, y: 730, s: 0.95, pose: "point", mouth: "worried" });
+        return { svg, marks: [] };
+    };
+
+    SCENES.t5 = (d) => {
+        const k = { g: d.g, x: 420, y: 730, s: 0.95, pose: "lift", mouth: "smile" };
+        const [hx, hy] = handPos(k, 1);
+        const svg = sky("#1E2E5A", "#3C5B93") + starField(40, 161, [0, 0, 1000, 260]) + moon(150, 100, 40) + sea(270, true) + beach(400, true) +
+            kid(k) + bottle(hx + 10, hy + 70, 0.75, 20) + turtle(640, 560, 0.72, -30, { smile: true }) + L(700, 500, 760, 440, "#FFFFFF", 4, `stroke-dasharray="6 10" opacity=".7"`);
+        return { svg, marks: [] };
+    };
+
+    SCENES.t6 = (d) => {
+        const svg = sky("#2C4478", "#6C88B8") + starField(30, 171, [0, 0, 1000, 220]) + moon(820, 90, 40) + sea(340, true) +
+            Pth("M 400,420 Q 500,380 640,420", "none", `stroke="#FFFFFF" stroke-width="6" opacity=".6" fill="none"`) +
+            beach(500, true) + turtle(520, 440, 0.8, 175, { smile: true }) +
+            kid({ g: d.g, x: 330, y: 740, s: 0.92, pose: "wave", mouth: "open", eyes: "happy" }) + hearts([[600, 380, 0.8, P.coral]]);
+        return { svg, marks: [] };
+    };
+
+    SCENES.t7 = (d) => {
+        const k = { g: d.g, x: 440, y: 730, s: 0.95, pose: "carry", mouth: "smile" };
+        const [hx, hy] = handPos(k, -1);
+        const svg = sky("#BEE3F2", "#FDF2DC") + sun(860, 100, 44) + sea(300) + beach(420) + palm(100, 560, 0.85) +
+            bottle(700, 640, 0.6, 70) + R(800, 690, 50, 30, "#E9E2D3", 6, sw(3)) + R(600, 700, 40, 26, P.coral, 6, sw(3)) +
+            kid(k) + trashBag(hx, hy + 116, 0.9) + adult({ x: 210, y: 720, s: 0.78, pose: "carry", sheila: P.plum });
+        return { svg, marks: [] };
+    };
+
+    SCENES.t8 = (d) => {
+        const svg = sky("#BEE3F2", "#FDF2DC") + sun(140, 100, 44) + sea(300) + beach(420) +
+            kid({ g: "m", x: 180, y: 700, s: 0.72, pose: "cheer", mouth: "open", dress: "#DCEBF5" }) + kid({ g: "f", x: 820, y: 700, s: 0.75, pose: "cheer", mouth: "open", dress: P.gold, scarf: P.teal }) +
+            kid({ g: d.g, x: 500, y: 740, s: 0.95, pose: "cheer", mouth: "open", eyes: "happy" }) +
+            trashBag(330, 720, 0.7) + trashBag(660, 720, 0.7, "#7A9E7E") + [[260, 520], [740, 500], [420, 480], [600, 540]].map(([x, y]) => star(x, y, 16, "#FFFFFF", false)).join("");
+        return { svg, marks: [] };
+    };
+
+    SCENES.t9 = (d) => {
+        const svg = sky("#BEE3F2", "#FDF2DC") + sun(880, 90, 40) + sea(300) + beach(430) +
+            thought(560, 200, 420, 230) + turtle(540, 200, 1.6, 90, { smile: true }) +
+            adult({ x: 820, y: 730, s: 0.92, pose: "point", flip: true, sheila: P.sun, abaya: "#4A5560" }) + kid({ g: d.g, x: 330, y: 740, s: 0.9, pose: "stand", mouth: "o" });
+        return { svg, marks: [] };
+    };
+
+    SCENES.t10 = (d) => {
+        const k = { g: d.g, x: 300, y: 720, s: 1, pose: "reach", mouth: "smile" };
+        const [hx, hy] = handPos(k, 1);
+        const svg = room("#E3F1EE", "#BFD8D2", 610) + R(470, 90, 440, 440, "#FFFFFF", 12, sw(5)) +
+            turtle(690, 280, 2.2, 0, { smile: true }) + Pth("M 500,430 q 40,-20 80,0 t 80,0 t 80,0 t 80,0 t 80,0", "none", `stroke="${P.sea}" stroke-width="8" fill="none" stroke-linecap="round"`) +
+            kid(k) + crayon(hx - 4, hy - 2, 64, -20, P.teal);
+        return { svg, marks: [mk("البحر بيتها", 690, 500, 46, P.teal, { w: 700 })] };
+    };
+
+    // ---------- النهاية ----------
+    SCENES.end = (d, o) => {
+        const st = o.story;
+        const svg = sky(st.tint, "#FFFCF6") + confetti(60, 191) + kid({ g: d.g, x: 500, y: 720, s: 1.25, pose: "cheer", mouth: "open", eyes: "happy", medal: true }) +
+            star5(160, 170, 50, P.gold) + star5(850, 150, 40, P.gold) + star5(830, 470, 30, P.gold) + star5(170, 470, 34, P.gold);
+        return { svg, marks: [] };
+    };
+
+    // =====================================================
+    // رسم الصفحات على Canvas
+    // =====================================================
+
+    const W = 1240, H = 1754;
+    const FONT = "HStory";
+    let fontsPromise = null;
+
+    function loadFonts() {
+        if (!fontsPromise) {
+            fontsPromise = Promise.all([["400", "amiri-regular"], ["700", "amiri-bold"]].map(([w, f]) =>
+                new FontFace(FONT, `url(${ASSETS}fonts/${f}.woff) format("woff")`, { weight: w, display: "block" }).load().then((face) => { document.fonts.add(face); return face; })
+            )).catch((e) => { console.warn("Story fonts:", e); fontsPromise = null; return null; });
+        }
+        return fontsPromise;
+    }
+
+    function svgDoc(inner) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 760" width="1000" height="760">${inner}</svg>`;
+    }
+
+    function loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("image"));
+            img.src = src;
+        });
+    }
+
+    async function svgImage(inner) {
+        const url = URL.createObjectURL(new Blob([svgDoc(inner)], { type: "image/svg+xml" }));
+        try { return await loadImage(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
+    }
+
+    function font(size, weight = 400) {
+        return `${weight} ${Math.round(size)}px ${FONT}, Amiri, "Times New Roman", serif`;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    // نص عربي ملتف ومتوسط، واسم الطفل بلون مميز
+    function layoutWords(ctx, text, size, maxW) {
+        ctx.font = font(size);
+        const words = String(text).split(/[ \n]+/).filter(Boolean).map((raw) => {
+            const segs = [];
+            const re = /\u0001([^\u0002]*)\u0002/g;
+            let last = 0, m;
+            while ((m = re.exec(raw))) {
+                if (m.index > last) segs.push({ t: raw.slice(last, m.index), hi: false });
+                segs.push({ t: m[1], hi: true });
+                last = m.index + m[0].length;
+            }
+            if (last < raw.length) segs.push({ t: raw.slice(last), hi: false });
+            segs.forEach((sg) => { ctx.font = font(size, sg.hi ? 700 : 400); sg.w = ctx.measureText(sg.t).width; });
+            return { segs, w: segs.reduce((n, sg) => n + sg.w, 0) };
+        });
+        ctx.font = font(size);
+        const space = ctx.measureText(" ").width;
+        const lines = [];
+        let line = [], lw = 0;
+        words.forEach((wd) => {
+            const add = (line.length ? space : 0) + wd.w;
+            if (line.length && lw + add > maxW) { lines.push({ words: line, w: lw }); line = [wd]; lw = wd.w; }
+            else { line.push(wd); lw += add; }
+        });
+        if (line.length) lines.push({ words: line, w: lw });
+        return { lines, space };
+    }
+
+    function drawParagraph(ctx, text, { cx, top, bottom, maxW, size = 54, minSize = 38, lh = 1.9, color = INK, hi = P.coral }) {
+        let s = size, lay;
+        for (; s >= minSize; s -= 2) {
+            lay = layoutWords(ctx, text, s, maxW);
+            if (lay.lines.length * s * lh <= bottom - top) break;
+        }
+        const height = lay.lines.length * s * lh;
+        let y = top + Math.max(0, (bottom - top - height) / 2) + s * lh * 0.62;
+        ctx.textBaseline = "alphabetic";
+        ctx.direction = "rtl";
+        ctx.textAlign = "right";
+        lay.lines.forEach((ln) => {
+            let x = cx + ln.w / 2;
+            ln.words.forEach((wd) => {
+                wd.segs.forEach((sg) => {
+                    ctx.font = font(s, sg.hi ? 700 : 400);
+                    ctx.fillStyle = sg.hi ? hi : color;
+                    ctx.fillText(sg.t, x, y);
+                    x -= sg.w;
+                });
+                x -= lay.space;
+            });
+            y += s * lh;
+        });
+        return s;
+    }
+
+    function fitText(ctx, text, maxW, size, weight = 700, min = 24) {
+        let s = size;
+        ctx.font = font(s, weight);
+        while (s > min && ctx.measureText(text).width > maxW) { s -= 2; ctx.font = font(s, weight); }
+        return s;
+    }
+
+    function drawMarks(ctx, marks, box) {
+        const k = box.w / 1000;
+        (marks || []).forEach((m) => {
+            if (!m || !m.t) return;
+            ctx.save();
+            const size = m.size * k;
+            ctx.font = font(size, m.w || 700);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.direction = m.dir || "rtl";
+            const x = box.x + m.x * k, y = box.y + m.y * k;
+            if (m.stroke) { ctx.lineWidth = Math.max(3, size * 0.09); ctx.strokeStyle = m.stroke; ctx.lineJoin = "round"; ctx.strokeText(m.t, x, y); }
+            ctx.fillStyle = m.color;
+            ctx.fillText(m.t, x, y);
+            ctx.restore();
+        });
+    }
+
+    async function drawScene(ctx, scene, box, photoImg) {
+        const img = await svgImage(scene.svg);
+        ctx.save();
+        roundRect(ctx, box.x, box.y, box.w, box.h, box.r || 0);
+        ctx.clip();
+        ctx.drawImage(img, box.x, box.y, box.w, box.h);
+        drawMarks(ctx, scene.marks, box);
+        if (scene.photo && photoImg) drawPhoto(ctx, photoImg, box.x + scene.photo.x * box.w / 1000, box.y + scene.photo.y * box.w / 1000, scene.photo.r * box.w / 1000);
+        ctx.restore();
+        if (box.r) {
+            ctx.save();
+            roundRect(ctx, box.x, box.y, box.w, box.h, box.r);
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    function drawPhoto(ctx, img, x, y, r) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, r + 22, 0, Math.PI * 2);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.clip();
+        const iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+        const sc = Math.max((r * 2) / iw, (r * 2) / ih);
+        const dw = iw * sc, dh = ih * sc;
+        ctx.drawImage(img, x - dw / 2, y - dh * 0.42, dw, dh);
+        ctx.restore();
+        const cols = [P.coral, P.gold, P.leaf, P.sky, P.plum, P.teal];
+        ctx.save();
+        ctx.lineWidth = 12;
+        ctx.lineCap = "round";
+        cols.forEach((c, i) => {
+            ctx.beginPath();
+            ctx.strokeStyle = c;
+            const a0 = (i / cols.length) * Math.PI * 2 + 0.06, a1 = ((i + 1) / cols.length) * Math.PI * 2 - 0.06;
+            ctx.arc(x, y, r + 11, a0, a1);
+            ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    function crayonStripe(ctx, y, h = 16) {
+        const cols = [P.coral, P.gold, P.leaf, P.sky, P.plum, P.teal];
+        const w = W / cols.length;
+        cols.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * w, y, w + 1, h); });
+    }
+
+    function pageNumber(ctx, n, color) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(W / 2, H - 92, 34, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.font = font(34, 700);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(n), W / 2, H - 90);
+        ctx.restore();
+    }
+
+    function paperBg(ctx, color = P.paper) {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    // ---------- أنواع الصفحات ----------
+    async function drawCover(ctx, st, d, photo) {
+        paperBg(ctx, st.tint);
+        crayonStripe(ctx, 0, 22);
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.textBaseline = "alphabetic";
+        // الاسم
+        const nameSize = fitText(ctx, d.name, W - 180, 172, 700, 80);
+        ctx.font = font(nameSize, 700);
+        ctx.lineWidth = 14;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = INK;
+        ctx.strokeText(d.name, W / 2, 335);
+        ctx.fillStyle = P.coral;
+        ctx.fillText(d.name, W / 2, 335);
+        // شارة صغيرة (فوق الاسم حتى لا تغطيها الحروف الطويلة)
+        ctx.font = font(36, 700);
+        const tag = "قصة مكتوبة خصيصاً لـ" + d.name;
+        const tagW = Math.min(W - 200, ctx.measureText(tag).width + 80);
+        ctx.fillStyle = "#FFFFFF";
+        roundRect(ctx, W / 2 - tagW / 2, 56, tagW, 68, 34);
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.fillStyle = st.color;
+        ctx.font = font(fitText(ctx, tag, tagW - 60, 36), 700);
+        ctx.fillText(tag, W / 2, 102);
+        // عنوان القصة
+        ctx.font = font(fitText(ctx, st.title, W - 200, 92), 700);
+        ctx.fillStyle = INK;
+        ctx.fillText(st.title, W / 2, 520);
+        const scene = SCENES[st.cover](d, { photo: Boolean(photo), story: st });
+        await drawScene(ctx, scene, { x: 50, y: 584, w: W - 100, h: (W - 100) * 0.76, r: 40 }, photo);
+        // اسم المتجر
+        ctx.font = font(44, 700);
+        ctx.fillStyle = INK;
+        ctx.textAlign = "center";
+        ctx.fillText("حروف وألوان", W / 2, H - 118);
+        ctx.font = font(32, 400);
+        ctx.fillStyle = "#6F6557";
+        ctx.fillText("قصة مصوّرة للأطفال · جاهزة للطباعة", W / 2, H - 62);
+        crayonStripe(ctx, H - 22, 22);
+    }
+
+    async function drawDedication(ctx, st, d) {
+        paperBg(ctx);
+        ctx.save();
+        ctx.setLineDash([26, 18]);
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = st.color;
+        roundRect(ctx, 80, 80, W - 160, H - 160, 50);
+        ctx.stroke();
+        ctx.restore();
+        const dk = { g: d.g, x: 500, y: 730, s: 1.15, pose: "hold", mouth: "smile", eyes: "happy" };
+        const [hx, hy] = handPos(dk, 1);
+        const [gx] = handPos(dk, -1);
+        const deco = R(-10, -10, 1020, 780, P.paper) + hearts([[180, 200, 2, P.plum], [820, 210, 2.2, P.gold], [260, 470, 1.4, P.sky], [760, 480, 1.5, P.leaf], [500, 110, 1.2, P.coral]]) +
+            star5(120, 380, 30, P.gold) + star5(890, 380, 34, P.gold) + star5(330, 120, 22, P.gold) + star5(680, 110, 24, P.gold) +
+            kid(dk) + G(at((hx + gx) / 2, hy - 6, 3.4), Pth("M 0,14 C -30,-8 -18,-32 0,-18 C 18,-32 30,-8 0,14 Z", P.coral, sw(2)));
+        await drawScene(ctx, { svg: deco, marks: [] }, { x: 150, y: 130, w: W - 300, h: (W - 300) * 0.76 });
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.font = font(96, 700);
+        ctx.fillStyle = st.color;
+        ctx.fillText("إهداء", W / 2, 960);
+        const text = d.ded ? d.ded : fill(DEFAULT_DED, d);
+        const marked = d.ded ? d.ded.split(d.name).join(NAME_ON + d.name.replace(/ /g, " ") + NAME_OFF) : fill(DEFAULT_DED, d, { mark: true });
+        drawParagraph(ctx, marked || text, { cx: W / 2, top: 1000, bottom: 1580, maxW: W - 320, size: 62, minSize: 40, lh: 1.85 });
+    }
+
+    async function drawStoryPage(ctx, st, d, sceneId, text, n) {
+        paperBg(ctx);
+        const scene = SCENES[sceneId](d, { story: st });
+        const box = { x: 64, y: 64, w: W - 128, h: (W - 128) * 0.76, r: 40 };
+        await drawScene(ctx, scene, box);
+        drawParagraph(ctx, fill(text, d, { mark: true }), { cx: W / 2, top: box.y + box.h + 30, bottom: H - 150, maxW: W - 200, size: 64, minSize: 44, lh: 1.85 });
+        pageNumber(ctx, n, st.color);
+    }
+
+    async function drawEnd(ctx, st, d) {
+        paperBg(ctx, st.tint);
+        const scene = SCENES.end(d, { story: st });
+        const box = { x: 64, y: 64, w: W - 128, h: (W - 128) * 0.76, r: 40 };
+        await drawScene(ctx, scene, box);
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.font = font(140, 700);
+        ctx.lineWidth = 12;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = INK;
+        ctx.strokeText("النهاية", W / 2, 1190);
+        ctx.fillStyle = P.coral;
+        ctx.fillText("النهاية", W / 2, 1190);
+        const hero = fill("[بطل|بطلة] هذه القصة:", d);
+        ctx.font = font(62, 700);
+        ctx.fillStyle = INK;
+        ctx.fillText(hero, W / 2, 1340);
+        ctx.font = font(fitText(ctx, d.name, W - 240, 110), 700);
+        ctx.fillStyle = st.color;
+        ctx.fillText(d.name, W / 2, 1480);
+        ctx.font = font(36, 400);
+        ctx.fillStyle = "#6F6557";
+        ctx.fillText("من مكتبة حروف وألوان", W / 2, H - 100);
+        crayonStripe(ctx, H - 22, 22);
+    }
+
+    function outlineShapes() {
+        const o = `fill="none" stroke="${INK}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"`;
+        return star5(120, 120, 60, "none", o) + star5(880, 120, 52, "none", o) + star5(90, 600, 40, "none", o) + star5(910, 620, 46, "none", o) +
+            G(at(250, 640, 1.3), Pth("M 0,14 C -30,-8 -18,-32 0,-18 C 18,-32 30,-8 0,14 Z", "none", o)) +
+            G(at(760, 650, 1.2), Pth("M 0,14 C -30,-8 -18,-32 0,-18 C 18,-32 30,-8 0,14 Z", "none", o)) +
+            [...Array(5)].map((_, i) => { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; return C(500 + Math.cos(a) * 30, 650 + Math.sin(a) * 30, 24, "none", o); }).join("") + C(500, 650, 18, "none", o) +
+            G(at(400, 110, 1), Pth("M -62,22 Q -78,-6 -46,-14 Q -38,-48 -4,-40 Q 18,-64 46,-36 Q 80,-36 72,0 Q 82,22 56,24 Z", "none", o)) + G(at(610, 90, 0.8), Pth("M -62,22 Q -78,-6 -46,-14 Q -38,-48 -4,-40 Q 18,-64 46,-36 Q 80,-36 72,0 Q 82,22 56,24 Z", "none", o));
+    }
+
+    async function drawColoring(ctx, st, d) {
+        paperBg(ctx, "#FFFFFF");
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        const title = fill("لوّن اسمك يا {name}", d);
+        ctx.font = font(fitText(ctx, title, W - 200, 74), 700);
+        ctx.fillStyle = INK;
+        ctx.fillText(title, W / 2, 170);
+        await drawScene(ctx, { svg: outlineShapes(), marks: [] }, { x: 70, y: 210, w: W - 140, h: (W - 140) * 0.76 });
+        // الاسم مفرّغ للتلوين
+        const size = fitText(ctx, d.name, W - 200, 300, 700, 120);
+        ctx.font = font(size, 700);
+        ctx.lineWidth = 9;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = INK;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(d.name, W / 2, 760);
+        ctx.strokeText(d.name, W / 2, 760);
+        // تتبّع الاسم
+        ctx.font = font(52, 700);
+        ctx.fillStyle = INK;
+        ctx.fillText("تتبّع اسمك بالقلم", W / 2, 1100);
+        const tSize = fitText(ctx, d.name, W - 300, 180, 700, 80);
+        [1290, 1500].forEach((y) => {
+            ctx.save();
+            ctx.strokeStyle = "#E6DDCC";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(140, y + 18);
+            ctx.lineTo(W - 140, y + 18);
+            ctx.stroke();
+            ctx.font = font(tSize, 400);
+            ctx.setLineDash([7, 8]);
+            ctx.lineWidth = 4.5;
+            ctx.strokeStyle = "#6F6557";
+            ctx.strokeText(d.name, W / 2, y);
+            ctx.restore();
+        });
+        crayonStripe(ctx, H - 22, 22);
+    }
+
+    // ---------- ترتيب صفحات الكتاب ----------
+    function bookPages(storyId) {
+        const st = STORIES[storyId];
+        if (!st) return [];
+        return [
+            { kind: "cover" }, { kind: "ded" },
+            ...st.pages.map(([scene, text], i) => ({ kind: "page", scene, text, n: i + 1 })),
+            { kind: "end" }, { kind: "color" }
+        ];
+    }
+
+    async function renderPage(storyId, custom, page, { width = W, photo = null, canvas = null } = {}) {
+        await loadFonts();
+        const st = STORIES[storyId];
+        const d = normalize(custom);
+        if (!d.name) d.name = d.g === "f" ? "سارة" : "سالم";
+        if (!d.age) d.age = 5;
+        uidN = 0;
+        const cv = canvas || document.createElement("canvas");
+        const scale = width / W;
+        cv.width = Math.round(W * scale);
+        cv.height = Math.round(H * scale);
+        const ctx = cv.getContext("2d");
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        if (page.kind === "cover") await drawCover(ctx, st, d, photo);
+        else if (page.kind === "ded") await drawDedication(ctx, st, d);
+        else if (page.kind === "end") await drawEnd(ctx, st, d);
+        else if (page.kind === "color") await drawColoring(ctx, st, d);
+        else await drawStoryPage(ctx, st, d, page.scene, page.text, page.n);
+        return cv;
+    }
+
+    // ---------- PDF ----------
+    function toJpeg(canvas, q = 0.9) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((b) => (b ? b.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)), reject) : reject(new Error("jpeg"))), "image/jpeg", q);
+        });
+    }
+
+    function utf16Hex(s) {
+        let out = "FEFF";
+        for (const ch of String(s)) {
+            const code = ch.codePointAt(0);
+            if (code > 0xffff) {
+                const c = code - 0x10000;
+                out += (0xd800 + (c >> 10)).toString(16).padStart(4, "0") + (0xdc00 + (c & 0x3ff)).toString(16).padStart(4, "0");
+            } else out += code.toString(16).padStart(4, "0");
+        }
+        return out.toUpperCase();
+    }
+
+    function pdfFromJpegs(images, title) {
+        const enc = new TextEncoder();
+        const chunks = [];
+        let len = 0;
+        const offsets = [];
+        const push = (x) => { const b = typeof x === "string" ? enc.encode(x) : x; chunks.push(b); len += b.length; };
+        const pw = 595.28, ph = 841.89;
+        const n = images.length;
+        // 1: الكتالوج، 2: الصفحات، 3: المعلومات، ثم لكل صفحة: صفحة + محتوى + صورة
+        const pageId = (i) => 4 + i * 3;
+        push("%PDF-1.4\n%âãÏÓ\n");
+        const obj = (id, body) => { offsets[id] = len; push(`${id} 0 obj\n${body}\nendobj\n`); };
+        obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+        obj(2, `<< /Type /Pages /Count ${n} /Kids [${images.map((_, i) => `${pageId(i)} 0 R`).join(" ")}] >>`);
+        obj(3, `<< /Title <${utf16Hex(title)}> /Producer (Huroof wa Alwan) /Creator (Huroof wa Alwan) >>`);
+        images.forEach((img, i) => {
+            const p = pageId(i);
+            obj(p, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im${i} ${p + 2} 0 R >> /ProcSet [/PDF /ImageC] >> /Contents ${p + 1} 0 R >>`);
+            const content = `q\n${pw} 0 0 ${ph} 0 0 cm\n/Im${i} Do\nQ\n`;
+            obj(p + 1, `<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream`);
+            offsets[p + 2] = len;
+            push(`${p + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${img.w} /Height ${img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.bytes.length} >>\nstream\n`);
+            push(img.bytes);
+            push("\nendstream\nendobj\n");
+        });
+        const total = 4 + n * 3;
+        const xref = len;
+        let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+        for (let i = 1; i < total; i++) x += `${String(offsets[i] || 0).padStart(10, "0")} 00000 n \n`;
+        push(x);
+        push(`trailer\n<< /Size ${total} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+        return new Blob(chunks, { type: "application/pdf" });
+    }
+
+    async function buildPDF(storyId, custom, { photo = null, onProgress = null, quality = 0.88 } = {}) {
+        const pages = bookPages(storyId);
+        const canvas = document.createElement("canvas");
+        const images = [];
+        for (let i = 0; i < pages.length; i++) {
+            if (onProgress) onProgress(i, pages.length);
+            await renderPage(storyId, custom, pages[i], { canvas, photo });
+            images.push({ bytes: await toJpeg(canvas, quality), w: canvas.width, h: canvas.height });
+            await new Promise((r) => setTimeout(r, 0));
+        }
+        if (onProgress) onProgress(pages.length, pages.length);
+        return pdfFromJpegs(images, bookTitle(storyId, custom));
+    }
+
+    function bookTitle(storyId, custom) {
+        const st = STORIES[storyId];
+        const d = normalize(custom);
+        return st ? `${d.name || ""} ${st.title}`.trim() : "";
+    }
+
+    function fileName(storyId, custom) {
+        return `${bookTitle(storyId, custom).replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim() || "قصة"}.pdf`;
+    }
+
+    async function readPhoto(file) {
+        if (!file) return null;
+        try {
+            if (root.createImageBitmap) return await createImageBitmap(file);
+        } catch { /* نجرب بطريقة الصورة العادية */ }
+        const url = URL.createObjectURL(file);
+        try { return await loadImage(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 2000); }
+    }
+
+    root.HUROOF_STORIES = {
+        STORIES, AGES, ORD,
+        list: () => Object.values(STORIES).map((s) => ({ id: s.id, title: s.title, product: s.product, color: s.color })),
+        get: (id) => STORIES[id] || null,
+        normalize, problem, fill, letters, bookPages, renderPage, buildPDF, bookTitle, fileName, readPhoto, loadFonts,
+        _scenes: SCENES
+    };
+})(window);

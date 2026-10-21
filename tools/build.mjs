@@ -119,7 +119,7 @@ async function fetchData() {
         if (!res.ok) throw new Error(`${p.split("?")[0]}: HTTP ${res.status} ${await res.text()}`);
         return res.json();
     };
-    const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at";
+    const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at,story";
     const [settings, categories, products, reviews, media] = await Promise.all([
         rest("store_settings?select=config&id=eq.1"),
         rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
@@ -506,7 +506,7 @@ async function main() {
         V_THUMBS: hashOf(JSON.stringify(thumbs)),
         V_RATES: hashOf(ratesSrc),
         V_CATALOG: hashOf(catalogSrc),
-        V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"))
+        V_STORE: hashOf(read("js/store.js"), read("js/admin-panel.js"), read("css/admin-panel.css"), read("js/stories.js"))
     };
     const baseCountry = ATHR.country(cfg, ATHR.BASE_COUNTRY);
     const multi = enabled.length > 1;

@@ -345,6 +345,9 @@
                 : `<button class="btn btn-ghost" type="button" disabled>${esc(ct(v, "texts.sold_out"))}</button>`;
         }
         const qty = v.cartQty(p.id);
+        if (ATHR.isStory(p) && qty === 0) {
+            return `<a class="btn btn-primary story-cta" href="${ATHR.url.product(p)}#personalize">✎ ${esc(t("اكتب اسم طفلك"))}</a>`;
+        }
         if (qty > 0 && V.maxFor(v, p) <= 1) {
             return `<a class="btn btn-ghost in-cart" href="${ATHR.url.page("cart")}">${ICON.check}${esc(t("في السلة"))}</a>`;
         }
@@ -1194,6 +1197,39 @@
         return `<div class="stage">${p.image_url ? `<img src="${esc(V.big(p))}" alt="${esc(label)}" fetchpriority="high" width="800" height="1000">` : ""}</div>`;
     };
 
+    // نموذج بيانات الطفل في صفحة القصة الشخصية + معاينة الصفحات
+    V.storyForm = function (v, p) {
+        const id = esc(p.id);
+        const ages = ATHR.STORY_AGES.map((a) => `<option value="${a}">${esc(ATHR.ageText(a))}</option>`).join("");
+        return `<div class="story-form" id="storyForm" data-story-for="${id}">
+            <div class="sf-head" id="personalize"><b>✎ ${esc(t("بيانات طفلك"))}</b><small>${esc(t("نكتب القصة كاملة باسمه، وتشوف المعاينة هنا فوراً"))}</small></div>
+            <label class="sf-field"><span>${esc(t("اسم الطفل"))}</span><input class="input" type="text" name="st_name" maxlength="22" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="${esc(t("مثال: سارة"))}"></label>
+            <div class="sf-row">
+                <div class="sf-field" role="radiogroup" aria-label="${esc(t("ولد أو بنت"))}"><span>${esc(t("ولد أو بنت"))}</span>
+                    <div class="sf-seg">
+                        <label><input type="radio" name="st_g" value="m"><span>${esc(t("ولد"))}</span></label>
+                        <label><input type="radio" name="st_g" value="f"><span>${esc(t("بنت"))}</span></label>
+                    </div>
+                </div>
+                <label class="sf-field"><span>${esc(t("العمر"))}</span><select class="input" name="st_age"><option value="">${esc(t("اختر"))}</option>${ages}</select></label>
+            </div>
+            <label class="sf-field"><span>${esc(t("إهداء من الأهل"))} <small>(${esc(t("اختياري"))})</small></span><textarea class="input" name="st_ded" rows="2" maxlength="220" placeholder="${esc(t("مثال: إلى بطلنا سالم، نحبك كثيراً. ماما وبابا"))}"></textarea></label>
+            <label class="sf-check"><input type="checkbox" name="st_photo"><span><b>${esc(t("أبي صورة طفلي على الغلاف"))}</b><small>${esc(t("ترسلها لنا على واتساب بعد الطلب، ونستخدمها للغلاف فقط."))}</small></span></label>
+            <p class="sf-err" id="stErr" role="alert" hidden></p>
+            <div class="sf-prev" id="storyPrev">
+                <div class="sf-prev-head"><b>${esc(t("معاينة القصة"))}</b><small id="stPrevNote">${esc(t("14 صفحة A4 جاهزة للطباعة"))}</small></div>
+                <div class="sf-pages" id="storyPages" aria-live="polite"></div>
+            </div>
+        </div>`;
+    };
+
+    // سطر صغير ببيانات الطفل تحت القصة في السلة
+    V.storyMeta = function (v, p, c) {
+        if (!ATHR.isStory(p)) return "";
+        if (!c || !c.name) return `<a class="cl-story warn" href="${ATHR.url.product(p)}#personalize">✎ ${esc(t("اكتب اسم طفلك"))}</a>`;
+        return `<span class="cl-story">👶 ${esc(c.name)} · ${esc(c.g === "f" ? t("بنت") : t("ولد"))}${c.age ? ` · ${esc(ATHR.ageText(c.age))}` : ""}${c.photo ? " · 📷" : ""} <a href="${ATHR.url.product(p)}#personalize">${esc(t("تعديل"))}</a></span>`;
+    };
+
     V.buyBox = function (v, p) {
         const cfg = v.cfg;
         if (p.is_available === false) {
@@ -1207,15 +1243,17 @@
         }
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp) && cfg.sales.wa_quick;
         const buyNow = cfg.sales.buy_now;
-        const single = V.maxFor(v, p) <= 1;
-        return `<div class="buy${single ? " single-qty" : ""}" id="buyBox">
+        const story = ATHR.isStory(p);
+        const single = story || V.maxFor(v, p) <= 1;
+        return `<div class="buy${single ? " single-qty" : ""}${story ? " has-story" : ""}" id="buyBox">
+            ${story ? V.storyForm(v, p) : ""}
             <div class="buy-row">
                 <div class="stepper lg" role="group" aria-label="${esc(t("الكمية"))}"${single ? " hidden" : ""}>
                     <button type="button" data-pdp-step="1" aria-label="${esc(t("زيادة"))}">+</button>
                     <output id="pdpQty" aria-live="polite">1</output>
                     <button type="button" data-pdp-step="-1" aria-label="${esc(t("إنقاص"))}">−</button>
                 </div>
-                <button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(ct(v, "texts.add_to_cart"))}</button>
+                <button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(story ? t("أضف القصة للسلة") : ct(v, "texts.add_to_cart"))}</button>
             </div>
             ${buyNow || wa ? `<div class="buy-alt${buyNow && wa ? "" : " single"}">
                 ${buyNow ? `<button class="btn btn-ghost" type="button" data-buy-now="${esc(p.id)}">${esc(t("اشترِ الآن"))}</button>` : ""}

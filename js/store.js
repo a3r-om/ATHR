@@ -246,7 +246,185 @@
         return stock !== null && stock < maxQty() ? t("المتوفر من هذا المنتج {n} فقط", { n: stock }) : t("أقصى كمية من المنتج الواحد {n}", { n: maxQty() });
     }
 
-    function setQty(id, qty, { silent = false } = {}) {
+    // =====================================================
+    // القصص الشخصية: بيانات الطفل تُكتب في صفحة القصة وتنحفظ مع القصة في السلة
+    // =====================================================
+    const CHILD_KEY = "huroof_child";
+    let storiesLib = null;
+
+    function loadStories() {
+        if (window.HUROOF_STORIES) return Promise.resolve(window.HUROOF_STORIES);
+        if (!storiesLib) {
+            const s = $$("script[src*='store.js']")[0];
+            const ver = (s && (s.src.match(/[?&]v=([^&]+)/) || [])[1]) || "1";
+            storiesLib = new Promise((resolve, reject) => {
+                const el = document.createElement("script");
+                el.src = `${BASE}js/stories.js?v=${ver}`;
+                el.onload = () => (window.HUROOF_STORIES ? resolve(window.HUROOF_STORIES) : reject(new Error("stories")));
+                el.onerror = () => { storiesLib = null; reject(new Error("stories")); };
+                document.head.appendChild(el);
+            });
+        }
+        return storiesLib;
+    }
+
+    function cartCustom(id) {
+        const it = getCart().items.find((i) => i.id === id);
+        return it && it.custom ? it.custom : null;
+    }
+
+    function storyBox(id) {
+        return $$("#storyForm").find((el) => el.dataset.storyFor === id) || null;
+    }
+
+    function readStoryForm(id) {
+        const box = storyBox(id);
+        if (!box) return null;
+        const g = box.querySelector('input[name="st_g"]:checked');
+        return {
+            name: box.querySelector('[name="st_name"]').value,
+            g: g ? g.value : "",
+            age: box.querySelector('[name="st_age"]').value,
+            ded: box.querySelector('[name="st_ded"]').value,
+            photo: box.querySelector('[name="st_photo"]').checked
+        };
+    }
+
+    function storyIssueText(issue) {
+        if (issue === "g") return t("اختر: ولد أو بنت، حتى نكتب القصة بالصيغة الصحيحة");
+        if (issue === "age") return t("اختر عمر الطفل");
+        return t("اكتب اسم الطفل بالحروف (حرفين على الأقل)");
+    }
+
+    function showStoryIssue(id, issue) {
+        const box = storyBox(id);
+        if (!box) return;
+        const err = box.querySelector("#stErr");
+        if (err) { err.textContent = storyIssueText(issue); err.hidden = false; }
+        box.querySelectorAll(".sf-field").forEach((f) => f.classList.remove("bad"));
+        const target = issue === "g" ? box.querySelector('input[name="st_g"]') : box.querySelector(issue === "age" ? '[name="st_age"]' : '[name="st_name"]');
+        const field = target && target.closest(".sf-field");
+        if (field) field.classList.add("bad");
+        box.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (target && issue !== "g") setTimeout(() => target.focus({ preventScroll: true }), 300);
+        toast(storyIssueText(issue));
+    }
+
+    // بيانات الطفل الجاهزة، أو نوجّه الزبون لتعبئتها
+    function storyGate(id, { prompt = true } = {}) {
+        const p = productById(id);
+        if (!ATHR.isStory(p)) return { ok: true, custom: null };
+        const raw = readStoryForm(id);
+        if (raw) {
+            const issue = ATHR.storyIssue(raw);
+            if (issue) {
+                if (prompt) showStoryIssue(id, issue);
+                return { ok: false };
+            }
+            const custom = ATHR.storyClean(raw);
+            storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age, ded: custom.ded });
+            return { ok: true, custom };
+        }
+        const have = cartCustom(id);
+        if (have) return { ok: true, custom: have };
+        if (prompt) {
+            toast(t("اكتب اسم طفلك أولاً حتى نكتب القصة باسمه"));
+            navigate(`${ATHR.url.product(p)}#personalize`);
+        }
+        return { ok: false };
+    }
+
+    // تحديث بيانات الطفل لقصة موجودة في السلة
+    function updateStoryInCart(id, custom) {
+        const items = getCart().items;
+        const it = items.find((i) => i.id === id);
+        if (!it) return false;
+        it.custom = custom;
+        saveCart(items);
+        return true;
+    }
+
+    let storyTimer = 0;
+    let storySeq = 0;
+
+    function storyPreview(p, delay = 450) {
+        clearTimeout(storyTimer);
+        storyTimer = setTimeout(async () => {
+            const box = $("#storyPages");
+            if (!box || !storyBox(p.id)) return;
+            const seq = ++storySeq;
+            let lib;
+            try { lib = await loadStories(); } catch { const pr = $("#storyPrev"); if (pr) pr.hidden = true; return; }
+            if (seq !== storySeq || !lib.get(p.story)) return;
+            const raw = readStoryForm(p.id) || {};
+            const clean = ATHR.storyClean(raw);
+            const sample = ATHR.storyIssue({ ...raw, g: "m", age: 5 }) === "name";
+            const g = raw.g === "f" ? "f" : "m";
+            const data = { ...clean, g, age: clean.age || 5, name: sample ? (g === "f" ? t("سارة") : t("سالم")) : clean.name };
+            const pages = lib.bookPages(p.story);
+            const pick = [0, 2, 5, pages.length - 1].filter((i) => pages[i]);
+            const note = $("#stPrevNote");
+            if (note) note.textContent = sample ? t("مثال باسم «{name}»، اكتب اسم طفلك وتتغير القصة", { name: data.name }) : t("{n} صفحة A4 جاهزة للطباعة", { n: pages.length });
+            if (box.children.length !== pick.length) box.innerHTML = pick.map(() => `<div class="sf-page"><canvas width="420" height="594"></canvas></div>`).join("");
+            box.classList.add("busy");
+            const canvases = box.querySelectorAll("canvas");
+            for (let k = 0; k < pick.length; k++) {
+                const tmp = document.createElement("canvas");
+                try { await lib.renderPage(p.story, data, pages[pick[k]], { width: 420, canvas: tmp }); } catch (e) { console.warn("Story preview:", e); break; }
+                if (seq !== storySeq) return;
+                const c = canvases[k];
+                if (!c) break;
+                c.width = tmp.width;
+                c.height = tmp.height;
+                c.getContext("2d").drawImage(tmp, 0, 0);
+            }
+            box.classList.remove("busy");
+        }, delay);
+    }
+
+    function initStoryForm(p) {
+        const box = storyBox(p.id);
+        if (!box) return;
+        const saved = cartCustom(p.id) || storage.get(CHILD_KEY, null);
+        if (saved && saved.name) {
+            box.querySelector('[name="st_name"]').value = saved.name;
+            const g = box.querySelector(`input[name="st_g"][value="${saved.g === "f" ? "f" : "m"}"]`);
+            if (g) g.checked = true;
+            if (saved.age) box.querySelector('[name="st_age"]').value = String(saved.age);
+            if (saved.ded) box.querySelector('[name="st_ded"]').value = saved.ded;
+            if (cartCustom(p.id)) box.querySelector('[name="st_photo"]').checked = Boolean(saved.photo);
+        }
+        const clearErr = () => {
+            const err = box.querySelector("#stErr");
+            if (err) err.hidden = true;
+            box.querySelectorAll(".sf-field.bad").forEach((f) => f.classList.remove("bad"));
+        };
+        box.addEventListener("input", (e) => {
+            clearErr();
+            if (e.target.name === "st_name" || e.target.name === "st_ded") storyPreview(p, 500);
+            else storyPreview(p, 120);
+        });
+        box.addEventListener("change", () => { clearErr(); storyPreview(p, 120); });
+        // نحدّث بيانات القصة في السلة إذا عدّلها الزبون بعد الإضافة
+        box.addEventListener("focusout", () => {
+            if (!cartCustom(p.id)) return;
+            const raw = readStoryForm(p.id);
+            if (raw && !ATHR.storyIssue(raw)) updateStoryInCart(p.id, ATHR.storyClean(raw));
+        });
+        if ("IntersectionObserver" in window) {
+            const io = new IntersectionObserver((en) => { if (en[0].isIntersecting) { io.disconnect(); storyPreview(p, 0); } }, { rootMargin: "300px" });
+            io.observe(box);
+        } else storyPreview(p, 0);
+        if (location.hash === "#personalize") {
+            setTimeout(() => {
+                box.scrollIntoView({ behavior: "smooth", block: "start" });
+                const name = box.querySelector('[name="st_name"]');
+                if (name && !name.value) name.focus({ preventScroll: true });
+            }, 250);
+        }
+    }
+
+    function setQty(id, qty, { silent = false, custom = null, prompt = true } = {}) {
         const product = productById(id);
         const items = getCart().items.filter((i) => i.id !== id || qty > 0);
         const limit = maxFor(id);
@@ -257,8 +435,16 @@
                 toast(C().texts.sold_out);
                 return false;
             }
-            if (existing) existing.qty = clamped;
-            else items.push({ id, qty: clamped });
+            // القصة الشخصية لا تدخل السلة بدون اسم الطفل
+            if (ATHR.isStory(product) && !custom && !(existing && existing.custom)) {
+                const gate = storyGate(id, { prompt });
+                if (!gate.ok) return false;
+                custom = gate.custom;
+            }
+            if (existing) {
+                existing.qty = clamped;
+                if (custom) existing.custom = custom;
+            } else items.push(custom ? { id, qty: clamped, custom } : { id, qty: clamped });
         }
         saveCart(items);
         if (!silent && qty > limit) toast(limitText(id));
@@ -384,7 +570,7 @@
     }
 
     async function fetchData() {
-        const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at";
+        const productCols = "id,name,name_en,slug,price,old_price,category_id,image_url,thumb_url,is_available,is_visible,is_best_seller,is_new_arrival,description,description_en,color_id,sort_order,video_url,weight_g,stock,created_at,story";
         const [settings, categories, products, reviews, proof] = await Promise.all([
             rest("store_settings?select=config&id=eq.1"),
             rest("categories?select=id,name,name_en,slug,sort_order,image_url,description,description_en&order=sort_order.asc"),
@@ -1335,6 +1521,7 @@
         captureOffer(p);
         if (nfc(route.slug) !== nfc(p.slug) && p.slug) history.replaceState(history.state, "", canonical + location.search + location.hash);
         $("#view").innerHTML = V.product(v(), p);
+        if (ATHR.isStory(p)) initStoryForm(p);
         const banner = offerBanner(p);
         if (banner) $("#view .pdp")?.insertAdjacentHTML("beforebegin", banner);
         markRestockButtons();
@@ -1553,7 +1740,7 @@
                     <div class="bb-info"><b>${local(p.price)}</b><small>${esc(V.label(v(), p))}</small></div>
                     ${inCart
                         ? `<a class="btn btn-primary" href="${BASE}checkout/">${esc(t("إتمام الطلب ({n})", { n: computeCart().count }))}</a>`
-                        : `<button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(ct("texts.add_to_cart"))}</button>`}
+                        : `<button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(ATHR.isStory(p) ? t("أضف القصة للسلة") : ct("texts.add_to_cart"))}</button>`}
                 </div>`;
             }
         } else if (S.loaded && r === "cart") {
@@ -1674,7 +1861,7 @@
         const num = (v) => Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
         const out = [fill(cfg.texts.wa_first_line), `🧾 رقم الطلب: ${ATHR.newOrderNo()}`];
         if (!isBase()) out.push(`📍 ${c.flag} ${c.name}`);
-        out.push("", ...lines.map((l) => `• ${ATHR.productLabel(l.product, cfg)}${l.qty > 1 ? ` ×${l.qty}` : ""} · ${num(l.total)}`));
+        out.push("", ...lines.flatMap((l) => [`• ${ATHR.productLabel(l.product, cfg)}${l.qty > 1 ? ` ×${l.qty}` : ""} · ${num(l.total)}`, ...ATHR.storyLines(l.custom)]));
         if (totals.discount > 0) out.push(`${totals.discountLabel}: -${num(totals.discount)}`);
         if (ATHR.isDigital(cfg)) {
             out.push(`💰 المجموع: ${money(totals.afterDiscount)}${approx(totals.afterDiscount)}`);
@@ -1688,7 +1875,7 @@
 
     function quickOrder(lines) {
         const cfg = C();
-        const totals = ATHR.computeCart(lines.map((l) => ({ id: l.product.id, qty: l.qty })), S.products, cfg, S.country);
+        const totals = ATHR.computeCart(lines.map((l) => ({ id: l.product.id, qty: l.qty, custom: l.custom || null })), S.products, cfg, S.country);
         window.open(ATHR.waLink(cfg.order.whatsapp, quickOrderMessage(totals.lines, totals)), "_blank", "noopener");
     }
 
@@ -1764,7 +1951,7 @@
                                             <a class="name" href="${ATHR.url.product(l.product)}">${esc(V.pname(l.product))}</a>
                                             <button class="cl-del" type="button" data-remove="${esc(l.product.id)}" aria-label="${esc(t("حذف"))}" title="${esc(t("حذف"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2V7M6.5 7l.8 11.6c.1 1 .9 1.9 2 1.9h5.4c1.1 0 1.9-.9 2-1.9L17.5 7M10.2 11v5.5M13.8 11v5.5"/></svg></button>
                                         </div>
-                                        <div class="cl-meta">${V.colorTag(v(), l.product)}${l.qty > 1 ? `<span class="cl-each">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</span>` : ""}</div>
+                                        <div class="cl-meta">${V.storyMeta(v(), l.product, l.custom)}${V.colorTag(v(), l.product)}${l.qty > 1 ? `<span class="cl-each">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</span>` : ""}</div>
                                         <div class="cart-line-foot">
                                             <div class="stepper sm" role="group" aria-label="${esc(t("الكمية"))}"${maxFor(l.product.id) <= 1 && l.qty <= 1 ? " hidden" : ""}>
                                                 <button type="button" data-inc="${esc(l.product.id)}" aria-label="${esc(t("زيادة"))}"${l.qty >= maxFor(l.product.id) ? " disabled" : ""}>+</button>
@@ -2204,6 +2391,12 @@
 
     async function placeOrder(form) {
         if (placing) return;
+        const missing = computeCart().lines.find((l) => ATHR.isStory(l.product) && !l.custom);
+        if (missing) {
+            toast(t("اكتب اسم الطفل لقصة «{name}» قبل إتمام الطلب", { name: V.pname(missing.product) }));
+            navigate(`${ATHR.url.product(missing.product)}#personalize`);
+            return;
+        }
         const ok = validateCheckout(form);
         if (!ok) return;
         placing = true;
@@ -2283,7 +2476,8 @@
                 label: ATHR.productLabel(l.product, cfg),
                 qty: l.qty,
                 price: Number(l.product.price),
-                total: l.total
+                total: l.total,
+                ...(ATHR.isStory(l.product) && l.custom ? { custom: l.custom } : {})
             })),
             subtotal: tt.subtotal,
             discount: tt.discount,
@@ -2351,6 +2545,19 @@
     function deliveryName(name) {
         const d = (C().order.delivery || []).find((x) => x.name === name);
         return d ? L(d, "name") : name;
+    }
+
+    // بعد طلب قصة شخصية: تذكير بإرسال صورة الطفل للغلاف (إن اختارها الزبون)
+    function storyDoneHTML(order) {
+        const stories = (order.items || []).filter((it) => it.custom && it.custom.name);
+        if (!stories.length) return "";
+        const photo = stories.filter((it) => it.custom.photo);
+        const names = Array.from(new Set(stories.map((it) => it.custom.name))).join("، ");
+        return `<div class="panel story-done">
+            <h2>📖 ${esc(t("قصة {name} قيد التجهيز", { name: names }))}</h2>
+            <p class="muted">${esc(t("نكتب القصة باسم طفلك ونرسل لك الملف PDF على واتساب بعد تأكيد الدفع، جاهزاً للطباعة."))}</p>
+            ${photo.length ? `<p><b>📷 ${esc(t("أرسل صورة {name} في نفس محادثة واتساب، ونضعها على الغلاف.", { name: Array.from(new Set(photo.map((it) => it.custom.name))).join("، ") }))}</b> <small class="muted">${esc(t("صورة واضحة للوجه بإضاءة جيدة."))}</small></p>` : ""}
+        </div>`;
     }
 
     // بطاقة الإهداء الرقمية بعد طلب الهدية: معاينة وإرسال للمُهدى إليه عبر واتساب
@@ -2570,6 +2777,7 @@
                     ${isOnline ? `<a class="btn btn-primary btn-block" href="${esc(payment.link)}" target="_blank" rel="noopener">${esc(t("ادفع الآن ({amount})", { amount: money(order.total) }))}</a>` : ""}
                     ${payment && payment.type === "bank" ? `<div><p class="muted" style="font-weight:500">${esc(t("حوّل {amount}:", { amount: `${money(order.total)}${code === "OM" ? "" : ` (≈ ${ATHR.moneyIn(order.total, cfg, code)})`}` }))}</p>${bankRows(payment)}</div>` : ""}
                 </div>
+                ${storyDoneHTML(order)}
                 ${giftDoneHTML(order, code)}
                 ${loyaltyDoneHTML(order)}
                 <div class="panel">
@@ -2577,7 +2785,7 @@
                     <div class="rows">
                         ${order.items.map((it) => {
                             const p = productById(it.id);
-                            return `<div class="row"><span>${esc(p ? V.label(v(), p) : it.label)} × ${it.qty}</span><span>${money(it.total)}</span></div>`;
+                            return `<div class="row"><span>${esc(p ? V.label(v(), p) : it.label)} × ${it.qty}${it.custom && it.custom.name ? `<small class="muted d-block">👶 ${esc(it.custom.name)}</small>` : ""}</span><span>${money(it.total)}</span></div>`;
                         }).join("")}
                         ${order.discount > 0 ? `<div class="row ok"><span>${esc(discountText(order.discount_label))}</span><span>-${money(order.discount)}</span></div>` : ""}
                         ${Number(order.coupon_discount) > 0 ? `<div class="row ok"><span>🎟️ ${esc(t("كود {code}", { code: order.coupon }))}</span><span>-${money(order.coupon_discount)}</span></div>` : ""}
@@ -2963,7 +3171,7 @@
         }
         if (d.favAll !== undefined) {
             afterReady(() => {
-                const ids = favIds().filter((id) => { const p = productById(id); return p && p.is_available !== false; });
+                const ids = favIds().filter((id) => { const p = productById(id); return p && p.is_available !== false && !ATHR.isStory(p); });
                 let n = 0;
                 ids.forEach((id) => { if (!cartQty(id) && setQty(id, 1, { silent: true })) { n++; track("add"); pixelAdd(id, 1); } });
                 updateCartUI();
@@ -3176,6 +3384,22 @@
         if (d.pdpAdd) {
             const id = d.pdpAdd;
             afterReady(() => {
+                if (ATHR.isStory(productById(id))) {
+                    const gate = storyGate(id);
+                    if (!gate.ok) return;
+                    if (cartQty(id)) {
+                        updateStoryInCart(id, gate.custom);
+                        toast(t("حدّثنا بيانات القصة ✓"));
+                        openAdded([id]);
+                        return;
+                    }
+                    if (setQty(id, 1, { silent: true, custom: gate.custom })) {
+                        track("add");
+                        pixelAdd(id, 1);
+                        openAdded([id]);
+                    }
+                    return;
+                }
                 const qty = Number($("#pdpQty")?.textContent) || 1;
                 const current = cartQty(id);
                 if (current + qty > maxFor(id)) toast(limitText(id));
@@ -3192,7 +3416,12 @@
             const id = d.buyNow;
             afterReady(() => {
                 const qty = Number($("#pdpQty")?.textContent) || 1;
-                if (cartQty(id) < qty) setQty(id, qty, { silent: true });
+                if (ATHR.isStory(productById(id))) {
+                    const gate = storyGate(id);
+                    if (!gate.ok) return;
+                    if (cartQty(id)) updateStoryInCart(id, gate.custom);
+                    else if (!setQty(id, 1, { silent: true, custom: gate.custom })) return;
+                } else if (cartQty(id) < qty) setQty(id, qty, { silent: true });
                 track("add");
                 pixelAdd(id, qty);
                 navigate(`${BASE}checkout/`);
@@ -3203,7 +3432,12 @@
             const id = d.giftNow;
             afterReady(() => {
                 const qty = Number($("#pdpQty")?.textContent) || 1;
-                if (cartQty(id) < qty) setQty(id, qty, { silent: true });
+                if (ATHR.isStory(productById(id))) {
+                    const gate = storyGate(id);
+                    if (!gate.ok) return;
+                    if (cartQty(id)) updateStoryInCart(id, gate.custom);
+                    else if (!setQty(id, 1, { silent: true, custom: gate.custom })) return;
+                } else if (cartQty(id) < qty) setQty(id, qty, { silent: true });
                 track("add");
                 pixelAdd(id, qty);
                 locStash.self = null;
@@ -3218,6 +3452,11 @@
             afterReady(() => {
                 const p = productById(id);
                 const qty = Number($("#pdpQty")?.textContent) || 1;
+                if (p && ATHR.isStory(p)) {
+                    const gate = storyGate(id);
+                    if (gate.ok) quickOrder([{ product: p, qty: 1, custom: gate.custom }]);
+                    return;
+                }
                 if (p) quickOrder([{ product: p, qty }]);
             });
             return;
