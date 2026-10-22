@@ -2754,9 +2754,9 @@ html.tpl-roa h1, html.tpl-roa h2, html.tpl-roa h3 { font-family: var(--font-head
 
 /* ----- الرأس: الشعار في المنتصف تماماً، القائمة يمين والسلة يسار ----- */
 html.tpl-roa .top { background: var(--head-bg); color: var(--head-ink); border-bottom: 1px solid var(--line); box-shadow: none; }
-html.tpl-roa .top-row { position: relative; grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu . lang cur cart" "search search search search search"; padding: 8px 0 10px; gap: 8px 6px; }
-html.tpl-roa .top-row.no-search { grid-template-areas: "menu . lang cur cart"; }
-html.tpl-roa .brand { position: absolute; left: 50%; top: 8px; height: 40px; transform: translateX(-50%); justify-self: auto; z-index: 1; }
+html.tpl-roa .top-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu brand lang cur cart" "search search search search search"; padding: 8px 0 10px; gap: 8px 6px; }
+html.tpl-roa .top-row.no-search { grid-template-areas: "menu brand lang cur cart"; }
+html.tpl-roa .brand { justify-self: start; height: 40px; }
 html.tpl-roa { --wide-h: 27px; }
 html.tpl-roa .icon-btn { background: transparent; color: var(--head-ink); }
 html.tpl-roa .icon-btn:hover { background: color-mix(in srgb, var(--head-ink) 8%, transparent); }
@@ -2771,7 +2771,7 @@ html.tpl-roa .search svg { stroke: var(--muted); }
 html.tpl-roa .search:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
 @media (max-width: 599px) { html.tpl-roa .lang-btn { display: none; } }
 @media (min-width: 760px) {
-    html.tpl-roa .top-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu . lang cur cart" "search search search search search"; }
+    html.tpl-roa .top-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu brand lang cur cart" "search search search search search"; }
     html.tpl-roa .search { width: min(100%, 560px); justify-self: center; }
     html.tpl-roa .cur-btn #curSym { display: inline; }
     html.tpl-roa { --wide-h: 32px; }
