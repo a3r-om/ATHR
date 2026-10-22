@@ -1285,3 +1285,16 @@ html.theme-dark .wa-var { color: #9EE6BE; }
 html.theme-dark .wa-av { background: #3A2326; color: #F1B7C0; }
 html.theme-dark .wa .ab-soft { background: #3A2326; color: #F1B7C0; }
 html.theme-dark .wa .link-mini { color: #F1B7C0; }
+
+/* v33 — معاينة قالب «هوية روا» */
+.tm-roa .tm-top { background: var(--b); color: var(--p); box-shadow: inset 0 -1px 0 rgba(87, 4, 24, .12); }
+.tm-roa .tm-logo { order: 2; flex: 1; margin: 0; }
+.tm-roa .tm-logo img { width: auto; height: 15px; filter: none !important; background: none !important; border-radius: 0; object-fit: contain; }
+.tm-roa .tm-search { background: #FAF6EE; box-shadow: inset 0 0 0 1px rgba(87, 4, 24, .12); }
+.tm-roa .tm-hero { background: var(--b); color: var(--p); padding: 7px 8px 2px; }
+.tm-roa .tm-ht { background: #E6D8C2; border-radius: 10px; }
+.tm-roa .tm-ht b { color: var(--p); }
+.tm-roa .tm-chips i { background: var(--p); opacity: .85; }
+.tm-roa .tm-card { background: #FAF6EE; border-radius: 10px; overflow: hidden; }
+.tm-roa .tm-img { background: #E6D8C2; }
+.tm-roa .tm-tile img { border-radius: 9px; }

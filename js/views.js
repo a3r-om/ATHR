@@ -658,9 +658,14 @@
         if (!cfg.theme.hero_show) return `<h1 class="sr-only">${esc(ATHR.storeName(cfg))}</h1>`;
         // الواجهة المختصرة: العنوان وسطر مزايا صغير فقط
         if (cfg.theme.hero_compact !== false && !cfg.theme.hero_image) {
+            const kicker = ct(v, "texts.hero_kicker");
+            const cta = ct(v, "texts.hero_button");
             return `<section class="hero hero-compact${cfg.theme.hero_pattern ? " pattern" : ""}">
             <div class="wrap hero-inner">
+                ${V.heroArt()}
+                ${kicker ? `<p class="hero-kicker" lang="it" dir="ltr">${esc(kicker)}</p>` : ""}
                 <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
+                ${cta ? `<a class="btn btn-primary hero-cta" href="#catalog">${esc(cta)}</a>` : ""}
                 <ul class="hero-mini">${V.storePoints(v).map(([ico, label]) => `<li>${ico}<span>${esc(label)}</span></li>`).join("")}</ul>
                 ${V.storeTotal(v) ? `<p class="hero-proof">${ICON.users}<span>${esc(V.storeTotal(v))}</span></p>` : ""}
             </div>
@@ -680,6 +685,15 @@
             </div>
         </section>`;
     };
+
+    // رسمة فنجان من فوق (هوية روا) — مخفية في باقي القوالب
+    V.heroArt = () => `<svg class="hero-art" viewBox="0 0 160 160" aria-hidden="true" focusable="false">
+            <circle cx="80" cy="80" r="66" fill="var(--art-saucer, #FAF6EE)"/>
+            <rect x="112" y="72" width="30" height="16" rx="8" fill="var(--art-ink, #570418)"/>
+            <circle cx="78" cy="80" r="40" fill="var(--art-ink, #570418)"/>
+            <circle cx="78" cy="80" r="33" fill="var(--art-saucer, #FAF6EE)"/>
+            <circle cx="78" cy="80" r="28" fill="var(--art-coffee, #23120D)"/>
+        </svg>`;
 
     // صور منتجات صغيرة داخل الواجهة: مخفية في القالب الكلاسيكي، وتظهر بأشكال مختلفة في بعض القوالب
     V.heroShots = function (v) {
@@ -812,7 +826,7 @@
         const vars = { to: card.to, from: card.from || "", store };
         const txt = (key, fallback) => ATHR.giftFill(ct(v, `gift.${key}`) || fallback, vars);
         const o = ATHR.giftOccasion(card.occasion, cfg, card.occasionText);
-        const logo = V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url);
+        const logo = V.asset(ATHR.logos(cfg).light || ATHR.logos(cfg).header);
         const gender = ATHR.giftGendersOn(cfg) && ATHR.giftFor(card.gender, cfg) ? card.gender : "";
         const stars = g.stars === false ? "" : Array.from({ length: 12 }, (_, i) => `<i style="--x:${(i * 61 + 7) % 100}%;--y:${(i * 37 + 11) % 100}%;--d:${((i * 0.53) % 4).toFixed(2)}s;--s:${0.6 + ((i * 7) % 5) / 10}"></i>`).join("");
         const party = g.confetti !== false;
@@ -1375,7 +1389,7 @@
         ].filter(Boolean);
         return `<div class="wrap foot">
             <div class="foot-head">
-                <div class="footer-brand"><img src="${esc(V.asset(cfg.logo_url || ATHR.DEFAULTS.logo_url))}" alt="${esc(ATHR.storeName(cfg))}" width="40" height="40"></div>
+                <div class="footer-brand${ATHR.logos(cfg).footer ? " stacked" : ""}"><img src="${esc(V.asset(ATHR.logos(cfg).footer || ATHR.logos(cfg).header))}" alt="${esc(ATHR.storeName(cfg))}" width="40" height="40"></div>
                 ${about ? `<p class="foot-about">${esc(fill(v, about))}</p>` : ""}
             </div>
             <ul class="foot-points">${points.map(([ic, text]) => `<li>${ic}<span>${esc(text)}</span></li>`).join("")}</ul>
@@ -1398,8 +1412,13 @@
 
     V.brand = function (v) {
         const cfg = v.cfg;
-        const logo = cfg.logo_url || ATHR.DEFAULTS.logo_url;
-        const photo = !/logo\.png$/.test(logo);
+        const L = ATHR.logos(cfg);
+        const logo = L.header;
+        if (L.wide) {
+            return `<span class="brand-logo wide" id="brandLogo"><img src="${esc(V.asset(logo))}" alt="" height="30"></span>
+            <span class="brand-name" id="brandName" hidden>${esc(ATHR.storeName(cfg))}</span>`;
+        }
+        const photo = !/logo\.png$|\.svg$/.test(logo);
         return `<span class="brand-logo shape-${esc(cfg.logo_shape || "rounded")}${photo ? " has-photo" : ""}" id="brandLogo"><img src="${esc(V.asset(logo))}" alt="" width="44" height="44"></span>
             <span class="brand-name" id="brandName"${cfg.show_name ? "" : " hidden"}>${esc(ATHR.storeName(cfg))}</span>`;
     };

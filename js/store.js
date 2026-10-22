@@ -2750,7 +2750,7 @@
                     <a class="mrow" href="#orders" data-native><span class="ml">دفتر الطلبيات والتقييمات والأداء</span></a>
                 </div>`);
         }
-        const logo = cfg.logo_url ? `<span class="menu-logo"><img src="${esc(V.asset(cfg.logo_url))}" alt="${esc(ATHR.storeName(cfg))}" height="26"></span>` : `<b>${esc(ATHR.storeName(cfg))}</b>`;
+        const logo = cfg.logo_url ? `<span class="menu-logo${ATHR.logos(cfg).wide ? " wide" : ""}"><img src="${esc(V.asset(cfg.logo_url))}" alt="${esc(ATHR.storeName(cfg))}" height="26"></span>` : `<b>${esc(ATHR.storeName(cfg))}</b>`;
         openSheet(`
             <div class="sheet-head menu-head"><a class="menu-brand" href="${BASE}" aria-label="${esc(ATHR.storeName(cfg))}">${logo}</a><button class="close" type="button" data-close-sheet aria-label="${esc(t("إغلاق"))}">×</button></div>
             <nav class="menu" aria-label="${esc(t("القائمة"))}">${parts.join("")}</nav>`, { label: t("القائمة"), kind: "menu" });

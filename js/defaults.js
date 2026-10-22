@@ -33,8 +33,11 @@ const ATHR_PHONE_RULES = {
 };
 
 const ATHR_DEFAULTS = {
-    name: "أثر",
-    logo_url: "images/logo.png",
+    name: "روا",
+    // هوية روا: الشعار الأفقي للرأس، والمتراكب للأسفل، والكريمي للخلفيات الملوّنة
+    logo_url: "images/brand/roa-lockup.svg",
+    logo_footer: "",
+    logo_light: "",
     show_name: true,
     logo_shape: "rounded",
 
@@ -64,7 +67,8 @@ const ATHR_DEFAULTS = {
     texts: {
         announce_show: false,
         announce_text: "",
-        hero_title: "كاسات تترك أثراً",
+        hero_kicker: "",
+        hero_title: "طقوس القهوة تبدأ من كوبك",
         hero_text: "أكواب ومجات ومحافظ بتصاميم الأندية والجامعات والشخصيات. اختر تصميمك ويوصلك أينما كنت في الخليج.",
         hero_button: "تصفّح المنتجات",
         hero_features: ["توصيل لكل دول الخليج", "توصيل مجاني للمكتب داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
@@ -72,7 +76,7 @@ const ATHR_DEFAULTS = {
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
         sold_out: "نفد المخزون",
-        about: "أثر متجر عُماني لأكواب سيراميك مطبوعة بتصاميم الأندية والجامعات والشخصيات، ومجات ومحافظ وهدايا. نوصّل لكل مناطق عُمان ودول الخليج.",
+        about: "روا متجر عُماني لأكواب السيراميك وأدوات القهوة، بروح إيطالية ودار عُمانية. نوصّل لكل مناطق عُمان ودول الخليج.",
         footer_delivery_title: "التوصيل والدفع",
         footer_delivery_text: "",
         footer_contact_title: "تواصل معنا",
@@ -314,6 +318,20 @@ ATHR.adSlides = function (config) {
     return [first, ...(Array.isArray(ad.more) ? ad.more.filter((x) => x && typeof x === "object" && !Array.isArray(x)) : [])];
 };
 ATHR.adReady = (s) => Boolean(s && ((s.type === "image" && s.image_url) || (s.type === "video" && s.video_url) || (s.type === "text" && String(s.title || s.text || "").trim())));
+
+// شعارات المتجر: الرأس (عريض أو مربع)، أسفل الصفحة (متراكب)، والفاتح للخلفيات الملوّنة
+// إذا ما انحدد «عريض» صراحةً: شعار روا الأفقي يعتبر عريض تلقائياً
+ATHR.logos = function (config) {
+    const cfg = config || {};
+    const header = cfg.logo_url || ATHR_DEFAULTS.logo_url;
+    const roa = /roa-lockup\.svg$/.test(header);
+    return {
+        header,
+        wide: typeof cfg.logo_wide === "boolean" ? cfg.logo_wide : roa,
+        footer: cfg.logo_footer || (roa ? "images/brand/roa-logo.svg" : ""),
+        light: cfg.logo_light || (roa ? "images/brand/roa-mark-cream.svg" : "")
+    };
+};
 
 ATHR.storeName = (config) => ATHR.ct(config, "name") || (config && config.name) || "";
 
@@ -1149,7 +1167,8 @@ ATHR.FONT_PARAMS = {
     "Aref Ruqaa": "Aref+Ruqaa:wght@400;700",
     "Rakkas": "Rakkas",
     "Lemonada": "Lemonada:wght@500;700",
-    "Marhey": "Marhey:wght@500;700"
+    "Marhey": "Marhey:wght@500;700",
+    "Cormorant Garamond": "Cormorant+Garamond:ital,wght@0,500;0,600;1,500"
 };
 
 ATHR.isHex = (x) => /^#[0-9a-f]{6}$/i.test(String(x || ""));
@@ -1199,6 +1218,14 @@ ATHR.themeVars = function (config) {
 
 ATHR.TEMPLATES = [
     {
+        id: "roa",
+        name: "هوية روا",
+        desc: "الهوية الرسمية: كريمي وبرغندي، شعار روا في المنتصف، عناوين بخط أميري ولمسات إيطالية، وبطاقات رملية ناعمة.",
+        theme: { primary: "#570418", hero: "#570418", bg: "#F2E9DA", text: "#23120D", font_head: "Amiri", font_body: "IBM Plex Sans Arabic", radius: "round", header: "light", hero_pattern: false },
+        fonts: ["Cormorant Garamond"],
+        head_color: "#F2E9DA"
+    },
+    {
         id: "apple",
         name: "ستايل Apple",
         desc: "مثل أنظمة آيفون: خط الجهاز، شريط زجاجي شفاف، أزرار وخانات وقوائم ومفاتيح بنفس أسلوب iOS، وبطاقات بيضاء ناعمة.",
@@ -1206,7 +1233,7 @@ ATHR.TEMPLATES = [
     },
     {
         id: "classic",
-        name: "أثر الكلاسيكي",
+        name: "الكلاسيكي",
         desc: "الشكل الأصلي: برغندي وبيج مع زخرفة عربية، وأقسام بصور مستطيلة.",
         theme: { primary: "#570418", hero: "#45030F", bg: "#EBDDC9", text: "#251A1B", font_head: "Reem Kufi", font_body: "IBM Plex Sans Arabic", radius: "medium", header: "color", hero_pattern: true }
     },
@@ -1271,11 +1298,11 @@ ATHR.themeClasses = function (config) {
 };
 
 // لون شريط المتصفح في الجوال
-ATHR.headColor = (config) => (config.theme && config.theme.header === "light" ? "#FFFFFF" : ATHR.themeColors(config).primary);
+ATHR.headColor = (config) => (config.theme && config.theme.header === "light" ? (ATHR.template(config).head_color || "#FFFFFF") : ATHR.themeColors(config).primary);
 
 ATHR.fontHref = function (config) {
     const t = config.theme || {};
-    const families = [t.font_head, t.font_body].filter((f, i, arr) => ATHR.FONT_PARAMS[f] && arr.indexOf(f) === i);
+    const families = [t.font_head, t.font_body, ...(ATHR.template(config).fonts || [])].filter((f, i, arr) => ATHR.FONT_PARAMS[f] && arr.indexOf(f) === i);
     return families.length ? `https://fonts.googleapis.com/css2?${families.map((f) => `family=${ATHR.FONT_PARAMS[f]}`).join("&")}&display=swap` : "";
 };
 

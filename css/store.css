@@ -2679,3 +2679,250 @@ html.tpl-apple .gfor-opt input:checked + span { box-shadow: inset 0 0 0 2px var(
 html.tpl-apple .occ span { border: 0; background: var(--fill); font-weight: 500; }
 html.tpl-apple .occ input:checked + span { background: var(--accent); color: #fff; }
 html.tpl-apple .msg-sugs button, html.tpl-apple .sug { border: 0; background: var(--fill); border-radius: 999px; }
+
+/* =====================================================
+   v33 — هوية روا (ROA · IL RITO DEL CAFFÈ)
+   Rosso #570418 · Crema #F2E9DA · Sabbia #E6D8C2 · Latte #FAF6EE · Pistacchio #D6DB89 · Espresso #23120D
+   الخطوط: أميري للعناوين، IBM Plex للنصوص والأسعار، Cormorant للمسات اللاتينية، والشعار بالرقعة (SVG)
+===================================================== */
+
+/* عام: الشعار العريض والمتراكب، وعناصر الواجهة الخاصة بالهوية */
+.brand-logo.wide { display: flex; width: auto; height: auto; border-radius: 0; overflow: visible; background: none; }
+.brand-logo.wide img { display: block; width: auto; height: var(--wide-h, 30px); max-width: 46vw; object-fit: contain; filter: var(--wide-logo-filter, none); }
+html:not(.head-light) .brand-logo.wide img { filter: brightness(0) invert(1); }
+.menu-logo.wide { background: transparent; padding: 0; }
+.menu-logo.wide img { height: 24px; filter: var(--wide-logo-filter, none); }
+.footer-brand.stacked img { width: auto; height: 72px; filter: var(--foot-logo-filter, brightness(0) invert(1)); }
+html[data-mode="dark"] { --wide-logo-filter: brightness(0) invert(.93); }
+@media (prefers-color-scheme: dark) { html[data-mode="auto"] { --wide-logo-filter: brightness(0) invert(.93); } }
+.hero-kicker { margin: 0; font-size: 11.5px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; opacity: .85; }
+.hero-cta, .hero-art { display: none; }
+
+html.tpl-roa {
+    --roa-rosso: #570418;
+    --roa-crema: #F2E9DA;
+    --roa-sabbia: #E6D8C2;
+    --roa-latte: #FAF6EE;
+    --roa-pistacchio: #D6DB89;
+    --roa-espresso: #23120D;
+    --font-latin: "Cormorant Garamond", "Cormorant", "Times New Roman", serif;
+    --surface: var(--roa-latte);
+    --img-bg: var(--roa-sabbia);
+    --soft: var(--roa-sabbia);
+    --accent: var(--roa-rosso);
+    --muted: color-mix(in srgb, var(--roa-espresso) 60%, var(--roa-crema));
+    --line: rgba(87, 4, 24, .13);
+    --hair: rgba(87, 4, 24, .2);
+    --head-ink: var(--roa-rosso);
+    --heading: var(--roa-rosso);
+    --deal: var(--roa-rosso);
+    --cart-red: var(--roa-rosso);
+    --r: 18px;
+    --r-sm: 12px;
+    --shadow: 0 1px 2px rgba(35, 18, 13, .04), 0 6px 18px rgba(35, 18, 13, .05);
+    --shadow-up: 0 -1px 0 var(--line), 0 -8px 24px rgba(35, 18, 13, .06);
+    --foot-logo-filter: none;
+    --art-saucer: var(--roa-latte);
+    --art-ink: var(--roa-rosso);
+    --art-coffee: var(--roa-espresso);
+}
+html.tpl-roa.head-light { --head-bg: var(--roa-crema); --head-ink: var(--roa-rosso); --logo-filter: none; }
+html.tpl-roa[data-mode="dark"] {
+    --bg: #1A0D09; --surface: #2A1712; --text: #F2E9DA;
+    --img-bg: #3A2119; --soft: #3A2119;
+    --accent: #E7C9A6; --heading: #F2E9DA;
+    --muted: rgba(242, 233, 218, .62); --line: rgba(242, 233, 218, .13); --hair: rgba(242, 233, 218, .22);
+    --head-ink: #F2E9DA; --shadow: none;
+    --foot-logo-filter: brightness(0) invert(.93);
+    --art-saucer: #3A2119; --art-ink: #F2E9DA; --art-coffee: #1A0D09;
+}
+html.tpl-roa.head-light[data-mode="dark"] { --head-bg: #1A0D09; --head-ink: #F2E9DA; }
+@media (prefers-color-scheme: dark) {
+    html.tpl-roa[data-mode="auto"] {
+        --bg: #1A0D09; --surface: #2A1712; --text: #F2E9DA;
+        --img-bg: #3A2119; --soft: #3A2119;
+        --accent: #E7C9A6; --heading: #F2E9DA;
+        --muted: rgba(242, 233, 218, .62); --line: rgba(242, 233, 218, .13); --hair: rgba(242, 233, 218, .22);
+        --head-ink: #F2E9DA; --shadow: none;
+        --foot-logo-filter: brightness(0) invert(.93);
+        --art-saucer: #3A2119; --art-ink: #F2E9DA; --art-coffee: #1A0D09;
+    }
+    html.tpl-roa.head-light[data-mode="auto"] { --head-bg: #1A0D09; --head-ink: #F2E9DA; }
+}
+html.tpl-roa body { background: var(--bg); color: var(--text); }
+html.tpl-roa h1, html.tpl-roa h2, html.tpl-roa h3 { font-family: var(--font-head); color: var(--heading); font-weight: 700; letter-spacing: 0; }
+
+/* ----- الرأس: الشعار في المنتصف تماماً، القائمة يمين والسلة يسار ----- */
+html.tpl-roa .top { background: var(--head-bg); color: var(--head-ink); border-bottom: 1px solid var(--line); box-shadow: none; }
+html.tpl-roa .top-row { position: relative; grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu . lang cur cart" "search search search search search"; padding: 8px 0 10px; gap: 8px 6px; }
+html.tpl-roa .top-row.no-search { grid-template-areas: "menu . lang cur cart"; }
+html.tpl-roa .brand { position: absolute; left: 50%; top: 8px; height: 40px; transform: translateX(-50%); justify-self: auto; z-index: 1; }
+html.tpl-roa { --wide-h: 27px; }
+html.tpl-roa .icon-btn { background: transparent; color: var(--head-ink); }
+html.tpl-roa .icon-btn:hover { background: color-mix(in srgb, var(--head-ink) 8%, transparent); }
+html.tpl-roa .icon-btn svg { width: 24px; height: 24px; stroke-width: 1.7; }
+html.tpl-roa .cur-btn, html.tpl-roa .lang-btn { height: 34px; padding: 0 10px; background: transparent; color: var(--head-ink); box-shadow: inset 0 0 0 1px var(--hair); font-weight: 600; font-size: 13px; }
+html.tpl-roa .cur-btn #curSym { display: none; }
+html.tpl-roa .cur-btn { padding: 0 9px; }
+html.tpl-roa .cart-count { background: var(--roa-rosso); color: var(--roa-crema); box-shadow: 0 0 0 2px var(--head-bg); }
+html.tpl-roa[data-mode="dark"] .cart-count { background: var(--roa-crema); color: var(--roa-rosso); }
+html.tpl-roa .search { height: 40px; border-radius: var(--r-pill); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); }
+html.tpl-roa .search svg { stroke: var(--muted); }
+html.tpl-roa .search:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
+@media (max-width: 599px) { html.tpl-roa .lang-btn { display: none; } }
+@media (min-width: 760px) {
+    html.tpl-roa .top-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu . lang cur cart" "search search search search search"; }
+    html.tpl-roa .search { width: min(100%, 560px); justify-self: center; }
+    html.tpl-roa .cur-btn #curSym { display: inline; }
+    html.tpl-roa { --wide-h: 32px; }
+}
+
+/* ----- الأشرطة: برغندي وكريمي، وعداد بالفستقي ----- */
+html.tpl-roa .bar { font-weight: 500; font-size: 13px; letter-spacing: .01em; }
+html.tpl-roa .bar-ship, html.tpl-roa .bar-announce { background: var(--roa-rosso); color: var(--roa-crema); border: 0; }
+html.tpl-roa .bar-ship.done { color: var(--roa-pistacchio); }
+html.tpl-roa .meter { height: 4px; background: rgba(242, 233, 218, .22); }
+html.tpl-roa .meter span { background: var(--roa-pistacchio); }
+html.tpl-roa .bar-cart { background: var(--roa-sabbia); color: var(--roa-espresso); }
+html.tpl-roa .bar-gift { background: var(--roa-sabbia); color: var(--roa-espresso); }
+
+/* ----- الأزرار ----- */
+html.tpl-roa .btn { border-radius: var(--r-pill); font-weight: 700; }
+html.tpl-roa .btn-primary { background: var(--roa-rosso); color: var(--roa-crema); }
+html.tpl-roa[data-mode="dark"] .btn-primary { background: var(--roa-crema); color: var(--roa-rosso); }
+html.tpl-roa .btn-ghost { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); border-color: transparent; }
+html.tpl-roa .link-btn { color: var(--accent); }
+
+/* ----- الواجهة: صندوق رملي، تمهيد إيطالي، عنوان أميري، زر وفنجان ----- */
+html.tpl-roa .hero, html.tpl-roa .hero:not(.has-image) { background: transparent; color: var(--heading); }
+html.tpl-roa .hero.pattern::before { display: none; }
+html.tpl-roa .hero-compact .hero-inner {
+    margin-top: 14px; padding: 24px 20px 22px; border-radius: var(--r);
+    background: var(--roa-sabbia);
+    grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; row-gap: 10px;
+}
+html.tpl-roa[data-mode="dark"] .hero-compact .hero-inner { background: var(--surface); }
+html.tpl-roa .hero-compact .hero-inner > * { grid-column: 1; }
+html.tpl-roa .hero-art { display: block; grid-column: 2 !important; grid-row: 1 / span 4; width: clamp(104px, 30vw, 190px); height: auto; }
+html.tpl-roa .hero-kicker { font-family: var(--font-latin); font-size: 12.5px; font-weight: 600; letter-spacing: .34em; color: var(--accent); opacity: 1; justify-self: start; }
+html.tpl-roa .hero-compact h1 { font-family: "Amiri", var(--font-head); font-size: clamp(29px, 8vw, 50px); line-height: 1.32; color: var(--heading); max-width: 11ch; text-wrap: balance; }
+html.tpl-roa .hero-cta { display: inline-flex; justify-self: start; min-height: 46px; padding: 0 28px; font-size: 16px; margin-top: 4px; }
+html.tpl-roa .hero-mini { display: none; }
+html.tpl-roa .hero-proof { color: var(--muted); font-size: 12.5px; }
+html.tpl-roa .hero-proof svg { stroke: var(--accent); }
+html.tpl-roa .hero:not(.hero-compact) .hero-inner { background: var(--roa-sabbia); border-radius: var(--r); padding: 22px 18px; margin-top: 14px; }
+
+/* ----- الأقسام: عنوان أميري + كلمة إيطالية ----- */
+html.tpl-roa .section-head h1, html.tpl-roa .section-head h2 { font-size: 23px; color: var(--heading); }
+html.tpl-roa .section-head .more { color: var(--accent); font-weight: 600; }
+html.tpl-roa .section-head::after { content: var(--it-label, none); font-family: var(--font-latin); font-size: 12px; font-weight: 600; letter-spacing: .34em; color: var(--accent); direction: ltr; white-space: nowrap; }
+html.tpl-roa .section-head:has(.more, select, .select)::after { display: none; }
+html.tpl-roa #best { --it-label: "I PIÙ AMATI"; }
+html.tpl-roa #sets { --it-label: "IN SET"; }
+html.tpl-roa #new { --it-label: "NUOVO"; }
+html.tpl-roa #related { --it-label: "TI PIACERÀ"; }
+html.tpl-roa #reviews { --it-label: "DICONO DI NOI"; }
+html.tpl-roa .intro { color: var(--muted); }
+
+/* ----- الأقسام المصورة والفلاتر ----- */
+html.tpl-roa .tile-img { border-radius: var(--r); background: var(--roa-sabbia); box-shadow: none; }
+html.tpl-roa .tile.on .tile-img, html.tpl-roa .tile:hover .tile-img { box-shadow: 0 0 0 2px var(--accent); }
+html.tpl-roa .tile-name { color: var(--text); font-weight: 600; }
+html.tpl-roa .tile.on .tile-name { color: var(--accent); }
+html.tpl-roa .chip { background: var(--surface); color: var(--text); border: 0; box-shadow: inset 0 0 0 1px var(--line); }
+html.tpl-roa .chip.on { background: var(--roa-rosso); color: var(--roa-crema); box-shadow: none; }
+html.tpl-roa[data-mode="dark"] .chip.on { background: var(--roa-crema); color: var(--roa-rosso); }
+html.tpl-roa .select { border-radius: var(--r-pill); background-color: var(--surface); box-shadow: inset 0 0 0 1px var(--line); border: 0; }
+
+/* ----- بطاقة المنتج: صورة على رملي وجسم لاتيه ----- */
+html.tpl-roa .card { background: var(--surface); border: 0; border-radius: var(--r); box-shadow: none; overflow: hidden; }
+html.tpl-roa .card-img { background: var(--roa-sabbia); }
+html.tpl-roa[data-mode="dark"] .card-img { background: var(--img-bg); }
+html.tpl-roa .card-body { padding: 11px 12px 12px; gap: 3px; }
+html.tpl-roa .card-name { color: var(--text); font-weight: 600; font-size: 14.5px; }
+html.tpl-roa .price b { color: var(--accent); font-size: 16px; font-weight: 700; font-family: var(--font-body); }
+html.tpl-roa .price s { color: var(--muted); }
+html.tpl-roa .card-action .btn, html.tpl-roa .card-action button { border-radius: var(--r-pill); }
+html.tpl-roa .badge { border-radius: 7px; padding: 3px 9px; font-size: 12px; font-weight: 700; box-shadow: none; }
+html.tpl-roa .badge.hot { background: var(--roa-rosso); color: var(--roa-crema); }
+html.tpl-roa .badge.sale { background: var(--roa-pistacchio); color: var(--roa-espresso); }
+html.tpl-roa .badge.out { background: var(--roa-espresso); color: var(--roa-crema); }
+html.tpl-roa .fav-btn { background: var(--roa-latte); color: var(--roa-rosso); box-shadow: none; }
+html.tpl-roa .fav-btn.on { color: var(--roa-rosso); }
+html.tpl-roa .sw.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent); }
+html.tpl-roa .stepper { background: var(--roa-sabbia); border-radius: var(--r-pill); }
+
+/* ----- صفحة المنتج ----- */
+html.tpl-roa .stage { background: var(--roa-sabbia); border-radius: var(--r); }
+html.tpl-roa[data-mode="dark"] .stage { background: var(--img-bg); }
+html.tpl-roa .pdp h1 { font-size: clamp(25px, 7vw, 34px); color: var(--heading); }
+html.tpl-roa .pp-now { color: var(--accent); }
+html.tpl-roa .pp-was { color: var(--muted); }
+html.tpl-roa .perks, html.tpl-roa .info-box, html.tpl-roa .offer, html.tpl-roa .review-product, html.tpl-roa .pdp-details { background: var(--surface); border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r); }
+html.tpl-roa .perk svg, html.tpl-roa .trust svg { stroke: var(--accent); }
+html.tpl-roa .variant { border-radius: var(--r-pill); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); border: 0; }
+html.tpl-roa .variant.on { box-shadow: inset 0 0 0 2px var(--accent); }
+html.tpl-roa .buybar { background: var(--surface); box-shadow: var(--shadow-up); border-top: 0; }
+html.tpl-roa .bb-info b { color: var(--accent); }
+
+/* ----- السلة والطلب ----- */
+html.tpl-roa .page-title { color: var(--heading); }
+html.tpl-roa .panel, html.tpl-roa .sum-mobile { background: var(--surface); border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r); }
+html.tpl-roa .panel h2 { color: var(--heading); }
+html.tpl-roa .cart-line img { border-radius: var(--r-sm); background: var(--roa-sabbia); }
+html.tpl-roa .row.total { color: var(--heading); }
+html.tpl-roa .input { background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--text); }
+html.tpl-roa .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); outline: none; }
+html.tpl-roa .option { border-radius: var(--r-sm); background: var(--bg); border: 1px solid var(--line); }
+html.tpl-roa .option:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg)); }
+html.tpl-roa .option input { accent-color: var(--roa-rosso); }
+html.tpl-roa .check-line input { accent-color: var(--roa-rosso); }
+html.tpl-roa .seg2 { background: var(--roa-sabbia); border-radius: var(--r-pill); }
+html.tpl-roa .seg2 input:checked + span { background: var(--roa-rosso); color: var(--roa-crema); }
+html.tpl-roa .coupon-box, html.tpl-roa .gift-panel, html.tpl-roa .bank-row { border-radius: var(--r-sm); }
+html.tpl-roa .thanks-head .check { background: var(--roa-rosso); color: var(--roa-crema); }
+html.tpl-roa .order-no { color: var(--accent); }
+
+/* ----- القوائم والنوافذ ----- */
+html.tpl-roa .sheet-panel { background: var(--surface); }
+html.tpl-roa .sheet-head h2 { color: var(--heading); }
+html.tpl-roa .menu-logo { background: transparent; padding: 0; }
+
+/* ----- أسفل الصفحة: رملي مع الشعار المتراكب ----- */
+html.tpl-roa .footer { background: var(--roa-sabbia); color: var(--roa-espresso); border-top: 0; }
+html.tpl-roa[data-mode="dark"] .footer { background: #120806; color: var(--muted); }
+html.tpl-roa .footer h2 { color: var(--heading); font-family: var(--font-head); }
+html.tpl-roa .footer a { color: var(--accent); }
+html.tpl-roa .footer-brand strong { color: var(--heading); }
+html.tpl-roa .footer-links a, html.tpl-roa .footer-social a.fsoc-icon, html.tpl-roa .footer-social a:not(.fsoc-icon) { border-color: var(--hair); color: var(--accent); }
+html.tpl-roa .footer-bottom { border-top-color: var(--line); opacity: .85; }
+html.tpl-roa .foot-about { color: var(--muted); }
+html.tpl-roa .foot-head .footer-brand.stacked img { height: 76px; }
+
+/* السلة العائمة: حلقة التقدّم بالبرغندي */
+html.tpl-roa .cf-ring { background: conic-gradient(var(--roa-rosso) var(--p, 0%), color-mix(in srgb, var(--roa-rosso) 18%, var(--surface)) 0); }
+html.tpl-roa .cf-in { background: var(--roa-latte); color: var(--roa-rosso); }
+html.tpl-roa .cf-count { background: var(--roa-rosso); color: var(--roa-crema); }
+html.tpl-roa .cf-pill.ok { background: var(--roa-pistacchio); color: var(--roa-espresso); }
+html.tpl-roa[data-mode="dark"] .cf-ring { background: conic-gradient(var(--roa-crema) var(--p, 0%), rgba(242, 233, 218, .2) 0); }
+html.tpl-roa[data-mode="dark"] .cf-in { background: var(--surface); color: var(--roa-crema); }
+/* أسفل الصفحة (روا): نصوص داكنة على الرملي */
+html.tpl-roa .foot-points li { background: var(--roa-latte); color: var(--roa-espresso); }
+html.tpl-roa .foot-points svg { stroke: var(--roa-rosso); }
+html.tpl-roa .foot-acc, html.tpl-roa .foot-acc:last-of-type { border-color: var(--line); }
+html.tpl-roa .foot-acc summary, html.tpl-roa .foot-follow > span { color: var(--heading); font-family: var(--font-head); }
+html.tpl-roa .foot-lines li::before { background: var(--roa-rosso); }
+html.tpl-roa .foot-icons a { border-color: var(--hair); color: var(--roa-rosso); background: var(--roa-latte); }
+html.tpl-roa .foot-icons a.wa svg { fill: var(--roa-rosso); }
+html.tpl-roa .foot-icons a.wa .wa-glyph { fill: var(--roa-latte); }
+html.tpl-roa .foot .footer-bottom a { color: var(--roa-rosso); }
+html.tpl-roa .foot-more { color: var(--roa-rosso); }
+html.tpl-roa[data-mode="dark"] .foot-points li, html.tpl-roa[data-mode="dark"] .foot-icons a { background: var(--surface); color: var(--text); }
+html.tpl-roa[data-mode="dark"] .foot-points svg, html.tpl-roa[data-mode="dark"] .foot-icons a, html.tpl-roa[data-mode="dark"] .foot .footer-bottom a, html.tpl-roa[data-mode="dark"] .foot-more { stroke: var(--roa-crema); color: var(--roa-crema); }
+html.tpl-roa[data-mode="dark"] .foot-icons a.wa svg { fill: var(--roa-crema); }
+html.tpl-roa[data-mode="dark"] .foot-icons a.wa .wa-glyph { fill: var(--surface); }
+html.tpl-roa .gift-cta, html.tpl-roa .gp { border-radius: var(--r); }
+html.tpl-roa .thanks-head .check svg { stroke: var(--roa-crema); }
+html.tpl-roa[data-mode="dark"] .seg2 { background: var(--img-bg); }
+html.tpl-roa[data-mode="dark"] .seg2 span { color: var(--text); }
+html.tpl-roa[data-mode="dark"] .seg2 input:checked + span { background: var(--roa-crema); color: var(--roa-rosso); }

@@ -205,7 +205,7 @@
         root().innerHTML = `
             <div class="adm-login">
                 <form class="adm-card adm-login-card" id="loginForm" novalidate>
-                    <div class="adm-login-logo"><img src="${esc(asset(config.logo_url || "images/logo.png"))}" alt=""></div>
+                    <div class="adm-login-logo"><img src="${esc(asset(ATHR.logos(config).light || ATHR.logos(config).header))}" alt=""></div>
                     <h1>لوحة التحكم</h1>
                     <p class="adm-muted">ادخل بحساب المتجر لتعديل المتجر ومتابعة الطلبات.</p>
                     <label class="af"><span>البريد الإلكتروني</span><input class="ai" id="loginEmail" type="email" autocomplete="email" dir="ltr" required></label>
@@ -576,7 +576,7 @@
         }
         const fam = (f) => (ATHR.FONT_PARAMS[f] ? `"${f}", system-ui` : "system-ui");
         return `<div class="font-sample">
-            <b style="font-family:${esc(fam(t.font_head))}">كاسات تترك أثراً · Cups that leave a mark</b>
+            <b style="font-family:${esc(fam(t.font_head))}">طقوس القهوة تبدأ من كوبك · Il rito del caffè</b>
             <span style="font-family:${esc(fam(t.font_body))}">كوب ريال مدريد سيراميك، السعر 3.500 ر.ع · Real Madrid Cup 3.500 OMR</span>
         </div>`;
     }
@@ -1190,7 +1190,7 @@
         const t = tp.theme;
         const c = cfg();
         const logo = c.logo_url || ATHR_DEFAULTS.logo_url;
-        const photo = !/logo\.png$/.test(logo);
+        const photo = !/logo\.png$|\.svg$/.test(logo);
         const thumb = (url) => ATHR.thumb(url, "s") || asset(url);
         const prods = A.draft.products.filter((p) => p.is_visible && p.image_url);
         const imgs = prods.slice(0, 3).map((p) => thumb(p.image_url));
@@ -1292,10 +1292,11 @@
                     ${colorField("config.theme.text", "لون النصوص")}
                 </div>
                 ${select("config.theme.mode", "وضع العرض", [["auto", "تلقائي حسب جهاز الزائر"], ["light", "فاتح دائماً"], ["dark", "داكن دائماً"]], { help: "في الوضع الداكن تُستخدم خلفية ونصوص داكنة تلقائياً مع لونك الأساسي." })}
-                <button class="ab ab-ghost ab-sm" type="button" data-a="reset-colors">إرجاع ألوان أثر الأصلية</button>`)
+                <button class="ab ab-ghost ab-sm" type="button" data-a="reset-colors">إرجاع ألوان القالب الأصلية</button>`)
             + card("الاسم والشعار", `
                 ${text("config.name", "اسم المتجر", { max: 40 })}
                 <div class="af"><span>الشعار</span>${uploadButton("تغيير الشعار", `data-upload="config.logo_url" data-kind="logo"`, { current: c.logo_url })}<small>الشعار الحالي أبيض بخلفية شفافة ويظهر على اللون الأساسي.</small>${c.logo_url !== ATHR_DEFAULTS.logo_url ? `<button class="ab-mini" type="button" data-reset-logo>الرجوع للشعار الأصلي</button>` : ""}</div>
+                ${toggle("config.logo_wide", "شعار عريض في الرأس", { help: "للشعار اللي فيه الاسم بسطر واحد (مثل ROA | روا). يظهر في منتصف الرأس بدون مربع." })}
                 ${toggle("config.show_name", "إظهار اسم المتجر بجانب الشعار", { help: "أوقفه إذا كان الشعار نفسه فيه اسم المتجر. يبقى الاسم في جوجل ورسائل الطلب." })}
                 ${select("config.logo_shape", "شكل الشعار", [["rounded", "زوايا مدوّرة"], ["circle", "دائري"], ["square", "مربع"]])}`)
             + card("الشكل العام", `
@@ -1360,7 +1361,7 @@
             + card("رسالة الطلب", `
                 ${area("config.texts.thanks_text", "نص الخطوة الأخيرة بعد إتمام الطلب", { rows: 2, placeholder: d.thanks_text })}
                 ${text("config.texts.wa_first_line", "أول سطر في رسالة واتساب", { placeholder: d.wa_first_line })}
-                ${area("config.texts.wa_last_line", "آخر سطر في رسالة واتساب (اختياري)", { rows: 2, placeholder: "مثال: شكراً لتسوقكم من متجر أثر ✨" })}`)
+                ${area("config.texts.wa_last_line", "آخر سطر في رسالة واتساب (اختياري)", { rows: 2, placeholder: "مثال: شكراً لتسوقكم من متجر روا ✨" })}`)
             + tabTextsEn();
     }
 
@@ -1533,7 +1534,7 @@
                 ${number("config.proof.min_favs", "أقل عدد لإظهار رقم المفضلة", { step: "1", min: "1", placeholder: "5" })}
                 ${toggle("config.proof.popup", "إشعار صغير: «أحد العملاء من السيب طلب كوب …»", { help: "من آخر الطلبات الحقيقية فقط: الولاية ووقت الطلب، بدون اسم أو رقم. يظهر 3 مرات كحد أقصى في الزيارة، ولا يظهر في السلة وصفحة إتمام الطلب، والزائر يقدر يقفله." })}
                 ${number("config.proof.recent_days", "أقدم طلب يظهر في الإشعار و«آخر طلب» (بالأيام)", { step: "1", min: "1", placeholder: "7" })}
-                ${toggle("config.proof.total", "«25 عميلاً طلبوا من أثر» أعلى الصفحة الرئيسية")}
+                ${toggle("config.proof.total", `«25 عميلاً طلبوا من ${esc(ATHR.storeName(cfg()) || "روا")}» أعلى الصفحة الرئيسية`)}
                 ${number("config.proof.min_total", "أقل عدد عملاء لإظهار هذا السطر", { step: "1", min: "1", placeholder: "20" })}
                 ${toggle("config.proof.verified", "شارة «مشتري موثّق» على التقييمات", { help: "تظهر تلقائياً إذا أرسل العميل التقييم من رابط «اطلب تقييم» في بطاقة طلبه (فيه رقم طلبه) وكان المنتج ضمن طلبه." })}`,
                 "الطلبات التجريبية: أخفها من دفتر الطلبات حتى لا تدخل في الأرقام. أسرع طريقة تجمع تقييمات: بعد التسليم اضغط «اطلب تقييم» في بطاقة الطلب.")
@@ -3937,7 +3938,7 @@
                 <details class="howto"><summary>من أين أحصل على الرقم؟</summary><ol>
                     <li>افتح <b dir="ltr">business.facebook.com</b> بحسابك المرتبط بصفحة إنستغرام.</li>
                     <li>ادخل «مدير الأحداث» (Events Manager) ← «ربط مصادر البيانات» ← «ويب» ← Meta Pixel.</li>
-                    <li>سمِّه «أثر»، واختر الإعداد اليدوي، ثم انسخ رقم Pixel ID (15–16 رقماً) والصقه هنا.</li>
+                    <li>سمِّه «${esc(ATHR.storeName(cfg()) || "روا")}»، واختر الإعداد اليدوي، ثم انسخ رقم Pixel ID (15–16 رقماً) والصقه هنا.</li>
                     <li>اضغط «نشر التغييرات». لا تحتاج تضيف أي كود آخر.</li>
                 </ol></details>`)}
             ${card(`TikTok Pixel ${status(ttId, t.tiktok_pixel)}`, `
@@ -4538,7 +4539,7 @@
                 return;
             }
             case "reset-colors":
-                ["primary", "hero", "bg", "text"].forEach((k) => { cfg().theme[k] = ATHR_DEFAULTS.theme[k]; });
+                ["primary", "hero", "bg", "text"].forEach((k) => { cfg().theme[k] = ATHR.template(cfg()).theme[k] || ATHR_DEFAULTS.theme[k]; });
                 afterChange();
                 return;
             case "signout":
@@ -6751,7 +6752,7 @@
         return `${waHead("⚙️ إعدادات الوكيل")}
             <form id="waSetForm" class="af-stack wa-form" autocomplete="off">
                 <section class="adm-card"><h2>الأسلوب</h2><div class="af-stack">
-                    <label class="af"><span>اسم الوكيل (اختياري)</span><input class="ai" name="agent_name" maxlength="30" value="${esc(c.agent_name || "")}" placeholder="مثال: مساعد أثر"><small>يعرّف نفسه به إذا انسأل.</small></label>
+                    <label class="af"><span>اسم الوكيل (اختياري)</span><input class="ai" name="agent_name" maxlength="30" value="${esc(c.agent_name || "")}" placeholder="مثال: مساعد ${esc(ATHR.storeName(cfg()) || "روا")}"><small>يعرّف نفسه به إذا انسأل.</small></label>
                     <label class="af"><span>طريقة الكلام</span><select class="ai" name="tone"><option value="gulf"${c.tone !== "formal" ? " selected" : ""}>خليجي ودود (هلا، أبشر، حياك)</option><option value="formal"${c.tone === "formal" ? " selected" : ""}>فصحى سهلة ورسمية</option></select></label>
                 </div></section>
                 <section class="adm-card"><h2>معلومات يعرفها الوكيل</h2><p class="adm-muted">المنتجات والأسعار والتوصيل والدفع ياخذها من المتجر تلقائياً. اكتب هنا أي شي ثاني تبيه يعرفه.</p><div class="af-stack">
@@ -6916,7 +6917,7 @@
                         <label class="af"><span>نص الزر</span><input class="ai" name="button_text" maxlength="25" value="تسوّق الآن"></label>
                         <label class="af"><span>رابط الزر</span><input class="ai" name="button_url" dir="ltr" maxlength="400" value="${esc(siteLink(ATHR.base()))}"></label>
                     </div>
-                    <label class="af"><span>تذييل (اختياري)</span><input class="ai" name="footer" maxlength="60" value="${esc(ATHR.storeName(cfg()) || "أثر")}"></label>
+                    <label class="af"><span>تذييل (اختياري)</span><input class="ai" name="footer" maxlength="60" value="${esc(ATHR.storeName(cfg()) || "روا")}"></label>
                     <button class="ab ab-soft ab-block" type="submit"${connected ? "" : " disabled"}>أرسل القالب لمراجعة Meta</button>
                 </form>
             </section>

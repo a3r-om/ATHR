@@ -464,8 +464,9 @@ async function main() {
     // ---------- رأس الصفحة ----------
     const verification = String((cfg.seo && cfg.seo.google_verification) || "").trim()
         .replace(/^.*content=["']?([^"'\s>]+).*$/i, "$1");
-    const logoAbs = absAsset(cfg.logo_url || ATHR.DEFAULTS.logo_url);
-    const shareImage = absAsset("images/logo2.jpeg");
+    // جوجل يفضّل شعار مربع بصيغة صورة: لو الشعار SVG نستخدم أيقونة روا
+    const logoAbs = absAsset(/\.svg$/i.test(cfg.logo_url || "") ? "images/brand/roa-icon-512.png" : (cfg.logo_url || ATHR.DEFAULTS.logo_url));
+    const shareImage = absAsset(cfg.share_image || "images/brand/roa-share.jpg");
 
     function head(o) {
         const lines = [`<title>${esc(o.title)}</title>`];
