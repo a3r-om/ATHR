@@ -50,18 +50,19 @@
   },
   "en": {
    "seo": {
-    "home_title": "ATHR | Club & character cups in Oman"
+    "home_title": "ROA | Ceramic cups & coffee tools in Oman"
    },
-   "name": "ATHR",
+   "name": "ROA",
    "sales": {
     "trust_custom": [
      "Free replacement for items damaged in delivery, if photographed on receipt"
     ]
    },
    "texts": {
-    "about": "ATHR is an Omani store for cups with club, character and other designs.",
+    "about": "Ceramic cups and coffee tools · an Italian soul, an Omani home.",
     "hero_text": "Club and character designs on ceramic cups. Pick your design and send your order on WhatsApp.",
-    "hero_title": "Cups that leave a mark",
+    "hero_title": "Your coffee ritual starts with your cup",
+    "hero_button": "Shop now",
     "hero_features": [
      "Delivery to all GCC countries",
      "Free office pickup in Oman over {free}",
@@ -70,7 +71,7 @@
    }
   },
   "seo": {
-   "home_title": "أثر | أكواب بتصاميم الأندية والشخصيات في عُمان",
+   "home_title": "روا | أكواب سيراميك وأدوات قهوة في عُمان",
    "home_description": "",
    "google_verification": ""
   },
@@ -188,7 +189,7 @@
    "banner_button": "ابدأ",
    "custom_occasion": true
   },
-  "name": "أثر",
+  "name": "روا",
   "order": {
    "max_qty": 10,
    "currency": "ر.ع",
@@ -573,7 +574,7 @@
    "review_request_msg": "السلام عليكم {client}، نتمنى أن طلبك من متجر {name} وصلك بخير 🤍 يسعدنا تقييمك في دقيقة من هنا: {link}"
   },
   "texts": {
-   "about": "أكواب بتصاميم الأندية والشخصيات وتصاميم أخرى.",
+   "about": "أكواب سيراميك وأدوات قهوة · بروح إيطالية ودار عُمانية.",
    "socials": [
     {
      "url": "https://www.instagram.com/a3r_om",
@@ -587,9 +588,10 @@
    "sold_out": "نفد المخزون",
    "all_label": "الكل",
    "hero_text": "تصاميم أندية وشخصيات على أكواب سيراميك. اختر تصميمك وأرسل طلبك عبر واتساب.",
-   "hero_title": "",
+   "hero_title": "طقوس القهوة تبدأ من كوبك",
    "add_to_cart": "أضف للسلة",
-   "hero_button": "تصفّح المنتجات",
+   "hero_button": "تسوّق الآن",
+   "hero_kicker": "IL RITO DEL CAFFÈ",
    "thanks_text": "أرسل طلبك عبر واتساب بالضغط على الزر بالأسفل، وسنؤكده ونجهّزه لك.",
    "wa_last_line": "",
    "announce_show": false,
@@ -607,16 +609,16 @@
    "footer_delivery_title": "التوصيل والدفع"
   },
   "theme": {
-   "bg": "#F2F2F7",
-   "hero": "#45030F",
+   "bg": "#F2E9DA",
+   "hero": "#570418",
    "mode": "light",
-   "text": "#1C1C1E",
+   "text": "#23120D",
    "header": "light",
    "radius": "round",
    "primary": "#570418",
-   "template": "apple",
-   "font_body": "system",
-   "font_head": "system",
+   "template": "roa",
+   "font_body": "IBM Plex Sans Arabic",
+   "font_head": "Amiri",
    "hero_show": true,
    "page_size": 12,
    "show_sort": true,
@@ -675,13 +677,16 @@
    "reviews_share_msg": "السلام عليكم، هذا رأيي في منتجات {name}:",
    "reviews_share_text": "شاركنا رأيك"
   },
-  "logo_url": "images/logo.png",
+  "logo_url": "images/brand/roa-lockup.svg",
   "tracking": {
    "meta_pixel": "2181161016171309",
    "tiktok_pixel": ""
   },
+  "logo_wide": true,
   "show_name": false,
-  "logo_shape": "rounded"
+  "logo_light": "images/brand/roa-mark-cream.svg",
+  "logo_shape": "rounded",
+  "logo_footer": "images/brand/roa-logo.svg"
  },
  "categories": [
   {
