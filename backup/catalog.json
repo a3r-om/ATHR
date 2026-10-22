@@ -619,7 +619,7 @@
    "template": "roa",
    "font_body": "IBM Plex Sans Arabic",
    "font_head": "Amiri",
-   "hero_show": true,
+   "hero_show": false,
    "page_size": 12,
    "show_sort": true,
    "hero_image": "",
