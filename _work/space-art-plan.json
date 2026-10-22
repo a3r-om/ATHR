@@ -265,7 +265,27 @@
   "order_note": "Run f ref sheet first (not_run). Each page: creative_run_flow_nodes [node], download content_url, save images/stories/space/{g}/{key}.jpg + s/{key}.jpg"
  },
  "done": {
-  "m": [],
+  "m": [
+   "cover",
+   "p1"
+  ],
   "f": []
+ },
+ "generated_on_free_plan": {
+  "note": "ElevenLabs free-plan output can never be used commercially, even after upgrading. Regenerate these on a paid plan before selling.",
+  "items": [
+   "ref m Qxui0I5UFW9gESBF8qB4",
+   "ref side OdIyDojeishuaPLSmVDp",
+   "ref f GpJk2Niirr1BYXvJvZpZ (gen FCM1c1FP3S1c43wYZKrI, 2026-10-22)",
+   "m/cover (gen wpR6fbXAMGUZKwLLKW1x)",
+   "m/p1 (gen arJhwqUsXca9E0cmV45C)"
+  ]
+ },
+ "credit_costs": {
+  "base": 406,
+  "per_ref": 203,
+  "two_ref_page": 812,
+  "one_ref_page": 609,
+  "all_26_pages_plus_3_refs": 21924
  }
 }
