@@ -39,9 +39,9 @@
    "title": "",
    "button": "",
    "image_alt": "",
-   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791825978282-1f6c6830605c4ea7.jpg",
+   "image_url": "images/ads/sale-20-40.jpg",
    "video_alt": "",
-   "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791924581580-5707daf11ba34fbc.mp4"
+   "video_url": "images/ads/sale-20-40.mp4"
   },
   "ai": {
    "model": "",
@@ -686,7 +686,7 @@
   "show_name": false,
   "logo_light": "images/brand/roa-mark-cream.svg",
   "logo_shape": "rounded",
-  "logo_footer": "images/brand/roa-logo.svg"
+  "logo_footer": "images/brand/roa-logo-full.webp"
  },
  "categories": [
   {
