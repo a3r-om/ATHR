@@ -5949,7 +5949,7 @@
                 ${channels.length ? `<table class="adm-table"><thead><tr><th>المصدر</th><th>زيارات</th><th>طلبات</th><th>مبيعات</th></tr></thead><tbody>
                     ${channels.map((c) => `<tr><td>${esc(CHANNELS[c.k])}</td><td>${c.visits}</td><td>${c.orders}</td><td>${money(c.revenue)}</td></tr>`).join("")}
                 </tbody></table>` : `<p class="adm-muted">لا توجد زيارات مسجّلة في هذه المدة بعد.</p>`}
-                <p class="adm-muted">لتعرف أثر كل منصة بدقة، أضف في آخر رابط المتجر أو المنتج الذي تنشره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</p>
+                <p class="adm-muted">لتعرف تأثير كل منصة بدقة، أضف في آخر رابط المتجر أو المنتج الذي تنشره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</p>
             </section>
             ${reportSections(inRange)}
             <section class="adm-card">

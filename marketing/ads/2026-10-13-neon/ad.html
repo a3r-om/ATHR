@@ -2,11 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>إعلان أثر — أسلوب النيون بألوان الهوية (بيج)</title>
+<title>إعلان روا — أسلوب النيون بألوان الهوية (بيج)</title>
 <link rel="stylesheet" href="../../kit/brand.css">
 <style>
 @font-face { font-family: "Lalezar"; src: url("../../kit/fonts/Lalezar-Regular.ttf"); }
-/* هوية أثر: خلفية بيج + خطوط عنابي + لمسة ذهبية */
+/* هوية روا: خلفية بيج + خطوط عنابي + لمسة ذهبية */
 :root { --wine: #7D1420; --deep: #4A0D12; --gold: #E9A72E; --cream: #F7F1E8; --muted: #6E5A55; }
 .reel { background: radial-gradient(ellipse 950px 1450px at 50% 46%, #F4E9DA 0%, #EADAC6 48%, #D9C2A5 100%); color: var(--deep); font-family: "Lalezar", "Plex", sans-serif; }
 #cam, #stage, #world { position: absolute; inset: 0; }
@@ -121,7 +121,7 @@
         <div class="dots" id="dots" style="left:540px;top:1470px;transform:translate(-50%,-50%)"><i></i><i></i><i></i><i></i><i></i></div>
     </div>
 
-    <!-- 3) كلها في أثر -->
+    <!-- 3) كلها في روا -->
     <div class="sc" id="s3">
         <div class="t w" id="t3a" style="left:540px;top:440px;font-size:150px">كلها في</div>
         <svg class="trail" id="tr3a" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
@@ -185,7 +185,7 @@
         <div class="t n" id="f4b" style="left:540px;top:1340px;font-size:104px">مع بطاقة إهداء فيها رسالتك</div>
     </div>
 
-    <!-- 6) كل كوب يترك أثر -->
+    <!-- 6) كل كوب طقسٌ صغير -->
     <div class="sc" id="s6">
         <div class="t w" id="t6a" style="left:540px;top:700px;font-size:190px;display:flex;gap:40px"><span id="w6a" style="display:inline-block">كل</span><span id="w6b" style="display:inline-block">كوب...</span></div>
         <svg class="trail" id="tr6" viewBox="0 0 1080 1920"><path class="tg"/><path class="tc"/></svg>
@@ -418,7 +418,7 @@ window.render = function (t) {
         streak("#tr2", ti > 0 ? eio(p(t, ti + 0.05, ti + 0.75)) : 0, 0.35, 0.9);
     }
 
-    // 3) كلها في أثر — أكواب سيراميك
+    // 3) كلها في روا — أكواب سيراميك
     if (t >= 10.8 && t < 15.6) {
         slam("#t3a", t, T.t3a, 0.3);
         streak("#tr3a", t >= T.logo ? frac((t - T.logo) / 1.7) : 0, 0.32, 0.95);
@@ -485,7 +485,7 @@ window.render = function (t) {
         rise("#f4b", t, a + 0.8);
     }
 
-    // 6) كل كوب يترك أثر
+    // 6) كل كوب طقسٌ صغير
     if (t >= 30.0 && t < 32.4) {
         put("#t6a", { o: 1 });
         for (const [id, at] of [["#w6a", T.w6a], ["#w6b", T.w6b]]) {

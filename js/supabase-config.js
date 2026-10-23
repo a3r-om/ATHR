@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — SUPABASE CONNECTION
+   ROA STORE — SUPABASE CONNECTION
    Publishable key only. Never place a Secret key here.
    الزوار يتعاملون مع قاعدة البيانات مباشرة (بدون مكتبة)،
    ومكتبة supabase-js تُحمَّل فقط للوحة التحكم.

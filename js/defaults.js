@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — الإعدادات الافتراضية والأدوات المشتركة
+   ROA STORE — الإعدادات الافتراضية والأدوات المشتركة
    أي إعداد غير محفوظ في قاعدة البيانات يأخذ قيمته من هنا.
    يعمل في المتصفح وفي سكربت بناء الصفحات (tools/build.mjs).
 ===================================================== */
@@ -328,7 +328,7 @@ ATHR.logos = function (config) {
     return {
         header,
         wide: typeof cfg.logo_wide === "boolean" ? cfg.logo_wide : roa,
-        footer: cfg.logo_footer || (roa ? "images/brand/roa-logo.svg" : ""),
+        footer: cfg.logo_footer || (roa ? "images/brand/roa-logo-full.webp" : ""),
         light: cfg.logo_light || (roa ? "images/brand/roa-mark-cream.svg" : "")
     };
 };
@@ -455,7 +455,7 @@ ATHR.muscatParts = function (date = new Date()) {
     };
 };
 
-ATHR.newOrderNo = () => "AT-" + String(Math.floor(10000 + Math.random() * 90000));
+ATHR.newOrderNo = () => "RO-" + String(Math.floor(10000 + Math.random() * 90000));
 
 // حساب السلة: المجموع، خصم الباقات، التوصيل المجاني
 ATHR.computeCart = function (cartItems, products, config, country = "OM") {

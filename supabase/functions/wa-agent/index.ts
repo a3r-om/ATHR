@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-// دالة الخادم: وكيل واتساب بالذكاء الاصطناعي لمتجر أثر
+// دالة الخادم: وكيل واتساب بالذكاء الاصطناعي لمتجر روا
 // - Meta ترسل رسائل الزبائن هنا (Webhook)، ونتحقق من التوقيع بسر التطبيق قبل أي شي
 // - الوكيل يرد من بيانات المتجر الحقيقية (المنتجات والأسعار والتوصيل والدفع)، ويسجّل الطلبات بنفس فحوصات المتجر
 // - لما يرد صاحب المتجر بنفسه من تطبيق واتساب للأعمال، يسكت الوكيل في هذي المحادثة
@@ -234,7 +234,7 @@ function catalog(ctx: Ctx, country: string) {
   return { data, codes, delivery, payments };
 }
 
-const storeName = (ctx: Ctx) => clip(ctx.store?.name, 40) || "أثر";
+const storeName = (ctx: Ctx) => clip(ctx.store?.name, 40) || "روا";
 
 // ---------- واتساب (Meta Graph API) ----------
 async function graph(ctx: Ctx, path: string, init: { method?: string; body?: unknown } = {}) {
@@ -954,7 +954,7 @@ async function adminTask(body: any) {
     const usesName = raw.includes("{name}");
     const text = raw.replace(/\{name\}/g, "{{1}}");
     const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const name = `athr_offer_${stamp}_${Math.random().toString(36).slice(2, 6)}`;
+    const name = `roa_offer_${stamp}_${Math.random().toString(36).slice(2, 6)}`;
     const components: any[] = [{ type: "BODY", text, ...(usesName ? { example: { body_text: [["أحمد"]] } } : {}) }];
     const footer = clip(body.footer, 60);
     if (footer) components.push({ type: "FOOTER", text: footer });

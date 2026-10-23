@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — قوالب الصفحات (HTML)
+   ROA STORE — قوالب الصفحات (HTML)
    دوال نقية تستعملها واجهة المتجر في المتصفح، وسكربت بناء
    صفحات جوجل (tools/build.mjs) لتطابق الصفحة قبل وبعد التحميل.
    كل نص للزائر يمر عبر t() ليظهر بالعربي أو الإنجليزي.
@@ -253,7 +253,7 @@
         return `أضافه ${who} للمفضلة`;
     };
 
-    // «25 عميلاً طلبوا من أثر» (أعلى الصفحة الرئيسية)
+    // «25 عميلاً طلبوا من روا» (أعلى الصفحة الرئيسية)
     V.storeTotal = function (v) {
         const pc = v.cfg.proof || {};
         const n = v.proof && Number(v.proof.total);
@@ -620,7 +620,7 @@
         if (ad.type === "video" && ad.video_url) {
             // نسخة الفيديو المضغوطة من بناء المتجر (تشتغل في كل الجوالات) + صورة غلاف تظهر فوراً
             const cat = typeof ATHR_CATALOG !== "undefined" && ATHR_CATALOG && ATHR_CATALOG.ad ? ATHR_CATALOG.ad[ad.video_url] : null;
-            const src = cat ? ATHR.base() + cat.v : ad.video_url;
+            const src = cat ? ATHR.base() + cat.v : V.asset(ad.video_url);
             const poster = cat ? ATHR.base() + cat.p : ad.image_url ? V.asset(ad.image_url) : "";
             // الفيديو الأول يشتغل تلقائياً، والباقي يشتغل لما يوصله الزبون
             return open(`<video muted loop playsinline${first ? ' autoplay preload="auto"' : ' preload="none"'} src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ""}${cat && cat.w && cat.h ? ` width="${cat.w}" height="${cat.h}"` : ""} aria-label="${esc(txt("video_alt") || "")}"></video><span class="ad-play" aria-hidden="true"></span>`, "ad-media");

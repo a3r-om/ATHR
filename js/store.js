@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — واجهة المتجر للزبون
+   ROA STORE — واجهة المتجر للزبون
    صفحات حقيقية لكل منتج وقسم (تُبنى مسبقًا لجوجل)، ثم يكمل
    المتجر في المتصفح بدون إعادة تحميل.
 ===================================================== */
@@ -2437,7 +2437,7 @@
             <p class="pts-intro">${esc(t("اكتب رقم جوالك ورقم أي طلب سابق لك، ونعرض لك نقاطك."))}</p>
             <form class="panel pts-form" id="pointsForm" novalidate>
                 ${field("ph", t("رقم الجوال"), `<span class="phone-wrap"><span class="dial" dir="ltr">+${c.dial}</span><input class="input" name="ph" type="tel" inputmode="numeric" autocomplete="tel-national" dir="ltr" placeholder="${rule.example}" value="${esc(local)}" required></span>`)}
-                ${field("no", t("رقم الطلب"), `<input class="input" name="no" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AT-12345" value="${esc(no)}" required>`, esc(t("تلقاه في رسالة طلبك على واتساب.")))}
+                ${field("no", t("رقم الطلب"), `<input class="input" name="no" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="RO-12345" value="${esc(no)}" required>`, esc(t("تلقاه في رسالة طلبك على واتساب.")))}
                 <p class="err pts-err" id="ptsErr" role="alert">${esc(PTS.error)}</p>
                 <button class="btn btn-primary btn-block" type="submit"${PTS.busy ? " disabled" : ""}>${esc(PTS.busy ? t("جاري البحث...") : t("اعرض نقاطي"))}</button>
             </form>
@@ -2541,7 +2541,7 @@
         const bad = (k, msg) => { const el = form.querySelector(`[data-err="${k}"]`); if (el) { el.textContent = msg; el.closest(".field").classList.add("invalid"); } };
         let ok = true;
         if (!phone.valid) { bad("ph", t("اكتب رقم {country} الصحيح: {hint}.", { country: L(c, "name"), hint: L(phone.rule, "hint") })); ok = false; }
-        if (!/^[A-Z]{1,4}-[0-9A-Z]{3,10}$/.test(no)) { bad("no", t("اكتب رقم الطلب كما في رسالتك، مثل AT-12345.")); ok = false; }
+        if (!/^[A-Z]{1,4}-[0-9A-Z]{3,10}$/.test(no)) { bad("no", t("اكتب رقم الطلب كما في رسالتك، مثل RO-12345.")); ok = false; }
         if (!ok) return;
         lookupPoints({ ph: c.dial + phone.local, no, local: phone.local }, true);
     }

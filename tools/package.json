@@ -1,7 +1,7 @@
 {
-  "name": "athr-build",
+  "name": "roa-build",
   "private": true,
-  "description": "أدوات بناء صفحات متجر أثر",
+  "description": "أدوات بناء صفحات متجر روا",
   "type": "module",
   "dependencies": {
     "sharp": "^0.33.5",

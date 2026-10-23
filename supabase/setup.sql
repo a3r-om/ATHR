@@ -1,5 +1,5 @@
 -- =====================================================
--- ATHR STORE — إعداد قاعدة البيانات (يُشغَّل مرة واحدة)
+-- ROA STORE — إعداد قاعدة البيانات (يُشغَّل مرة واحدة)
 -- الجداول + الصلاحيات + مخزن الصور
 -- آمن لإعادة التشغيل: لا يحذف أي بيانات موجودة.
 -- =====================================================
@@ -2132,7 +2132,7 @@ begin
     end if;
     select value into vt from private.app_secrets where name = 'wa_verify';
     if vt is null then
-        vt := 'athr-' || substr(md5(random()::text || clock_timestamp()::text), 1, 20);
+        vt := 'roa-' || substr(md5(random()::text || clock_timestamp()::text), 1, 20);
         insert into private.app_secrets (name, value) values ('wa_verify', vt) on conflict (name) do nothing;
         select value into vt from private.app_secrets where name = 'wa_verify';
     end if;
@@ -2206,7 +2206,7 @@ $$;
 revoke execute on function public.wa_log(jsonb) from public, anon, authenticated;
 grant execute on function public.wa_log(jsonb) to service_role;
 
--- 6) طلب من الوكيل: حساب فقط (يتراجع بدون أثر) أو تسجيل فعلي — نفس فحوصات طلب المتجر
+-- 6) طلب من الوكيل: حساب فقط (يتراجع وما يحفظ شي) أو تسجيل فعلي — نفس فحوصات طلب المتجر
 create or replace function public.wa_order(o jsonb, do_save boolean default false)
 returns jsonb
 language plpgsql

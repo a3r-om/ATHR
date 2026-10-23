@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — واجهة المتجر
+   ROA STORE — واجهة المتجر
    الألوان والخطوط تأتي من لوحة التحكم عبر متغيرات CSS.
    مصممة للجوال أولاً: أزرار كبيرة، شريط شراء ثابت، صور خفيفة.
 ===================================================== */
@@ -2691,7 +2691,7 @@ html.tpl-apple .msg-sugs button, html.tpl-apple .sug { border: 0; background: va
 .brand-logo.wide img { display: block; width: auto; height: var(--wide-h, 30px); max-width: 46vw; object-fit: contain; filter: var(--wide-logo-filter, none); }
 html:not(.head-light) .brand-logo.wide img { filter: brightness(0) invert(1); }
 .menu-logo.wide { background: transparent; padding: 0; }
-.menu-logo.wide img { height: 24px; filter: var(--wide-logo-filter, none); }
+.menu-logo.wide img { height: 30px; filter: var(--wide-logo-filter, none); }
 .footer-brand.stacked img { width: auto; height: 72px; filter: var(--foot-logo-filter, brightness(0) invert(1)); }
 html[data-mode="dark"] { --wide-logo-filter: brightness(0) invert(.93); }
 @media (prefers-color-scheme: dark) { html[data-mode="auto"] { --wide-logo-filter: brightness(0) invert(.93); } }
@@ -2756,8 +2756,8 @@ html.tpl-roa h1, html.tpl-roa h2, html.tpl-roa h3 { font-family: var(--font-head
 html.tpl-roa .top { background: var(--head-bg); color: var(--head-ink); border-bottom: 1px solid var(--line); box-shadow: none; }
 html.tpl-roa .top-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu brand lang cur cart" "search search search search search"; padding: 8px 0 10px; gap: 8px 6px; }
 html.tpl-roa .top-row.no-search { grid-template-areas: "menu brand lang cur cart"; }
-html.tpl-roa .brand { justify-self: start; height: 40px; }
-html.tpl-roa { --wide-h: 27px; }
+html.tpl-roa .brand { justify-self: start; height: 44px; }
+html.tpl-roa { --wide-h: 35px; }
 html.tpl-roa .icon-btn { background: transparent; color: var(--head-ink); }
 html.tpl-roa .icon-btn:hover { background: color-mix(in srgb, var(--head-ink) 8%, transparent); }
 html.tpl-roa .icon-btn svg { width: 24px; height: 24px; stroke-width: 1.7; }
@@ -2774,7 +2774,8 @@ html.tpl-roa .search:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent);
     html.tpl-roa .top-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "menu brand lang cur cart" "search search search search search"; }
     html.tpl-roa .search { width: min(100%, 560px); justify-self: center; }
     html.tpl-roa .cur-btn #curSym { display: inline; }
-    html.tpl-roa { --wide-h: 32px; }
+    html.tpl-roa { --wide-h: 42px; }
+    html.tpl-roa .brand { height: 50px; }
 }
 
 /* ----- الأشرطة: برغندي وكريمي، وعداد بالفستقي ----- */
@@ -2897,7 +2898,7 @@ html.tpl-roa .footer-brand strong { color: var(--heading); }
 html.tpl-roa .footer-links a, html.tpl-roa .footer-social a.fsoc-icon, html.tpl-roa .footer-social a:not(.fsoc-icon) { border-color: var(--hair); color: var(--accent); }
 html.tpl-roa .footer-bottom { border-top-color: var(--line); opacity: .85; }
 html.tpl-roa .foot-about { color: var(--muted); }
-html.tpl-roa .foot-head .footer-brand.stacked img { height: 76px; }
+html.tpl-roa .foot-head .footer-brand.stacked img { height: 112px; }
 
 /* السلة العائمة: حلقة التقدّم بالبرغندي */
 html.tpl-roa .cf-ring { background: conic-gradient(var(--roa-rosso) var(--p, 0%), color-mix(in srgb, var(--roa-rosso) 18%, var(--surface)) 0); }

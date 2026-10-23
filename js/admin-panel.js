@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — لوحة التحكم ودفتر الطلبيات (للمالك فقط)
+   ROA STORE — لوحة التحكم ودفتر الطلبيات (للمالك فقط)
    التعديلات تُحفظ مسودة على الجوال حتى تضغط «نشر التغييرات».
 ===================================================== */
 
@@ -630,7 +630,7 @@
                     ${list.map(({ p, i }) => `
                         <li class="prow${p.is_visible ? "" : " is-hidden"}${A.rowMenu === p.id ? " open" : ""}">
                             <button type="button" class="prow-main" data-edit="${esc(p.id)}">
-                                <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
+                                <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/brand/roa-placeholder.jpg"))}" alt="" loading="lazy">
                                 <span class="prow-info">
                                     <b>${esc(p.name || "منتج بدون اسم")}</b>
                                     <span class="adm-muted">${money(p.price)} · ${esc(catName(p.category_id))}</span>
@@ -1194,7 +1194,7 @@
         const thumb = (url) => ATHR.thumb(url, "s") || asset(url);
         const prods = A.draft.products.filter((p) => p.is_visible && p.image_url);
         const imgs = prods.slice(0, 3).map((p) => thumb(p.image_url));
-        while (imgs.length < 3) imgs.push(asset("images/logo2.jpeg"));
+        while (imgs.length < 3) imgs.push(asset("images/brand/roa-placeholder.jpg"));
         const cats = A.draft.categories.map((cat) => {
             const p = prods.find((x) => x.category_id === cat.id);
             const img = cat.image_url ? thumb(cat.image_url) : p ? thumb(p.image_url) : "";
@@ -1373,7 +1373,7 @@
         const ex = (path) => ATHR.withLang("en", () => ATHR.ct({ ...cfg(), en: {} }, path)) || "";
         const ltr = (path, label, opts = {}) => text(path, label, { dir: "ltr", ...opts });
         return card("النصوص بالإنجليزي", `
-                ${ltr("config.en.name", "اسم المتجر بالإنجليزي", { placeholder: "ATHR", max: 40 })}
+                ${ltr("config.en.name", "اسم المتجر بالإنجليزي", { placeholder: "ROA", max: 40 })}
                 ${ltr("config.en.texts.hero_title", "العنوان الرئيسي", { placeholder: ex("texts.hero_title"), max: 60 })}
                 ${area("config.en.texts.hero_text", "النص التعريفي", { rows: 2, placeholder: ex("texts.hero_text") })}
                 <div class="af"><span>المزايا الصغيرة تحت النص</span>
@@ -1901,7 +1901,7 @@
             const ready = g.live && g.live.is_available !== false;
             const [cls, label] = ready ? ["ok", "✅ متوفر الآن"] : !g.live ? ["", "مخفي"] : g.p.is_available !== false ? ["warn", "انشر التغييرات ثم أرسل"] : ["", "ما زال نافداً"];
             return `<li class="rs-row">
-                <img src="${esc(ATHR.thumb(g.p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
+                <img src="${esc(ATHR.thumb(g.p.image_url, "s") || asset("images/brand/roa-placeholder.jpg"))}" alt="" loading="lazy">
                 <span class="op-info"><b>${esc(g.p.name)}</b><small>${g.wait.length ? `🔔 ${waitText(g.wait.length)}` : "لا أحد ينتظر"}${g.done ? ` · أُبلغ ${g.done}` : ""}</small><span><span class="tag ${cls}">${label}</span></span></span>
                 <span class="rs-btns">
                     ${ready && g.wait.length ? `<button class="ab ab-primary ab-sm" type="button" data-restock-send="${esc(g.pid)}">أرسل لهم (${g.wait.length})</button>` : ""}
@@ -2004,7 +2004,7 @@
         const offerIds = new Set(offerProducts().map((p) => p.id));
         const rows = top.map(({ p, n }, i) => `<li class="ft-row">
             <span class="ft-rank">${i + 1}</span>
-            <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/logo2.jpeg"))}" alt="" loading="lazy">
+            <img src="${esc(ATHR.thumb(p.image_url, "s") || asset("images/brand/roa-placeholder.jpg"))}" alt="" loading="lazy">
             <span class="op-info"><b>${esc(p.name)}</b><small>${money(p.price)}${p.is_available === false ? " · نفد" : ""}</small></span>
             <span class="ft-n">❤️ ${n}</span>
             ${offerIds.has(p.id) ? `<button class="ab-mini gift" type="button" data-fav-offer="${esc(p.id)}">📣 عرض</button>` : ""}
@@ -2396,7 +2396,7 @@
 
     function downloadOrders() {
         const list = filteredOrders();
-        XL.download(XL.workbook([{ name: "الطلبات", rows: ordersRows(list), widths: [12, 12, 10, 22, 16, 12, 14, 14, 50, 8, 10, 9, 12, 10, 9, 10, 14, 12, 14, 7] }]), `athr-orders-${today()}.xlsx`);
+        XL.download(XL.workbook([{ name: "الطلبات", rows: ordersRows(list), widths: [12, 12, 10, 22, 16, 12, 14, 14, 50, 8, 10, 9, 12, 10, 9, 10, 14, 12, 14, 7] }]), `roa-orders-${today()}.xlsx`);
         toast(`نُزّل ملف ${list.length} طلب`);
     }
 
@@ -2453,7 +2453,7 @@
             { name: "الأقسام", rows: [["القسم", "القطع المباعة", "المبيعات (ر.ع)"], ...rep.cats.map(([n, c]) => [n, c.qty, Math.round(c.total * 1000) / 1000])], widths: [26, 14, 16] },
             { name: "الأشهر", rows: [["الشهر", "عدد الطلبات", "المبيعات (ر.ع)"], ...months.map((m) => [`${m.label} ${m.key.slice(0, 4)}`, m.orders, Math.round(m.total * 1000) / 1000])], widths: [20, 12, 16] },
             { name: "الطلبات", rows: ordersRows(inRange), widths: [12, 12, 10, 22, 16, 12, 14, 14, 50, 8, 10, 9, 12, 10, 9, 10, 14, 12, 14, 7] }
-        ]), `athr-report-${days}d-${today()}.xlsx`);
+        ]), `roa-report-${days}d-${today()}.xlsx`);
         toast("نُزّل تقرير المبيعات");
     }
 
@@ -2863,7 +2863,7 @@
             for (const [t, order] of BACKUP_TABLES) tables[t] = await fetchAllRows(t, order);
             try { const ex = await finCall({ action: "get", doc: "expenses" }); tables.expenses = (ex.data && ex.data.items) || []; } catch { /* المصاريف اختيارية في النسخة */ }
             const counts = Object.fromEntries(Object.entries(tables).map(([k, v]) => [k, v.length]));
-            saveJsonFile({ app: "athr", version: 1, source: "admin-download", taken_at: new Date().toISOString(), counts, tables }, `athr-backup-${fileStamp()}.json`);
+            saveJsonFile({ app: "athr", version: 1, source: "admin-download", taken_at: new Date().toISOString(), counts, tables }, `roa-backup-${fileStamp()}.json`);
             storage.set(BACKUP_KEY, { at: new Date().toISOString(), counts });
             toast("نزلت النسخة الكاملة ✓ احفظها في الملفات");
             if ($("#bkLast")) $("#bkLast").innerHTML = `آخر نسخة كاملة نزّلتها: <b>اليوم</b> (${esc(countsLine(counts))})`;
@@ -2924,7 +2924,7 @@
             if (error || !data) { toast("تعذّر تنزيل النسخة"); return true; }
             const b = (A.backups || []).find((x) => String(x.id) === String(d.bkGet));
             const when = b ? new Date(new Date(b.taken_at).getTime() + 4 * 36e5).toISOString().slice(0, 16).replace("T", "-").replace(":", "") : fileStamp();
-            saveJsonFile(data, `athr-backup-${when}.json`);
+            saveJsonFile(data, `roa-backup-${when}.json`);
             return true;
         }
         if (d.bkRestore) { restoreSheet(d.bkRestore); return true; }
@@ -3838,14 +3838,14 @@
         if (d.a === "fin-del") { await deleteExpense(false); return true; }
         if (d.a === "fin-stop") { await deleteExpense(true); return true; }
         if (d.a === "fin-retry") { f.err = ""; renderFinance(true); await loadFinance(); renderFinance(true); return true; }
-        if (d.a === "fin-xlsx") { XL.download(financeWorkbook(), `athr-finance-${muscatDay()}.xlsx`); toast("نُزّل ملف المبيعات والمصاريف"); return true; }
+        if (d.a === "fin-xlsx") { XL.download(financeWorkbook(), `roa-finance-${muscatDay()}.xlsx`); toast("نُزّل ملف المبيعات والمصاريف"); return true; }
         return false;
     }
 
     // أزرار هذه المميزات
     async function v17Click(d) {
         switch (d.a) {
-            case "xlsx-products": XL.download(productsWorkbook(), `athr-products-${today()}.xlsx`); toast("نُزّل ملف المنتجات"); return true;
+            case "xlsx-products": XL.download(productsWorkbook(), `roa-products-${today()}.xlsx`); toast("نُزّل ملف المنتجات"); return true;
             case "xlsx-orders": downloadOrders(); return true;
             case "xlsx-report": downloadReport(); return true;
             case "import-apply": applyImport(); return true;
@@ -5593,7 +5593,7 @@
     // معاينة بشكل رسالة واتساب، مع بطاقة الرابط (صورة المنتج) كما تظهر عند العميل
     function waBubble(text, st) {
         const p = st.product;
-        const img = p ? (ATHR.thumb(p.image_url, "m") || asset(p.image_url)) : asset("images/logo2.jpeg");
+        const img = p ? (ATHR.thumb(p.image_url, "m") || asset(p.image_url)) : asset("images/brand/roa-placeholder.jpg");
         const html = esc(text)
             .replace(/\*([^*\n]+)\*/g, "<b>$1</b>")
             .replace(/(https?:\/\/[^\s<]+)/g, (u) => {
@@ -5726,7 +5726,7 @@
         const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
         const a = document.createElement("a");
         a.href = url;
-        a.download = `athr-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `roa-customers-${new Date().toISOString().slice(0, 10)}.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -5949,7 +5949,7 @@
                 ${channels.length ? `<table class="adm-table"><thead><tr><th>المصدر</th><th>زيارات</th><th>طلبات</th><th>مبيعات</th></tr></thead><tbody>
                     ${channels.map((c) => `<tr><td>${esc(CHANNELS[c.k])}</td><td>${c.visits}</td><td>${c.orders}</td><td>${money(c.revenue)}</td></tr>`).join("")}
                 </tbody></table>` : `<p class="adm-muted">لا توجد زيارات مسجّلة في هذه المدة بعد.</p>`}
-                <p class="adm-muted">لتعرف أثر كل منصة بدقة، أضف في آخر رابط المتجر أو المنتج الذي تنشره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</p>
+                <p class="adm-muted">لتعرف تأثير كل منصة بدقة، أضف في آخر رابط المتجر أو المنتج الذي تنشره <code dir="ltr">?ref=instagram</code> أو <code dir="ltr">?ref=tiktok</code>.</p>
             </section>
             ${reportSections(inRange)}
             <section class="adm-card">
@@ -6825,9 +6825,9 @@
             <section class="adm-card"><h2>الخطوة 1: سوّ التطبيق في Meta</h2>
                 <p class="adm-muted">من سفاري في الآيفون: اضغط <b>aA</b> بجانب الرابط ← «طلب موقع سطح المكتب»، لأن صفحات Meta للمطورين تشتغل أحسن كذا.</p>
                 <ol class="wa-steps">
-                    <li>افتح <b dir="ltr">developers.facebook.com</b> وسجّل دخول بفيسبوك ← <b>My Apps ← Create App</b> ← اختر <b>Business</b> وسمّه مثلاً <span dir="ltr">Athr Agent</span>.</li>
+                    <li>افتح <b dir="ltr">developers.facebook.com</b> وسجّل دخول بفيسبوك ← <b>My Apps ← Create App</b> ← اختر <b>Business</b> وسمّه مثلاً <span dir="ltr">ROA Agent</span>.</li>
                     <li>في صفحة التطبيق اضغط <b>WhatsApp ← Set up</b> واختر حسابك التجاري (أو سوّ واحد جديد).</li>
-                    <li>من <b>WhatsApp ← API Setup</b>: تلقى الرقم التجريبي. في خانة <b>To</b> أضف رقمك وأكّده بالكود. وللرقم الحقيقي اضغط <b>Add phone number</b> واكتب اسم العرض «${esc(ATHR.storeName(cfg()) || "أثر")}» والرقم الجديد.</li>
+                    <li>من <b>WhatsApp ← API Setup</b>: تلقى الرقم التجريبي. في خانة <b>To</b> أضف رقمك وأكّده بالكود. وللرقم الحقيقي اضغط <b>Add phone number</b> واكتب اسم العرض «${esc(ATHR.storeName(cfg()) || "روا")}» والرقم الجديد.</li>
                     <li>من نفس الصفحة انسخ <b>Phone number ID</b> و <b>WhatsApp Business Account ID</b>.</li>
                 </ol>
             </section>

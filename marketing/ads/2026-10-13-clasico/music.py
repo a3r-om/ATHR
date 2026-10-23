@@ -297,7 +297,7 @@ for i, T in enumerate(TL["facts"]):
     add(T, bloop(760 + i * 140, 1500 + i * 200, 0.2), 0.14 if i < 2 else 0.2)
     add(T, pluck([523.25, 587.33, 880.0][i], 0.5, 0.2), 0.14 if i < 2 else 0.22)
 
-# البناء: «اختار / فريقك / واترك أثر»
+# البناء: «اختار / فريقك / وابدأ طقسك»
 ra, rb = riser(TL["g"] - TL["w"])
 add(TL["w"], ra, 0.3, other=rb)
 for i, T in enumerate(TL["words"]):

@@ -220,7 +220,7 @@ Deno.serve(async (req: Request) => {
   }
   if (!key) return json({ error: "no_key" }, 400);
 
-  const store = clip(body.store, 40) || "أثر";
+  const store = clip(body.store, 40) || "روا";
   try {
     if (body.task === "describe") {
       const items = (Array.isArray(body.items) ? body.items : []).slice(0, 8).map((x: Record<string, unknown>) => ({

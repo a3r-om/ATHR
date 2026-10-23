@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>إعلان أثر — كل كوب يترك أثر</title>
+<title>إعلان روا — كل كوب طقسٌ صغير</title>
 <link rel="stylesheet" href="../../kit/brand.css">
 <style>
 :root { --dark: #4A0D12; --cream: #F7F1E8; --acc: #F2A516; --wine: #7D1420; }
@@ -46,7 +46,7 @@
     <!-- A: «كل يوم يبدأ بكوب» -->
     <div class="txt" id="a1" style="font-size:120px;font-weight:700;color:var(--cream)"></div>
 
-    <!-- B: الكوب يرتفع ويترك أثر -->
+    <!-- B: الكوب يرتفع ويترك دائرة -->
     <svg class="layer" id="ringScene" viewBox="-540 -960 1080 1920" aria-hidden="true">
         <g id="ringG" transform="translate(0 -180)">
             <g filter="url(#stain)">
@@ -96,7 +96,7 @@
     <!-- F: كلمة على كل نبضة -->
     <div class="txt" id="fw" style="font-size:180px;font-weight:700;color:var(--cream)"></div>
 
-    <!-- G: الشعار يتكوّن داخل الأثر -->
+    <!-- G: الشعار يتكوّن داخل الدائرة -->
     <svg class="layer" id="logoScene" viewBox="-540 -960 1080 1920" aria-hidden="true">
         <g transform="translate(0 -120)">
             <g id="bigRing" filter="url(#stain)">
@@ -164,7 +164,7 @@ const MOMENTS = [
     { id: "d4", head: "يرافقك طول يومك" },
     { id: "d5", head: "تصاميم تشبهك" }
 ];
-const WORDS = ["اختار", "أرسلها هدية", "نوصّلها", "واترك <span class=\"mark\">أثر</span>"];
+const WORDS = ["اختار", "أرسلها هدية", "نوصّلها", "وابدأ <span class=\"mark\">طقسك</span>"];
 
 window.render = function (t) {
     const dark = t < TL.b || (t >= TL.f && t < TL.g);
@@ -180,7 +180,7 @@ window.render = function (t) {
         a1.style.transform = `scale(${1 + 0.04 * easeInOut(p(t, 2.2, TL.b))})`;
     } else show(a1, false);
 
-    // ---- B: الكوب يرتفع ويترك أثر ----
+    // ---- B: الكوب يرتفع ويترك دائرة ----
     const rs = $("#ringScene");
     const bOn = t >= TL.b && t < TL.d[0] + 0.1;
     show(rs, bOn);
@@ -193,7 +193,7 @@ window.render = function (t) {
         const dk = back(p(t, TL.dots, TL.dots + 0.45));
         $("#ringDots").setAttribute("opacity", String(easeOut(p(t, TL.dots, TL.dots + 0.2))));
         $("#ringDots").setAttribute("transform", `scale(${0.6 + 0.4 * dk})`);
-        // انتقال: الأثر يكبر ويصير نافذة على المشهد التالي
+        // انتقال: الدائرة تكبر ويصير نافذة على المشهد التالي
         const z = easeIn(p(t, TL.iris, TL.d[0] + 0.1));
         $("#ringG").setAttribute("transform", `translate(0 ${-180 + z * 180}) scale(${1 + z * 9})`);
         rs.style.opacity = String(1 - p(t, TL.d[0] - 0.1, TL.d[0] + 0.1));
@@ -205,7 +205,7 @@ window.render = function (t) {
         const ty = typed("بس مو كل كوب", t, TL.b1, 13);
         b1.innerHTML = ty.text + (t < TL.b2 ? caret(blink(t, TL.b1 + 1)) : "");
         center(b1, 1240);
-        const ty2 = typed("يترك أثر.", t, TL.b2, 11);
+        const ty2 = typed("طقسٌ صغير.", t, TL.b2, 11);
         const a = Array.from(ty2.text);
         const pre = a.slice(0, 5).join(""), word = a.slice(5).join("");
         b2.innerHTML = `${pre}<span class="wine">${word}</span>` + caret(blink(t, TL.b2 + 0.9));
@@ -224,7 +224,7 @@ window.render = function (t) {
         if (!on) return;
         el.style.zIndex = String(10 + i);
         if (i === 0) {
-            // يظهر من داخل الأثر (دائرة تتسع)
+            // يظهر من داخل الدائرة (دائرة تتسع)
             const z = easeIn(p(t, TL.iris, T + 0.1));
             const r = 190 * (1 + 9 * z);
             el.style.clipPath = r < 1150 ? `circle(${r}px at 50% ${40.6 + 9.4 * z}%)` : "none";
@@ -293,7 +293,7 @@ window.render = function (t) {
         set(fw, { o: easeOut(p(t, TL.words[j], TL.words[j] + 0.1)), s: 0.82 + 0.18 * k });
     }
 
-    // ---- G: الشعار داخل الأثر ----
+    // ---- G: الشعار داخل الدائرة ----
     const ls = $("#logoScene"), g1 = $("#g1"), h1 = $("#h1"), h2 = $("#h2");
     const gOn = t >= TL.g;
     show(ls, gOn); show(g1, gOn); show(h1, gOn && t >= TL.h); show(h2, gOn && t >= TL.h);
@@ -311,7 +311,7 @@ window.render = function (t) {
             const cx = [269.8, 307.6, 232][i], cy = [104.7, 157.6, 157.7][i];
             el.setAttribute("transform", `translate(${cx} ${cy}) scale(${Math.max(0.001, dk)}) translate(${-cx} ${-cy})`);
         });
-        const ty = typed("أكواب تترك أثراً", t, TL.g + 1.75, 14);
+        const ty = typed("كل كوب طقسٌ صغير", t, TL.g + 1.75, 14);
         g1.innerHTML = ty.text + (t >= TL.g + 1.6 && t < TL.h ? caret(blink(t, TL.g + 2.9)) : "");
         center(g1, 1300);
         if (t >= TL.h) {

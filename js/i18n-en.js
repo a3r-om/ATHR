@@ -1,5 +1,5 @@
 /* =====================================================
-   ATHR STORE — English
+   ROA STORE — English
    المفتاح هو النص العربي كما في الكود، والقيمة ترجمته.
    نصوص المتجر الخاصة (الواجهة، النبذة...) تُكتب من لوحة التحكم.
 ===================================================== */
@@ -381,7 +381,7 @@
         "جاري تحميل نقاطك...": "Loading your points...",
         "تعذّر الاتصال. حاول مرة ثانية.": "Couldn't connect. Please try again.",
         "ما لقينا طلب بهذا الرقم. تأكد من رقم الجوال ورقم الطلب.": "We couldn't find an order with these details. Check the phone and order number.",
-        "اكتب رقم الطلب كما في رسالتك، مثل AT-12345.": "Enter the order number as in your message, e.g. AT-12345.",
+        "اكتب رقم الطلب كما في رسالتك، مثل RO-12345.": "Enter the order number as in your message, e.g. RO-12345.",
         "رصيدك وكم باقي على الخصم": "Your balance and progress to a discount",
         "اكتب اسم المناسبة": "Type the occasion",
         "مثال: عيد الأم، ترقية، نجاح، ذكرى زواج": "e.g. Mother's Day, promotion, anniversary",

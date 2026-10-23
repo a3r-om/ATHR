@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>إعلان أثر — مدريدي ولا برشلوني؟</title>
+<title>إعلان روا — مدريدي ولا برشلوني؟</title>
 <link rel="stylesheet" href="../../kit/brand.css">
 <style>
 :root { --dark: #4A0D12; --cream: #F7F1E8; --acc: #F2A516; --wine: #7D1420; }
@@ -100,7 +100,7 @@
         <div class="txt" id="fw" style="font-size:180px;font-weight:700;color:var(--cream)"></div>
     </div>
 
-    <!-- H: الشعار داخل الأثر -->
+    <!-- H: الشعار داخل الدائرة -->
     <div class="scene" id="sh" style="z-index:16;background:var(--cream)">
         <svg class="layer" viewBox="-540 -960 1080 1920" aria-hidden="true">
             <g transform="translate(0 -120)">
@@ -279,7 +279,7 @@ window.render = function (t) {
     const gOn = t >= TL.w && t < TL.g;
     sg.style.display = gOn ? "block" : "none";
     if (gOn) {
-        const WORDS = ["اختار", "فريقك", "واترك <span class=\"mark\">أثر</span>"];
+        const WORDS = ["اختار", "فريقك", "وابدأ <span class=\"mark\">طقسك</span>"];
         let j = 0;
         TL.words.forEach((w, n) => { if (t >= w) j = n; });
         const fw = $("#fw");
@@ -309,7 +309,7 @@ window.render = function (t) {
             const cx = [269.8, 307.6, 232][i], cy = [104.7, 157.6, 157.7][i];
             el.setAttribute("transform", `translate(${cx} ${cy}) scale(${Math.max(0.001, dk)}) translate(${-cx} ${-cy})`);
         });
-        const ty = typed("أكواب تترك أثراً", t, TL.g + 1.75, 14);
+        const ty = typed("كل كوب طقسٌ صغير", t, TL.g + 1.75, 14);
         g1.innerHTML = ty.text + (t >= TL.g + 1.6 && t < TL.h ? caret(blink(t, TL.g + 2.9)) : "");
         center(g1, 1300);
         show(h1, t >= TL.h); show(h2, t >= TL.h);

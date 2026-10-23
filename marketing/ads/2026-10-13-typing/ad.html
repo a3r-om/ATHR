@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>إعلان أثر — أسلوب الكتابة الحركية</title>
+<title>إعلان روا — أسلوب الكتابة الحركية</title>
 <link rel="stylesheet" href="../../kit/brand.css">
 <style>
 :root { --dark: #4A0D12; --cream: #F7F1E8; --ink: #4A0D12; --acc: #F2A516; --tile: #621520; }
@@ -269,11 +269,11 @@ window.render = function (t) {
         sel.style.background = C.acc;
     } else { show(ehna, false); show(sel, false); }
 
-    // «متجر أثر» تنكتب جنب الكوب
+    // «متجر روا» تنكتب جنب الكوب
     const nameEl = $("#name");
     if (t >= 2.8 && t < 4.6) {
         show(nameEl, true);
-        const full = "متجر أثر";
+        const full = "متجر روا";
         const ty = typed(full, t, 2.8, 10);
         const a = Array.from(ty.text);
         const reg = a.slice(0, 5).join(""), bold = a.slice(5).join("");
@@ -316,7 +316,7 @@ window.render = function (t) {
         $("#almond").setAttribute("d", d);
         $("#almondClipPath").setAttribute("d", d);
         $("#almondEdge").setAttribute("d", d);
-        // القزحية: تلتفت من اليمين لليسار مع أثر حركة
+        // القزحية: تلتفت من اليمين لليسار مع ذيل حركة
         const look = easeExpo(p(t, 7.28, 7.5));
         const ix = 120 + (-70 - 120) * look, iy = 10 - 6 * look;
         const iris = $("#iris");
@@ -325,7 +325,7 @@ window.render = function (t) {
         $("#pupilC").setAttribute("opacity", String(1 - pd));
         $("#pupilD").setAttribute("opacity", String(pd));
         $("#pupilD").setAttribute("transform", `scale(${0.6 + 0.4 * pd})`);
-        // أثر الحركة
+        // ذيل الحركة
         const trail = $("#irisTrail");
         const moving = t >= 7.28 && t < 7.62;
         if (moving) {
