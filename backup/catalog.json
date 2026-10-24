@@ -490,42 +490,42 @@
      "a": "1c1c9369-eb78-4fa1-9c07-468f80cf0d1d",
      "b": "1bb71b44-c9a0-4468-936e-4b8b394cb661",
      "id": "b-angel",
-     "pct": 20,
+     "pct": 10,
      "enabled": true
     },
     {
      "a": "ec23da4a-efa1-48d7-8299-ef0cd575932f",
      "b": "e5b9b25a-242f-407e-8cd0-bf8d4dedd875",
      "id": "b-stitch",
-     "pct": 20,
+     "pct": 10,
      "enabled": true
     },
     {
      "a": "8e72fce0-f01a-4238-98b3-d99b26ebaeac",
      "b": "d12e9754-d081-4767-8a18-e567130b1798",
      "id": "b-hk",
-     "pct": 20,
+     "pct": 10,
      "enabled": true
     },
     {
      "a": "7886bd1d-4480-4230-aba6-a8c7a0b4b53d",
      "b": "5a780c04-f2f1-4e3f-910e-25a965e84a6b",
      "id": "b-q-ayon",
-     "pct": 25,
+     "pct": 10,
      "enabled": true
     },
     {
      "a": "68b79104-010c-4b76-ad63-e4a820f36914",
      "b": "1a86a766-852a-4bb9-b163-6e6ff4e7f0b2",
      "id": "b-q-zarni",
-     "pct": 25,
+     "pct": 10,
      "enabled": true
     },
     {
      "a": "fe4c80e1-e284-4195-ba62-0c24214bbe82",
      "b": "e8af85dd-40f4-4f85-9563-4c8bf141bfa6",
      "id": "b-q-allm",
-     "pct": 25,
+     "pct": 10,
      "enabled": true
     }
    ],
