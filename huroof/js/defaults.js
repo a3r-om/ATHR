@@ -1331,6 +1331,13 @@ ATHR.themeVars = function (config) {
 
 ATHR.TEMPLATES = [
     {
+        id: "night",
+        base: "huroof",
+        name: "ليلة الحكايات",
+        desc: "سماء ليلية بنفسجية بنجوم وهلال ذهبي، وأزرار مضيئة. مثالي لمتجر القصص الشخصية.",
+        theme: { primary: "#8B5CF6", hero: "#120A22", bg: "#170D2B", text: "#EFEAF8", font_head: "Amiri", font_body: "Amiri", radius: "round", header: "light", hero_pattern: false }
+    },
+    {
         id: "huroof",
         name: "حروف وألوان",
         desc: "الشكل الأصلي للمتجر: بيج هادئ وورق أبيض وألوان أقلام التلوين، وخط Amiri.",
@@ -1382,7 +1389,7 @@ ATHR.TEMPLATES = [
 
 ATHR.template = function (config) {
     const id = config && config.theme && config.theme.template;
-    return ATHR.TEMPLATES.find((x) => x.id === id) || ATHR.TEMPLATES[0];
+    return ATHR.TEMPLATES.find((x) => x.id === id) || ATHR.TEMPLATES.find((x) => x.id === "huroof");
 };
 
 // هل غيّر صاحب المتجر شيئاً من ألوان/خطوط القالب بعد تطبيقه؟
@@ -1398,12 +1405,13 @@ ATHR.themeClasses = function (config) {
     return [
         { sharp: "r-sharp", round: "r-round" }[t.radius] || "",
         `tpl-${ATHR.template(config).id}`,
+        ATHR.template(config).base ? `tpl-${ATHR.template(config).base}` : "",
         t.header === "light" ? "head-light" : ""
     ].filter(Boolean);
 };
 
 // لون شريط المتصفح في الجوال
-ATHR.headColor = (config) => (config.theme && config.theme.header === "light" ? "#FFFFFF" : ATHR.themeColors(config).primary);
+ATHR.headColor = (config) => (ATHR.template(config).id === "night" ? "#170D2B" : config.theme && config.theme.header === "light" ? "#FFFFFF" : ATHR.themeColors(config).primary);
 
 ATHR.fontHref = function (config) {
     const t = config.theme || {};
