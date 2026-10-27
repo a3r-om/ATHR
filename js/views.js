@@ -81,6 +81,8 @@
             proofById,
             country: o.country || ATHR.BASE_COUNTRY,
             cartQty: o.cartQty || (() => 0),
+            cartCustom: o.cartCustom || (() => null),
+            savedChild: o.savedChild || (() => null),
             isFav: o.isFav || (() => false),
             prerender: Boolean(o.prerender),
             byId,
@@ -346,7 +348,7 @@
         }
         const qty = v.cartQty(p.id);
         if (ATHR.isStory(p) && qty === 0) {
-            return `<a class="btn btn-primary story-cta" href="${ATHR.url.product(p)}#personalize">✎ ${esc(t("اكتب اسم طفلك"))}</a>`;
+            return `<button class="btn btn-primary story-cta" type="button" data-wiz="${esc(p.id)}">✎ ${esc(t("اكتب اسم طفلك"))}</button>`;
         }
         if (qty > 0 && V.maxFor(v, p) <= 1) {
             return `<a class="btn btn-ghost in-cart" href="${ATHR.url.page("cart")}">${ICON.check}${esc(t("في السلة"))}</a>`;
@@ -920,12 +922,17 @@
     V.isStoryStore = (v) => v.products.length > 0 && v.products.every((p) => ATHR.isStory(p));
 
     V.storyHome = function (v) {
+        const cfg = v.cfg;
+        const sc = ATHR.storyCfg(cfg);
         const list = V.listings(v, v.products.filter((p) => p.is_available !== false));
         const books = list.filter((p) => V.img(p)).slice(0, 3);
+        const proStory = ATHR.proOn(cfg) ? list.find((p) => ATHR.proOn(cfg, p.story)) : null;
+        const print = ATHR.printOn(cfg, v.country);
         const steps = [
-            [t("اختر القصة"), t("مغامرة يحبها طفلك")],
-            [t("اكتب اسم طفلك"), t("وشوف القصة باسمه فوراً")],
-            [t("تصلك على واتساب"), t("ملف PDF جاهز للطباعة")]
+            [t("جاوب على أسئلة بسيطة"), t("اسمه وعمره وماذا يحب")],
+            [t("اختر المغامرة"), t("وقيمة أو عادة يتعلمها")],
+            [t("شوف القصة باسمه"), t("قبل ما تطلب")],
+            [print ? t("تصلك PDF أو مطبوعة") : t("تصلك على واتساب"), print ? t("بغلاف مقوّى لباب بيتك") : t("ملف PDF جاهز للطباعة")]
         ];
         const why = [
             ["❤️", t("يكون هو البطل"), t("اسمه في كل صفحة")],
@@ -933,19 +940,29 @@
             ["🎨", t("رسومات ساحرة"), t("ملوّنة ومليانة حياة")],
             ["🎁", t("هدية لا تُنسى"), t("يحتفظ فيها سنين")]
         ];
+        const promise = [
+            sc.guarantee ? ["🛡️", t("ضمان الرضا"), t("إذا ما عجبتك القصة نعدّلها مجاناً، أو نرجّع لك المبلغ كاملاً.")] : null,
+            proStory ? ["🔒", t("صورة طفلك بأمان"), t("نستخدمها لرسم قصته فقط، ولا نشاركها مع أحد، ونحذفها بعد التسليم.")] : null,
+            ["✍️", t("عربي سليم"), t("نص عربي مكتوب بعناية، بصيغة الولد أو البنت، وبخط واضح يسهل على الطفل قراءته.")]
+        ].filter(Boolean);
+        const short = (p) => V.pname(p).replace(/^قصة باسم طفلك:\s*/, "");
+        const minPrice = list.length ? Math.min(...list.map((p) => Number(p.price) || 0)) : 0;
         return `<section class="sh-hero">
                 <div class="wrap sh-inner">
                     <div class="sh-text">
                         <span class="sh-kicker">✨ ${esc(t("قصص مخصّصة باسم طفلك"))}</span>
                         <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
                         <p>${esc(fill(v, ct(v, "texts.hero_text")))}</p>
-                        <a class="btn btn-primary sh-cta" href="#stories">${esc(ct(v, "texts.hero_button") || t("اختر قصة طفلك"))}</a>
+                        <div class="sh-btns">
+                            <button class="btn btn-primary sh-cta" type="button" data-wiz-new>✨ ${esc(ct(v, "texts.hero_button") || t("اصنع قصة طفلك"))}</button>
+                            <a class="link-btn sh-more" href="#examples">${esc(t("تصفّح قصة كاملة"))}</a>
+                        </div>
                     </div>
                     ${books.length ? `<div class="sh-books" aria-hidden="true">${books.map((p, i) => `<span class="shb shb${i + 1}"><img src="${esc(V.img(p))}" alt="" width="300" height="375"${i ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async"></span>`).join("")}</div>` : ""}
                 </div>
             </section>
             <section class="sh-steps" aria-label="${esc(t("طريقة الطلب"))}">
-                <ol class="wrap sh-steps-list">${steps.map(([b, s], i) => `<li><span class="sh-n">${i + 1}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ol>
+                <ol class="wrap sh-steps-list four">${steps.map(([b, s], i) => `<li><span class="sh-n">${i + 1}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ol>
             </section>
             <section class="section sh-stories" id="stories" aria-labelledby="stories-t">
                 <div class="wrap">
@@ -954,10 +971,71 @@
                     ${V.grid(v, list, { eagerCount: 4 })}
                 </div>
             </section>
+            <section class="section sh-ex" id="examples" aria-labelledby="ex-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="ex-t">${esc(t("تصفّح القصة كاملة قبل الشراء"))}</h2></div>
+                    <p class="sh-lead">${esc(t("افتح أي قصة واقرأها صفحة صفحة، واكتب اسم طفلك لتشوفها باسمه."))}</p>
+                    <div class="sh-ex-list">${list.map((p) => `<button type="button" class="sh-ex-item" data-flip="${esc(p.id)}">
+                        ${V.img(p) ? `<img src="${esc(V.img(p))}" alt="" width="300" height="375" loading="lazy" decoding="async">` : ""}
+                        <span><b>${esc(short(p))}</b><small>📖 ${esc(t("تصفّح القصة"))}</small></span>
+                    </button>`).join("")}</div>
+                </div>
+            </section>
+            <section class="section sh-plans" id="plans" aria-labelledby="plans-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="plans-t">${esc(t("اختر نوع قصة طفلك"))}</h2></div>
+                    <div class="sh-plan-list">
+                        <article class="sh-plan">
+                            <span class="sh-plan-e" aria-hidden="true">📖</span>
+                            <h3>${esc(t("قصة جاهزة باسمه"))}</h3>
+                            <p class="sh-plan-p"><small>${esc(t("من"))}</small> <b>${local(v, minPrice)}</b></p>
+                            <ul>
+                                <li>${esc(t("اسمه وعمره وهواياته في القصة"))}</li>
+                                <li>${esc(t("قيمة أو عادة يومية تختارها"))}</li>
+                                <li>${esc(t("تشوفها كاملة قبل ما تطلب"))}</li>
+                                <li>${esc(t("تصلك خلال ساعات"))}</li>
+                            </ul>
+                            <button class="btn btn-ghost btn-block" type="button" data-wiz-new>${esc(t("ابدأ الآن"))}</button>
+                        </article>
+                        ${proStory ? `<article class="sh-plan pro">
+                            <span class="sh-plan-badge">${esc(t("الأكثر تميّزاً"))}</span>
+                            <span class="sh-plan-e" aria-hidden="true">🌟</span>
+                            <h3>${esc(t("قصة مؤلفة خصيصاً"))}</h3>
+                            <p class="sh-plan-p"><b>${local(v, Number(proStory.price) + (Number(sc.pro_price) || 0))}</b></p>
+                            <ul>
+                                <li>${esc(t("نرسم طفلك بوجهه من صورته"))}</li>
+                                <li>${esc(t("نكتبها حول أسرته وأصدقائه"))}</li>
+                                <li>${esc(t("تعالج العادة اللي تبيها"))}</li>
+                                <li>${esc(sc.pro_time)}</li>
+                            </ul>
+                            <small class="sh-plan-small">${esc(t("متاحة الآن لقصة «{story}»", { story: short(proStory) }))}</small>
+                            <button class="btn btn-primary btn-block" type="button" data-wiz="${esc(proStory.id)}">${esc(t("اصنع قصته الخاصة"))}</button>
+                        </article>` : ""}
+                    </div>
+                    ${print ? `<p class="sh-plan-note">📦 ${esc(t("أي قصة تقدر تطلبها مطبوعة بغلاف مقوّى بـ{price} إضافية، وتوصل لبيتك داخل عُمان.", { price: local(v, Number(sc.print_price) || 0) }))}</p>` : ""}
+                </div>
+            </section>
+            <section class="section sh-gifts" aria-labelledby="gifts-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="gifts-t">🎁 ${esc(t("هدايا مجانية مع كل قصة"))}</h2></div>
+                    <p class="sh-lead">${esc(t("في آخر كل قصة صفحات إضافية باسم طفلك، يطبعها ويفرح فيها."))}</p>
+                    <div class="sh-gift-list">
+                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="cert" width="300" height="424"></canvas></span><figcaption><b>🏅 ${esc(t("شهادة بطل القصة"))}</b><small>${esc(t("باسمه والرسالة اللي تعلّمها"))}</small></figcaption></figure>
+                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="labels" width="300" height="424"></canvas></span><figcaption><b>🏷️ ${esc(t("ملصقات اسمه"))}</b><small>${esc(t("لدفاتره وأغراض المدرسة"))}</small></figcaption></figure>
+                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="color" width="300" height="424"></canvas></span><figcaption><b>🖍️ ${esc(t("صفحة تلوين"))}</b><small>${esc(t("يلوّن اسمه بنفسه"))}</small></figcaption></figure>
+                    </div>
+                </div>
+            </section>
             <section class="section sh-why" aria-labelledby="why-t">
                 <div class="wrap">
                     <div class="section-head"><h2 id="why-t">${esc(t("ليش بيحبها طفلك؟"))}</h2></div>
                     <ul class="sh-why-list">${why.map(([e, b, s]) => `<li><span class="sh-e" aria-hidden="true">${e}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ul>
+                </div>
+            </section>
+            <section class="section sh-promise" aria-labelledby="promise-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="promise-t">${esc(t("وعدنا لك"))}</h2></div>
+                    <ul class="sh-promise-list">${promise.map(([e, b, s]) => `<li><span class="sh-e" aria-hidden="true">${e}</span><div><b>${esc(b)}</b><small>${esc(s)}</small></div></li>`).join("")}</ul>
                 </div>
             </section>
             ${V.storeReviews(v)}
@@ -1246,36 +1324,35 @@
         return `<div class="stage">${p.image_url ? `<img src="${esc(V.big(p))}" alt="${esc(label)}" fetchpriority="high" width="800" height="1000">` : ""}</div>`;
     };
 
-    // نموذج بيانات الطفل في صفحة القصة الشخصية + معاينة الصفحات
-    V.storyForm = function (v, p) {
-        const id = esc(p.id);
-        const ages = ATHR.STORY_AGES.map((a) => `<option value="${a}">${esc(ATHR.ageText(a))}</option>`).join("");
-        return `<div class="story-form" id="storyForm" data-story-for="${id}">
-            <div class="sf-head" id="personalize"><b>✎ ${esc(t("بيانات طفلك"))}</b><small>${esc(t("نكتب القصة كاملة باسمه، وتشوف المعاينة هنا فوراً"))}</small></div>
-            <label class="sf-field"><span>${esc(t("اسم الطفل"))}</span><input class="input" type="text" name="st_name" maxlength="22" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="${esc(t("مثال: سارة"))}"></label>
-            <div class="sf-row">
-                <div class="sf-field" role="radiogroup" aria-label="${esc(t("ولد أو بنت"))}"><span>${esc(t("ولد أو بنت"))}</span>
-                    <div class="sf-seg">
-                        <label><input type="radio" name="st_g" value="m"><span>${esc(t("ولد"))}</span></label>
-                        <label><input type="radio" name="st_g" value="f"><span>${esc(t("بنت"))}</span></label>
-                    </div>
-                </div>
-                <label class="sf-field"><span>${esc(t("العمر"))}</span><select class="input" name="st_age"><option value="">${esc(t("اختر"))}</option>${ages}</select></label>
-            </div>
-            <label class="sf-check"><input type="checkbox" name="st_photo"><span><b>${esc(t("أبي صورة طفلي على الغلاف"))}</b><small>${esc(t("ترسلها لنا على واتساب بعد الطلب، ونستخدمها للغلاف فقط."))}</small></span></label>
-            <p class="sf-err" id="stErr" role="alert" hidden></p>
+    // صفحة القصة الشخصية: معاينة الصفحات + أنواع القصة، والأسئلة في معالج «اصنع قصة طفلك»
+    V.storyBox = function (v, p, c) {
+        const cfg = v.cfg;
+        const sc = ATHR.storyCfg(cfg);
+        const pro = ATHR.proOn(cfg, p.story);
+        const print = ATHR.printOn(cfg, v.country);
+        const kinds = [
+            ["📖", t("قصة عادية باسم طفلك"), local(v, p.price)],
+            pro ? ["🌟", t("مميّزة: نرسم طفلك بوجهه من صورته"), local(v, Number(p.price) + (Number(sc.pro_price) || 0))] : null,
+            print ? ["📦", t("نسخة مطبوعة بغلاف مقوّى"), "+" + local(v, Number(sc.print_price) || 0)] : null
+        ].filter(Boolean);
+        return `<div class="story-box" id="storyBox" data-story-for="${esc(p.id)}">
+            <div class="sf-head" id="personalize"><b>✨ ${esc(t("اصنع القصة باسم طفلك"))}</b><small>${esc(t("أسئلة بسيطة عن طفلك، وتشوف القصة جاهزة باسمه قبل الطلب"))}</small></div>
+            ${c && c.name ? `<div class="sb-child">👶 <b>${esc(c.name)}</b> · ${esc(c.g === "f" ? t("بنت") : t("ولد"))}${c.age ? ` · ${esc(ATHR.ageText(c.age))}` : ""}${ATHR.storyKind(c) ? ` · ${esc(ATHR.storyKind(c))}` : ""}</div>` : ""}
             <div class="sf-prev" id="storyPrev">
-                <div class="sf-prev-head"><b>${esc(t("معاينة القصة"))}</b><small id="stPrevNote">${esc(t("14 صفحة A4 جاهزة للطباعة"))}</small></div>
+                <div class="sf-prev-head"><b>${esc(t("معاينة القصة"))}</b><small id="stPrevNote"></small></div>
                 <div class="sf-pages" id="storyPages" aria-live="polite"></div>
             </div>
+            ${kinds.length > 1 ? `<ul class="sb-kinds">${kinds.map(([e, label, price]) => `<li><span aria-hidden="true">${e}</span><span>${esc(label)}</span><b>${price}</b></li>`).join("")}</ul>` : ""}
+            ${sc.guarantee ? `<p class="sb-guard">🛡️ ${esc(t("ضمان الرضا: نعدّل القصة مجاناً أو نرجّع لك المبلغ"))}</p>` : ""}
         </div>`;
     };
 
     // سطر صغير ببيانات الطفل تحت القصة في السلة
     V.storyMeta = function (v, p, c) {
         if (!ATHR.isStory(p)) return "";
-        if (!c || !c.name) return `<a class="cl-story warn" href="${ATHR.url.product(p)}#personalize">✎ ${esc(t("اكتب اسم طفلك"))}</a>`;
-        return `<span class="cl-story">👶 ${esc(c.name)} · ${esc(c.g === "f" ? t("بنت") : t("ولد"))}${c.age ? ` · ${esc(ATHR.ageText(c.age))}` : ""}${c.photo ? " · 📷" : ""} <a href="${ATHR.url.product(p)}#personalize">${esc(t("تعديل"))}</a></span>`;
+        if (!c || !c.name) return `<button class="cl-story warn" type="button" data-wiz="${esc(p.id)}">✎ ${esc(t("اكتب اسم طفلك"))}</button>`;
+        const kind = ATHR.storyKind(c);
+        return `<span class="cl-story">👶 ${esc(c.name)} · ${esc(c.g === "f" ? t("بنت") : t("ولد"))}${c.age ? ` · ${esc(ATHR.ageText(c.age))}` : ""}${kind ? ` · <b>${esc(kind)}</b>` : ""} <button class="link-btn" type="button" data-wiz="${esc(p.id)}">${esc(t("تعديل"))}</button></span>`;
     };
 
     V.buyBox = function (v, p) {
@@ -1293,8 +1370,18 @@
         const buyNow = cfg.sales.buy_now;
         const story = ATHR.isStory(p);
         const single = story || V.maxFor(v, p) <= 1;
-        return `<div class="buy${single ? " single-qty" : ""}${story ? " has-story" : ""}" id="buyBox">
-            ${story ? V.storyForm(v, p) : ""}
+        if (story) {
+            const c = v.cartCustom ? v.cartCustom(p.id) : null;
+            return `<div class="buy single-qty has-story" id="buyBox">
+                ${V.storyBox(v, p, c || (v.savedChild ? v.savedChild() : null))}
+                ${c ? `<div class="buy-row sb-row">
+                        <a class="btn btn-primary" href="${ATHR.url.page("checkout")}">${esc(t("أكمل الطلب"))}</a>
+                        <button class="btn btn-ghost" type="button" data-wiz="${esc(p.id)}">✎ ${esc(t("عدّل القصة"))}</button>
+                    </div>`
+                    : `<button class="btn btn-primary btn-block sb-cta" type="button" data-wiz="${esc(p.id)}">✎ ${esc(t("اكتب اسم طفلك وشوف القصة"))}</button>`}
+            </div>`;
+        }
+        return `<div class="buy${single ? " single-qty" : ""}" id="buyBox">
             <div class="buy-row">
                 <div class="stepper lg" role="group" aria-label="${esc(t("الكمية"))}"${single ? " hidden" : ""}>
                     <button type="button" data-pdp-step="1" aria-label="${esc(t("زيادة"))}">+</button>

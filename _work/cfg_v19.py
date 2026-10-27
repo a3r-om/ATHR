@@ -1,0 +1,50 @@
+# الإعدادات الجديدة للقصص: تُطبَّق على seed.json (للبناء) وتطلع SQL لقاعدة البيانات
+import json, sys
+STORIES = {"pro_enabled": True, "pro_price": 5, "pro_stories": ["space"], "pro_time": "خلال 48 ساعة من وصول الصورة",
+           "print_enabled": True, "print_price": 6, "print_time": "3 إلى 5 أيام داخل عُمان", "guarantee": True}
+PRINT = {"id": "print", "enabled": True, "name": "توصيل القصة المطبوعة", "name_en": "Printed book delivery", "type": "home", "pricing": "fixed", "price": 2,
+         "countries": ["OM"], "note": "نطبع القصة بغلاف مقوّى ونوصلها لبيتك، ونرسل لك نسخة PDF على واتساب.",
+         "note_en": "We print a hardcover copy and deliver it to your door, plus a PDF on WhatsApp.", "duration": "3 إلى 5 أيام"}
+TEXTS = {"hero_button": "اصنع قصة طفلك",
+         "hero_text": "جاوب على أسئلة بسيطة عن طفلك، وشوف القصة باسمه قبل ما تطلب. قصة تعلّمه قيمة أو عادة جميلة، ومعها شهادة بطل وملصقات باسمه هدية.",
+         "hero_features": ["اسم طفلك في كل صفحة", "قيمة أو عادة يتعلمها", "PDF أو مطبوعة", "ضمان الرضا"]}
+FAQ = [
+    {"q": "ما الفرق بين القصة الجاهزة والقصة المؤلفة خصيصاً؟", "a": "الجاهزة: قصة مرسومة نكتب فيها اسم طفلك وعمره وهواياته ورسالة تختارها، وتصلك خلال ساعات. المؤلفة خصيصاً: نرسم طفلك بوجهه من صورته، ونكتب القصة حول أسرته وأصدقائه والعادة اللي تبيها، وتصلك خلال 48 ساعة من وصول الصورة."},
+    {"q": "كيف تصلني القصة؟", "a": "بعد تأكيد الدفع نرسل لك القصة PDF على واتساب. وإذا اخترت النسخة المطبوعة، نطبعها بغلاف مقوّى ونوصلها لبيتك داخل عُمان خلال 3 إلى 5 أيام."},
+    {"q": "وش لو ما عجبتني القصة؟", "a": "نعدّلها لك مجاناً، وإذا ما زالت ما عجبتك نرجّع لك المبلغ كاملاً."},
+    {"q": "هل صورة طفلي آمنة؟", "a": "نستخدم الصورة لرسم قصة طفلك فقط، ولا نشاركها مع أحد، ونحذفها بعد تسليم القصة."},
+    {"q": "هل تساعد القصة في تعديل سلوك طفلي؟", "a": "نعم، تختار قيمة مثل الصدق والشجاعة، أو عادة يومية مثل تنظيف الأسنان والنوم بدري وترتيب الألعاب، ونكتبها في القصة وفي شهادة البطل. وفي القصة المؤلفة خصيصاً تدور القصة كلها حولها."},
+    {"q": "كم صفحة في القصة؟", "a": "غلاف باسم طفلك، و10 صفحات للقصة، وصفحة النهاية، ومعها هدايا: صفحة تلوين، وشهادة بطل القصة، وورقة ملصقات باسمه للمدرسة."},
+    {"q": "لأي عمر تناسب؟", "a": "من 3 إلى 8 سنوات. الجمل قصيرة وسهلة يقرأها الطفل بنفسه أو تقرؤونها له."},
+    {"q": "كيف أدفع؟", "a": "تحويل بنكي، ونرسل لك بيانات الحساب على واتساب مع تأكيد طلبك."}
+]
+def apply(cfg):
+    cfg["stories"] = {**cfg.get("stories", {}), **STORIES}
+    dl = [d for d in cfg.setdefault("order", {}).get("delivery", []) if d.get("id") != "print"]
+    dl.append(PRINT)
+    cfg["order"]["delivery"] = dl
+    cfg.setdefault("texts", {}).update(TEXTS)
+    cfg.setdefault("contact", {})["faq"] = FAQ
+    return cfg
+def sql():
+    j = lambda x: json.dumps(x, ensure_ascii=False).replace("'", "''")
+    return f"""update public.store_settings set config =
+  jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        jsonb_set(config, '{{stories}}', coalesce(config->'stories','{{}}'::jsonb) || '{j(STORIES)}'::jsonb),
+        '{{order,delivery}}', coalesce((select jsonb_agg(d) from jsonb_array_elements(config#>'{{order,delivery}}') d where d->>'id' <> 'print'), '[]'::jsonb) || jsonb_build_array('{j(PRINT)}'::jsonb)),
+      '{{texts}}', coalesce(config->'texts','{{}}'::jsonb) || '{j(TEXTS)}'::jsonb),
+    '{{contact,faq}}', '{j(FAQ)}'::jsonb)
+where id = 1
+returning jsonb_array_length(config#>'{{order,delivery}}') as delivery_n, config->'stories'->>'pro_price' as pro, jsonb_array_length(config#>'{{contact,faq}}') as faq_n, config ? 'sales' as has_sales, config#>>'{{order,whatsapp}}' as wa;"""
+if __name__ == "__main__":
+    if sys.argv[1] == "seed":
+        p = "/home/claude/gen/seed.json"
+        d = json.load(open(p, encoding="utf-8"))
+        key = "config" if "config" in d else "settings"
+        d[key] = apply(d[key])
+        json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        print("seed updated", [x["id"] for x in d[key]["order"]["delivery"]])
+    else:
+        print(sql())

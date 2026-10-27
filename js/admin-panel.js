@@ -1511,7 +1511,17 @@
         const volText = ATHR.volumeTiers(cfg()).map((t) => `${ATHR.piecesText(t.min)} خصم ${t.pct}%`).join("، ");
 
         promoMaybeLoad();
-        return couponsCard() + loyaltyCard() + stockCard() + restockCard() + favCard()
+        const sc = ATHR.storyCfg(cfg());
+        const storiesCard = card("📖 القصص: المؤلفة خصيصاً والمطبوعة", `
+                ${toggle("config.stories.pro_enabled", "القصة المؤلفة خصيصاً بوجه الطفل (من صورته)", { rerender: true, help: "الزبون يرسل صورة طفله على واتساب بعد الطلب، وترسم القصة بوجهه. متاحة الآن لقصة «رحلة إلى الفضاء»." })}
+                ${sc.pro_enabled ? number("config.stories.pro_price", "سعر الإضافة للقصة المؤلفة خصيصاً (ر.ع)", { step: "0.5", min: "0", placeholder: "5" }) : ""}
+                ${sc.pro_enabled ? text("config.stories.pro_time", "مدة تجهيز القصة المؤلفة خصيصاً", { placeholder: "خلال 48 ساعة من وصول الصورة" }) : ""}
+                ${toggle("config.stories.print_enabled", "النسخة المطبوعة بغلاف مقوّى", { rerender: true, help: "تحتاج طريقة توصيل للبيت مفعّلة في «الطلب والتوصيل» (مثل «توصيل القصة المطبوعة»)، ويظهر الخيار فقط للدول اللي فيها هذي الطريقة." })}
+                ${sc.print_enabled ? number("config.stories.print_price", "سعر الإضافة للنسخة المطبوعة (ر.ع)", { step: "0.5", min: "0", placeholder: "6", help: "فوق سعر القصة، وسعر التوصيل يُضاف من طريقة التوصيل." }) : ""}
+                ${sc.print_enabled ? text("config.stories.print_time", "مدة الطباعة والتوصيل", { placeholder: "3 إلى 5 أيام داخل عُمان" }) : ""}
+                ${toggle("config.stories.guarantee", "إظهار «ضمان الرضا: نعدّل القصة مجاناً أو نرجّع المبلغ»")}`,
+                "الأسعار تُضاف فوق سعر كل قصة، والخادم يحسبها بنفسه في كل طلب.");
+        return storiesCard + couponsCard() + loyaltyCard() + stockCard() + restockCard() + favCard()
             + card("خصم الكمية (يرفع قيمة الطلب)", `
                 ${toggle("config.sales.volume.enabled", "تفعيل خصم الكمية", { rerender: true })}
                 <ul class="lst">${tiers}</ul>
@@ -6034,7 +6044,14 @@
                 <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
                 ${storyItems(o).map(({ it, i }) => `<div class="oc-story">
                     <div><b>📖 ${esc(it.label || it.name)}</b>
-                    <span>👶 ${esc(it.custom.name)} · ${it.custom.g === "f" ? "بنت" : "ولد"}${it.custom.age ? ` · ${esc(ATHR.ageText(it.custom.age))}` : ""}${it.custom.photo ? " · 📷 بيرسل صورة للغلاف" : ""}</span>
+                    <span>👶 ${esc(it.custom.name)} · ${it.custom.g === "f" ? "بنت" : "ولد"}${it.custom.age ? ` · ${esc(ATHR.ageText(it.custom.age))}` : ""}${it.custom.photo && it.custom.tier !== "pro" ? " · 📷 بيرسل صورة للغلاف" : ""}</span>
+                    ${it.custom.tier === "pro" ? `<span class="oc-pro">🌟 مؤلفة خصيصاً بوجه الطفل — بيرسل ${it.custom.g === "f" ? "صورتها" : "صورته"} على واتساب${it.custom.g === "f" ? (it.custom.hijab === false ? " · بدون حجاب" : " · بالحجاب") : ""}</span>` : ""}
+                    ${it.custom.fmt === "print" ? `<span class="oc-print">📦 نسخة مطبوعة بغلاف مقوّى + PDF</span>` : ""}
+                    ${(it.custom.likes || []).length ? `<small class="adm-muted">🎈 يحب: ${esc(ATHR.likesText(it.custom.likes))}</small>` : ""}
+                    ${ATHR.lessonOf(it.custom.lesson) ? `<small class="adm-muted">✨ رسالة القصة: ${esc(ATHR.lessonOf(it.custom.lesson).t)}</small>` : ""}
+                    ${it.custom.family ? `<small class="adm-muted">👨‍👩‍👧 الأسرة: ${esc(it.custom.family)}</small>` : ""}
+                    ${it.custom.friend ? `<small class="adm-muted">🤝 الصديق: ${esc(it.custom.friend)}</small>` : ""}
+                    ${it.custom.note ? `<small class="adm-muted">📝 ${esc(it.custom.note)}</small>` : ""}
                     </div>
                     <button type="button" class="ab ab-primary ab-sm" data-story-make="${esc(o.id)}" data-story-i="${i}">📖 اصنع ملف القصة</button>
                 </div>`).join("")}
@@ -6194,6 +6211,7 @@
         return {
             story: $("#smStory") ? $("#smStory").value : "letters",
             custom: {
+                ...(SM.extra || {}),
                 name: $("#smName") ? $("#smName").value : "",
                 g: $("#smG") ? $("#smG").value : "m",
                 age: $("#smAge") ? $("#smAge").value : "",
@@ -6216,12 +6234,16 @@
         SM.order = o;
         SM.index = i;
         SM.photo = null;
+        SM.extra = { likes: Array.isArray(c.likes) ? c.likes : [], lesson: c.lesson || "" };
         smReset();
         const story = it ? storyIdOf(it) : "letters";
         const ages = ATHR.STORY_AGES.map((a) => `<option value="${a}"${Number(c.age) === a ? " selected" : ""}>${esc(ATHR.ageText(a))}</option>`).join("");
         openOrderSheet(`${offerSheetHead("📖 صانع القصص")}
             <div class="sm-body" id="storyMaker">
                 <p class="adm-muted">${it ? `طلب <b dir="ltr">${esc(o.order_no || "")}</b> · ${esc(o.customer_name || "")}. راجع البيانات وصحّح الاسم إذا لزم.` : "اصنع قصة لأي طفل، مثل طلب وصلك على واتساب."}</p>
+                ${c.tier === "pro" ? `<p class="sm-pro">🌟 هذه قصة <b>مؤلفة خصيصاً بوجه الطفل</b>: نصها يُكتب حول أسرته وتفاصيله، ورسوماتها من صورته. أرسل صورة الطفل ورقم الطلب في محادثة Claude، ويجهّز لك ملف القصة كاملاً. الملف هنا بالشخصية الجاهزة (للمراجعة فقط).</p>` : ""}
+                ${c.fmt === "print" ? `<p class="sm-print">📦 العميل طلب نسخة مطبوعة: اصنع الملف وأرسله للمطبعة (A4، غلاف مقوّى)، وأرسل نسخة PDF للعميل.</p>` : ""}
+                ${(c.likes || []).length || ATHR.lessonOf(c.lesson) ? `<p class="adm-muted">${(c.likes || []).length ? `🎈 يحب: ${esc(ATHR.likesText(c.likes))}` : ""}${(c.likes || []).length && ATHR.lessonOf(c.lesson) ? " · " : ""}${ATHR.lessonOf(c.lesson) ? `✨ الرسالة: ${esc(ATHR.lessonOf(c.lesson).t)}` : ""} — مكتوبة في القصة تلقائياً.</p>` : ""}
                 <label class="af"><span>القصة</span><select class="ai" id="smStory">${STORY_OPTS.map(([v, l]) => `<option value="${v}"${v === story ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
                 <label class="af"><span>اسم الطفل</span><input class="ai" id="smName" maxlength="22" autocomplete="off" value="${esc(c.name || "")}"></label>
                 <div class="two">

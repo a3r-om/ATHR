@@ -129,6 +129,8 @@
                 proof: S.proof,
                 country: S.country,
                 cartQty,
+                cartCustom: (id) => cartCustom(id),
+                savedChild: () => storage.get(CHILD_KEY, null),
                 isFav: (id) => favSet().has(id)
             });
         }
@@ -273,63 +275,18 @@
         return it && it.custom ? it.custom : null;
     }
 
-    function storyBox(id) {
-        return $$("#storyForm").find((el) => el.dataset.storyFor === id) || null;
+    // بيانات الطفل لقصة: من السلة، أو آخر طفل كتبه الزبون على هذا الجهاز
+    function childFor(id) {
+        return cartCustom(id) || storage.get(CHILD_KEY, null) || null;
     }
 
-    function readStoryForm(id) {
-        const box = storyBox(id);
-        if (!box) return null;
-        const g = box.querySelector('input[name="st_g"]:checked');
-        return {
-            name: box.querySelector('[name="st_name"]').value,
-            g: g ? g.value : "",
-            age: box.querySelector('[name="st_age"]').value,
-            photo: box.querySelector('[name="st_photo"]').checked
-        };
-    }
-
-    function storyIssueText(issue) {
-        if (issue === "g") return t("اختر: ولد أو بنت، حتى نكتب القصة بالصيغة الصحيحة");
-        if (issue === "age") return t("اختر عمر الطفل");
-        return t("اكتب اسم الطفل بالحروف (حرفين على الأقل)");
-    }
-
-    function showStoryIssue(id, issue) {
-        const box = storyBox(id);
-        if (!box) return;
-        const err = box.querySelector("#stErr");
-        if (err) { err.textContent = storyIssueText(issue); err.hidden = false; }
-        box.querySelectorAll(".sf-field").forEach((f) => f.classList.remove("bad"));
-        const target = issue === "g" ? box.querySelector('input[name="st_g"]') : box.querySelector(issue === "age" ? '[name="st_age"]' : '[name="st_name"]');
-        const field = target && target.closest(".sf-field");
-        if (field) field.classList.add("bad");
-        box.scrollIntoView({ behavior: "smooth", block: "start" });
-        if (target && issue !== "g") setTimeout(() => target.focus({ preventScroll: true }), 300);
-        toast(storyIssueText(issue));
-    }
-
-    // بيانات الطفل الجاهزة، أو نوجّه الزبون لتعبئتها
+    // بيانات الطفل الجاهزة، أو نفتح معالج «اصنع قصة طفلك»
     function storyGate(id, { prompt = true } = {}) {
         const p = productById(id);
         if (!ATHR.isStory(p)) return { ok: true, custom: null };
-        const raw = readStoryForm(id);
-        if (raw) {
-            const issue = ATHR.storyIssue(raw);
-            if (issue) {
-                if (prompt) showStoryIssue(id, issue);
-                return { ok: false };
-            }
-            const custom = ATHR.storyClean(raw);
-            storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age });
-            return { ok: true, custom };
-        }
         const have = cartCustom(id);
         if (have) return { ok: true, custom: have };
-        if (prompt) {
-            toast(t("اكتب اسم طفلك أولاً حتى نكتب القصة باسمه"));
-            navigate(`${ATHR.url.product(p)}#personalize`);
-        }
+        if (prompt) wizardOpen({ pid: id });
         return { ok: false };
     }
 
@@ -346,25 +303,28 @@
     let storyTimer = 0;
     let storySeq = 0;
 
+    // معاينة صفحات القصة في صفحة المنتج: باسم الطفل المحفوظ، أو باسم مثال
     function storyPreview(p, delay = 450) {
         clearTimeout(storyTimer);
         storyTimer = setTimeout(async () => {
             const box = $("#storyPages");
-            if (!box || !storyBox(p.id)) return;
+            if (!box || !$("#storyBox")) return;
             const seq = ++storySeq;
             let lib;
             try { lib = await loadStories(); } catch { const pr = $("#storyPrev"); if (pr) pr.hidden = true; return; }
             if (seq !== storySeq || !lib.get(p.story)) return;
-            const raw = readStoryForm(p.id) || {};
-            const clean = ATHR.storyClean(raw);
-            const sample = ATHR.storyIssue({ ...raw, g: "m", age: 5 }) === "name";
-            const g = raw.g === "f" ? "f" : "m";
-            const data = { ...clean, g, age: clean.age || 5, name: sample ? (g === "f" ? t("سارة") : t("سالم")) : clean.name };
+            const saved = childFor(p.id);
+            const clean = saved ? ATHR.storyClean(saved) : null;
+            const sample = !clean || ATHR.storyIssue({ ...clean, age: clean.age || 5 }) === "name";
+            const g = clean && clean.g === "f" ? "f" : "m";
+            const data = sample ? { name: g === "f" ? t("سارة") : t("سالم"), g, age: 5 } : { ...clean, age: clean.age || 5 };
             const pages = lib.bookPages(p.story);
-            const pick = (lib.isIllustrated && lib.isIllustrated(p.story) ? [0, 1, 5, pages.length - 1] : [0, 2, 5, pages.length - 1]).filter((i) => pages[i]);
+            const wide = Boolean(lib.isIllustrated && lib.isIllustrated(p.story));
+            const at = (kinds) => pages.findIndex((pg) => kinds.includes(pg.kind));
+            const pick = [0, 1, 5, at(["end", "bend"]), at(["cert", "bcert"])].filter((i) => i >= 0 && pages[i]);
             const note = $("#stPrevNote");
-            if (note) note.textContent = sample ? t("مثال باسم «{name}»، اكتب اسم طفلك وتتغير القصة", { name: data.name }) : t("{n} صفحة A4 جاهزة للطباعة", { n: pages.length });
-            box.classList.toggle("wide", Boolean(lib.isIllustrated && lib.isIllustrated(p.story)));
+            if (note) note.textContent = sample ? t("مثال باسم «{name}». اكتب اسم طفلك وتتغير القصة كلها", { name: data.name }) : t("قصة {name}: {n} صفحة A4 جاهزة للطباعة", { name: data.name, n: pages.length });
+            box.classList.toggle("wide", wide);
             if (box.children.length !== pick.length) box.innerHTML = pick.map(() => `<div class="sf-page"><canvas width="420" height="594"></canvas></div>`).join("");
             box.classList.add("busy");
             const canvases = box.querySelectorAll("canvas");
@@ -383,43 +343,613 @@
     }
 
     function initStoryForm(p) {
-        const box = storyBox(p.id);
+        const box = $("#storyBox");
         if (!box) return;
-        const saved = cartCustom(p.id) || storage.get(CHILD_KEY, null);
-        if (saved && saved.name) {
-            box.querySelector('[name="st_name"]').value = saved.name;
-            const g = box.querySelector(`input[name="st_g"][value="${saved.g === "f" ? "f" : "m"}"]`);
-            if (g) g.checked = true;
-            if (saved.age) box.querySelector('[name="st_age"]').value = String(saved.age);
-            if (cartCustom(p.id)) box.querySelector('[name="st_photo"]').checked = Boolean(saved.photo);
-        }
-        const clearErr = () => {
-            const err = box.querySelector("#stErr");
-            if (err) err.hidden = true;
-            box.querySelectorAll(".sf-field.bad").forEach((f) => f.classList.remove("bad"));
-        };
-        box.addEventListener("input", (e) => {
-            clearErr();
-            if (e.target.name === "st_name") storyPreview(p, 500);
-            else storyPreview(p, 120);
-        });
-        box.addEventListener("change", () => { clearErr(); storyPreview(p, 120); });
-        // نحدّث بيانات القصة في السلة إذا عدّلها الزبون بعد الإضافة
-        box.addEventListener("focusout", () => {
-            if (!cartCustom(p.id)) return;
-            const raw = readStoryForm(p.id);
-            if (raw && !ATHR.storyIssue(raw)) updateStoryInCart(p.id, ATHR.storyClean(raw));
-        });
         if ("IntersectionObserver" in window) {
             const io = new IntersectionObserver((en) => { if (en[0].isIntersecting) { io.disconnect(); storyPreview(p, 0); } }, { rootMargin: "300px" });
             io.observe(box);
         } else storyPreview(p, 0);
         if (location.hash === "#personalize") {
-            setTimeout(() => {
-                box.scrollIntoView({ behavior: "smooth", block: "start" });
-                const name = box.querySelector('[name="st_name"]');
-                if (name && !name.value) name.focus({ preventScroll: true });
-            }, 250);
+            history.replaceState(history.state, "", location.pathname + location.search);
+            setTimeout(() => wizardOpen({ pid: p.id }), 150);
+        }
+    }
+
+    function refreshStoryBuyBox() {
+        if (S.route.name !== "product") return;
+        const p = findProduct(S.route.slug);
+        const bb = $("#buyBox");
+        if (!p || !bb || !ATHR.isStory(p)) return;
+        bb.outerHTML = V.buyBox(v(), p);
+        initStoryForm(p);
+        renderBuyBar();
+    }
+
+    // =====================================================
+    // معالج «اصنع قصة طفلك»: سؤال واحد في كل شاشة
+    // =====================================================
+    const WZ = { open: false, st: null, el: null, pushed: false, skipPop: false, timer: 0, seq: 0 };
+
+    function wzStories() {
+        return V.listings(v(), v().products.filter((p) => ATHR.isStory(p) && p.is_available !== false));
+    }
+    function wzProduct() {
+        const p = WZ.st && WZ.st.pid ? productById(WZ.st.pid) : null;
+        return p && ATHR.isStory(p) ? p : null;
+    }
+    const wzG = (m, f) => (WZ.st.g === "f" ? f : m);
+    const wzName = () => ATHR.storyClean({ name: WZ.st.name }).name || wzG(t("البطل"), t("البطلة"));
+
+    function wzSteps() {
+        const cfg = C();
+        const out = ["g", "name", "age", "likes", "lesson"];
+        if (!WZ.st.fixed || !wzProduct()) out.push("story");
+        if (ATHR.proOn(cfg)) out.push("tier");
+        if (ATHR.printOn(cfg, S.country)) out.push("fmt");
+        out.push("review");
+        return out;
+    }
+
+    function wzCustom() {
+        const s = WZ.st;
+        const p = wzProduct();
+        const cfg = C();
+        return ATHR.storyClean({
+            name: s.name, g: s.g, age: s.age, likes: s.likes, lesson: s.lesson,
+            tier: s.tier === "pro" && p && ATHR.proOn(cfg, p.story) ? "pro" : "std",
+            fmt: s.fmt === "print" && ATHR.printOn(cfg, S.country) ? "print" : "pdf",
+            hijab: s.hijab, note: s.note, family: s.family, friend: s.friend
+        });
+    }
+
+    function wizardOpen({ pid = "", step = "" } = {}) {
+        if (!S.loaded) return;
+        const p = pid ? productById(pid) : null;
+        const story = p && ATHR.isStory(p) ? p : null;
+        const inCart = story ? cartCustom(story.id) : null;
+        const saved = inCart || storage.get(CHILD_KEY, null) || {};
+        WZ.st = {
+            pid: story ? story.id : "",
+            fixed: Boolean(story),
+            g: saved.g === "f" || saved.g === "m" ? saved.g : "",
+            name: saved.name || "",
+            age: Number(saved.age) || 0,
+            likes: Array.isArray(saved.likes) ? saved.likes.slice(0, 2) : [],
+            lesson: saved.lesson || "",
+            tier: inCart && inCart.tier === "pro" ? "pro" : "std",
+            fmt: inCart && inCart.fmt === "print" ? "print" : "pdf",
+            hijab: saved.hijab !== false,
+            note: (inCart && inCart.note) || "",
+            family: (inCart && inCart.family) || "",
+            friend: (inCart && inCart.friend) || "",
+            edit: Boolean(inCart),
+            i: 0, err: "", ret: false
+        };
+        const steps = wzSteps();
+        if (step && steps.includes(step)) WZ.st.i = steps.indexOf(step);
+        else if (inCart) WZ.st.i = steps.indexOf("review");
+        if (!WZ.el) {
+            WZ.el = document.createElement("div");
+            WZ.el.className = "wz";
+            WZ.el.id = "storyWizard";
+            WZ.el.setAttribute("role", "dialog");
+            WZ.el.setAttribute("aria-modal", "true");
+            WZ.el.setAttribute("aria-label", t("اصنع قصة طفلك"));
+            WZ.el.addEventListener("click", wzClick);
+            WZ.el.addEventListener("input", wzInput);
+            WZ.el.addEventListener("change", wzChange);
+            WZ.el.addEventListener("keydown", wzKey);
+        }
+        document.body.appendChild(WZ.el);
+        document.documentElement.classList.add("wz-on");
+        WZ.open = true;
+        if (!WZ.pushed) {
+            try { history.pushState({ ...(history.state || {}), wz: 1 }, "", location.href); WZ.pushed = true; } catch { /* المتصفح يمنع */ }
+        }
+        wzRender();
+    }
+
+    function wizardClose({ fromPop = false, keepHistory = false } = {}) {
+        if (!WZ.open) return;
+        WZ.open = false;
+        clearTimeout(WZ.timer);
+        WZ.seq++;
+        if (WZ.el) WZ.el.remove();
+        document.documentElement.classList.remove("wz-on");
+        if (WZ.pushed) {
+            WZ.pushed = false;
+            if (!fromPop && !keepHistory) { WZ.skipPop = true; history.back(); }
+        }
+    }
+
+    function wzValid(key) {
+        const s = WZ.st;
+        if (key === "g" && !s.g) return t("اختر: ولد أو بنت");
+        if (key === "name" && ATHR.storyIssue({ name: s.name, g: s.g || "m", age: 5 }) === "name") return t("اكتب اسم الطفل بالحروف (حرفين على الأقل)");
+        if (key === "age" && !s.age) return t("اختر العمر");
+        if (key === "story" && !wzProduct()) return t("اختر القصة");
+        return "";
+    }
+
+    function wzNext() {
+        const s = WZ.st;
+        const steps = wzSteps();
+        const key = steps[s.i];
+        const err = wzValid(key);
+        if (err) { s.err = err; wzShowErr(); return; }
+        s.err = "";
+        if (s.ret) { s.ret = false; s.i = steps.indexOf("review"); }
+        else s.i = Math.min(steps.length - 1, s.i + 1);
+        wzRender();
+    }
+
+    function wzAuto() {
+        wzRender({ keepScroll: true });
+        clearTimeout(WZ.timer);
+        WZ.timer = setTimeout(() => { if (WZ.open) wzNext(); }, 240);
+    }
+
+    function wzShowErr() {
+        const el = WZ.el && WZ.el.querySelector(".wz-err");
+        if (!el) return;
+        el.textContent = WZ.st.err;
+        el.hidden = !WZ.st.err;
+        if (WZ.st.err) {
+            el.classList.remove("shake");
+            void el.offsetWidth;
+            el.classList.add("shake");
+        }
+    }
+
+    const WZ_VIEWS = {
+        g() {
+            const s = WZ.st;
+            return `<h2 class="wz-q">${esc(t("من بطل القصة؟"))}</h2>
+                <p class="wz-sub">${esc(t("نكتب القصة كاملة بصيغة الولد أو البنت"))}</p>
+                <div class="wz-big2">${[["m", "👦", t("ولد")], ["f", "👧", t("بنت")]].map(([val, e, label]) => `<button type="button" class="wz-card${s.g === val ? " on" : ""}" data-wz-g="${val}" aria-pressed="${s.g === val}"><span class="wz-e" aria-hidden="true">${e}</span><b>${esc(label)}</b></button>`).join("")}</div>`;
+        },
+        name() {
+            const s = WZ.st;
+            return `<h2 class="wz-q">${esc(wzG(t("ما اسم البطل؟"), t("ما اسم البطلة؟")))}</h2>
+                <p class="wz-sub">${esc(t("الاسم يظهر على الغلاف وفي كل صفحة"))}</p>
+                <input class="input wz-name" name="wz_name" maxlength="22" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="${esc(wzG(t("مثال: محمد"), t("مثال: سارة")))}" value="${esc(s.name)}" aria-label="${esc(t("اسم الطفل"))}">
+                <div class="wz-mini" aria-hidden="true"><span class="wz-mini-book"><small>${esc(t("قصة"))}</small><b id="wzMiniName">${esc(wzName())}</b><i>✦ ✧ ✦</i></span></div>
+                <ul class="wz-tips"><li>${esc(t("اكتب الاسم الذي تنادونه به في البيت"))}</li><li>${esc(t("تأكد من الإملاء، فالاسم يتكرر في كل صفحة"))}</li></ul>`;
+        },
+        age() {
+            const s = WZ.st;
+            return `<h2 class="wz-q">${esc(t("كم عمر {name}؟", { name: wzName() }))}</h2>
+                <p class="wz-sub">${esc(t("نكتب العمر في أول صفحة من القصة"))}</p>
+                <div class="wz-ages">${ATHR.STORY_AGES.map((a) => `<button type="button" class="wz-chip${s.age === a ? " on" : ""}" data-wz-age="${a}" aria-pressed="${s.age === a}">${esc(ATHR.ageText(a))}</button>`).join("")}</div>`;
+        },
+        likes() {
+            const s = WZ.st;
+            return `<h2 class="wz-q">${esc(wzG(t("ماذا يحب {name}؟", { name: wzName() }), t("ماذا تحب {name}؟", { name: wzName() })))}</h2>
+                <p class="wz-sub">${esc(t("اختر شيئين على الأكثر، ونكتبهما في القصة"))}</p>
+                <div class="wz-chips">${ATHR.STORY_LIKES.map((l) => {
+                    const on = s.likes.includes(l.id);
+                    return `<button type="button" class="wz-chip${on ? " on" : ""}" data-wz-like="${l.id}" aria-pressed="${on}"${!on && s.likes.length >= 2 ? " disabled" : ""}><span aria-hidden="true">${l.e}</span> ${esc(t(l.t))}</button>`;
+                }).join("")}</div>`;
+        },
+        lesson() {
+            const s = WZ.st;
+            const chips = (k) => ATHR.STORY_LESSONS.filter((l) => l.k === k).map((l) => `<button type="button" class="wz-chip${s.lesson === l.id ? " on" : ""}" data-wz-lesson="${l.id}" aria-pressed="${s.lesson === l.id}"><span aria-hidden="true">${l.e}</span> ${esc(t(l.t))}</button>`).join("");
+            return `<h2 class="wz-q">${esc(t("ماذا تحب أن تعلّم القصة {name}؟", { name: wzName() }))}</h2>
+                <p class="wz-sub">${esc(t("اختر قيمة أو عادة يومية، ونكتبها في نهاية القصة وفي شهادة البطل"))}</p>
+                <b class="wz-group">💛 ${esc(t("قيم وأخلاق"))}</b>
+                <div class="wz-chips">${chips("v")}</div>
+                <b class="wz-group">🌞 ${esc(t("عادات يومية"))}</b>
+                <div class="wz-chips">${chips("h")}</div>`;
+        },
+        story() {
+            const s = WZ.st;
+            return `<h2 class="wz-q">${esc(t("اختر مغامرة {name}", { name: wzName() }))}</h2>
+                <div class="wz-stories">${wzStories().map((p) => `<button type="button" class="wz-story${s.pid === p.id ? " on" : ""}" data-wz-story="${esc(p.id)}" aria-pressed="${s.pid === p.id}">
+                    ${V.img(p) ? `<img src="${esc(V.img(p))}" alt="" width="300" height="375" loading="lazy" decoding="async">` : `<span class="wz-noimg"></span>`}
+                    <span><b>${esc(V.pname(p).replace(/^قصة باسم طفلك:\s*/, ""))}</b><small>${esc(t("من {price}", { price: local(p.price) }))}</small></span>
+                </button>`).join("")}</div>`;
+        },
+        tier() {
+            const s = WZ.st;
+            const cfg = C();
+            const sc = ATHR.storyCfg(cfg);
+            const p = wzProduct();
+            const base = p ? Number(p.price) : 0;
+            const proOk = Boolean(p && ATHR.proOn(cfg, p.story));
+            const proStory = proOk ? null : wzStories().find((x) => ATHR.proOn(cfg, x.story));
+            const name = wzName();
+            return `<h2 class="wz-q">${esc(t("اختر نوع القصة"))}</h2>
+                <div class="wz-opts">
+                    <button type="button" class="wz-opt${s.tier !== "pro" ? " on" : ""}" data-wz-tier="std" aria-pressed="${s.tier !== "pro"}">
+                        <span class="wz-opt-e" aria-hidden="true">📖</span>
+                        <span class="wz-opt-t"><b>${esc(t("قصة جاهزة باسمه"))}</b><small>${esc(wzG(t("قصة مرسومة جاهزة، و{name} هو البطل باسمه وهواياته", { name }), t("قصة مرسومة جاهزة، و{name} هي البطلة باسمها وهواياتها", { name })))}</small><small class="wz-when">⏱ ${esc(t("تصلك خلال ساعات"))}</small></span>
+                        <span class="wz-opt-p">${local(base)}</span>
+                    </button>
+                    <button type="button" class="wz-opt pro${s.tier === "pro" && proOk ? " on" : ""}" data-wz-tier="pro" aria-pressed="${s.tier === "pro" && proOk}"${proOk ? "" : " disabled"}>
+                        <span class="wz-badge">${esc(t("الأكثر تميّزاً"))}</span>
+                        <span class="wz-opt-e" aria-hidden="true">🌟</span>
+                        <span class="wz-opt-t"><b>${esc(t("قصة مؤلفة خصيصاً لـ{name}", { name }))}</b><small>${esc(wzG(t("نرسمه بوجهه من صورته، ونكتب القصة حول أسرته وأصدقائه والعادة اللي تبيها", { name }), t("نرسمها بوجهها من صورتها، ونكتب القصة حول أسرتها وصديقاتها والعادة اللي تبيها", { name })))}</small><small class="wz-when">⏱ ${esc(sc.pro_time)}</small></span>
+                        <span class="wz-opt-p">${local(base + (Number(sc.pro_price) || 0))}</span>
+                    </button>
+                </div>
+                ${!proOk && proStory ? `<p class="wz-note">${esc(t("القصة المميّزة متاحة الآن لقصة «{story}».", { story: V.pname(proStory).replace(/^قصة باسم طفلك:\s*/, "") }))} <button type="button" class="link-btn" data-wz-story-pro="${esc(proStory.id)}">${esc(t("اخترها"))}</button></p>` : ""}
+                ${s.tier === "pro" && proOk ? `<div class="wz-pro">
+                    <b>📷 ${esc(wzG(t("بعد الطلب ترسل لنا صورة {name} على واتساب", { name }), t("بعد الطلب ترسل لنا صورة {name} على واتساب", { name })))}</b>
+                    <ul class="wz-tips">
+                        <li>${esc(t("صورة واضحة يظهر فيها الوجه كاملاً"))}</li>
+                        <li>${esc(t("بإضاءة جيدة وابتسامة طبيعية"))}</li>
+                        <li>${esc(t("بدون نظارة شمسية أو فلاتر"))}</li>
+                    </ul>
+                    ${s.g === "f" ? `<div class="wz-field"><span>${esc(t("الحجاب في الرسومات"))}</span><div class="sf-seg" role="radiogroup" aria-label="${esc(t("الحجاب في الرسومات"))}">
+                        <label><input type="radio" name="wz_hijab" value="1"${s.hijab ? " checked" : ""}><span>${esc(t("بالحجاب"))}</span></label>
+                        <label><input type="radio" name="wz_hijab" value="0"${s.hijab ? "" : " checked"}><span>${esc(t("بدون حجاب"))}</span></label>
+                    </div></div>` : ""}
+                    <label class="wz-field"><span>${esc(t("أسماء الأسرة في القصة (اختياري)"))}</span><input class="input" name="wz_family" maxlength="120" autocomplete="off" placeholder="${esc(t("مثال: ماما مريم، بابا خالد، أخته لين"))}" value="${esc(s.family)}"></label>
+                    <label class="wz-field"><span>${esc(wzG(t("صديقه المفضّل (اختياري)"), t("صديقتها المفضّلة (اختياري)")))}</span><input class="input" name="wz_friend" maxlength="60" autocomplete="off" placeholder="${esc(wzG(t("مثال: سالم"), t("مثال: ريم")))}" value="${esc(s.friend)}"></label>
+                    <label class="wz-field"><span>${esc(t("تفاصيل خاصة عن {name} (اختياري)", { name }))}</span><textarea class="input" name="wz_note" rows="2" maxlength="200" placeholder="${esc(wzG(t("مثال: يلبس نظارة، يحب الديناصورات، مكانه المفضل البحر"), t("مثال: تلبس نظارة، تحب الفراشات، مكانها المفضل البحر")))}">${esc(s.note)}</textarea></label>
+                    <p class="wz-safe">🔒 ${esc(t("نستخدم الصورة لرسم القصة فقط، ولا نشاركها مع أحد، ونحذفها بعد التسليم."))}</p>
+                </div>` : ""}`;
+        },
+        fmt() {
+            const s = WZ.st;
+            const cfg = C();
+            const sc = ATHR.storyCfg(cfg);
+            const ship = (cfg.order.delivery || []).find((d) => d.enabled && d.type !== "digital" && ATHR.inCountries(d, S.country));
+            return `<h2 class="wz-q">${esc(t("كيف تحب أن تصلك القصة؟"))}</h2>
+                <div class="wz-opts">
+                    <button type="button" class="wz-opt${s.fmt !== "print" ? " on" : ""}" data-wz-fmt="pdf" aria-pressed="${s.fmt !== "print"}">
+                        <span class="wz-opt-e" aria-hidden="true">📱</span>
+                        <span class="wz-opt-t"><b>${esc(t("ملف PDF على واتساب"))}</b><small>${esc(t("تقرؤونها من الجوال أو تطبعونها في البيت"))}</small></span>
+                        <span class="wz-opt-p small">${esc(t("ضمن السعر"))}</span>
+                    </button>
+                    <button type="button" class="wz-opt${s.fmt === "print" ? " on" : ""}" data-wz-fmt="print" aria-pressed="${s.fmt === "print"}">
+                        <span class="wz-opt-e" aria-hidden="true">📦</span>
+                        <span class="wz-opt-t"><b>${esc(t("كتاب مطبوع بغلاف مقوّى"))}</b><small>${esc(t("نطبعها ونوصلها لبيتك، ومعها نسخة PDF"))}</small><small class="wz-when">🚚 ${esc(sc.print_time)}${ship && Number(ship.price) > 0 ? ` · ${esc(t("التوصيل {price}", { price: local(ship.price) }))}` : ""}</small></span>
+                        <span class="wz-opt-p">+${local(Number(sc.print_price) || 0)}</span>
+                    </button>
+                </div>`;
+        },
+        review() {
+            const c = wzCustom();
+            const p = wzProduct();
+            const cfg = C();
+            const steps = wzSteps();
+            const lesson = ATHR.lessonOf(c.lesson);
+            const unit = p ? ATHR.storyUnit(p, c, cfg) : 0;
+            const row = (k, label, value) => `<li><span>${esc(label)}</span><b>${esc(value)}</b>${steps.includes(k) ? `<button type="button" class="link-btn" data-wz-go="${k}">${esc(t("تعديل"))}</button>` : ""}</li>`;
+            return `<h2 class="wz-q">${esc(t("قصة {name} جاهزة!", { name: c.name }))}</h2>
+                <p class="wz-sub">${esc(t("هذه صفحات من القصة باسمه، اسحب لتشوف أكثر"))}</p>
+                <div class="sf-pages wz-pages" id="wzPages" aria-live="polite"></div>
+                ${c.tier === "pro" ? `<p class="wz-note">🌟 ${esc(t("في القصة المؤلفة خصيصاً نرسم {name} من صورته مكان الشخصية التي في المعاينة، ونكتب النص حول أسرته وتفاصيله.", { name: c.name }))}</p>` : ""}
+                <div class="wz-gifts"><b>🎁 ${esc(t("هدايا مجانية مع القصة"))}</b><span>🏅 ${esc(t("شهادة بطل القصة"))}</span><span>🏷️ ${esc(t("ملصقات اسمه للمدرسة"))}</span><span>🖍️ ${esc(t("صفحة تلوين"))}</span></div>
+                <ul class="wz-sum">
+                    ${row("g", wzG(t("البطل"), t("البطلة")), `${c.name} · ${c.g === "f" ? t("بنت") : t("ولد")} · ${ATHR.ageText(c.age)}`)}
+                    ${row("likes", wzG(t("يحب"), t("تحب")), c.likes.length ? ATHR.likesText(c.likes) : t("لم تختر"))}
+                    ${row("lesson", t("رسالة القصة"), lesson ? t(lesson.t) : t("رسالة القصة الأصلية"))}
+                    ${row("story", t("المغامرة"), p ? V.pname(p).replace(/^قصة باسم طفلك:\s*/, "") : "")}
+                    ${steps.includes("tier") ? row("tier", t("النوع"), c.tier === "pro" ? t("مؤلفة خصيصاً بوجهه") : t("جاهزة باسمه")) : ""}
+                    ${steps.includes("fmt") ? row("fmt", t("الاستلام"), c.fmt === "print" ? t("كتاب مطبوع + PDF") : t("PDF على واتساب")) : ""}
+                </ul>
+                <div class="wz-total"><span>${esc(t("سعر القصة"))}</span><b>${local(unit)}</b></div>
+                ${c.fmt === "print" ? `<p class="wz-muted">${esc(t("يُضاف سعر التوصيل في صفحة الطلب."))}</p>` : ""}
+                ${ATHR.storyCfg(cfg).guarantee ? `<div class="wz-guard"><span aria-hidden="true">🛡️</span><span><b>${esc(t("ضمان الرضا"))}</b> ${esc(t("إذا ما عجبتك القصة نعدّلها مجاناً، أو نرجّع لك المبلغ كاملاً."))}</span></div>` : ""}`;
+        }
+    };
+
+    function wzRender({ keepScroll = false } = {}) {
+        if (!WZ.open || !WZ.el) return;
+        const s = WZ.st;
+        const steps = wzSteps();
+        if (s.i >= steps.length) s.i = steps.length - 1;
+        const key = steps[s.i];
+        const last = key === "review";
+        const optional = key === "likes" || key === "lesson";
+        const pct = Math.round(((s.i + 1) / steps.length) * 100);
+        const scrollTop = keepScroll ? (WZ.el.querySelector(".wz-body") || {}).scrollTop || 0 : 0;
+        WZ.el.innerHTML = `<div class="wz-panel">
+            <header class="wz-top">
+                <button type="button" class="wz-icon" data-wz="back" aria-label="${esc(t("رجوع"))}"${s.i === 0 ? " hidden" : ""}>→</button>
+                <div class="wz-prog" role="progressbar" aria-label="${esc(t("التقدم"))}" aria-valuemin="1" aria-valuemax="${steps.length}" aria-valuenow="${s.i + 1}"><i style="width:${pct}%"></i></div>
+                <small class="wz-count">${esc(t("{n} من {total}", { n: s.i + 1, total: steps.length }))}</small>
+                <button type="button" class="wz-icon" data-wz="close" aria-label="${esc(t("إغلاق"))}">✕</button>
+            </header>
+            <div class="wz-body" data-step="${key}">${WZ_VIEWS[key]()}</div>
+            <footer class="wz-foot">
+                <p class="wz-err" role="alert"${s.err ? "" : " hidden"}>${esc(s.err)}</p>
+                ${last
+                    ? `<button type="button" class="btn btn-primary btn-block wz-next" data-wz="order">${esc(t("أكمل الطلب"))}</button>
+                       <button type="button" class="btn btn-ghost btn-block" data-wz="cart">${esc(s.edit ? t("حفظ التعديل") : t("أضف للسلة واختر قصة ثانية"))}</button>`
+                    : `<button type="button" class="btn btn-primary btn-block wz-next" data-wz="next">${esc(s.ret ? t("حفظ") : t("التالي"))}</button>`}
+                ${optional ? `<button type="button" class="link-btn wz-skip" data-wz="skip">${esc(key === "lesson" ? t("تخطّي، نختار لكم رسالة القصة") : t("تخطّي"))}</button>` : ""}
+            </footer>
+        </div>`;
+        const body = WZ.el.querySelector(".wz-body");
+        if (body) body.scrollTop = scrollTop;
+        if (key === "name") {
+            const input = WZ.el.querySelector('[name="wz_name"]');
+            if (input && !keepScroll) setTimeout(() => { try { input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length); } catch { /* */ } }, 60);
+        }
+        if (last) wzPreview();
+    }
+
+    async function wzPreview() {
+        const box = WZ.el && WZ.el.querySelector("#wzPages");
+        const p = wzProduct();
+        if (!box || !p) return;
+        const seq = ++WZ.seq;
+        let lib;
+        try { lib = await loadStories(); } catch { box.hidden = true; return; }
+        if (seq !== WZ.seq || !lib.get(p.story)) return;
+        const data = wzCustom();
+        const pages = lib.bookPages(p.story);
+        const wide = Boolean(lib.isIllustrated && lib.isIllustrated(p.story));
+        box.classList.toggle("wide", wide);
+        const at = (kinds) => pages.findIndex((pg) => kinds.includes(pg.kind));
+        const pick = [0, 1, at(["end", "bend"]), at(["cert", "bcert"]), at(["labels", "blabels"])].filter((i) => i >= 0 && pages[i]);
+        box.innerHTML = pick.map(() => `<div class="sf-page"><canvas width="420" height="594"></canvas></div>`).join("");
+        const canvases = box.querySelectorAll("canvas");
+        for (let k = 0; k < pick.length; k++) {
+            const tmp = document.createElement("canvas");
+            try { await lib.renderPage(p.story, data, pages[pick[k]], { width: 420, canvas: tmp }); } catch (e) { console.warn("Wizard preview:", e); break; }
+            if (seq !== WZ.seq) return;
+            const c = canvases[k];
+            if (!c) break;
+            c.width = tmp.width;
+            c.height = tmp.height;
+            c.getContext("2d").drawImage(tmp, 0, 0);
+        }
+    }
+
+    function wzFinish(mode) {
+        const s = WZ.st;
+        const steps = wzSteps();
+        for (let k = 0; k < steps.length - 1; k++) {
+            const err = wzValid(steps[k]);
+            if (err) { s.i = k; s.err = err; wzRender(); return; }
+        }
+        const p = wzProduct();
+        if (!p) return;
+        const custom = wzCustom();
+        storage.set(CHILD_KEY, { name: custom.name, g: custom.g, age: custom.age, likes: custom.likes, lesson: custom.lesson, hijab: custom.hijab });
+        const had = cartQty(p.id) > 0;
+        if (had) updateStoryInCart(p.id, custom);
+        else if (!setQty(p.id, 1, { silent: true, custom })) return;
+        if (!had) { track("add"); pixelAdd(p.id, 1); }
+        if (mode === "order") {
+            wizardClose({ keepHistory: true });
+            navigate(`${BASE}checkout/`);
+            return;
+        }
+        wizardClose();
+        updateCartUI();
+        refreshStoryBuyBox();
+        toast(had ? t("حدّثنا بيانات القصة ✓") : t("أُضيفت قصة {name} للسلة ✓", { name: custom.name }), { href: `${BASE}cart/`, text: t("السلة") });
+    }
+
+    function wzClick(e) {
+        const b = e.target.closest("button");
+        if (!b || !WZ.open) return;
+        const s = WZ.st;
+        const d = b.dataset;
+        if (d.wz === "close") { wizardClose(); return; }
+        if (d.wz === "back") {
+            clearTimeout(WZ.timer);
+            s.err = "";
+            if (s.ret) { s.ret = false; s.i = wzSteps().indexOf("review"); } else s.i = Math.max(0, s.i - 1);
+            wzRender();
+            return;
+        }
+        if (d.wz === "next") { wzNext(); return; }
+        if (d.wz === "skip") {
+            const key = wzSteps()[s.i];
+            if (key === "likes") s.likes = [];
+            if (key === "lesson") s.lesson = "";
+            wzNext();
+            return;
+        }
+        if (d.wz === "order" || d.wz === "cart") { wzFinish(d.wz); return; }
+        if (d.wzG) { s.g = d.wzG; s.err = ""; wzAuto(); return; }
+        if (d.wzAge) { s.age = Number(d.wzAge); s.err = ""; wzAuto(); return; }
+        if (d.wzLike) {
+            const id = d.wzLike;
+            s.likes = s.likes.includes(id) ? s.likes.filter((x) => x !== id) : s.likes.concat(id).slice(0, 2);
+            wzRender({ keepScroll: true });
+            return;
+        }
+        if (d.wzLesson) { s.lesson = s.lesson === d.wzLesson ? "" : d.wzLesson; wzRender({ keepScroll: true }); return; }
+        if (d.wzStory) {
+            s.pid = d.wzStory;
+            if (!ATHR.proOn(C(), (wzProduct() || {}).story)) s.tier = "std";
+            s.err = "";
+            wzAuto();
+            return;
+        }
+        if (d.wzStoryPro) { s.pid = d.wzStoryPro; s.tier = "pro"; wzRender({ keepScroll: true }); return; }
+        if (d.wzTier) { s.tier = d.wzTier; wzRender({ keepScroll: true }); return; }
+        if (d.wzFmt) { s.fmt = d.wzFmt; wzRender({ keepScroll: true }); return; }
+        if (d.wzGo) {
+            const k = wzSteps().indexOf(d.wzGo);
+            if (k >= 0) { s.i = k; s.err = ""; s.ret = true; wzRender(); }
+        }
+    }
+
+    function wzInput(e) {
+        if (!WZ.open) return;
+        const s = WZ.st;
+        if (e.target.name === "wz_name") {
+            s.name = e.target.value;
+            const mini = WZ.el.querySelector("#wzMiniName");
+            if (mini) mini.textContent = wzName();
+            if (s.err) { s.err = ""; wzShowErr(); }
+        }
+        if (e.target.name === "wz_note") s.note = e.target.value;
+        if (e.target.name === "wz_family") s.family = e.target.value;
+        if (e.target.name === "wz_friend") s.friend = e.target.value;
+    }
+
+    function wzChange(e) {
+        if (!WZ.open) return;
+        if (e.target.name === "wz_hijab") WZ.st.hijab = e.target.value === "1";
+    }
+
+    function wzKey(e) {
+        if (e.key === "Escape") { wizardClose(); return; }
+        if (e.key === "Enter" && e.target.name === "wz_name") { e.preventDefault(); wzNext(); }
+    }
+
+    // =====================================================
+    // تصفّح القصة كاملة قبل الشراء: صفحة صفحة، وباسم طفلك إذا كتبته
+    // =====================================================
+    const FB = { open: false, el: null, pid: "", i: 0, name: "", g: "m", seq: 0, pushed: false, skipPop: false, timer: 0, x0: null, n: 0 };
+
+    function flipOpen(pid) {
+        const p = productById(pid);
+        if (!p || !ATHR.isStory(p) || !S.loaded) return;
+        const saved = storage.get(CHILD_KEY, null) || {};
+        FB.pid = p.id;
+        FB.i = 0;
+        FB.n = 0;
+        FB.name = saved.name || "";
+        FB.g = saved.g === "f" ? "f" : "m";
+        if (!FB.el) {
+            FB.el = document.createElement("div");
+            FB.el.className = "wz fb";
+            FB.el.setAttribute("role", "dialog");
+            FB.el.setAttribute("aria-modal", "true");
+            FB.el.addEventListener("click", flipClick);
+            FB.el.addEventListener("input", (e) => {
+                if (e.target.name !== "fb_name") return;
+                FB.name = e.target.value;
+                clearTimeout(FB.timer);
+                FB.timer = setTimeout(flipDraw, 450);
+            });
+            FB.el.addEventListener("change", (e) => { if (e.target.name === "fb_g") { FB.g = e.target.value === "f" ? "f" : "m"; flipDraw(); } });
+            FB.el.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") flipClose();
+                if (e.target.name === "fb_name") return;
+                if (e.key === "ArrowLeft") flipGo(1);
+                if (e.key === "ArrowRight") flipGo(-1);
+            });
+            FB.el.addEventListener("pointerdown", (e) => { if (e.target.closest(".fb-stage")) FB.x0 = e.clientX; });
+            FB.el.addEventListener("pointerup", (e) => {
+                if (FB.x0 === null) return;
+                const dx = e.clientX - FB.x0;
+                FB.x0 = null;
+                if (Math.abs(dx) > 40) flipGo(dx > 0 ? 1 : -1);
+            });
+        }
+        FB.el.setAttribute("aria-label", t("تصفّح القصة"));
+        FB.el.innerHTML = `<div class="wz-panel fb-panel">
+            <header class="wz-top">
+                <b class="fb-title">📖 ${esc(V.pname(p).replace(/^قصة باسم طفلك:\s*/, ""))}</b>
+                <button type="button" class="wz-icon" data-fb="close" aria-label="${esc(t("إغلاق"))}">✕</button>
+            </header>
+            <div class="fb-try">
+                <input class="input" name="fb_name" maxlength="22" autocomplete="off" placeholder="${esc(t("اكتب اسم طفلك هنا"))}" value="${esc(FB.name)}" aria-label="${esc(t("اسم الطفل"))}">
+                <div class="sf-seg" role="radiogroup" aria-label="${esc(t("ولد أو بنت"))}">
+                    <label><input type="radio" name="fb_g" value="m"${FB.g === "m" ? " checked" : ""}><span>${esc(t("ولد"))}</span></label>
+                    <label><input type="radio" name="fb_g" value="f"${FB.g === "f" ? " checked" : ""}><span>${esc(t("بنت"))}</span></label>
+                </div>
+            </div>
+            <div class="fb-stage">
+                <button type="button" class="fb-nav prev" data-fb="prev" aria-label="${esc(t("الصفحة السابقة"))}">›</button>
+                <div class="fb-page"><canvas id="fbCanvas" width="600" height="848"></canvas></div>
+                <button type="button" class="fb-nav next" data-fb="next" aria-label="${esc(t("الصفحة التالية"))}">‹</button>
+            </div>
+            <p class="fb-count" id="fbCount" aria-live="polite"></p>
+            <footer class="wz-foot">
+                <button type="button" class="btn btn-primary btn-block" data-fb="make">✎ ${esc(t("اصنع هذه القصة باسم طفلك"))}</button>
+            </footer>
+        </div>`;
+        document.body.appendChild(FB.el);
+        document.documentElement.classList.add("wz-on");
+        FB.open = true;
+        if (!FB.pushed) {
+            try { history.pushState({ ...(history.state || {}), fb: 1 }, "", location.href); FB.pushed = true; } catch { /* المتصفح يمنع */ }
+        }
+        flipDraw();
+    }
+
+    function flipClose({ fromPop = false } = {}) {
+        if (!FB.open) return;
+        FB.open = false;
+        FB.seq++;
+        clearTimeout(FB.timer);
+        if (FB.el) FB.el.remove();
+        if (!WZ.open) document.documentElement.classList.remove("wz-on");
+        if (FB.pushed) {
+            FB.pushed = false;
+            if (!fromPop) { FB.skipPop = true; history.back(); }
+        }
+    }
+
+    function flipGo(step) {
+        if (!FB.open || !FB.n) return;
+        const next = Math.max(0, Math.min(FB.n - 1, FB.i + step));
+        if (next === FB.i) return;
+        FB.i = next;
+        flipDraw();
+    }
+
+    async function flipDraw() {
+        const p = productById(FB.pid);
+        const cv = FB.el && FB.el.querySelector("#fbCanvas");
+        if (!p || !cv) return;
+        const seq = ++FB.seq;
+        let lib;
+        try { lib = await loadStories(); } catch { toast(t("تعذر فتح القصة. تأكد من الإنترنت.")); return; }
+        if (seq !== FB.seq) return;
+        const pages = lib.bookPages(p.story);
+        FB.n = pages.length;
+        const clean = ATHR.storyClean({ name: FB.name, g: FB.g, age: 5 });
+        const ok = ATHR.storyIssue({ name: FB.name, g: FB.g, age: 5 }) !== "name";
+        const data = { name: ok ? clean.name : (FB.g === "f" ? t("سارة") : t("سالم")), g: FB.g, age: 5 };
+        const page = pages[FB.i];
+        const wide = page.kind && page.kind[0] === "b";
+        const box = FB.el.querySelector(".fb-page");
+        const w = Math.min(1100, Math.round((box ? box.clientWidth : 360) * Math.min(2, window.devicePixelRatio || 1)));
+        const tmp = document.createElement("canvas");
+        FB.el.classList.add("busy");
+        try { await lib.renderPage(p.story, data, page, { width: Math.max(360, w), canvas: tmp }); } catch (e) { console.warn("Flip:", e); }
+        if (seq !== FB.seq) return;
+        FB.el.classList.remove("busy");
+        FB.el.classList.toggle("wide", Boolean(wide));
+        cv.width = tmp.width;
+        cv.height = tmp.height;
+        cv.getContext("2d").drawImage(tmp, 0, 0);
+        const label = page.kind === "cover" || page.kind === "bcover" ? t("الغلاف")
+            : page.kind === "end" || page.kind === "bend" ? t("النهاية")
+            : page.kind === "color" || page.kind === "bcolor" ? t("صفحة التلوين")
+            : page.kind === "cert" || page.kind === "bcert" ? t("هدية: شهادة البطل")
+            : page.kind === "labels" || page.kind === "blabels" ? t("هدية: ملصقات الاسم")
+            : t("صفحة {n}", { n: page.n });
+        const count = FB.el.querySelector("#fbCount");
+        if (count) count.textContent = `${label} · ${t("{n} من {total}", { n: FB.i + 1, total: FB.n })}${ok ? "" : ` · ${t("مثال باسم «{name}»", { name: data.name })}`}`;
+        const prev = FB.el.querySelector('[data-fb="prev"]');
+        const next = FB.el.querySelector('[data-fb="next"]');
+        if (prev) prev.disabled = FB.i === 0;
+        if (next) next.disabled = FB.i >= FB.n - 1;
+    }
+
+    function flipClick(e) {
+        const b = e.target.closest("[data-fb]");
+        if (!b) return;
+        const k = b.dataset.fb;
+        if (k === "close") flipClose();
+        if (k === "prev") flipGo(-1);
+        if (k === "next") flipGo(1);
+        if (k === "make") {
+            const pid = FB.pid;
+            if (ATHR.storyIssue({ name: FB.name, g: FB.g, age: 5 }) !== "name") {
+                const saved = storage.get(CHILD_KEY, null) || {};
+                storage.set(CHILD_KEY, { ...saved, name: ATHR.storyClean({ name: FB.name }).name, g: FB.g });
+            }
+            // نفس خطوة الرجوع في المتصفح تنتقل للمعالج
+            const pushed = FB.pushed;
+            FB.pushed = false;
+            flipClose();
+            if (pushed && !WZ.pushed) WZ.pushed = true;
+            wizardOpen({ pid });
         }
     }
 
@@ -1036,6 +1566,10 @@
     });
 
     window.addEventListener("popstate", () => {
+        if (WZ.skipPop) { WZ.skipPop = false; return; }
+        if (FB.skipPop) { FB.skipPop = false; return; }
+        if (WZ.open) { wizardClose({ fromPop: true }); return; }
+        if (FB.open) { flipClose({ fromPop: true }); return; }
         closeSheet();
         render({ scroll: "restore" });
     });
@@ -1080,6 +1614,37 @@
         setupAdSlider();
         playAd();
         homeFavRail();
+        giftPreviews();
+    }
+
+    // معاينة هدايا القصة في الرئيسية (شهادة البطل، الملصقات، التلوين) باسم الطفل المحفوظ أو اسم مثال
+    function giftPreviews() {
+        const cans = $$("[data-gift-prev]");
+        if (!cans.length) return;
+        const run = async () => {
+            let lib;
+            try { lib = await loadStories(); } catch { return; }
+            const p = v().products.find((x) => ATHR.isStory(x) && lib.get(x.story) && !lib.isIllustrated(x.story)) || v().products.find((x) => ATHR.isStory(x) && lib.get(x.story));
+            if (!p) return;
+            const saved = storage.get(CHILD_KEY, null);
+            const ok = saved && ATHR.storyIssue({ ...saved, age: saved.age || 5 }) !== "name";
+            const data = ok ? { ...ATHR.storyClean(saved), age: saved.age || 5 } : { name: t("سارة"), g: "f", age: 5, lesson: "teeth" };
+            const pages = lib.bookPages(p.story);
+            for (const c of cans) {
+                const kind = c.dataset.giftPrev;
+                const pg = pages.find((x) => x.kind === kind || x.kind === "b" + kind);
+                if (!pg || !c.isConnected) continue;
+                const tmp = document.createElement("canvas");
+                try { await lib.renderPage(p.story, data, pg, { width: 420, canvas: tmp }); } catch { continue; }
+                c.width = tmp.width;
+                c.height = tmp.height;
+                c.getContext("2d").drawImage(tmp, 0, 0);
+            }
+        };
+        if ("IntersectionObserver" in window) {
+            const io = new IntersectionObserver((en) => { if (en.some((x) => x.isIntersecting)) { io.disconnect(); run(); } }, { rootMargin: "200px" });
+            cans.forEach((c) => io.observe(c));
+        } else run();
     }
 
     // تشغيل فيديو (لو الجوال منع التشغيل التلقائي، مثل وضع توفير الطاقة، تظهر الصورة مع زر تشغيل)
@@ -1736,10 +2301,12 @@
             if (p && p.is_available !== false && !buyBoxVisible) {
                 const inCart = cartQty(p.id);
                 html = `<div class="buybar-inner">
-                    <div class="bb-info"><b>${local(p.price)}</b><small>${esc(V.label(v(), p))}</small></div>
+                    <div class="bb-info"><b>${ATHR.isStory(p) && cartCustom(p.id) ? local(ATHR.storyUnit(p, cartCustom(p.id), C())) : local(p.price)}</b><small>${esc(V.label(v(), p))}</small></div>
                     ${inCart
                         ? `<a class="btn btn-primary" href="${BASE}checkout/">${esc(t("إتمام الطلب ({n})", { n: computeCart().count }))}</a>`
-                        : `<button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(ATHR.isStory(p) ? t("أضف القصة للسلة") : ct("texts.add_to_cart"))}</button>`}
+                        : ATHR.isStory(p)
+                            ? `<button class="btn btn-primary" type="button" data-wiz="${esc(p.id)}">✎ ${esc(t("اكتب اسم طفلك"))}</button>`
+                            : `<button class="btn btn-primary" type="button" data-pdp-add="${esc(p.id)}">${esc(ct("texts.add_to_cart"))}</button>`}
                 </div>`;
             }
         } else if (S.loaded && r === "cart") {
@@ -1932,7 +2499,7 @@
         }
 
         const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp);
-        const delivery = ATHR.deliveriesFor(cfg, S.country);
+        const delivery = ATHR.deliveriesForCart(cfg, S.country, totals.lines);
         const c = CC();
         const sug = cfg.sales.related_show ? cartSuggestions(totals) : { items: [] };
 
@@ -1950,7 +2517,7 @@
                                             <a class="name" href="${ATHR.url.product(l.product)}">${esc(V.pname(l.product))}</a>
                                             <button class="cl-del" type="button" data-remove="${esc(l.product.id)}" aria-label="${esc(t("حذف"))}" title="${esc(t("حذف"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2V7M6.5 7l.8 11.6c.1 1 .9 1.9 2 1.9h5.4c1.1 0 1.9-.9 2-1.9L17.5 7M10.2 11v5.5M13.8 11v5.5"/></svg></button>
                                         </div>
-                                        <div class="cl-meta">${V.storyMeta(v(), l.product, l.custom)}${V.colorTag(v(), l.product)}${l.qty > 1 ? `<span class="cl-each">${esc(t("{price} للقطعة", { price: money(l.product.price) }))}</span>` : ""}</div>
+                                        <div class="cl-meta">${V.storyMeta(v(), l.product, l.custom)}${V.colorTag(v(), l.product)}${l.qty > 1 ? `<span class="cl-each">${esc(t("{price} للقطعة", { price: money(l.unit) }))}</span>` : ""}</div>
                                         <div class="cart-line-foot">
                                             <div class="stepper sm" role="group" aria-label="${esc(t("الكمية"))}"${maxFor(l.product.id) <= 1 && l.qty <= 1 ? " hidden" : ""}>
                                                 <button type="button" data-inc="${esc(l.product.id)}" aria-label="${esc(t("زيادة"))}"${l.qty >= maxFor(l.product.id) ? " disabled" : ""}>+</button>
@@ -2121,7 +2688,7 @@
         const saved = keep || (gift ? { ...base, wilaya: "", gov: "", address: "", office: "" } : base);
         const c = CC();
         const rule = ATHR.PHONE_RULES[c.code] || ATHR.PHONE_RULES.OM;
-        const delivery = ATHR.deliveriesFor(cfg, c.code);
+        const delivery = ATHR.deliveriesForCart(cfg, c.code, totals.lines);
         const payments = giftPayments(ATHR.paymentsFor(cfg, c.code), gift);
         const pickDelivery = delivery.find((d) => d.id === saved.delivery) || delivery[0];
         const pickPayment = payments.find((p) => p.id === saved.payment) || payments[0];
@@ -2235,7 +2802,7 @@
 
     function selectedDelivery() {
         const id = $('input[name="delivery"]:checked')?.value;
-        return ATHR.deliveriesFor(C(), S.country).find((d) => d.id === id);
+        return ATHR.deliveriesForCart(C(), S.country, computeCart().lines).find((d) => d.id === id);
     }
 
     function selectedPayment() {
@@ -2286,7 +2853,7 @@
 
     function checkoutTotals() {
         const totals = computeCart();
-        const d = selectedDelivery() || ATHR.deliveriesFor(C(), S.country)[0];
+        const d = selectedDelivery() || ATHR.deliveriesForCart(C(), S.country, totals.lines)[0];
         const shipping = ATHR.shippingFor(d, totals.lines, C());
         const coupon = C().sales.coupons === false ? null : S.coupon;
         const eff = ATHR.couponEffect(coupon, totals.afterDiscount);
@@ -2308,7 +2875,7 @@
             return;
         }
         $$("[data-ship-price]").forEach((el) => {
-            const d = ATHR.deliveriesFor(C(), S.country).find((x) => x.id === el.dataset.shipPrice);
+            const d = ATHR.deliveriesForCart(C(), S.country, tt.lines).find((x) => x.id === el.dataset.shipPrice);
             const s = ATHR.shippingFor(d, tt.lines, C());
             el.textContent = tt.freeShipping || !(s.cost > 0) ? t("مجاني") : money(s.cost);
         });
@@ -2393,7 +2960,7 @@
         const missing = computeCart().lines.find((l) => ATHR.isStory(l.product) && !l.custom);
         if (missing) {
             toast(t("اكتب اسم الطفل لقصة «{name}» قبل إتمام الطلب", { name: V.pname(missing.product) }));
-            navigate(`${ATHR.url.product(missing.product)}#personalize`);
+            wizardOpen({ pid: missing.product.id });
             return;
         }
         const ok = validateCheckout(form);
@@ -2474,7 +3041,7 @@
                 color: colorById(l.product.color_id)?.name || null,
                 label: ATHR.productLabel(l.product, cfg),
                 qty: l.qty,
-                price: Number(l.product.price),
+                price: Number(l.unit),
                 total: l.total,
                 ...(ATHR.isStory(l.product) && l.custom ? { custom: l.custom } : {})
             })),
@@ -2546,16 +3113,29 @@
         return d ? L(d, "name") : name;
     }
 
-    // بعد طلب قصة شخصية: تذكير بإرسال صورة الطفل للغلاف (إن اختارها الزبون)
+    // بعد طلب قصة شخصية: متى تصل، وزر إرسال صورة الطفل للقصة المميّزة
     function storyDoneHTML(order) {
+        const cfg = C();
         const stories = (order.items || []).filter((it) => it.custom && it.custom.name);
         if (!stories.length) return "";
-        const photo = stories.filter((it) => it.custom.photo);
-        const names = Array.from(new Set(stories.map((it) => it.custom.name))).join("، ");
+        const uniq = (list) => Array.from(new Set(list.map((it) => it.custom.name))).join("، ");
+        const pro = stories.filter((it) => it.custom.tier === "pro");
+        const photo = stories.filter((it) => it.custom.photo && it.custom.tier !== "pro");
+        const printed = stories.some((it) => it.custom.fmt === "print");
+        const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp)
+            ? ATHR.waLink(cfg.order.whatsapp, ATHR.withLang("ar", () => `السلام عليكم، هذه صورة ${uniq(pro.length ? pro : photo)} لطلب القصة رقم ${order.order_no} 📷`))
+            : "";
         return `<div class="panel story-done">
-            <h2>📖 ${esc(t("قصة {name} قيد التجهيز", { name: names }))}</h2>
-            <p class="muted">${esc(t("نكتب القصة باسم طفلك ونرسل لك الملف PDF على واتساب بعد تأكيد الدفع، جاهزاً للطباعة."))}</p>
-            ${photo.length ? `<p><b>📷 ${esc(t("أرسل صورة {name} في نفس محادثة واتساب، ونضعها على الغلاف.", { name: Array.from(new Set(photo.map((it) => it.custom.name))).join("، ") }))}</b> <small class="muted">${esc(t("صورة واضحة للوجه بإضاءة جيدة."))}</small></p>` : ""}
+            <h2>📖 ${esc(t("قصة {name} قيد التجهيز", { name: uniq(stories) }))}</h2>
+            <p class="muted">${esc(printed
+                ? t("بعد تأكيد الدفع نرسل لك القصة PDF على واتساب، ونطبع النسخة المطبوعة ونوصلها لك.")
+                : t("نكتب القصة باسم طفلك ونرسل لك الملف PDF على واتساب بعد تأكيد الدفع، جاهزاً للطباعة."))}</p>
+            ${pro.length ? `<div class="sd-pro">
+                <p><b>🌟 ${esc(t("خطوة مهمة: أرسل صورة {name} على واتساب حتى نرسمه في القصة.", { name: uniq(pro) }))}</b></p>
+                <small class="muted">${esc(t("صورة واضحة للوجه بإضاءة جيدة. نجهّز القصة {time}.", { time: ATHR.storyCfg(cfg).pro_time }))}</small>
+                ${wa ? `<a class="btn btn-wa btn-block" href="${esc(wa)}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("أرسل الصورة الآن"))}</a>` : ""}
+            </div>` : ""}
+            ${photo.length ? `<p><b>📷 ${esc(t("أرسل صورة {name} في نفس محادثة واتساب، ونضعها على الغلاف.", { name: uniq(photo) }))}</b> <small class="muted">${esc(t("صورة واضحة للوجه بإضاءة جيدة."))}</small></p>` : ""}
         </div>`;
     }
 
@@ -3317,6 +3897,9 @@
         }
         if (d.openCurrency !== undefined || el.id === "curBtn") { afterReady(openCurrency); return; }
         if (d.setCountry) { closeSheet(); setCountry(d.setCountry); return; }
+        if (d.wiz) { const id = d.wiz; afterReady(() => wizardOpen({ pid: id })); return; }
+        if (d.wizNew !== undefined) { afterReady(() => wizardOpen({})); return; }
+        if (d.flip) { const id = d.flip; afterReady(() => flipOpen(id)); return; }
         if (d.add) {
             const id = d.add;
             afterReady(() => { if (addToCart(id)) openAdded([id]); });
@@ -3384,19 +3967,7 @@
             const id = d.pdpAdd;
             afterReady(() => {
                 if (ATHR.isStory(productById(id))) {
-                    const gate = storyGate(id);
-                    if (!gate.ok) return;
-                    if (cartQty(id)) {
-                        updateStoryInCart(id, gate.custom);
-                        toast(t("حدّثنا بيانات القصة ✓"));
-                        openAdded([id]);
-                        return;
-                    }
-                    if (setQty(id, 1, { silent: true, custom: gate.custom })) {
-                        track("add");
-                        pixelAdd(id, 1);
-                        openAdded([id]);
-                    }
+                    wizardOpen({ pid: id });
                     return;
                 }
                 const qty = Number($("#pdpQty")?.textContent) || 1;

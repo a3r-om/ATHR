@@ -45,8 +45,17 @@
             g: x.g === "f" ? "f" : "m",
             age: age >= 1 && age <= 12 ? age : 0,
             ded: String(x.ded || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, 220),
-            photo: Boolean(x.photo)
+            photo: Boolean(x.photo),
+            likes: [...new Set((Array.isArray(x.likes) ? x.likes : []).filter((id) => LIKES().some((l) => l.id === id)))].slice(0, 2),
+            lesson: LESSONS().some((l) => l.id === x.lesson) ? x.lesson : ""
         };
+    }
+
+    // الهوايات ورسائل القصص من defaults.js (ATHR)، ونسخة احتياطية لو الملف وحده
+    function LIKES() { return (root.ATHR && root.ATHR.STORY_LIKES) || []; }
+    function LESSONS() { return (root.ATHR && root.ATHR.STORY_LESSONS) || []; }
+    function likesText(d) {
+        return d.likes.map((id) => (LIKES().find((l) => l.id === id) || {}).t).filter(Boolean).join(" و");
     }
 
     // رسالة الخطأ للزبون، أو "" إذا البيانات كاملة
@@ -75,6 +84,8 @@
             .replace(/\{age\}/g, ORD[d.age] || ORD[5])
             .replace(/\{friend\}/g, friendName(d))
             .replace(/\{letters\}/g, letters(d.name).join(" - "))
+            .replace(/\{\+likes\|([^}]*)\}/g, (_, t) => (d.likes && d.likes.length ? t.replace("*", likesText(d)) : ""))
+            .replace(/\{likes\|([^}]*)\}/g, (_, def) => (d.likes && d.likes.length ? likesText(d) : def))
             .replace(/\{name\}/g, () => name);
     }
 
@@ -84,10 +95,10 @@
 
     const STORIES = {
         letters: {
-            id: "letters", title: "في حديقة الحروف", product: "قصة باسم طفلك: حديقة الحروف",
+            id: "letters", title: "في حديقة الحروف", product: "قصة باسم طفلك: حديقة الحروف", lesson: "learn",
             color: P.leaf, tint: "#E7F1E2", cover: "lettersCover",
             pages: [
-                ["l1", "{name} [طفلٌ|طفلةٌ] في {age} من [عمره|عمرها]، [يحب|تحب] الألوان والرسم. وفي صباحٍ مشمس، [استيقظ|استيقظت] على صوت عصفورٍ صغيرٍ يغرّد عند النافذة."],
+                ["l1", "{name} [طفلٌ|طفلةٌ] في {age} من [عمره|عمرها]، [يحب|تحب] {likes|الألوان والرسم}. وفي صباحٍ مشمس، [استيقظ|استيقظت] على صوت عصفورٍ صغيرٍ يغرّد عند النافذة."],
                 ["l2", "قال العصفور: «[تعالَ|تعالي] معي يا {name}، عندي لك مفاجأة!» [فتبعه|فتبعته] {name} إلى حديقةٍ عجيبة، أشجارها ملوّنة، وعلى أغصانها حروفٌ تلمع مثل النجوم."],
                 ["l3", "قال العصفور: «هذه حديقة الحروف، وكل حرفٍ فيها يبحث عن صديق. هل [تعرف|تعرفين] الحروف التي يُكتب بها اسمك؟»"],
                 ["l4", "[فكّر|فكّرت] {name} قليلاً، ثم [ابتسم|ابتسمت] [وقال|وقالت]: «طبعاً! اسمي يتكوّن من هذه الحروف: {letters}»"],
@@ -100,10 +111,10 @@
             ]
         },
         space: {
-            id: "space", title: "في رحلة إلى الفضاء", product: "قصة باسم طفلك: رحلة إلى الفضاء",
+            id: "space", title: "في رحلة إلى الفضاء", product: "قصة باسم طفلك: رحلة إلى الفضاء", lesson: "help",
             color: P.plum, tint: "#E8E4F4", cover: "spaceCover",
             pages: [
-                ["s1", "{name} في {age} من [عمره|عمرها]، [ينظر|تنظر] كل ليلةٍ إلى السماء، [ويعدّ|وتعدّ] النجوم، [ويحلم|وتحلم] أن [يسافر|تسافر] يوماً إلى الفضاء."],
+                ["s1", "{name} في {age} من [عمره|عمرها]، [ينظر|تنظر] كل ليلةٍ إلى السماء، [ويعدّ|وتعدّ] النجوم، [ويحلم|وتحلم] أن [يسافر|تسافر] يوماً إلى الفضاء.{+likes| [ويحب|وتحب] أيضاً *.}"],
                 ["s2", "وفي ليلةٍ هادئة، هبط صاروخٌ صغيرٌ في حديقة البيت، وخرج منه روبوتٌ لطيفٌ اسمه «بيبو» وقال: «هل [تريد|تريدين] أن [تسافر|تسافري] معي يا {name}؟»"],
                 ["s3", "[لبس|لبست] {name} خوذة الفضاء، [وجلس|وجلست] بجانب بيبو، وعدّا معاً: ثلاثة... اثنان... واحد... انطلق الصاروخ!"],
                 ["s4", "ارتفع الصاروخ عالياً، ومن النافذة [رأى|رأت] {name} الأرض كرةً زرقاء جميلة، [فأشار|فأشارت] إليها [وقال|وقالت]: «هناك عُمان... هناك بيتي!»"],
@@ -116,10 +127,10 @@
             ]
         },
         school: {
-            id: "school", title: "وأول يوم في المدرسة", product: "قصة باسم طفلك: أول يوم في المدرسة",
+            id: "school", title: "وأول يوم في المدرسة", product: "قصة باسم طفلك: أول يوم في المدرسة", lesson: "brave",
             color: P.coral, tint: "#FBE9DC", cover: "schoolCover",
             pages: [
-                ["c1", "{name} في {age} من [عمره|عمرها]، واليوم يومٌ مهمٌّ جداً: إنه أول يومٍ في المدرسة! حقيبةٌ جديدة، وأقلامٌ ملوّنة، ودفترٌ ينتظر أول كلمة."],
+                ["c1", "{name} في {age} من [عمره|عمرها]{+likes|، [يحب|تحب] *}، واليوم يومٌ مهمٌّ جداً: إنه أول يومٍ في المدرسة! حقيبةٌ جديدة، وأقلامٌ ملوّنة، ودفترٌ ينتظر أول كلمة."],
                 ["c2", "لكنّ [قلبه|قلبها] كان يدقّ بسرعة، [فسأل|فسألت] {name}: «ماذا لو لم أجد [صديقاً|صديقة]؟ وماذا لو تُهتُ في المدرسة الكبيرة؟»"],
                 ["c3", "أمسكت ماما [يده|يدها] وقالت: «كل الأطفال يشعرون بهذا في اليوم الأول، وسوف [تكتشف|تكتشفين] أن المدرسة مكانٌ جميلٌ ومليءٌ بالأصدقاء.»"],
                 ["c4", "عند باب المدرسة، استقبلت المعلمة الأطفال بابتسامةٍ كبيرة وقالت: «أهلاً بك يا {name}، كنّا ننتظرك!» [فشعر|فشعرت] {name} بالدفء والأمان."],
@@ -132,10 +143,10 @@
             ]
         },
         turtle: {
-            id: "turtle", title: "والسلحفاة الصغيرة", product: "قصة باسم طفلك: السلحفاة الصغيرة",
+            id: "turtle", title: "والسلحفاة الصغيرة", product: "قصة باسم طفلك: السلحفاة الصغيرة", lesson: "kind",
             color: P.teal, tint: "#DCEFEA", cover: "turtleCover",
             pages: [
-                ["t1", "{name} في {age} من [عمره|عمرها]، [ذهب|ذهبت] مع [عائلته|عائلتها] في رحلةٍ إلى شاطئ رأس الجنز في عُمان، حيث تأتي السلاحف كل عامٍ لتضع بيضها على الرمال."],
+                ["t1", "{name} في {age} من [عمره|عمرها]، [ذهب|ذهبت] مع [عائلته|عائلتها] في رحلةٍ إلى شاطئ رأس الجنز في عُمان، حيث تأتي السلاحف كل عامٍ لتضع بيضها على الرمال.{+likes| [وهو يحب|وهي تحب] * كثيراً.}"],
                 ["t2", "في الليل جلس الجميع بهدوءٍ على الرمل، فالسلاحف تحب الهدوء والظلام. وكان القمر يضيء البحر مثل مصباحٍ كبيرٍ في السماء."],
                 ["t3", "وفجأةً تحرّك الرمل... وخرجت سلاحف صغيرةٌ جداً من بيضها، وبدأت تمشي نحو البحر بخطواتٍ صغيرةٍ مضحكة. [همس|همست] {name}: ما أجملها!"],
                 ["t4", "لكنّ {name} [لاحظ|لاحظت] سلحفاةً صغيرةً عالقةً خلف علبةٍ بلاستيكيةٍ تركها أحدهم على الشاطئ، لا تستطيع أن تصل إلى البحر."],
@@ -156,7 +167,7 @@
         ready: false,
         badge: "مغامرة بين الكواكب",
         pages: [
-            ["p1", "right", "{name} في {age} من [عمره|عمرها]، [ويحب|وتحب] النجوم كثيراً. في ليلةٍ هادئة [جلس|جلست] عند النافذة [وهمس|وهمست]: «ليتني أطيرُ إلى القمر!»"],
+            ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|النجوم} كثيراً. في ليلةٍ هادئة [جلس|جلست] عند النافذة [وهمس|وهمست]: «ليتني أطيرُ إلى القمر!»"],
             ["p2", "left", "فجأةً… طَق طَق! روبوتٌ صغير يلوّح من النافذة. قال: «أنا بيبو! سمعتُ أمنيتك يا {name}. هل [تأتي|تأتين] معي إلى الفضاء؟»"],
             ["p3", "right", "في الصباح [لبس|لبست] {name} بدلة الفضاء، [ووقف|ووقفت] أمام صاروخٍ عملاق. [وعدّ|وعدّت] مع بيبو: «ثلاثة… اثنان… واحد… انطلِق!»"],
             ["p4", "left", "طار الصاروخ عالياً… عالياً! ومن النافذة [رأى|رأت] {name} الأرض كرةً زرقاء جميلة، [فقال|فقالت]: «هناك عُمان… هناك بيتي!»"],
@@ -1357,6 +1368,12 @@
         pageNumber(ctx, n, st.color);
     }
 
+    // رسالة القصة في صفحة النهاية: اختيار الأهل، أو رسالة القصة الأصلية
+    function lessonText(st, d) {
+        const l = LESSONS().find((x) => x.id === (d.lesson || st.lesson));
+        return l ? fill(l.s, d, { mark: true }) : "";
+    }
+
     async function drawEnd(ctx, st, d) {
         paperBg(ctx, st.tint);
         const scene = SCENES.end(d, { story: st });
@@ -1368,16 +1385,18 @@
         ctx.lineWidth = 12;
         ctx.lineJoin = "round";
         ctx.strokeStyle = INK;
-        ctx.strokeText("النهاية", W / 2, 1190);
+        ctx.strokeText("النهاية", W / 2, 1140);
         ctx.fillStyle = P.coral;
-        ctx.fillText("النهاية", W / 2, 1190);
+        ctx.fillText("النهاية", W / 2, 1140);
         const hero = fill("[بطل|بطلة] هذه القصة:", d);
-        ctx.font = font(62, 700);
+        ctx.font = font(58, 700);
         ctx.fillStyle = INK;
-        ctx.fillText(hero, W / 2, 1340);
-        ctx.font = font(fitText(ctx, d.name, W - 240, 110), 700);
+        ctx.fillText(hero, W / 2, 1262);
+        ctx.font = font(fitText(ctx, d.name, W - 240, 104), 700);
         ctx.fillStyle = st.color;
-        ctx.fillText(d.name, W / 2, 1480);
+        ctx.fillText(d.name, W / 2, 1390);
+        const lesson = lessonText(st, d);
+        if (lesson) drawParagraph(ctx, lesson, { cx: W / 2, top: 1440, bottom: 1610, maxW: W - 260, size: 48, minSize: 34, lh: 1.7, color: "#4A4136" });
         ctx.font = font(36, 400);
         ctx.fillStyle = "#6F6557";
         ctx.fillText("من مكتبة حروف وألوان", W / 2, H - 100);
@@ -1576,19 +1595,29 @@
     async function drawBookEnd(ctx, storyId, st, d, small) {
         const img = await artImage(artUrl(storyId, d.g, "end", small));
         drawCoverImage(ctx, img, 0, 0, BW, BH);
-        const cw = 760, ch = 420, x = (BW - cw) / 2, y = 60;
+        const lesson = lessonText(st, d);
+        const cw = 1180, ch = lesson ? 420 : 340, x = (BW - cw) / 2, y = 50;
         softCard(ctx, x, y, cw, ch);
-        glowText(ctx, "النهاية", BW / 2, y + 170, { size: 130, line: 14, stroke: "#2B2620", gradient: [[0, "#FFB199"], [1, "#D2614A"]], shadow: false });
+        glowText(ctx, "النهاية", BW / 2, y + 150, { size: 118, line: 14, stroke: "#2B2620", gradient: [[0, "#FFB199"], [1, "#D2614A"]], shadow: false });
         ctx.save();
-        ctx.font = font(52, 700);
-        ctx.fillStyle = "#2B2620";
         ctx.textAlign = "center";
         ctx.direction = "rtl";
-        ctx.fillText(fill("[بطل|بطلة] هذه القصة", d), BW / 2, y + 265);
-        ctx.font = font(fitText(ctx, d.name, cw - 120, 96), 700);
+        const hero = fill("[بطل|بطلة] هذه القصة: ", d);
+        ctx.font = font(54, 700);
+        const hw = ctx.measureText(hero).width;
+        ctx.font = font(fitText(ctx, d.name, cw - 160 - hw, 76), 700);
+        const nw = ctx.measureText(d.name).width;
+        const mid = BW / 2 + (hw - nw) / 2;
+        ctx.font = font(54, 700);
+        ctx.fillStyle = "#2B2620";
+        ctx.textAlign = "right";
+        ctx.fillText(hero, mid + hw, y + 262);
+        ctx.font = font(fitText(ctx, d.name, cw - 160 - hw, 76), 700);
         ctx.fillStyle = "#7E62B5";
-        ctx.fillText(d.name, BW / 2, y + 370);
+        ctx.textAlign = "left";
+        ctx.fillText(d.name, mid - nw, y + 262);
         ctx.restore();
+        if (lesson) drawParagraph(ctx, lesson, { cx: BW / 2, top: y + 296, bottom: y + ch - 30, maxW: cw - 140, size: 44, minSize: 32, lh: 1.6, color: "#4A4136", hi: "#7E62B5" });
     }
 
     async function drawBookColoring(ctx, storyId, st, d, small) {
@@ -1621,6 +1650,203 @@
         ctx.restore();
     }
 
+    // =====================================================
+    // هدايا مع كل قصة: شهادة «بطل القصة» وملصقات الاسم لأغراض المدرسة
+    // نفس الرسم للكتاب العادي (طولي) والمصوّر (عرضي)
+    // =====================================================
+    function cStar(ctx, cx, cy, r, fill, stroke, lw = 4) {
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+            const a = -Math.PI / 2 + (i * Math.PI) / 5;
+            const rr = i % 2 ? r * 0.46 : r;
+            ctx[i ? "lineTo" : "moveTo"](cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.lineWidth = lw; ctx.lineJoin = "round"; ctx.strokeStyle = stroke; ctx.stroke(); }
+    }
+
+    function stripeW(ctx, w, y, h) {
+        const cols = [P.coral, P.gold, P.leaf, P.sky, P.plum, P.teal];
+        const cw = w / cols.length;
+        cols.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * cw, y, cw + 1, h); });
+    }
+
+    function shortTitle(st) {
+        return String(st.product || st.title || "").replace(/^.*?:\s*/, "");
+    }
+
+    function medal(ctx, cx, cy, r) {
+        ctx.save();
+        // الشريطين
+        [[-1, P.coral], [1, P.sky]].forEach(([s, c]) => {
+            ctx.beginPath();
+            ctx.moveTo(cx + s * r * 0.25, cy + r * 0.5);
+            ctx.lineTo(cx + s * r * 0.85, cy + r * 1.75);
+            ctx.lineTo(cx + s * r * 0.5, cy + r * 1.55);
+            ctx.lineTo(cx + s * r * 0.3, cy + r * 1.85);
+            ctx.lineTo(cx - s * r * 0.15, cy + r * 0.6);
+            ctx.closePath();
+            ctx.fillStyle = c;
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+        });
+        const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+        g.addColorStop(0, "#FFE58A");
+        g.addColorStop(1, "#E9A21B");
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.74, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(43,38,32,.45)";
+        ctx.stroke();
+        cStar(ctx, cx, cy, r * 0.5, "#FFFFFF", INK, 4);
+        ctx.restore();
+    }
+
+    function drawCertificate(ctx, w, h, st, d) {
+        const wide = w > h;
+        const k = wide ? 0.86 : 1;
+        ctx.fillStyle = "#FFFCF6";
+        ctx.fillRect(0, 0, w, h);
+        stripeW(ctx, w, 0, 18);
+        stripeW(ctx, w, h - 18, 18);
+        const m = 58;
+        ctx.save();
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = st.color;
+        roundRect(ctx, m, m, w - 2 * m, h - 2 * m, 44);
+        ctx.stroke();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = P.gold;
+        ctx.setLineDash([18, 12]);
+        roundRect(ctx, m + 24, m + 24, w - 2 * m - 48, h - 2 * m - 48, 32);
+        ctx.stroke();
+        ctx.restore();
+        [[m + 70, m + 70], [w - m - 70, m + 70], [m + 70, h - m - 70], [w - m - 70, h - m - 70]].forEach(([x, y]) => cStar(ctx, x, y, 28, P.gold, INK));
+        const cx = w / 2;
+        const Y = (p, l) => (wide ? l : p);
+        medal(ctx, cx, Y(250, 170), Y(84, 62));
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.textBaseline = "alphabetic";
+        ctx.font = font(96 * k, 700);
+        ctx.fillStyle = INK;
+        ctx.fillText(fill("شهادة [بطل|بطلة] القصة", d), cx, Y(520, 345));
+        ctx.font = font(46 * k, 400);
+        ctx.fillStyle = "#6F6557";
+        ctx.fillText("تُمنح هذه الشهادة بكل فخر إلى", cx, Y(610, 412));
+        const ns = fitText(ctx, d.name, w - 2 * m - 220, 170 * k, 700, 70);
+        ctx.font = font(ns, 700);
+        ctx.lineWidth = 14;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = INK;
+        ctx.strokeText(d.name, cx, Y(800, 560));
+        ctx.fillStyle = P.coral;
+        ctx.fillText(d.name, cx, Y(800, 560));
+        ctx.restore();
+        const reason = fill("[لأنه كان بطلاً رائعاً|لأنها كانت بطلةً رائعة] في قصة «" + shortTitle(st) + "»", d, { mark: false });
+        drawParagraph(ctx, reason, { cx, top: Y(860, 600), bottom: Y(1010, 690), maxW: w - 2 * m - 200, size: 52 * k, minSize: 34, lh: 1.7 });
+        const lesson = lessonText(st, d);
+        if (lesson) drawParagraph(ctx, lesson, { cx, top: Y(1020, 700), bottom: Y(1200, 800), maxW: w - 2 * m - 220, size: 46 * k, minSize: 32, lh: 1.7, color: "#4A4136", hi: st.color });
+        // التاريخ والتوقيع
+        const sy = Y(1440, 975);
+        const gap = Math.min(220, w * 0.12);
+        [[cx + gap + 150, "التاريخ"], [cx - gap - 150, "توقيع ماما وبابا"]].forEach(([x, label]) => {
+            ctx.save();
+            ctx.strokeStyle = "#8A7E6E";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 9]);
+            ctx.beginPath();
+            ctx.moveTo(x - 170, sy);
+            ctx.lineTo(x + 170, sy);
+            ctx.stroke();
+            ctx.restore();
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.direction = "rtl";
+            ctx.font = font(38 * k, 700);
+            ctx.fillStyle = "#6F6557";
+            ctx.fillText(label, x, sy + 56);
+            ctx.restore();
+        });
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.font = font(34, 700);
+        ctx.fillStyle = st.color;
+        ctx.fillText("حروف وألوان", cx, h - m - 40);
+        ctx.restore();
+    }
+
+    function drawLabels(ctx, w, h, st, d) {
+        const wide = w > h;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, w, h);
+        stripeW(ctx, w, 0, 16);
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.direction = "rtl";
+        ctx.font = font(wide ? 62 : 72, 700);
+        ctx.fillStyle = INK;
+        ctx.fillText(fill("ملصقات {name}", d), w / 2, wide ? 110 : 150);
+        ctx.font = font(wide ? 34 : 38, 400);
+        ctx.fillStyle = "#6F6557";
+        ctx.fillText("قصّها والصقها على دفاترك وأقلامك وأغراض المدرسة", w / 2, wide ? 165 : 215);
+        ctx.restore();
+        const cols = wide ? 3 : 2, rows = wide ? 4 : 7;
+        const mx = 80, top = wide ? 205 : 270, bottom = wide ? 70 : 90;
+        const gx = wide ? 44 : 40, gy = wide ? 30 : 24;
+        const lw = (w - 2 * mx - gx * (cols - 1)) / cols;
+        const lh = (h - top - bottom - gy * (rows - 1)) / rows;
+        const colors = [P.coral, P.sky, P.leaf, P.plum, P.gold, P.teal];
+        const size = fitText(ctx, d.name, lw - lh - 60, Math.min(78, lh * 0.5), 700, 36);
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = w - mx - (c + 1) * lw - c * gx;
+                const y = top + r * (lh + gy);
+                const col = colors[(r * cols + c) % colors.length];
+                ctx.save();
+                ctx.setLineDash([9, 8]);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#C9BFAF";
+                roundRect(ctx, x - 10, y - 10, lw + 20, lh + 20, 34);
+                ctx.stroke();
+                ctx.restore();
+                ctx.save();
+                roundRect(ctx, x, y, lw, lh, 26);
+                ctx.fillStyle = col + "1F";
+                ctx.fill();
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = col;
+                ctx.stroke();
+                const sr = lh * 0.3;
+                const scx = x + lw - sr - 22;
+                ctx.beginPath();
+                ctx.arc(scx, y + lh / 2, sr, 0, Math.PI * 2);
+                ctx.fillStyle = col;
+                ctx.fill();
+                cStar(ctx, scx, y + lh / 2, sr * 0.62, "#FFFFFF", null);
+                ctx.textAlign = "center";
+                ctx.direction = "rtl";
+                ctx.textBaseline = "middle";
+                ctx.font = font(size, 700);
+                ctx.fillStyle = INK;
+                ctx.fillText(d.name, x + (lw - sr * 2 - 22) / 2, y + lh / 2 + 4);
+                ctx.restore();
+            }
+        }
+    }
+
     // ---------- ترتيب صفحات الكتاب ----------
     function bookPages(storyId) {
         const st = STORIES[storyId];
@@ -1629,13 +1855,13 @@
             return [
                 { kind: "bcover" },
                 ...st.book.pages.map(([key, side, text], i) => ({ kind: "bpage", key, side, text, n: i + 1 })),
-                { kind: "bend" }, { kind: "bcolor" }
+                { kind: "bend" }, { kind: "bcolor" }, { kind: "bcert" }, { kind: "blabels" }
             ];
         }
         return [
             { kind: "cover" },
             ...st.pages.map(([scene, text], i) => ({ kind: "page", scene, text, n: i + 1 })),
-            { kind: "end" }, { kind: "color" }
+            { kind: "end" }, { kind: "color" }, { kind: "cert" }, { kind: "labels" }
         ];
     }
 
@@ -1657,6 +1883,8 @@
             if (page.kind === "bcover") await drawBookCover(bctx, storyId, st, d, photo, small);
             else if (page.kind === "bend") await drawBookEnd(bctx, storyId, st, d, small);
             else if (page.kind === "bcolor") await drawBookColoring(bctx, storyId, st, d, small);
+            else if (page.kind === "bcert") drawCertificate(bctx, BW, BH, st, d);
+            else if (page.kind === "blabels") drawLabels(bctx, BW, BH, st, d);
             else await drawBookPage(bctx, storyId, st, d, page, small);
             return cv;
         }
@@ -1669,6 +1897,8 @@
         else if (page.kind === "ded") await drawDedication(ctx, st, d);
         else if (page.kind === "end") await drawEnd(ctx, st, d);
         else if (page.kind === "color") await drawColoring(ctx, st, d);
+        else if (page.kind === "cert") drawCertificate(ctx, W, H, st, d);
+        else if (page.kind === "labels") drawLabels(ctx, W, H, st, d);
         else await drawStoryPage(ctx, st, d, page.scene, page.text, page.n);
         return cv;
     }
