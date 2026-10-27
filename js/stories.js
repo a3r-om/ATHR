@@ -45,6 +45,7 @@
             g: x.g === "f" ? "f" : "m",
             age: age >= 1 && age <= 12 ? age : 0,
             ded: String(x.ded || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, 220),
+            ded_from: String(x.ded_from || "").replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, 40),
             photo: Boolean(x.photo),
             likes: [...new Set((Array.isArray(x.likes) ? x.likes : []).filter((id) => LIKES().some((l) => l.id === id)))].slice(0, 2),
             lesson: LESSONS().some((l) => l.id === x.lesson) ? x.lesson : ""
@@ -1354,9 +1355,21 @@
         ctx.font = font(96, 700);
         ctx.fillStyle = st.color;
         ctx.fillText("إهداء", W / 2, 960);
-        const text = d.ded ? d.ded : fill(DEFAULT_DED, d);
-        const marked = d.ded ? d.ded.split(d.name).join(NAME_ON + d.name.replace(/ /g, " ") + NAME_OFF) : fill(DEFAULT_DED, d, { mark: true });
-        drawParagraph(ctx, marked || text, { cx: W / 2, top: 1000, bottom: 1580, maxW: W - 320, size: 62, minSize: 40, lh: 1.85 });
+        drawParagraph(ctx, dedMarked(d), { cx: W / 2, top: 1000, bottom: d.ded_from ? 1470 : 1580, maxW: W - 320, size: 62, minSize: 38, lh: 1.85 });
+        if (d.ded_from) {
+            ctx.font = font(44, 400);
+            ctx.fillStyle = "#6F6557";
+            ctx.fillText("مع كل الحب", W / 2, 1528);
+            ctx.font = font(fitText(ctx, d.ded_from, W - 360, 60), 700);
+            ctx.fillStyle = st.color;
+            ctx.fillText(d.ded_from, W / 2, 1598);
+        }
+    }
+
+    // نص الإهداء مع تمييز اسم الطفل بلون القصة
+    function dedMarked(d) {
+        if (!d.ded) return fill(DEFAULT_DED, d, { mark: true });
+        return d.name ? d.ded.split(d.name).join(NAME_ON + d.name.replace(/ /g, "\u00A0") + NAME_OFF) : d.ded;
     }
 
     async function drawStoryPage(ctx, st, d, sceneId, text, n) {
@@ -1620,6 +1633,41 @@
         if (lesson) drawParagraph(ctx, lesson, { cx: BW / 2, top: y + 296, bottom: y + ch - 30, maxW: cw - 140, size: 44, minSize: 32, lh: 1.6, color: "#4A4136", hi: "#7E62B5" });
     }
 
+    // الإهداء في الكتاب المصوّر: سماء ليلية ونجوم، وبطاقة ناعمة في الوسط
+    function drawBookDedication(ctx, st, d) {
+        const g = ctx.createLinearGradient(0, 0, 0, BH);
+        g.addColorStop(0, "#1B1440");
+        g.addColorStop(1, "#3B2A7A");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, BW, BH);
+        const rnd = (i) => ((Math.sin(i * 12.9898) * 43758.5453) % 1 + 1) % 1;
+        for (let i = 1; i < 90; i++) {
+            ctx.beginPath();
+            ctx.arc(rnd(i) * BW, rnd(i + 200) * BH, 1.5 + rnd(i + 400) * 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,240,190,${0.35 + rnd(i + 600) * 0.6})`;
+            ctx.fill();
+        }
+        cStar(ctx, 230, 210, 46, "#FFD23F", "#C98A1E", 4);
+        cStar(ctx, BW - 240, 260, 36, "#FFD23F", "#C98A1E", 4);
+        cStar(ctx, BW - 330, BH - 200, 28, "#FFD23F", "#C98A1E", 4);
+        const cw = 1160, ch = d.ded_from ? 860 : 760, x = (BW - cw) / 2, y = (BH - ch) / 2;
+        softCard(ctx, x, y, cw, ch);
+        glowText(ctx, "إهداء", BW / 2, y + 150, { size: 110, line: 12, stroke: "#2B2620", gradient: [[0, "#C9B2FF"], [1, "#7E62B5"]], shadow: false });
+        drawParagraph(ctx, dedMarked(d), { cx: BW / 2, top: y + 200, bottom: y + ch - (d.ded_from ? 190 : 70), maxW: cw - 180, size: 56, minSize: 36, lh: 1.8, color: "#2B2620", hi: "#7E62B5" });
+        if (d.ded_from) {
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.direction = "rtl";
+            ctx.font = font(40, 400);
+            ctx.fillStyle = "#6F6557";
+            ctx.fillText("مع كل الحب", BW / 2, y + ch - 110);
+            ctx.font = font(fitText(ctx, d.ded_from, cw - 200, 58), 700);
+            ctx.fillStyle = "#D2614A";
+            ctx.fillText(d.ded_from, BW / 2, y + ch - 44);
+            ctx.restore();
+        }
+    }
+
     async function drawBookColoring(ctx, storyId, st, d, small) {
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, BW, BH);
@@ -1848,18 +1896,22 @@
     }
 
     // ---------- ترتيب صفحات الكتاب ----------
-    function bookPages(storyId) {
+    // ترتيب صفحات الكتاب. صفحة الإهداء بعد الغلاف إذا كتب الأهل إهداء
+    function bookPages(storyId, custom = null) {
         const st = STORIES[storyId];
         if (!st) return [];
+        const ded = Boolean(custom && normalize(custom).ded);
         if (st.book && st.book.ready) {
             return [
                 { kind: "bcover" },
+                ...(ded ? [{ kind: "bded" }] : []),
                 ...st.book.pages.map(([key, side, text], i) => ({ kind: "bpage", key, side, text, n: i + 1 })),
                 { kind: "bend" }, { kind: "bcolor" }, { kind: "bcert" }, { kind: "blabels" }
             ];
         }
         return [
             { kind: "cover" },
+            ...(ded ? [{ kind: "ded" }] : []),
             ...st.pages.map(([scene, text], i) => ({ kind: "page", scene, text, n: i + 1 })),
             { kind: "end" }, { kind: "color" }, { kind: "cert" }, { kind: "labels" }
         ];
@@ -1881,6 +1933,7 @@
             bctx.setTransform(sc, 0, 0, sc, 0, 0);
             const small = width <= 900;
             if (page.kind === "bcover") await drawBookCover(bctx, storyId, st, d, photo, small);
+            else if (page.kind === "bded") drawBookDedication(bctx, st, d);
             else if (page.kind === "bend") await drawBookEnd(bctx, storyId, st, d, small);
             else if (page.kind === "bcolor") await drawBookColoring(bctx, storyId, st, d, small);
             else if (page.kind === "bcert") drawCertificate(bctx, BW, BH, st, d);
@@ -1958,7 +2011,7 @@
     }
 
     async function buildPDF(storyId, custom, { photo = null, onProgress = null, quality = 0.88 } = {}) {
-        const pages = bookPages(storyId);
+        const pages = bookPages(storyId, custom);
         const canvas = document.createElement("canvas");
         const images = [];
         for (let i = 0; i < pages.length; i++) {

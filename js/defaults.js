@@ -204,7 +204,11 @@ const ATHR_DEFAULTS = {
         print_enabled: true,
         print_price: 6,
         print_time: "3 إلى 5 أيام داخل عُمان",
-        guarantee: true
+        guarantee: true,
+        // صفحة القصة: رفع صورة الطفل، والإهداء المجاني، وتغليف الهدية للمطبوعة
+        photo_upload: true,
+        ded_enabled: true,
+        wrap_enabled: true
     },
 
     contact: {
@@ -503,6 +507,25 @@ ATHR.STORY_LESSONS = [
 ];
 ATHR.likesText = (ids) => (Array.isArray(ids) ? ids : []).map((id) => (ATHR.STORY_LIKES.find((x) => x.id === id) || {}).t).filter(Boolean).join(" و");
 ATHR.lessonOf = (id) => ATHR.STORY_LESSONS.find((x) => x.id === id) || null;
+// الإهداء المجاني في أول صفحة: نص جاهز يتعبّأ باسم الطفل، أو نص يكتبه الأهل
+ATHR.STORY_DEDS = [
+    { id: "d1", e: "💛", t: "نحبك", s: "إلى [بطلنا الصغير|بطلتنا الصغيرة] {name}: كتبنا هذه القصة لأجلك، فأنت أجمل حكاية في حياتنا. نحبك كثيراً." },
+    { id: "d2", e: "🌟", t: "فخورون بك", s: "إلى {name} [الغالي|الغالية]: [كن|كوني] دائماً [شجاعاً ولطيفاً|شجاعةً ولطيفةً]، [وتذكّر|وتذكّري] أننا فخورون بك في كل خطوة." },
+    { id: "d3", e: "🌙", t: "أحلام سعيدة", s: "إلى نور عيوننا {name}: نتمنى لك أحلاماً سعيدة، ومغامراتٍ جميلة، وقلباً مليئاً بالفرح." },
+    { id: "d4", e: "🎂", t: "عيد ميلاد", s: "عيد ميلادٍ سعيد يا {name}! هذه القصة هديتك، وأنت [بطلها|بطلتها]. كل عامٍ وأنت بخير." },
+    { id: "d5", e: "🎓", t: "تشجيع ونجاح", s: "مبروك يا {name}! [أنت قادرٌ|أنتِ قادرةٌ] على أشياء عظيمة، وهذه القصة تذكّرك [بأنك بطلٌ حقيقي|بأنكِ بطلةٌ حقيقية]." }
+];
+ATHR.dedOf = (id) => ATHR.STORY_DEDS.find((x) => x.id === id) || null;
+// تعبئة نص بصيغة الولد أو البنت: [للولد|للبنت] و{name}
+ATHR.gfill = (text, c) => String(text || "")
+    .replace(/\[([^\]|]*)\|([^\]]*)\]/g, (_, m, f) => (c && c.g === "f" ? f : m))
+    .replace(/\{name\}/g, () => (c && c.name) || "");
+ATHR.dedText = (id, c) => {
+    const d = ATHR.dedOf(id);
+    return d ? ATHR.gfill(d.s, c) : "";
+};
+// مسار صورة الطفل في المخزن الخاص: تاريخ/رقم عشوائي.jpg
+ATHR.PHOTO_PATH = /^[0-9]{8}\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.jpg$/;
 
 ATHR.storyClean = function (c) {
     const x = c || {};
@@ -513,18 +536,30 @@ ATHR.storyClean = function (c) {
         .replace(/\s+/g, " ").trim().slice(0, 22).trim();
     const likes = [...new Set((Array.isArray(x.likes) ? x.likes : []).filter((id) => ATHR.STORY_LIKES.some((l) => l.id === id)))].slice(0, 2);
     const tier = x.tier === "pro" ? "pro" : "std";
+    const txt = (v, n) => String(v || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F<>]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, n);
+    const photoPath = ATHR.PHOTO_PATH.test(String(x.photo_path || "")) ? x.photo_path : "";
     const out = {
         name,
         g: x.g === "f" ? "f" : "m",
         age: age >= 1 && age <= 12 ? age : 0,
-        photo: tier === "pro" || Boolean(x.photo),
+        photo: tier === "pro" || Boolean(photoPath) || x.photo === true,
         likes,
         lesson: ATHR.lessonOf(x.lesson) ? x.lesson : "",
         tier,
         fmt: x.fmt === "print" ? "print" : "pdf"
     };
+    if (photoPath) out.photo_path = photoPath;
+    if (out.fmt === "print" && x.wrap === true) out.wrap = true;
+    const dedT = ATHR.dedOf(x.ded_t) || x.ded_t === "own" ? x.ded_t : "";
+    if (dedT) {
+        const text = dedT === "own" ? txt(String(x.ded || "").replace(/\n+/g, " "), 220) : ATHR.dedText(dedT, out);
+        if (text) {
+            out.ded_t = dedT;
+            out.ded = text;
+            out.ded_from = txt(x.ded_from, 40);
+        }
+    }
     if (tier === "pro") {
-        const txt = (v, n) => String(v || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F<>]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, n);
         out.family = txt(x.family, 120);
         out.friend = txt(x.friend, 60);
         out.note = txt(x.note, 200);
@@ -555,7 +590,12 @@ ATHR.storyUnit = function (product, custom, config) {
     if (custom.fmt === "print" && s.print_enabled) add += Number(s.print_price) || 0;
     return Math.round((base + add) * 1000) / 1000;
 };
-ATHR.storyKind = (c) => [c && c.tier === "pro" ? "مؤلفة خصيصاً بوجهه" : "", c && c.fmt === "print" ? "مطبوعة" : ""].filter(Boolean).join("، ");
+ATHR.storyKind = (c) => [
+    c && c.tier === "pro" ? "مؤلفة خصيصاً بوجهه" : "",
+    c && c.fmt === "print" ? (c.wrap ? "مطبوعة ومغلّفة كهدية" : "مطبوعة") : "",
+    c && c.photo_path && c.tier !== "pro" ? "بصورته على الغلاف" : "",
+    c && c.ded ? "مع إهداء" : ""
+].filter(Boolean).join("، ");
 ATHR.needsShipping = (lines) => (lines || []).some((l) => l && l.custom && l.custom.fmt === "print");
 // طرق الاستلام المناسبة للسلة: المطبوع يحتاج توصيل، والملفات وحدها تصل على واتساب
 ATHR.deliveriesForCart = function (config, code, lines) {
@@ -581,11 +621,14 @@ ATHR.storyLines = function (c, indent = "   ") {
         `${indent}👶 اسم الطفل: ${c.name} (${c.g === "f" ? "بنت" : "ولد"}${c.age ? `، ${ATHR.ageText(c.age)}` : ""})`,
         c.likes && c.likes.length ? `${indent}🎈 يحب: ${ATHR.likesText(c.likes)}` : "",
         lesson ? `${indent}✨ رسالة القصة: ${lesson.t}` : "",
-        c.tier === "pro" ? `${indent}🌟 قصة مؤلفة خصيصاً بوجه الطفل: سأرسل ${c.g === "f" ? "صورتها" : "صورته"} على واتساب${c.g === "f" ? (c.hijab === false ? " (بدون حجاب)" : " (بالحجاب)") : ""}` : (c.photo ? `${indent}📷 سأرسل صورة الطفل للغلاف` : ""),
+        c.tier === "pro" ? `${indent}🌟 قصة مؤلفة خصيصاً بوجه الطفل${c.g === "f" ? (c.hijab === false ? " (بدون حجاب)" : " (بالحجاب)") : ""}` : "",
+        c.photo_path ? `${indent}📷 صورة الطفل: مرفوعة مع الطلب ✓` : (c.photo ? `${indent}📷 سأرسل ${c.g === "f" ? "صورتها" : "صورته"} على واتساب` : ""),
         c.tier === "pro" && c.family ? `${indent}👨‍👩‍👧 الأسرة: ${c.family}` : "",
         c.tier === "pro" && c.friend ? `${indent}🤝 الصديق المفضّل: ${c.friend}` : "",
         c.tier === "pro" && c.note ? `${indent}📝 تفاصيل خاصة: ${c.note}` : "",
-        c.fmt === "print" ? `${indent}📦 نسخة مطبوعة بغلاف مقوّى + PDF` : ""
+        c.ded ? `${indent}💌 الإهداء: «${c.ded}»${c.ded_from ? ` — ${c.ded_from}` : ""}` : "",
+        c.fmt === "print" ? `${indent}📦 نسخة مطبوعة بغلاف مقوّى + PDF` : "",
+        c.wrap ? `${indent}🎁 تغليف هدية (مجاني)` : ""
     ].filter(Boolean);
 };
 

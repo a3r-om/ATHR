@@ -1513,7 +1513,10 @@
         promoMaybeLoad();
         const sc = ATHR.storyCfg(cfg());
         const storiesCard = card("📖 القصص: المؤلفة خصيصاً والمطبوعة", `
-                ${toggle("config.stories.pro_enabled", "القصة المؤلفة خصيصاً بوجه الطفل (من صورته)", { rerender: true, help: "الزبون يرسل صورة طفله على واتساب بعد الطلب، وترسم القصة بوجهه. متاحة الآن لقصة «رحلة إلى الفضاء»." })}
+                ${toggle("config.stories.photo_upload", "رفع صورة الطفل في صفحة القصة", { help: "الزبون يرفع صورة طفله وهو يخصّص القصة، وتظهر على الغلاف في المعاينة. الصورة في مخزن خاص لا يراه أحد غيرك، وتفتحها من بطاقة الطلب." })}
+                ${toggle("config.stories.ded_enabled", "إهداء مجاني في أول صفحة", { help: "الزبون يختار إهداءً جاهزاً أو يكتب إهداءه، ويُطبع في صفحة خاصة بعد الغلاف." })}
+                ${toggle("config.stories.wrap_enabled", "تغليف هدية مجاني للقصة المطبوعة")}
+                ${toggle("config.stories.pro_enabled", "القصة المؤلفة خصيصاً بوجه الطفل (من صورته)", { rerender: true, help: "ترسم القصة بوجه الطفل من صورته المرفوعة مع الطلب. متاحة الآن لقصة «رحلة إلى الفضاء»." })}
                 ${sc.pro_enabled ? number("config.stories.pro_price", "سعر الإضافة للقصة المؤلفة خصيصاً (ر.ع)", { step: "0.5", min: "0", placeholder: "5" }) : ""}
                 ${sc.pro_enabled ? text("config.stories.pro_time", "مدة تجهيز القصة المؤلفة خصيصاً", { placeholder: "خلال 48 ساعة من وصول الصورة" }) : ""}
                 ${toggle("config.stories.print_enabled", "النسخة المطبوعة بغلاف مقوّى", { rerender: true, help: "تحتاج طريقة توصيل للبيت مفعّلة في «الطلب والتوصيل» (مثل «توصيل القصة المطبوعة»)، ويظهر الخيار فقط للدول اللي فيها هذي الطريقة." })}
@@ -4693,6 +4696,7 @@
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
         if (d.orderCopy) { const o = A.orders.find((x) => x.id === d.orderCopy); if (o) ATHR.store.copyText(orderText(o), "نُسخ الطلب"); return; }
         if (d.storyMake) { const o = A.orders.find((x) => x.id === d.storyMake); if (o) openStoryMaker(o, Number(d.storyI)); return; }
+        if (d.photoView) { const o = A.orders.find((x) => x.id === d.photoView); if (o) openPhotoSheet(o, Number(d.photoI)); return; }
         if (d.orderHide) { const o = A.orders.find((x) => x.id === d.orderHide); if (o) updateOrderField(o.id, "hidden", !o.hidden); return; }
         if (d.orderDelete) { await deleteOrder(d.orderDelete); return; }
     }
@@ -5312,6 +5316,7 @@
         if (error) throw error;
         A.orders = data || [];
         A.ordersLoaded = true;
+        setTimeout(cleanupPhotos, 4000);
     }
 
     function renderBook() {
@@ -6044,9 +6049,12 @@
                 <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
                 ${storyItems(o).map(({ it, i }) => `<div class="oc-story">
                     <div><b>📖 ${esc(it.label || it.name)}</b>
-                    <span>👶 ${esc(it.custom.name)} · ${it.custom.g === "f" ? "بنت" : "ولد"}${it.custom.age ? ` · ${esc(ATHR.ageText(it.custom.age))}` : ""}${it.custom.photo && it.custom.tier !== "pro" ? " · 📷 بيرسل صورة للغلاف" : ""}</span>
-                    ${it.custom.tier === "pro" ? `<span class="oc-pro">🌟 مؤلفة خصيصاً بوجه الطفل — بيرسل ${it.custom.g === "f" ? "صورتها" : "صورته"} على واتساب${it.custom.g === "f" ? (it.custom.hijab === false ? " · بدون حجاب" : " · بالحجاب") : ""}</span>` : ""}
-                    ${it.custom.fmt === "print" ? `<span class="oc-print">📦 نسخة مطبوعة بغلاف مقوّى + PDF</span>` : ""}
+                    <span>👶 ${esc(it.custom.name)} · ${it.custom.g === "f" ? "بنت" : "ولد"}${it.custom.age ? ` · ${esc(ATHR.ageText(it.custom.age))}` : ""}</span>
+                    ${it.custom.tier === "pro" ? `<span class="oc-pro">🌟 مؤلفة خصيصاً بوجه الطفل${it.custom.g === "f" ? (it.custom.hijab === false ? " · بدون حجاب" : " · بالحجاب") : ""}</span>` : ""}
+                    ${it.custom.photo_path ? `<button type="button" class="oc-photo" data-photo-view="${esc(o.id)}" data-photo-i="${i}">📷 صورة الطفل مرفوعة — اعرضها</button>`
+                        : it.custom.photo ? `<span class="oc-pro">📷 بيرسل ${it.custom.g === "f" ? "صورتها" : "صورته"} على واتساب</span>` : ""}
+                    ${it.custom.fmt === "print" ? `<span class="oc-print">📦 نسخة مطبوعة بغلاف مقوّى + PDF${it.custom.wrap ? " · 🎁 مغلّفة كهدية" : ""}</span>` : ""}
+                    ${it.custom.ded ? `<small class="oc-ded">💌 الإهداء: «${esc(it.custom.ded)}»${it.custom.ded_from ? ` — ${esc(it.custom.ded_from)}` : ""}</small>` : ""}
                     ${(it.custom.likes || []).length ? `<small class="adm-muted">🎈 يحب: ${esc(ATHR.likesText(it.custom.likes))}</small>` : ""}
                     ${ATHR.lessonOf(it.custom.lesson) ? `<small class="adm-muted">✨ رسالة القصة: ${esc(ATHR.lessonOf(it.custom.lesson).t)}</small>` : ""}
                     ${it.custom.family ? `<small class="adm-muted">👨‍👩‍👧 الأسرة: ${esc(it.custom.family)}</small>` : ""}
@@ -6228,13 +6236,95 @@
         if (act) act.innerHTML = `<button class="ab ab-primary ab-block" type="button" data-sm="make">📖 اصنع ملف القصة PDF</button>`;
     }
 
+    // صورة الطفل المرفوعة مع الطلب: رابط مؤقت من المخزن الخاص (ساعة واحدة)
+    const PHOTO_BUCKET = "story-photos";
+    async function photoUrl(path, download = "") {
+        const { data, error } = await sb.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600, download ? { download } : undefined);
+        if (error || !data) throw error || new Error("signed url");
+        return data.signedUrl;
+    }
+
+    async function smOrderPhoto(path) {
+        const label = $("#smPhotoName");
+        if (label) label.textContent = "⏳ نحمّل صورة الطفل من الطلب...";
+        try {
+            const url = await photoUrl(path);
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`photo ${res.status}`);
+            const blob = await res.blob();
+            const lib = await loadStoriesLib();
+            const img = await lib.readPhoto(blob);
+            if (!$("#storyMaker") || SM.photo) return;
+            SM.photo = img;
+            if ($("#smPhotoName")) $("#smPhotoName").textContent = "✓ صورة الطفل من الطلب على الغلاف";
+            if ($("#smPhotoClear")) $("#smPhotoClear").hidden = false;
+            smReset();
+            smPreview(0);
+        } catch (e) {
+            console.warn("Order photo:", e);
+            if ($("#smPhotoName")) $("#smPhotoName").textContent = "تعذر تحميل الصورة (ربما انحذفت). اختر صورة يدوياً.";
+        }
+    }
+
+    function openPhotoSheet(o, i) {
+        const it = o && Array.isArray(o.items) ? o.items[i] : null;
+        const c = (it && it.custom) || {};
+        if (!c.photo_path) return;
+        const name = `${c.name || "طفل"}-${o.order_no || ""}.jpg`.replace(/\s+/g, "-");
+        openOrderSheet(`${offerSheetHead(`📷 صورة ${esc(c.name || "الطفل")}`)}
+            <div class="ph-body" id="photoSheet">
+                <p class="adm-muted">طلب <b dir="ltr">${esc(o.order_no || "")}</b> · ${esc(o.customer_name || "")}</p>
+                <div class="ph-img" id="phImg"><span class="adm-muted">⏳ نحمّل الصورة...</span></div>
+                <div class="ph-actions" id="phActions" hidden>
+                    <a class="ab ab-primary ab-block" id="phDown" href="#" target="_blank" rel="noopener">⬇️ تنزيل الصورة</a>
+                    <button class="ab-mini danger" type="button" id="phDel">🗑️ احذف الصورة نهائياً (بعد تسليم القصة)</button>
+                </div>
+                <small class="adm-muted">الصورة في مخزن خاص لا يراه أحد غيرك، وتنحذف تلقائياً بعد 45 يوماً من الطلب.</small>
+            </div>`);
+        (async () => {
+            try {
+                const [view, down] = await Promise.all([photoUrl(c.photo_path), photoUrl(c.photo_path, name)]);
+                const box = $("#phImg");
+                if (!box) return;
+                box.innerHTML = `<img src="${esc(view)}" alt="صورة ${esc(c.name || "الطفل")}">`;
+                $("#phDown").href = down;
+                $("#phActions").hidden = false;
+            } catch (e) {
+                console.warn("Photo:", e);
+                const box = $("#phImg");
+                if (box) box.innerHTML = `<span class="adm-muted">تعذر فتح الصورة. ربما انحذفت، أو تأكد من الإنترنت.</span>`;
+            }
+        })();
+        $("#phDel").addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!confirm("تحذف صورة الطفل نهائياً؟ احذفها بعد ما تسلّم القصة.")) return;
+            const { error } = await sb.storage.from(PHOTO_BUCKET).remove([c.photo_path]);
+            if (error) { toast("تعذر الحذف. تأكد من الإنترنت."); return; }
+            toast("انحذفت الصورة ✓");
+            closeOrderSheet();
+        });
+    }
+
+    // تنظيف تلقائي: صور بدون طلب بعد 14 يوماً، وصور الطلبات الأقدم من 45 يوماً
+    let photoCleanDone = false;
+    async function cleanupPhotos() {
+        if (photoCleanDone) return;
+        photoCleanDone = true;
+        try {
+            const { data, error } = await sb.rpc("huroof_photos_to_clean");
+            if (error || !Array.isArray(data) || !data.length) return;
+            const names = data.map((x) => (typeof x === "string" ? x : x && x.huroof_photos_to_clean)).filter(Boolean);
+            if (names.length) await sb.storage.from(PHOTO_BUCKET).remove(names);
+        } catch (e) { console.warn("Photo cleanup:", e); }
+    }
+
     function openStoryMaker(o, i) {
         const it = o && Array.isArray(o.items) ? o.items[i] : null;
         const c = (it && it.custom) || {};
         SM.order = o;
         SM.index = i;
         SM.photo = null;
-        SM.extra = { likes: Array.isArray(c.likes) ? c.likes : [], lesson: c.lesson || "" };
+        SM.extra = { likes: Array.isArray(c.likes) ? c.likes : [], lesson: c.lesson || "", ded_t: c.ded_t || "", ded: c.ded || "", ded_from: c.ded_from || "" };
         smReset();
         const story = it ? storyIdOf(it) : "letters";
         const ages = ATHR.STORY_AGES.map((a) => `<option value="${a}"${Number(c.age) === a ? " selected" : ""}>${esc(ATHR.ageText(a))}</option>`).join("");
@@ -6243,6 +6333,8 @@
                 <p class="adm-muted">${it ? `طلب <b dir="ltr">${esc(o.order_no || "")}</b> · ${esc(o.customer_name || "")}. راجع البيانات وصحّح الاسم إذا لزم.` : "اصنع قصة لأي طفل، مثل طلب وصلك على واتساب."}</p>
                 ${c.tier === "pro" ? `<p class="sm-pro">🌟 هذه قصة <b>مؤلفة خصيصاً بوجه الطفل</b>: نصها يُكتب حول أسرته وتفاصيله، ورسوماتها من صورته. أرسل صورة الطفل ورقم الطلب في محادثة Claude، ويجهّز لك ملف القصة كاملاً. الملف هنا بالشخصية الجاهزة (للمراجعة فقط).</p>` : ""}
                 ${c.fmt === "print" ? `<p class="sm-print">📦 العميل طلب نسخة مطبوعة: اصنع الملف وأرسله للمطبعة (A4، غلاف مقوّى)، وأرسل نسخة PDF للعميل.</p>` : ""}
+                ${c.ded ? `<p class="adm-muted">💌 الإهداء في أول صفحة: «${esc(c.ded)}»${c.ded_from ? ` — ${esc(c.ded_from)}` : ""}</p>` : ""}
+                ${c.wrap ? `<p class="sm-print">🎁 غلّف الكتاب المطبوع كهدية قبل التوصيل.</p>` : ""}
                 ${(c.likes || []).length || ATHR.lessonOf(c.lesson) ? `<p class="adm-muted">${(c.likes || []).length ? `🎈 يحب: ${esc(ATHR.likesText(c.likes))}` : ""}${(c.likes || []).length && ATHR.lessonOf(c.lesson) ? " · " : ""}${ATHR.lessonOf(c.lesson) ? `✨ الرسالة: ${esc(ATHR.lessonOf(c.lesson).t)}` : ""} — مكتوبة في القصة تلقائياً.</p>` : ""}
                 <label class="af"><span>القصة</span><select class="ai" id="smStory">${STORY_OPTS.map(([v, l]) => `<option value="${v}"${v === story ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
                 <label class="af"><span>اسم الطفل</span><input class="ai" id="smName" maxlength="22" autocomplete="off" value="${esc(c.name || "")}"></label>
@@ -6251,18 +6343,19 @@
                     <label class="af"><span>العمر</span><select class="ai" id="smAge"><option value="">اختر</option>${ages}</select></label>
                 </div>
                 <div class="sm-photo">
-                    <label class="ab ab-ghost ab-sm" for="smPhoto">📷 ${c.photo ? "اختر صورة الطفل اللي أرسلها العميل" : "صورة الطفل للغلاف (اختياري)"}</label>
+                    <label class="ab ab-ghost ab-sm" for="smPhoto">📷 ${c.photo_path ? "صورة ثانية بدل صورة الطلب" : c.photo ? "اختر صورة الطفل اللي أرسلها العميل" : "صورة الطفل للغلاف (اختياري)"}</label>
                     <input type="file" id="smPhoto" accept="image/*" hidden>
                     <span class="adm-muted" id="smPhotoName"></span>
                     <button class="ab-mini danger" type="button" data-sm="photo-clear" id="smPhotoClear" hidden>إزالة الصورة</button>
                 </div>
-                <small class="adm-muted">الصورة تبقى في جوالك فقط ولا تُرفع لأي مكان.</small>
+                <small class="adm-muted">${c.photo_path ? "صورة الطفل من الطلب (مخزن خاص لا يراه غيرك)." : "الصورة تبقى في جوالك فقط ولا تُرفع لأي مكان."}</small>
                 <div class="sm-prev"><canvas id="smCover" width="300" height="424"></canvas><canvas id="smPage" width="300" height="424"></canvas></div>
                 <p class="sm-err" id="smErr" hidden></p>
                 <div class="sm-progress" id="smProgress" hidden><span class="sm-bar"><i id="smBar"></i></span><small id="smStep"></small></div>
                 <div class="sm-actions" id="smActions"></div>
             </div>`);
         smReset();
+        if (c.photo_path) smOrderPhoto(c.photo_path);
         const box = $("#storyMaker");
         box.addEventListener("input", (e) => { e.stopPropagation(); smReset(); smPreview(400); });
         box.addEventListener("change", async (e) => {
@@ -6348,7 +6441,7 @@
             const canShare = Boolean(navigator.canShare && navigator.canShare({ files: [SM.pdf] }));
             const o = SM.order;
             $("#smActions").innerHTML = `
-                <p class="sm-ready">✓ ملف «${esc(SM.pdf.name)}» جاهز (${(SM.pdf.size / 1048576).toFixed(1)} م.ب، ${lib.bookPages(story).length} صفحة)</p>
+                <p class="sm-ready">✓ ملف «${esc(SM.pdf.name)}» جاهز (${(SM.pdf.size / 1048576).toFixed(1)} م.ب، ${lib.bookPages(story, custom).length} صفحة)</p>
                 ${canShare ? `<button class="ab ab-primary ab-block" type="button" data-sm="share">📤 أرسل الملف (اختر واتساب ثم العميل)</button>` : ""}
                 <a class="ab ${canShare ? "ab-ghost" : "ab-primary"} ab-block" href="${SM.url}" download="${esc(SM.pdf.name)}">⬇️ تنزيل الملف</a>
                 ${o && o.phone ? `<button class="ab ab-ghost ab-block" type="button" data-sm="wa">💬 رسالة للعميل على واتساب</button>` : ""}
