@@ -2783,7 +2783,7 @@ html.tpl-roa .bar { font-weight: 500; font-size: 13px; letter-spacing: .01em; }
 html.tpl-roa .bar-ship, html.tpl-roa .bar-announce { background: var(--roa-rosso); color: var(--roa-crema); border: 0; }
 html.tpl-roa .bar-ship.done { color: var(--roa-crema); }
 html.tpl-roa .meter { height: 4px; background: rgba(242, 233, 218, .22); }
-html.tpl-roa .meter span { background: var(--roa-pistacchio); }
+html.tpl-roa .meter span { background: var(--roa-crema); }
 html.tpl-roa .bar-cart { background: var(--roa-sabbia); color: var(--roa-espresso); }
 html.tpl-roa .bar-gift { background: var(--roa-sabbia); color: var(--roa-espresso); }
 
