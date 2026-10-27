@@ -23,12 +23,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="/ATHR/huroof/css/store.css?v=9b68479aef">
+<link rel="stylesheet" href="/ATHR/huroof/css/store.css?v=a695ded7bd">
 <style id="themeVars">:root{--primary:#2B2620;--hero:#2B2620;--bg:#F3E9D9;--text:#2B2620;--on-primary:#FFFFFF;--logo-filter:none;--font-head:"Amiri","Amiri",system-ui,sans-serif;--font-body:"Amiri",system-ui,-apple-system,"Segoe UI",sans-serif}html[data-mode="dark"]{--btn-bg:#F1EEE8;--btn-ink:#141414}@media (prefers-color-scheme:dark){html[data-mode="auto"]{--btn-bg:#F1EEE8;--btn-ink:#141414}}</style>
 <script>window.ATHR_BASE = "/ATHR/huroof/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("huroof_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("huroof_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
 /* رابط لوحة التحكم: شاشة انتظار من أول لحظة، وملفات اللوحة تبدأ التحميل مع ملفات المتجر */
-if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=db348b609a"], ["style", B + "css/admin-panel.css?v=db348b609a"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
+if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=7d0c40152d"], ["style", B + "css/admin-panel.css?v=7d0c40152d"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
 </head>
 <body>
 
@@ -62,14 +62,17 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                     <div class="sh-text">
                         <span class="sh-kicker">✨ قصص مخصّصة باسم طفلك</span>
                         <h1>قصة يكون طفلك بطلها</h1>
-                        <p>نكتب اسم طفلك في كل صفحة، برسومات ملوّنة تبهره، ويوصلك الملف على واتساب جاهزاً للطباعة.</p>
-                        <a class="btn btn-primary sh-cta" href="#stories">اختر قصة طفلك</a>
+                        <p>جاوب على أسئلة بسيطة عن طفلك، وشوف القصة باسمه قبل ما تطلب. قصة تعلّمه قيمة أو عادة جميلة، ومعها شهادة بطل وملصقات باسمه هدية.</p>
+                        <div class="sh-btns">
+                            <button class="btn btn-primary sh-cta" type="button" data-wiz-new>✨ اصنع قصة طفلك</button>
+                            <a class="link-btn sh-more" href="#examples">تصفّح قصة كاملة</a>
+                        </div>
                     </div>
                     <div class="sh-books" aria-hidden="true"><span class="shb shb1"><img src="/ATHR/huroof/images/p/st-letters-0.jpg" alt="" width="300" height="375" fetchpriority="high" decoding="async"></span><span class="shb shb2"><img src="/ATHR/huroof/images/p/st-space-0.jpg" alt="" width="300" height="375" loading="lazy" decoding="async"></span><span class="shb shb3"><img src="/ATHR/huroof/images/p/st-school-0.jpg" alt="" width="300" height="375" loading="lazy" decoding="async"></span></div>
                 </div>
             </section>
             <section class="sh-steps" aria-label="طريقة الطلب">
-                <ol class="wrap sh-steps-list"><li><span class="sh-n">1</span><b>اختر القصة</b><small>مغامرة يحبها طفلك</small></li><li><span class="sh-n">2</span><b>اكتب اسم طفلك</b><small>وشوف القصة باسمه فوراً</small></li><li><span class="sh-n">3</span><b>تصلك على واتساب</b><small>ملف PDF جاهز للطباعة</small></li></ol>
+                <ol class="wrap sh-steps-list four"><li><span class="sh-n">1</span><b>جاوب على أسئلة بسيطة</b><small>اسمه وعمره وماذا يحب</small></li><li><span class="sh-n">2</span><b>اختر المغامرة</b><small>وقيمة أو عادة يتعلمها</small></li><li><span class="sh-n">3</span><b>شوف القصة باسمه</b><small>قبل ما تطلب</small></li><li><span class="sh-n">4</span><b>تصلك PDF أو مطبوعة</b><small>بغلاف مقوّى لباب بيتك</small></li></ol>
             </section>
             <section class="section sh-stories" id="stories" aria-labelledby="stories-t">
                 <div class="wrap">
@@ -94,7 +97,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </div>
                 
             </div>
-            <div class="card-action" data-action-for="2a5bc039-3e85-52ff-a7b5-9c3d43ec1e1e"><a class="btn btn-primary story-cta" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%AD%D8%AF%D9%8A%D9%82%D8%A9-%D8%A7%D9%84%D8%AD%D8%B1%D9%88%D9%81/#personalize">✎ اكتب اسم طفلك</a></div>
+            <div class="card-action" data-action-for="2a5bc039-3e85-52ff-a7b5-9c3d43ec1e1e"><button class="btn btn-primary story-cta" type="button" data-wiz="2a5bc039-3e85-52ff-a7b5-9c3d43ec1e1e">✎ اكتب اسم طفلك</button></div>
         </article><article class="card" data-card="fa958620-42a9-5dd2-94e7-471ba3677506">
             <a class="card-img" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%B1%D8%AD%D9%84%D8%A9-%D8%A5%D9%84%D9%89-%D8%A7%D9%84%D9%81%D8%B6%D8%A7%D8%A1/" tabindex="-1" aria-hidden="true">
                 <img src="/ATHR/huroof/images/p/st-space-0.jpg" alt="" width="400" height="500" fetchpriority="high" decoding="async">
@@ -114,7 +117,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </div>
                 
             </div>
-            <div class="card-action" data-action-for="fa958620-42a9-5dd2-94e7-471ba3677506"><a class="btn btn-primary story-cta" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%B1%D8%AD%D9%84%D8%A9-%D8%A5%D9%84%D9%89-%D8%A7%D9%84%D9%81%D8%B6%D8%A7%D8%A1/#personalize">✎ اكتب اسم طفلك</a></div>
+            <div class="card-action" data-action-for="fa958620-42a9-5dd2-94e7-471ba3677506"><button class="btn btn-primary story-cta" type="button" data-wiz="fa958620-42a9-5dd2-94e7-471ba3677506">✎ اكتب اسم طفلك</button></div>
         </article><article class="card" data-card="54246eb5-6c42-5332-b299-17e573d0f646">
             <a class="card-img" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%A3%D9%88%D9%84-%D9%8A%D9%88%D9%85-%D9%81%D9%8A-%D8%A7%D9%84%D9%85%D8%AF%D8%B1%D8%B3%D8%A9/" tabindex="-1" aria-hidden="true">
                 <img src="/ATHR/huroof/images/p/st-school-0.jpg" alt="" width="400" height="500" decoding="async">
@@ -134,7 +137,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </div>
                 
             </div>
-            <div class="card-action" data-action-for="54246eb5-6c42-5332-b299-17e573d0f646"><a class="btn btn-primary story-cta" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%A3%D9%88%D9%84-%D9%8A%D9%88%D9%85-%D9%81%D9%8A-%D8%A7%D9%84%D9%85%D8%AF%D8%B1%D8%B3%D8%A9/#personalize">✎ اكتب اسم طفلك</a></div>
+            <div class="card-action" data-action-for="54246eb5-6c42-5332-b299-17e573d0f646"><button class="btn btn-primary story-cta" type="button" data-wiz="54246eb5-6c42-5332-b299-17e573d0f646">✎ اكتب اسم طفلك</button></div>
         </article><article class="card" data-card="9e32517c-b9d4-509f-b2a3-91d05d2f549e">
             <a class="card-img" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%A7%D9%84%D8%B3%D9%84%D8%AD%D9%81%D8%A7%D8%A9-%D8%A7%D9%84%D8%B5%D8%BA%D9%8A%D8%B1%D8%A9/" tabindex="-1" aria-hidden="true">
                 <img src="/ATHR/huroof/images/p/st-turtle-0.jpg" alt="" width="400" height="500" decoding="async">
@@ -154,8 +157,72 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </div>
                 
             </div>
-            <div class="card-action" data-action-for="9e32517c-b9d4-509f-b2a3-91d05d2f549e"><a class="btn btn-primary story-cta" href="/ATHR/huroof/p/%D9%82%D8%B5%D8%A9-%D8%A8%D8%A7%D8%B3%D9%85-%D8%B7%D9%81%D9%84%D9%83-%D8%A7%D9%84%D8%B3%D9%84%D8%AD%D9%81%D8%A7%D8%A9-%D8%A7%D9%84%D8%B5%D8%BA%D9%8A%D8%B1%D8%A9/#personalize">✎ اكتب اسم طفلك</a></div>
+            <div class="card-action" data-action-for="9e32517c-b9d4-509f-b2a3-91d05d2f549e"><button class="btn btn-primary story-cta" type="button" data-wiz="9e32517c-b9d4-509f-b2a3-91d05d2f549e">✎ اكتب اسم طفلك</button></div>
         </article></div>
+                </div>
+            </section>
+            <section class="section sh-ex" id="examples" aria-labelledby="ex-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="ex-t">تصفّح القصة كاملة قبل الشراء</h2></div>
+                    <p class="sh-lead">افتح أي قصة واقرأها صفحة صفحة، واكتب اسم طفلك لتشوفها باسمه.</p>
+                    <div class="sh-ex-list"><button type="button" class="sh-ex-item" data-flip="2a5bc039-3e85-52ff-a7b5-9c3d43ec1e1e">
+                        <img src="/ATHR/huroof/images/p/st-letters-0.jpg" alt="" width="300" height="375" loading="lazy" decoding="async">
+                        <span><b>حديقة الحروف</b><small>📖 تصفّح القصة</small></span>
+                    </button><button type="button" class="sh-ex-item" data-flip="fa958620-42a9-5dd2-94e7-471ba3677506">
+                        <img src="/ATHR/huroof/images/p/st-space-0.jpg" alt="" width="300" height="375" loading="lazy" decoding="async">
+                        <span><b>رحلة إلى الفضاء</b><small>📖 تصفّح القصة</small></span>
+                    </button><button type="button" class="sh-ex-item" data-flip="54246eb5-6c42-5332-b299-17e573d0f646">
+                        <img src="/ATHR/huroof/images/p/st-school-0.jpg" alt="" width="300" height="375" loading="lazy" decoding="async">
+                        <span><b>أول يوم في المدرسة</b><small>📖 تصفّح القصة</small></span>
+                    </button><button type="button" class="sh-ex-item" data-flip="9e32517c-b9d4-509f-b2a3-91d05d2f549e">
+                        <img src="/ATHR/huroof/images/p/st-turtle-0.jpg" alt="" width="300" height="375" loading="lazy" decoding="async">
+                        <span><b>السلحفاة الصغيرة</b><small>📖 تصفّح القصة</small></span>
+                    </button></div>
+                </div>
+            </section>
+            <section class="section sh-plans" id="plans" aria-labelledby="plans-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="plans-t">اختر نوع قصة طفلك</h2></div>
+                    <div class="sh-plan-list">
+                        <article class="sh-plan">
+                            <span class="sh-plan-e" aria-hidden="true">📖</span>
+                            <h3>قصة جاهزة باسمه</h3>
+                            <p class="sh-plan-p"><small>من</small> <b>2.000 ر.ع</b></p>
+                            <ul>
+                                <li>اسمه وعمره وهواياته في القصة</li>
+                                <li>قيمة أو عادة يومية تختارها</li>
+                                <li>تشوفها كاملة قبل ما تطلب</li>
+                                <li>تصلك خلال ساعات</li>
+                            </ul>
+                            <button class="btn btn-ghost btn-block" type="button" data-wiz-new>ابدأ الآن</button>
+                        </article>
+                        <article class="sh-plan pro">
+                            <span class="sh-plan-badge">الأكثر تميّزاً</span>
+                            <span class="sh-plan-e" aria-hidden="true">🌟</span>
+                            <h3>قصة مؤلفة خصيصاً</h3>
+                            <p class="sh-plan-p"><b>7.000 ر.ع</b></p>
+                            <ul>
+                                <li>نرسم طفلك بوجهه من صورته</li>
+                                <li>نكتبها حول أسرته وأصدقائه</li>
+                                <li>تعالج العادة اللي تبيها</li>
+                                <li>خلال 48 ساعة من وصول الصورة</li>
+                            </ul>
+                            <small class="sh-plan-small">متاحة الآن لقصة «رحلة إلى الفضاء»</small>
+                            <button class="btn btn-primary btn-block" type="button" data-wiz="fa958620-42a9-5dd2-94e7-471ba3677506">اصنع قصته الخاصة</button>
+                        </article>
+                    </div>
+                    <p class="sh-plan-note">📦 أي قصة تقدر تطلبها مطبوعة بغلاف مقوّى بـ6.000 ر.ع إضافية، وتوصل لبيتك داخل عُمان.</p>
+                </div>
+            </section>
+            <section class="section sh-gifts" aria-labelledby="gifts-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="gifts-t">🎁 هدايا مجانية مع كل قصة</h2></div>
+                    <p class="sh-lead">في آخر كل قصة صفحات إضافية باسم طفلك، يطبعها ويفرح فيها.</p>
+                    <div class="sh-gift-list">
+                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="cert" width="300" height="424"></canvas></span><figcaption><b>🏅 شهادة بطل القصة</b><small>باسمه والرسالة اللي تعلّمها</small></figcaption></figure>
+                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="labels" width="300" height="424"></canvas></span><figcaption><b>🏷️ ملصقات اسمه</b><small>لدفاتره وأغراض المدرسة</small></figcaption></figure>
+                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="color" width="300" height="424"></canvas></span><figcaption><b>🖍️ صفحة تلوين</b><small>يلوّن اسمه بنفسه</small></figcaption></figure>
+                    </div>
                 </div>
             </section>
             <section class="section sh-why" aria-labelledby="why-t">
@@ -164,11 +231,17 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                     <ul class="sh-why-list"><li><span class="sh-e" aria-hidden="true">❤️</span><b>يكون هو البطل</b><small>اسمه في كل صفحة</small></li><li><span class="sh-e" aria-hidden="true">⭐</span><b>يحب القراءة</b><small>جمل قصيرة وسهلة</small></li><li><span class="sh-e" aria-hidden="true">🎨</span><b>رسومات ساحرة</b><small>ملوّنة ومليانة حياة</small></li><li><span class="sh-e" aria-hidden="true">🎁</span><b>هدية لا تُنسى</b><small>يحتفظ فيها سنين</small></li></ul>
                 </div>
             </section>
+            <section class="section sh-promise" aria-labelledby="promise-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="promise-t">وعدنا لك</h2></div>
+                    <ul class="sh-promise-list"><li><span class="sh-e" aria-hidden="true">🛡️</span><div><b>ضمان الرضا</b><small>إذا ما عجبتك القصة نعدّلها مجاناً، أو نرجّع لك المبلغ كاملاً.</small></div></li><li><span class="sh-e" aria-hidden="true">🔒</span><div><b>صورة طفلك بأمان</b><small>نستخدمها لرسم قصته فقط، ولا نشاركها مع أحد، ونحذفها بعد التسليم.</small></div></li><li><span class="sh-e" aria-hidden="true">✍️</span><div><b>عربي سليم</b><small>نص عربي مكتوب بعناية، بصيغة الولد أو البنت، وبخط واضح يسهل على الطفل قراءته.</small></div></li></ul>
+                </div>
+            </section>
             
             <section class="section home-faq" id="faq" aria-labelledby="faq-t">
             <div class="wrap">
                 <div class="section-head"><h2 id="faq-t">أسئلة متكررة</h2><a class="more" href="/ATHR/huroof/shipping/">كل الأسئلة</a></div>
-                <div class="faq-list"><details class="faq-item"><summary>كيف تصلني القصة؟</summary><p>بعد ما ترسل الطلب على واتساب ونؤكد الدفع، نرسل لك القصة باسم طفلك ملف PDF في نفس المحادثة، عادةً خلال ساعات.</p></details><details class="faq-item"><summary>هل أقدر أطبعها؟</summary><p>نعم، الملف بجودة عالية تطبعه في البيت أو في أي مكتبة، أو يقرأه طفلك من الجوال أو الآيباد.</p></details><details class="faq-item"><summary>كم صفحة في القصة؟</summary><p>غلاف باسم طفلك، و10 صفحات للقصة، وصفحة النهاية، وصفحة تلوين لاسمه.</p></details><details class="faq-item"><summary>هل أقدر أحط صورة طفلي؟</summary><p>نعم، اختر «أبي صورة طفلي على الغلاف» وأرسل الصورة على واتساب بعد الطلب، ونستخدمها للغلاف فقط.</p></details><details class="faq-item"><summary>لأي عمر تناسب؟</summary><p>من 3 إلى 8 سنوات. الجمل قصيرة وسهلة يقرأها الطفل بنفسه أو تقرؤونها له.</p></details></div>
+                <div class="faq-list"><details class="faq-item"><summary>ما الفرق بين القصة الجاهزة والقصة المؤلفة خصيصاً؟</summary><p>الجاهزة: قصة مرسومة نكتب فيها اسم طفلك وعمره وهواياته ورسالة تختارها، وتصلك خلال ساعات. المؤلفة خصيصاً: نرسم طفلك بوجهه من صورته، ونكتب القصة حول أسرته وأصدقائه والعادة اللي تبيها، وتصلك خلال 48 ساعة من وصول الصورة.</p></details><details class="faq-item"><summary>كيف تصلني القصة؟</summary><p>بعد تأكيد الدفع نرسل لك القصة PDF على واتساب. وإذا اخترت النسخة المطبوعة، نطبعها بغلاف مقوّى ونوصلها لبيتك داخل عُمان خلال 3 إلى 5 أيام.</p></details><details class="faq-item"><summary>وش لو ما عجبتني القصة؟</summary><p>نعدّلها لك مجاناً، وإذا ما زالت ما عجبتك نرجّع لك المبلغ كاملاً.</p></details><details class="faq-item"><summary>هل صورة طفلي آمنة؟</summary><p>نستخدم الصورة لرسم قصة طفلك فقط، ولا نشاركها مع أحد، ونحذفها بعد تسليم القصة.</p></details><details class="faq-item"><summary>هل تساعد القصة في تعديل سلوك طفلي؟</summary><p>نعم، تختار قيمة مثل الصدق والشجاعة، أو عادة يومية مثل تنظيف الأسنان والنوم بدري وترتيب الألعاب، ونكتبها في القصة وفي شهادة البطل. وفي القصة المؤلفة خصيصاً تدور القصة كلها حولها.</p></details></div>
             </div>
         </section>
 </main>
@@ -185,7 +258,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </details>
             <details class="foot-acc">
                 <summary>الاستلام والدفع<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></summary>
-                <ul class="foot-lines"><li>استلام الملفات على واتساب · مجاني · خلال ساعات</li><li>الدفع: تحويل بنكي</li></ul>
+                <ul class="foot-lines"><li>استلام الملفات على واتساب · مجاني · خلال ساعات</li><li>توصيل القصة المطبوعة · 2.000 ر.ع · 3 إلى 5 أيام</li><li>الدفع: تحويل بنكي</li></ul>
                 <a class="foot-more" href="/ATHR/huroof/shipping/">التفاصيل كاملة</a>
             </details>
             <div class="foot-follow"><span>تواصل معنا</span><div class="foot-icons"><a class="wa" href="https://wa.me/96877336242" target="_blank" rel="noopener" aria-label="واتساب"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6a9.3 9.3 0 0 0-8 14.1L2.7 21.4l4.8-1.3A9.3 9.3 0 1 0 12 2.6Z"/><path class="wa-glyph" d="M8.4 7.6c.2-.4.4-.4.7-.4h.6c.2 0 .4.1.5.4l.8 1.8c.1.3.1.5-.1.7l-.7.8c.7 1.3 1.7 2.3 3 3l.8-.7c.2-.2.4-.2.7-.1l1.8.8c.3.1.4.3.4.5v.6c0 .3-.1.5-.4.7-.4.3-1 .5-1.6.5-1.4 0-3.2-.8-4.7-2.3S8 9.9 8 8.5c0-.4.1-.7.4-.9Z"/></svg></a></div></div>
@@ -201,12 +274,12 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="/ATHR/huroof/js/supabase-config.js?v=3a3f59bac8" defer></script>
-<script src="/ATHR/huroof/js/defaults.js?v=ef5990d14a" defer></script>
-<script src="/ATHR/huroof/js/views.js?v=70a91f798c" defer></script>
+<script src="/ATHR/huroof/js/defaults.js?v=dcff2fe073" defer></script>
+<script src="/ATHR/huroof/js/views.js?v=04ef3afea1" defer></script>
 <script src="/ATHR/huroof/js/i18n-en.js?v=5e8cbf81b1" defer></script>
 <script src="/ATHR/huroof/js/thumbs.js?v=99914b932b" defer></script>
 <script src="/ATHR/huroof/js/rates.js?v=3245f6932f" defer></script>
-<script src="/ATHR/huroof/js/catalog.js?v=677ab90bf1" defer></script>
-<script src="/ATHR/huroof/js/store.js?v=db348b609a" defer></script>
+<script src="/ATHR/huroof/js/catalog.js?v=e70edaa063" defer></script>
+<script src="/ATHR/huroof/js/store.js?v=7d0c40152d" defer></script>
 </body>
 </html>

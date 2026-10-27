@@ -1,6 +1,6 @@
 /* =====================================================
    حروف وألوان — الإعدادات الافتراضية والأدوات المشتركة
-   (مبني على نظام متجر روا، ومعدّل لبيع ملفات رقمية تصل على واتساب)
+   (مبني على نظام متجر أثر، ومعدّل لبيع ملفات رقمية تصل على واتساب)
    أي إعداد غير محفوظ في قاعدة البيانات يأخذ قيمته من هنا.
    يعمل في المتصفح وفي سكربت بناء الصفحات (tools/build.mjs).
 ===================================================== */
@@ -109,7 +109,8 @@ const ATHR_DEFAULTS = {
         // ملفات رقمية: لا شحن ولا عنوان، والملفات تصل للزبون على واتساب بعد تأكيد الدفع
         digital: true,
         delivery: [
-            { id: "wa", enabled: true, name: "استلام الملفات على واتساب", name_en: "Files on WhatsApp", type: "digital", pricing: "fixed", price: 0, countries: ["OM", "AE", "SA", "KW", "QA", "BH"], note: "نرسل لك القصة في محادثة واتساب بعد تأكيد الدفع.", note_en: "We send your story in a WhatsApp chat once payment is confirmed.", duration: "خلال ساعات" }
+            { id: "wa", enabled: true, name: "استلام الملفات على واتساب", name_en: "Files on WhatsApp", type: "digital", pricing: "fixed", price: 0, countries: ["OM", "AE", "SA", "KW", "QA", "BH"], note: "نرسل لك القصة في محادثة واتساب بعد تأكيد الدفع.", note_en: "We send your story in a WhatsApp chat once payment is confirmed.", duration: "خلال ساعات" },
+            { id: "print", enabled: true, name: "توصيل القصة المطبوعة", name_en: "Printed book delivery", type: "home", pricing: "fixed", price: 2, countries: ["OM"], note: "نطبع القصة بغلاف مقوّى ونوصلها لبيتك، ونرسل لك نسخة PDF على واتساب.", note_en: "We print a hardcover copy and deliver it to your door, plus a PDF on WhatsApp.", duration: "3 إلى 5 أيام" }
         ],
         free_enabled: false,
         free_min: 0,
@@ -192,6 +193,18 @@ const ATHR_DEFAULTS = {
         google_verification: "",
         home_title: "",
         home_description: ""
+    },
+
+    // القصص الشخصية: النوع المميّز (بوجه الطفل من صورته) والنسخة المطبوعة، وأسعارهم فوق سعر القصة
+    stories: {
+        pro_enabled: true,
+        pro_price: 5,
+        pro_stories: ["space"],
+        pro_time: "خلال 48 ساعة من وصول الصورة",
+        print_enabled: true,
+        print_price: 6,
+        print_time: "3 إلى 5 أيام داخل عُمان",
+        guarantee: true
     },
 
     contact: {
@@ -453,6 +466,44 @@ ATHR.ageText = (n) => {
     if (a === 2) return "سنتان";
     return a <= 10 ? `${a} سنوات` : `${a} سنة`;
 };
+// هوايات الطفل (حتى 2) تدخل في أول صفحة: «يحب الرسم وكرة القدم»
+ATHR.STORY_LIKES = [
+    { id: "draw", e: "🎨", t: "الرسم" },
+    { id: "football", e: "⚽", t: "كرة القدم" },
+    { id: "read", e: "📚", t: "القراءة" },
+    { id: "swim", e: "🏊", t: "السباحة" },
+    { id: "animals", e: "🐾", t: "الحيوانات" },
+    { id: "cars", e: "🚗", t: "السيارات" },
+    { id: "bike", e: "🚲", t: "ركوب الدراجة" },
+    { id: "blocks", e: "🧱", t: "تركيب المكعبات" },
+    { id: "cook", e: "🧁", t: "الطبخ" },
+    { id: "sea", e: "🌊", t: "البحر" },
+    { id: "songs", e: "🎵", t: "الأناشيد" },
+    { id: "science", e: "🔬", t: "التجارب العلمية" }
+];
+// رسالة القصة: قيمة أو عادة يومية تُكتب في صفحة النهاية وفي شهادة البطل. بدون اختيار نستخدم رسالة القصة الأصلية
+ATHR.STORY_LESSONS = [
+    { id: "brave", k: "v", e: "🦁", t: "الشجاعة", s: "[تعلّم|تعلّمت] {name} أنّ الشجاعة تبدأ بخطوةٍ صغيرة." },
+    { id: "help", k: "v", e: "🤝", t: "مساعدة الآخرين", s: "[تعلّم|تعلّمت] {name} أنّ مساعدة الآخرين تملأ القلب فرحاً." },
+    { id: "honest", k: "v", e: "💎", t: "الصدق", s: "[تعلّم|تعلّمت] {name} أنّ الصدق يجعل الجميع يثقون بنا." },
+    { id: "patient", k: "v", e: "🌱", t: "الصبر", s: "[تعلّم|تعلّمت] {name} أنّ الصبر يوصلنا إلى ما نحب." },
+    { id: "share", k: "v", e: "🎈", t: "المشاركة", s: "[تعلّم|تعلّمت] {name} أنّ المشاركة تجعل الفرح أكبر." },
+    { id: "parents", k: "v", e: "💛", t: "بر الوالدين", s: "[تعلّم|تعلّمت] {name} أنّ رضا الوالدين أجمل هدية." },
+    { id: "learn", k: "v", e: "✏️", t: "حب التعلّم", s: "[تعلّم|تعلّمت] {name} أنّ كل شيءٍ جديدٍ نتعلّمه مغامرةٌ جميلة." },
+    { id: "self", k: "v", e: "⭐", t: "الثقة بالنفس", s: "[عرف|عرفت] {name} [أنه قادرٌ|أنها قادرةٌ] على أشياء عظيمة." },
+    { id: "kind", k: "v", e: "🐢", t: "الرفق بالحيوان", s: "[تعلّم|تعلّمت] {name} أنّ الرفق بالحيوان من أجمل الأخلاق." },
+    { id: "teeth", k: "h", e: "🪥", t: "تنظيف الأسنان", s: "[تعلّم|تعلّمت] {name} أن [ينظّف أسنانه|تنظّف أسنانها] كل ليلة، مثل الأبطال." },
+    { id: "sleep", k: "h", e: "🌙", t: "النوم بدري", s: "[تعلّم|تعلّمت] {name} أن [ينام مبكراً ليصحو نشيطاً|تنام مبكراً لتصحو نشيطةً] كل صباح." },
+    { id: "tidy", k: "h", e: "🧸", t: "ترتيب الألعاب", s: "[تعلّم|تعلّمت] {name} أن [يرتّب ألعابه|ترتّب ألعابها] بعد اللعب بنفس[ه|ها]." },
+    { id: "food", k: "h", e: "🥕", t: "الأكل الصحي", s: "[تعلّم|تعلّمت] {name} أنّ الخضار والفواكه [تجعله قوياً ونشيطاً|تجعلها قويةً ونشيطة]." },
+    { id: "polite", k: "h", e: "🌷", t: "الكلام بأدب", s: "[تعلّم|تعلّمت] {name} أن [يقول|تقول] «من فضلك» و«شكراً» دائماً." },
+    { id: "screen", k: "h", e: "📵", t: "تقليل الشاشات", s: "[تعلّم|تعلّمت] {name} أنّ اللعب والقراءة أجمل من الجلوس طويلاً أمام الشاشة." },
+    { id: "pray", k: "h", e: "🕌", t: "المحافظة على الصلاة", s: "[تعلّم|تعلّمت] {name} أن [يحافظ على صلاته|تحافظ على صلاتها]، فهي نورٌ في القلب." },
+    { id: "dark", k: "h", e: "🔦", t: "عدم الخوف من الظلام", s: "[عرف|عرفت] {name} أنّ الظلام لا يخيف، وأنّ [قلبه|قلبها] الشجاع يضيء الطريق." }
+];
+ATHR.likesText = (ids) => (Array.isArray(ids) ? ids : []).map((id) => (ATHR.STORY_LIKES.find((x) => x.id === id) || {}).t).filter(Boolean).join(" و");
+ATHR.lessonOf = (id) => ATHR.STORY_LESSONS.find((x) => x.id === id) || null;
+
 ATHR.storyClean = function (c) {
     const x = c || {};
     const age = Math.round(Number(x.age));
@@ -460,12 +511,59 @@ ATHR.storyClean = function (c) {
         .replace(/[\u0000-\u001F\u007F[\]{}<>|\\/"`~@#$%^&*=+_;:!?؟.,،٫0-9\u0660-\u0669\u06F0-\u06F9]/g, "")
         .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
         .replace(/\s+/g, " ").trim().slice(0, 22).trim();
-    return {
+    const likes = [...new Set((Array.isArray(x.likes) ? x.likes : []).filter((id) => ATHR.STORY_LIKES.some((l) => l.id === id)))].slice(0, 2);
+    const tier = x.tier === "pro" ? "pro" : "std";
+    const out = {
         name,
         g: x.g === "f" ? "f" : "m",
         age: age >= 1 && age <= 12 ? age : 0,
-        photo: Boolean(x.photo)
+        photo: tier === "pro" || Boolean(x.photo),
+        likes,
+        lesson: ATHR.lessonOf(x.lesson) ? x.lesson : "",
+        tier,
+        fmt: x.fmt === "print" ? "print" : "pdf"
     };
+    if (tier === "pro") {
+        const txt = (v, n) => String(v || "").replace(/[\u0000-\u0009\u000B-\u001F\u007F<>]/g, "").replace(/[ \t]+/g, " ").trim().slice(0, n);
+        out.family = txt(x.family, 120);
+        out.friend = txt(x.friend, 60);
+        out.note = txt(x.note, 200);
+        if (out.g === "f") out.hijab = x.hijab !== false && x.hijab !== "0";
+    }
+    return out;
+};
+
+// إعدادات القصص (النوع المميّز والمطبوع)
+ATHR.storyCfg = (config) => ({ ...ATHR.DEFAULTS.stories, ...((config && config.stories) || {}) });
+ATHR.proOn = (config, storyId) => {
+    const s = ATHR.storyCfg(config);
+    return Boolean(s.pro_enabled) && Number(s.pro_price) >= 0 && (!storyId || (Array.isArray(s.pro_stories) && s.pro_stories.includes(storyId)));
+};
+// المطبوع: مفعّل وفيه طريقة توصيل غير رقمية لدولة الزبون
+ATHR.printOn = (config, country) => {
+    const s = ATHR.storyCfg(config);
+    if (!s.print_enabled) return false;
+    return (config.order.delivery || []).some((d) => d.enabled && d.type !== "digital" && ATHR.inCountries(d, country || "OM"));
+};
+// سعر القصة الواحدة حسب اختيارات الزبون
+ATHR.storyUnit = function (product, custom, config) {
+    const base = Number(product && product.price) || 0;
+    if (!ATHR.isStory(product) || !custom) return base;
+    const s = ATHR.storyCfg(config);
+    let add = 0;
+    if (custom.tier === "pro" && ATHR.proOn(config, product.story)) add += Number(s.pro_price) || 0;
+    if (custom.fmt === "print" && s.print_enabled) add += Number(s.print_price) || 0;
+    return Math.round((base + add) * 1000) / 1000;
+};
+ATHR.storyKind = (c) => [c && c.tier === "pro" ? "مؤلفة خصيصاً بوجهه" : "", c && c.fmt === "print" ? "مطبوعة" : ""].filter(Boolean).join("، ");
+ATHR.needsShipping = (lines) => (lines || []).some((l) => l && l.custom && l.custom.fmt === "print");
+// طرق الاستلام المناسبة للسلة: المطبوع يحتاج توصيل، والملفات وحدها تصل على واتساب
+ATHR.deliveriesForCart = function (config, code, lines) {
+    const all = ATHR.deliveriesFor(config, code);
+    if (!(lines || []).some((l) => l && l.custom)) return all;
+    const ship = ATHR.needsShipping(lines);
+    const fit = all.filter((d) => (ship ? d.type !== "digital" : d.type === "digital"));
+    return fit.length ? fit : (ship ? [] : all);
 };
 // أول خانة ناقصة: name | g | age، أو "" إذا البيانات كاملة
 ATHR.storyIssue = function (raw) {
@@ -478,9 +576,16 @@ ATHR.storyIssue = function (raw) {
 // أسطر بيانات الطفل في رسالة الطلب
 ATHR.storyLines = function (c, indent = "   ") {
     if (!c || !c.name) return [];
+    const lesson = ATHR.lessonOf(c.lesson);
     return [
         `${indent}👶 اسم الطفل: ${c.name} (${c.g === "f" ? "بنت" : "ولد"}${c.age ? `، ${ATHR.ageText(c.age)}` : ""})`,
-        c.photo ? `${indent}📷 سأرسل صورة الطفل للغلاف` : ""
+        c.likes && c.likes.length ? `${indent}🎈 يحب: ${ATHR.likesText(c.likes)}` : "",
+        lesson ? `${indent}✨ رسالة القصة: ${lesson.t}` : "",
+        c.tier === "pro" ? `${indent}🌟 قصة مؤلفة خصيصاً بوجه الطفل: سأرسل ${c.g === "f" ? "صورتها" : "صورته"} على واتساب${c.g === "f" ? (c.hijab === false ? " (بدون حجاب)" : " (بالحجاب)") : ""}` : (c.photo ? `${indent}📷 سأرسل صورة الطفل للغلاف` : ""),
+        c.tier === "pro" && c.family ? `${indent}👨‍👩‍👧 الأسرة: ${c.family}` : "",
+        c.tier === "pro" && c.friend ? `${indent}🤝 الصديق المفضّل: ${c.friend}` : "",
+        c.tier === "pro" && c.note ? `${indent}📝 تفاصيل خاصة: ${c.note}` : "",
+        c.fmt === "print" ? `${indent}📦 نسخة مطبوعة بغلاف مقوّى + PDF` : ""
     ].filter(Boolean);
 };
 
@@ -492,7 +597,9 @@ ATHR.computeCart = function (cartItems, products, config, country = "OM") {
         const product = byId.get(item.id);
         if (!product) return;
         const qty = Math.max(1, Math.min(Number(item.qty) || 1, Number(config.order.max_qty) || 99));
-        lines.push({ product, qty, total: Number(product.price) * qty, custom: ATHR.isStory(product) && item.custom ? item.custom : null });
+        const custom = ATHR.isStory(product) && item.custom ? item.custom : null;
+        const unit = custom ? ATHR.storyUnit(product, custom, config) : Number(product.price);
+        lines.push({ product, qty, unit, total: Math.round(unit * qty * 1000) / 1000, custom });
     });
 
     const subtotal = lines.reduce((sum, line) => sum + line.total, 0);

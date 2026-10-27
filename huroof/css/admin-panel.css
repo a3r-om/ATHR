@@ -1153,3 +1153,10 @@ html.theme-dark .bp-warn { color: #F2B866; }
 .sm-actions { display: grid; gap: 8px; }
 .sm-actions a.ab { text-align: center; text-decoration: none; }
 .sm-ready { margin: 0; color: #2E7D4F; font-weight: 700; overflow-wrap: anywhere; }
+.oc-pro, .oc-print { display: block; font-weight: 700; font-size: .92em; }
+.oc-pro { color: #9A6A00; }
+.oc-print { color: #2F6E8E; }
+.oc-story small { display: block; }
+.sm-pro, .sm-print { margin: 0 0 8px; padding: 10px 12px; border-radius: 10px; line-height: 1.7; }
+.sm-pro { background: #FFF4D6; }
+.sm-print { background: #E4F0F7; }
