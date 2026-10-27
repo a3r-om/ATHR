@@ -2781,7 +2781,7 @@ html.tpl-roa .search:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent);
 /* ----- الأشرطة: برغندي وكريمي، وعداد بالفستقي ----- */
 html.tpl-roa .bar { font-weight: 500; font-size: 13px; letter-spacing: .01em; }
 html.tpl-roa .bar-ship, html.tpl-roa .bar-announce { background: var(--roa-rosso); color: var(--roa-crema); border: 0; }
-html.tpl-roa .bar-ship.done { color: var(--roa-pistacchio); }
+html.tpl-roa .bar-ship.done { color: var(--roa-crema); }
 html.tpl-roa .meter { height: 4px; background: rgba(242, 233, 218, .22); }
 html.tpl-roa .meter span { background: var(--roa-pistacchio); }
 html.tpl-roa .bar-cart { background: var(--roa-sabbia); color: var(--roa-espresso); }
@@ -2846,7 +2846,7 @@ html.tpl-roa .price s { color: var(--muted); }
 html.tpl-roa .card-action .btn, html.tpl-roa .card-action button { border-radius: var(--r-pill); }
 html.tpl-roa .badge { border-radius: 7px; padding: 3px 9px; font-size: 12px; font-weight: 700; box-shadow: none; }
 html.tpl-roa .badge.hot { background: var(--roa-rosso); color: var(--roa-crema); }
-html.tpl-roa .badge.sale { background: var(--roa-pistacchio); color: var(--roa-espresso); }
+html.tpl-roa .badge.sale { background: var(--roa-sabbia); color: var(--roa-rosso); }
 html.tpl-roa .badge.out { background: var(--roa-espresso); color: var(--roa-crema); }
 html.tpl-roa .fav-btn { background: var(--roa-latte); color: var(--roa-rosso); box-shadow: none; }
 html.tpl-roa .fav-btn.on { color: var(--roa-rosso); }
@@ -2901,12 +2901,16 @@ html.tpl-roa .foot-about { color: var(--muted); }
 html.tpl-roa .foot-head .footer-brand.stacked img { height: 112px; }
 
 /* السلة العائمة: حلقة التقدّم بالبرغندي */
-html.tpl-roa .cf-ring { background: conic-gradient(var(--roa-rosso) var(--p, 0%), color-mix(in srgb, var(--roa-rosso) 18%, var(--surface)) 0); }
-html.tpl-roa .cf-in { background: var(--roa-latte); color: var(--roa-rosso); }
-html.tpl-roa .cf-count { background: var(--roa-rosso); color: var(--roa-crema); }
-html.tpl-roa .cf-pill.ok { background: var(--roa-pistacchio); color: var(--roa-espresso); }
-html.tpl-roa[data-mode="dark"] .cf-ring { background: conic-gradient(var(--roa-crema) var(--p, 0%), rgba(242, 233, 218, .2) 0); }
-html.tpl-roa[data-mode="dark"] .cf-in { background: var(--surface); color: var(--roa-crema); }
+/* السلة العائمة: الدائرة خضراء، والكلام والرقم أحمر، ولما يكتمل الشحن المجاني يصير كله أخضر */
+html.tpl-roa { --cf-green: #3E8E41; --cf-red: #C62828; }
+html.tpl-roa .cf-ring { background: conic-gradient(var(--cf-green) var(--p, 0%), color-mix(in srgb, var(--cf-green) 18%, var(--surface)) 0); }
+html.tpl-roa .cf-in { background: var(--roa-latte); color: var(--cf-red); }
+html.tpl-roa .cf-count, html.tpl-roa .cf-pill { background: var(--cf-red); color: #fff; }
+html.tpl-roa .cart-float.cf-done .cf-in { color: var(--cf-green); }
+html.tpl-roa .cart-float.cf-done .cf-count, html.tpl-roa .cf-pill.ok { background: var(--cf-green); color: #fff; }
+html.tpl-roa[data-mode="dark"] .cf-ring { background: conic-gradient(var(--cf-green) var(--p, 0%), rgba(242, 233, 218, .2) 0); }
+html.tpl-roa[data-mode="dark"] { --cf-red: #EF5350; --cf-green: #5DB563; }
+html.tpl-roa[data-mode="dark"] .cf-in { background: var(--surface); color: var(--cf-red); }
 /* أسفل الصفحة (روا): نصوص داكنة على الرملي */
 html.tpl-roa .foot-points li { background: var(--roa-latte); color: var(--roa-espresso); }
 html.tpl-roa .foot-points svg { stroke: var(--roa-rosso); }

@@ -1531,6 +1531,7 @@
         el.href = ATHR.url.page("cart");
         el.hidden = false;
         el.classList.toggle("has-items", tt.count > 0);
+        el.classList.toggle("cf-done", Boolean(tt.count && tt.freeShipping));
         el.setAttribute("aria-label", `${t("السلة")} (${tt.count})`);
         el.innerHTML = `<span class="cf-ring" style="--p:${Math.max(0, pct)}%"><span class="cf-in">${CART_ICON}<small>${esc(t("السلة"))}</small></span></span>
             ${tt.count ? `<b class="cf-count">${tt.count > 99 ? "99+" : tt.count}</b>` : ""}${pill}`;
