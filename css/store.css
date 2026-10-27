@@ -3472,3 +3472,11 @@ html:not(.tpl-night) .ks-cta { background: var(--text); box-shadow: none; }
 .sf-buy { min-height: 48px; border-radius: 99px; margin-top: -4px; }
 .sf-guard { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 14px; background: rgba(98, 214, 160, .1); line-height: 1.7; font-size: .92rem; }
 .sf-guard b { color: var(--ok); }
+
+/* قصص قادمة */
+.ks-soon { align-items: center; text-align: center; padding: 18px 8px 14px; background: linear-gradient(160deg, rgba(139, 92, 246, .22), rgba(245, 196, 81, .08)); }
+.ks-soon-e { font-size: 3.4rem; line-height: 1.2; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .4)); }
+.ks-soon .ks-body { padding: 6px 4px 8px; justify-items: center; }
+.ks-soon .ks-blurb { -webkit-line-clamp: 3; }
+.ks-soon-tag { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: .82rem; font-weight: 700; color: #1A0F2E; background: var(--gold, #F5C451); }
+.ks-soon-wa { margin-top: 14px; min-height: 50px; border-radius: 99px; }

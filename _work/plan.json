@@ -1,0 +1,827 @@
+{
+ "style": "Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+ "refs": {
+  "astro/side": "Character sheet on a plain soft lavender background, three characters side by side, full body: Bibo, a small round white robot with a glossy dome head, two big glowing cyan eyes, a tiny antenna with a light and short stubby arms; Zuzu, a small coral-pink fluffy alien with huge friendly eyes and two curly antennae; and a little golden star with a cute face and tiny arms. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "astro/m": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani boy with big expressive brown eyes, warm light-tan skin, rosy cheeks, tousled dark brown hair and a joyful smile, shown twice side by side, full body, standing (view 1: wearing a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet ; view 2: wearing navy-blue pajamas with small yellow stars). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "astro/f": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani girl with big expressive brown eyes, warm light-tan skin, rosy cheeks and a joyful smile, wearing a soft pink hijab that covers her hair, shown twice side by side, full body, standing (view 1: wearing a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet ; view 2: wearing lilac pajamas with small yellow stars). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "sea/side": "Character sheet on a plain soft aqua background, characters side by side: Dana, a small friendly light-blue dolphin with big sparkling eyes and a pink cheek blush; Nono, a small cute purple octopus with big round eyes; a huge gentle blue whale with a kind smile; and a glowing magical pearly seashell. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "sea/m": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani boy with big expressive brown eyes, warm light-tan skin, rosy cheeks, tousled dark brown hair and a joyful smile, shown twice side by side, full body, standing (view 1: wearing a turquoise swim rash-guard shirt and navy swim shorts ; view 2: wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "sea/f": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani girl with big expressive brown eyes, warm light-tan skin, rosy cheeks and a joyful smile, wearing a soft pink hijab that covers her hair, shown twice side by side, full body, standing (view 1: wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab ; view 2: wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "dino/side": "Character sheet on a plain soft mint background, characters side by side: Dudu, a cute baby triceratops, mint-green with a peach belly, tiny horns and huge sparkly eyes; his mother, a big gentle green triceratops; a tall friendly long-neck brachiosaurus; a friendly orange pterosaur; and a big but cute orange-brown T-rex with small arms; plus a golden sand hourglass. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "dino/m": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani boy with big expressive brown eyes, warm light-tan skin, rosy cheeks, tousled dark brown hair and a joyful smile, shown twice side by side, full body, standing (front view and three-quarter view, wearing a khaki explorer shirt, olive shorts and a small orange backpack). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "dino/f": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani girl with big expressive brown eyes, warm light-tan skin, rosy cheeks and a joyful smile, wearing a soft pink hijab that covers her hair, shown twice side by side, full body, standing (front view and three-quarter view, wearing a khaki explorer dress over leggings, a small orange backpack). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "oman/side": "Character sheet on a plain soft sand-beige background, characters side by side: Shaheen, a friendly cute peregrine falcon with golden eyes and brown-cream feathers; a kind Omani grandfather with a short white beard, white dishdasha and embroidered kumma cap; and a gentle smiling camel with a colorful saddle blanket; plus an old rolled treasure map. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "oman/m": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani boy with big expressive brown eyes, warm light-tan skin, rosy cheeks, tousled dark brown hair and a joyful smile, shown twice side by side, full body, standing (front view and three-quarter view, wearing a white Omani dishdasha and an embroidered Omani kumma cap). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo.",
+  "oman/f": "Character sheet on a plain soft pastel background: the same a cute 5-year-old Omani girl with big expressive brown eyes, warm light-tan skin, rosy cheeks and a joyful smile, wearing a soft pink hijab that covers her hair, shown twice side by side, full body, standing (front view and three-quarter view, wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab). Consistent face and proportions in both views. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+ },
+ "pages": {
+  "astro/m/cover": {
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy stands on a glowing silvery moon surface pointing excitedly up at the stars with a big open-mouth smile, wearing a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet; Bibo hovers happily beside; a sleek white-and-orange rocket nearby; huge colorful planets, a golden ringed planet and the blue Earth in a deep blue starry sky with soft purple nebula. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p1": {
+   "side": "right",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: at night the boy in navy-blue pajamas with small yellow stars kneels on the bed by a big open window, chin in hands, gazing dreamily at a huge glowing full moon; cozy bedroom with rocket posters, warm desk lamp, a toy rocket and a teddy bear. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p2": {
+   "side": "left",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: Bibo floats just outside the open bedroom window waving hello with glowing cyan eyes; the boy in navy-blue pajamas with small yellow stars sits up in bed in delighted surprise; moonlight and tiny magical sparkles. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p3": {
+   "side": "right",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: sunrise on a launch pad: the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet waves happily next to Bibo in front of a giant white-and-orange rocket with a tall launch tower and soft steam. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p4": {
+   "side": "left",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: inside a round rocket window: the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet and Bibo look out happily at the beautiful blue Earth with the Arabian Peninsula visible, stars all around. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p5": {
+   "side": "right",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet jumps very high on the moon surface leaving footprints in silver dust, laughing; Bibo bounces along; Earth in the black starry sky. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p6": {
+   "side": "left",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet joyfully slides along the colorful glowing rings of Saturn like a slide, arms raised; Bibo cheers with sparkling lights. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p7": {
+   "side": "right",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: on a colorful candy-like planet with lollipop trees and pink grass the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet meets Zuzu the coral-pink fluffy alien; they shake hands and smile; Bibo watches. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p8": {
+   "side": "left",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: in deep space the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet and Bibo find the little golden star crying softly, lost and alone; the child kneels and comforts it kindly. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p9": {
+   "side": "right",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet gently lifts the little golden star back up to a sparkling family of stars; the whole sky lights up with joy. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/p10": {
+   "side": "left",
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: back home at night the boy in navy-blue pajamas with small yellow stars sleeps peacefully smiling in bed hugging the teddy bear; through the window a little golden star twinkles and Bibo waves goodbye. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/end": {
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy in a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet and Bibo, Zuzu and the little golden star wave goodbye together on the moon, Earth glowing behind them, confetti of tiny stars. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/m/color": {
+   "refs": [
+    "astro/m",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: the boy stands on a glowing silvery moon surface pointing excitedly up at the stars with a big open-mouth smile, wearing a white-and-sky-blue astronaut suit with an orange star badge, holding a clear-visor helmet; Bibo hovers happily beside; a sleek white-and-orange rocket nearby; huge colorful planets, a golden ringed planet and the blue Earth in a deep blue starry sky with soft purple nebula. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "astro/f/cover": {
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl stands on a glowing silvery moon surface pointing excitedly up at the stars with a big open-mouth smile, wearing a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet; Bibo hovers happily beside; a sleek white-and-orange rocket nearby; huge colorful planets, a golden ringed planet and the blue Earth in a deep blue starry sky with soft purple nebula. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p1": {
+   "side": "right",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: at night the girl in lilac pajamas with small yellow stars kneels on the bed by a big open window, chin in hands, gazing dreamily at a huge glowing full moon; cozy bedroom with rocket posters, warm desk lamp, a toy rocket and a teddy bear. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p2": {
+   "side": "left",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: Bibo floats just outside the open bedroom window waving hello with glowing cyan eyes; the girl in lilac pajamas with small yellow stars sits up in bed in delighted surprise; moonlight and tiny magical sparkles. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p3": {
+   "side": "right",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: sunrise on a launch pad: the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet waves happily next to Bibo in front of a giant white-and-orange rocket with a tall launch tower and soft steam. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p4": {
+   "side": "left",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: inside a round rocket window: the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet and Bibo look out happily at the beautiful blue Earth with the Arabian Peninsula visible, stars all around. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p5": {
+   "side": "right",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet jumps very high on the moon surface leaving footprints in silver dust, laughing; Bibo bounces along; Earth in the black starry sky. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p6": {
+   "side": "left",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet joyfully slides along the colorful glowing rings of Saturn like a slide, arms raised; Bibo cheers with sparkling lights. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p7": {
+   "side": "right",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: on a colorful candy-like planet with lollipop trees and pink grass the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet meets Zuzu the coral-pink fluffy alien; they shake hands and smile; Bibo watches. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p8": {
+   "side": "left",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: in deep space the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet and Bibo find the little golden star crying softly, lost and alone; the child kneels and comforts it kindly. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p9": {
+   "side": "right",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet gently lifts the little golden star back up to a sparkling family of stars; the whole sky lights up with joy. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/p10": {
+   "side": "left",
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: back home at night the girl in lilac pajamas with small yellow stars sleeps peacefully smiling in bed hugging the teddy bear; through the window a little golden star twinkles and Bibo waves goodbye. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/end": {
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl in a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet and Bibo, Zuzu and the little golden star wave goodbye together on the moon, Earth glowing behind them, confetti of tiny stars. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "astro/f/color": {
+   "refs": [
+    "astro/f",
+    "astro/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: the girl stands on a glowing silvery moon surface pointing excitedly up at the stars with a big open-mouth smile, wearing a white-and-lavender astronaut suit with a pink star badge, holding a clear-visor helmet; Bibo hovers happily beside; a sleek white-and-orange rocket nearby; huge colorful planets, a golden ringed planet and the blue Earth in a deep blue starry sky with soft purple nebula. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "sea/m/cover": {
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: underwater in a sunlit coral reef the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head swims happily holding onto Dana the light-blue dolphin; colorful corals, tropical fish, light rays from the surface, bubbles. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p1": {
+   "side": "right",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: golden sunset on a sandy Omani beach near Muscat with mountains behind; the boy wearing a turquoise swim rash-guard shirt and navy swim shorts kneels in the sand amazed, holding a glowing magical pearly seashell. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p2": {
+   "side": "left",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: Dana the light-blue dolphin leaps out of the sparkling sunset waves, smiling at the boy wearing a turquoise swim rash-guard shirt and navy swim shorts who stands at the water's edge holding the glowing shell. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p3": {
+   "side": "right",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head is amazed, touching the bubble; Dana beside; they start diving into clear turquoise water, sparkles swirling. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p4": {
+   "side": "left",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: a breathtaking colorful coral reef: red, yellow and purple corals; schools of clownfish and tropical fish swim around the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head who waves happily; Dana nearby. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p5": {
+   "side": "right",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: Nono the little purple octopus cries sadly in a messy sea garden littered with plastic bags and bottles; the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head and Dana look concerned. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p6": {
+   "side": "left",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head, Dana and Nono happily collect plastic bags and bottles into a big net together, teamwork, bubbles. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p7": {
+   "side": "right",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the clean coral garden glows with color; happy fish dance around; Nono paints colorful swirls of ink in the water; the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head laughs. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p8": {
+   "side": "left",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: inside an old sunken wooden ship, the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head opens a small treasure chest revealing a big glowing white pearl; Dana watches with wide eyes. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p9": {
+   "side": "right",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: a huge gentle blue whale carries the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head on its back up toward the shining sea surface; Dana swims alongside; light rays. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/p10": {
+   "side": "left",
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: back on the beach at dusk the boy wearing a turquoise swim rash-guard shirt and navy swim shorts waves goodbye to Dana jumping in the waves, holding the glowing shell close to the heart. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/end": {
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head with Dana, Nono and the big blue whale in a glowing clean coral reef, waving together, bubbles and happy fish. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/m/color": {
+   "refs": [
+    "sea/m",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: underwater in a sunlit coral reef the boy wearing a turquoise swim rash-guard shirt and navy swim shorts inside a clear magical glass bubble helmet around the head swims happily holding onto Dana the light-blue dolphin; colorful corals, tropical fish, light rays from the surface, bubbles. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "sea/f/cover": {
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: underwater in a sunlit coral reef the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head swims happily holding onto Dana the light-blue dolphin; colorful corals, tropical fish, light rays from the surface, bubbles. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p1": {
+   "side": "right",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: golden sunset on a sandy Omani beach near Muscat with mountains behind; the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab kneels in the sand amazed, holding a glowing magical pearly seashell. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p2": {
+   "side": "left",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: Dana the light-blue dolphin leaps out of the sparkling sunset waves, smiling at the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab who stands at the water's edge holding the glowing shell. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p3": {
+   "side": "right",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head is amazed, touching the bubble; Dana beside; they start diving into clear turquoise water, sparkles swirling. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p4": {
+   "side": "left",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: a breathtaking colorful coral reef: red, yellow and purple corals; schools of clownfish and tropical fish swim around the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head who waves happily; Dana nearby. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p5": {
+   "side": "right",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: Nono the little purple octopus cries sadly in a messy sea garden littered with plastic bags and bottles; the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head and Dana look concerned. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p6": {
+   "side": "left",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head, Dana and Nono happily collect plastic bags and bottles into a big net together, teamwork, bubbles. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p7": {
+   "side": "right",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the clean coral garden glows with color; happy fish dance around; Nono paints colorful swirls of ink in the water; the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head laughs. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p8": {
+   "side": "left",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: inside an old sunken wooden ship, the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head opens a small treasure chest revealing a big glowing white pearl; Dana watches with wide eyes. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p9": {
+   "side": "right",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: a huge gentle blue whale carries the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head on its back up toward the shining sea surface; Dana swims alongside; light rays. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/p10": {
+   "side": "left",
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: back on the beach at dusk the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab waves goodbye to Dana jumping in the waves, holding the glowing shell close to the heart. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/end": {
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head with Dana, Nono and the big blue whale in a glowing clean coral reef, waving together, bubbles and happy fish. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "sea/f/color": {
+   "refs": [
+    "sea/f",
+    "sea/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: underwater in a sunlit coral reef the girl wearing a modest full-length pink-and-turquoise swimsuit with a matching pink swim hijab inside a clear magical glass bubble helmet around the head swims happily holding onto Dana the light-blue dolphin; colorful corals, tropical fish, light rays from the surface, bubbles. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "dino/m/cover": {
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: in a lush prehistoric jungle with giant ferns and a distant smoking volcano the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack hugs Dudu the baby triceratops, both laughing; a tall brachiosaurus and flying pterosaurs behind; golden sunlight. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p1": {
+   "side": "right",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: an attic with old trunks and dusty books; the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack holds a shining golden sand hourglass that swirls with magical golden light. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p2": {
+   "side": "left",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack stands amazed in a giant prehistoric jungle with huge ferns and a distant smoking volcano, golden sparkles fading around. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p3": {
+   "side": "right",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: Dudu the baby triceratops peeks out shyly crying from behind a giant leaf; the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack kneels and gently wipes his tears. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p4": {
+   "side": "left",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack and Dudu ride high on the neck of a tall friendly brachiosaurus above the treetops, pointing at a big nest by a far lake. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p5": {
+   "side": "right",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: friendly orange pterosaurs carry the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack and Dudu flying over a wide sparkling river, joyful. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p6": {
+   "side": "left",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: a big orange-brown T-rex appears between the trees looking scary but with tears, a thorn stuck in its foot; the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack and Dudu peek from behind a rock. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p7": {
+   "side": "right",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack bravely and gently pulls the thorn from the T-rex's foot; the T-rex smiles gratefully. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p8": {
+   "side": "left",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: at a big nest by the lake Dudu runs into his mother's hug; happy dinosaurs cheer around the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p9": {
+   "side": "right",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: Dudu gives the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack a small stone with his footprint; the golden hourglass glows; sunset over the jungle. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/p10": {
+   "side": "left",
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: back in a cozy bedroom the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack places the footprint stone on a shelf full of dinosaur toys, smiling proudly. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/end": {
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack with Dudu, his mother, the brachiosaurus and the smiling T-rex waving together at sunset in the jungle. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/m/color": {
+   "refs": [
+    "dino/m",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: in a lush prehistoric jungle with giant ferns and a distant smoking volcano the boy wearing a khaki explorer shirt, olive shorts and a small orange backpack hugs Dudu the baby triceratops, both laughing; a tall brachiosaurus and flying pterosaurs behind; golden sunlight. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "dino/f/cover": {
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: in a lush prehistoric jungle with giant ferns and a distant smoking volcano the girl wearing a khaki explorer dress over leggings, a small orange backpack hugs Dudu the baby triceratops, both laughing; a tall brachiosaurus and flying pterosaurs behind; golden sunlight. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p1": {
+   "side": "right",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: an attic with old trunks and dusty books; the girl wearing a khaki explorer dress over leggings, a small orange backpack holds a shining golden sand hourglass that swirls with magical golden light. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p2": {
+   "side": "left",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a khaki explorer dress over leggings, a small orange backpack stands amazed in a giant prehistoric jungle with huge ferns and a distant smoking volcano, golden sparkles fading around. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p3": {
+   "side": "right",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: Dudu the baby triceratops peeks out shyly crying from behind a giant leaf; the girl wearing a khaki explorer dress over leggings, a small orange backpack kneels and gently wipes his tears. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p4": {
+   "side": "left",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a khaki explorer dress over leggings, a small orange backpack and Dudu ride high on the neck of a tall friendly brachiosaurus above the treetops, pointing at a big nest by a far lake. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p5": {
+   "side": "right",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: friendly orange pterosaurs carry the girl wearing a khaki explorer dress over leggings, a small orange backpack and Dudu flying over a wide sparkling river, joyful. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p6": {
+   "side": "left",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: a big orange-brown T-rex appears between the trees looking scary but with tears, a thorn stuck in its foot; the girl wearing a khaki explorer dress over leggings, a small orange backpack and Dudu peek from behind a rock. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p7": {
+   "side": "right",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a khaki explorer dress over leggings, a small orange backpack bravely and gently pulls the thorn from the T-rex's foot; the T-rex smiles gratefully. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p8": {
+   "side": "left",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: at a big nest by the lake Dudu runs into his mother's hug; happy dinosaurs cheer around the girl wearing a khaki explorer dress over leggings, a small orange backpack. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p9": {
+   "side": "right",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: Dudu gives the girl wearing a khaki explorer dress over leggings, a small orange backpack a small stone with his footprint; the golden hourglass glows; sunset over the jungle. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/p10": {
+   "side": "left",
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: back in a cozy bedroom the girl wearing a khaki explorer dress over leggings, a small orange backpack places the footprint stone on a shelf full of dinosaur toys, smiling proudly. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/end": {
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a khaki explorer dress over leggings, a small orange backpack with Dudu, his mother, the brachiosaurus and the smiling T-rex waving together at sunset in the jungle. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "dino/f/color": {
+   "refs": [
+    "dino/f",
+    "dino/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: in a lush prehistoric jungle with giant ferns and a distant smoking volcano the girl wearing a khaki explorer dress over leggings, a small orange backpack hugs Dudu the baby triceratops, both laughing; a tall brachiosaurus and flying pterosaurs behind; golden sunlight. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "oman/m/cover": {
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: in front of the round tower of Nizwa Fort with palm groves and mountains, the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap holds an old treasure map, smiling excitedly; Shaheen the falcon perches proudly on the child's shoulder; warm golden light. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p1": {
+   "side": "right",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: in a traditional Omani house courtyard in Nizwa, the kind grandfather hands an old rolled treasure map to the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap; palm trees, carved wooden door. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p2": {
+   "side": "left",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: Shaheen the friendly falcon lands on the shoulder of the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap; the child smiles in surprise; blue sky and palm trees. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p3": {
+   "side": "right",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap stands on top of the round tower of Nizwa Fort looking over endless green palm groves and mountains; Shaheen flies nearby. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p4": {
+   "side": "left",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap rides a gentle smiling camel across tall golden sand dunes of the Omani desert; Shaheen flies ahead. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p5": {
+   "side": "right",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: night in the desert under a sky full of stars; the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap sits on a rug eating dates by a small lantern; Shaheen perches nearby counting stars. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p6": {
+   "side": "left",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: on the green mountain Jebel Akhdar: cool terraces, pomegranate trees and pink roses; the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap smells a rose happily; Shaheen above. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p7": {
+   "side": "right",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: on an old wooden Omani dhow boat at sea near Sur, the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap laughs as dolphins jump around the boat; Shaheen on the mast. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p8": {
+   "side": "left",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap reads the end of the old map thoughtfully, then smiles with an idea; Shaheen tilts its head; sunset colors. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p9": {
+   "side": "right",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: back at the grandfather's house: the whole Omani family gathered around a dinner mat with food welcomes the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap; the grandfather smiles warmly. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/p10": {
+   "side": "left",
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap hugs the kind grandfather at dusk; Shaheen flies over the round tower of Nizwa Fort in the orange sky. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/end": {
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. Scene: the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap waves with the grandfather, the camel and Shaheen the falcon in front of Nizwa Fort at sunset. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/m/color": {
+   "refs": [
+    "oman/m",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and hair. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: in front of the round tower of Nizwa Fort with palm groves and mountains, the boy wearing a white Omani dishdasha and an embroidered Omani kumma cap holds an old treasure map, smiling excitedly; Shaheen the falcon perches proudly on the child's shoulder; warm golden light. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  },
+  "oman/f/cover": {
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: in front of the round tower of Nizwa Fort with palm groves and mountains, the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab holds an old treasure map, smiling excitedly; Shaheen the falcon perches proudly on the child's shoulder; warm golden light. Composition: keep the TOP third as open sky or soft background with no important details, for the title; keep the bottom-right corner simple. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p1": {
+   "side": "right",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: in a traditional Omani house courtyard in Nizwa, the kind grandfather hands an old rolled treasure map to the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab; palm trees, carved wooden door. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p2": {
+   "side": "left",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: Shaheen the friendly falcon lands on the shoulder of the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab; the child smiles in surprise; blue sky and palm trees. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p3": {
+   "side": "right",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab stands on top of the round tower of Nizwa Fort looking over endless green palm groves and mountains; Shaheen flies nearby. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p4": {
+   "side": "left",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab rides a gentle smiling camel across tall golden sand dunes of the Omani desert; Shaheen flies ahead. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p5": {
+   "side": "right",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: night in the desert under a sky full of stars; the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab sits on a rug eating dates by a small lantern; Shaheen perches nearby counting stars. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p6": {
+   "side": "left",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: on the green mountain Jebel Akhdar: cool terraces, pomegranate trees and pink roses; the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab smells a rose happily; Shaheen above. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p7": {
+   "side": "right",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: on an old wooden Omani dhow boat at sea near Sur, the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab laughs as dolphins jump around the boat; Shaheen on the mast. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p8": {
+   "side": "left",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab reads the end of the old map thoughtfully, then smiles with an idea; Shaheen tilts its head; sunset colors. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p9": {
+   "side": "right",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: back at the grandfather's house: the whole Omani family gathered around a dinner mat with food welcomes the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab; the grandfather smiles warmly. Composition: keep the RIGHT third calm and uncluttered (no characters or details) for the story text; characters on the left two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/p10": {
+   "side": "left",
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab hugs the kind grandfather at dusk; Shaheen flies over the round tower of Nizwa Fort in the orange sky. Composition: keep the LEFT third calm and uncluttered (no characters or details) for the story text; characters on the right two thirds. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/end": {
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. Scene: the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab waves with the grandfather, the camel and Shaheen the falcon in front of Nizwa Fort at sunset. Composition: keep the TOP 40% simple and calm for a text card. Children's picture-book illustration in polished 3D animated feature-film style, soft cinematic lighting, vibrant saturated colors, magical atmosphere, wide landscape 3:2. No text, no letters, no watermark, no logo."
+  },
+  "oman/f/color": {
+   "refs": [
+    "oman/f",
+    "oman/side"
+   ],
+   "prompt": "Reference 1 is the main child: keep exactly the same face, eyes, skin and pink hijab. Reference 2 shows the side characters: keep their designs. A black-and-white COLORING PAGE for kids: clean bold black outlines only on pure white, no shading, no gray, no color. Scene: in front of the round tower of Nizwa Fort with palm groves and mountains, the girl wearing a colorful embroidered traditional Omani girl's dress and a soft pink hijab holds an old treasure map, smiling excitedly; Shaheen the falcon perches proudly on the child's shoulder; warm golden light. Simple shapes, large areas to color, wide landscape 3:2. No text, no letters."
+  }
+ }
+}

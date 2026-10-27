@@ -951,7 +951,16 @@
     };
 
     // متجر القصص الشخصية: واجهة بسيطة (العنوان، 3 خطوات، القصص، ليش بيحبها طفلك، الأسئلة)
-    V.isStoryStore = (v) => v.products.length > 0 && v.products.every((p) => ATHR.isStory(p));
+    // متجر القصص: كل المنتجات قصص، أو ما فيه منتجات بعد (القصص الجديدة قيد الرسم)
+    V.isStoryStore = (v) => (v.products.length ? v.products.every((p) => ATHR.isStory(p)) : Boolean(v.cfg.stories));
+
+    // قصص قادمة (تظهر لما ما فيه قصص منشورة)
+    V.SOON = [
+        { e: "🚀", t: "مستكشف الفضاء", s: "صاروخ وروبوت صديق ورحلة بين الكواكب" },
+        { e: "🐬", t: "أعماق البحر", s: "دلفين وشعاب مرجانية وكنز اللؤلؤ" },
+        { e: "🦕", t: "أرض الديناصورات", s: "آلة زمن وديناصور صغير ضائع" },
+        { e: "🏰", t: "مغامرة في عُمان", s: "قلعة وصحراء وجبال وصقر يدلّ الطريق" }
+    ];
 
     // مقالات قصيرة للأهل في الرئيسية (تنفتح في نافذة)
     V.TIPS = [
@@ -1042,9 +1051,11 @@
             </section>
             <section class="section ks-best" id="stories" aria-labelledby="best-t">
                 <div class="wrap">
-                    <div class="section-head ks-head"><h2 id="best-t">${esc(t("قصص يكون طفلك بطلها"))}</h2></div>
-                    <p class="sh-lead">${esc(t("اختر القصة، واكتب بيانات طفلك، وشوفها باسمه قبل ما تطلب."))}</p>
-                    <div class="ks-grid">${list.map((p, i) => V.storyCard(v, p, { eager: i < 2, high: i < 2 })).join("")}</div>
+                    <div class="section-head ks-head"><h2 id="best-t">${esc(list.length ? t("قصص يكون طفلك بطلها") : t("قصصنا الجديدة قريباً"))}</h2></div>
+                    <p class="sh-lead">${esc(list.length ? t("اختر القصة، واكتب بيانات طفلك، وشوفها باسمه قبل ما تطلب.") : t("نرسم الحين مغامرات جديدة بأسلوب ثلاثي الأبعاد، طفلك بطلها باسمه وصورته."))}</p>
+                    ${list.length ? `<div class="ks-grid">${list.map((p, i) => V.storyCard(v, p, { eager: i < 2, high: i < 2 })).join("")}</div>`
+                        : `<div class="ks-grid">${V.SOON.map((x) => `<article class="ks-card ks-soon"><span class="ks-soon-e" aria-hidden="true">${x.e}</span><div class="ks-body"><b class="ks-name">${esc(t(x.t))}</b><p class="ks-blurb">${esc(t(x.s))}</p></div><span class="ks-soon-tag">✨ ${esc(t("قريباً"))}</span></article>`).join("")}</div>
+                        ${ATHR.isValidWhatsapp(cfg.order.whatsapp) ? `<a class="btn btn-wa btn-block ks-soon-wa" href="${esc(ATHR.waLink(cfg.order.whatsapp, t("السلام عليكم، خبّروني أول ما تنزل القصص الجديدة 📚")))}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("خبّرني أول ما تنزل"))}</a>` : ""}`}
                 </div>
             </section>
             <section class="section ks-giftban-s" aria-label="${esc(giftLine)}">
@@ -1072,7 +1083,7 @@
                     </div>
                 </div>
             </section>` : ""}
-            <section class="section sh-gifts" aria-labelledby="gifts-t">
+            ${list.length ? `<section class="section sh-gifts" aria-labelledby="gifts-t">
                 <div class="wrap">
                     <div class="section-head"><h2 id="gifts-t">🎁 ${esc(t("هدايا مجانية مع كل قصة"))}</h2></div>
                     <p class="sh-lead">${esc(t("في آخر كل قصة صفحات إضافية باسم طفلك، يطبعها ويفرح فيها."))}</p>
@@ -1082,7 +1093,7 @@
                         <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="color" width="300" height="424"></canvas></span><figcaption><b>🖍️ ${esc(t("صفحة تلوين"))}</b><small>${esc(t("يلوّن اسمه بنفسه"))}</small></figcaption></figure>
                     </div>
                 </div>
-            </section>
+            </section>` : ""}
             ${V.storeReviews(v)}
             ${V.homeFaq(v)}
             <section class="section ks-why" aria-labelledby="why-t">

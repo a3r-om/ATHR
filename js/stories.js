@@ -181,6 +181,88 @@
         ]
     };
 
+    // ---------- المجموعة الجديدة: قصص مصوّرة ثلاثية الأبعاد فقط ----------
+    // الرسومات في images/stories/{id}/{m|f}/{cover|p1..p10|end|color}.jpg (وصغيرة في s/)
+    // photo: صورة الطفل على الغلاف داخل خوذة (helmet) أو إطار ذهبي (frame)
+    Object.assign(STORIES, {
+        astro: {
+            id: "astro", title: "[مستكشف|مستكشفة] الفضاء", product: "قصة باسم طفلك: مستكشف الفضاء", lesson: "help",
+            color: P.plum, tint: "#E8E4F4", illustrated: true,
+            book: {
+                ready: false, badge: "رحلة إلى القمر وزُحل", photo: "helmet",
+                pages: [
+                    ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|النجوم} كثيراً. وفي ليلةٍ هادئة [جلس|جلست] عند النافذة [وهمس|وهمست]: «ليتني أطيرُ إلى القمر!»"],
+                    ["p2", "left", "فجأةً… طَق طَق! روبوتٌ صغير يلوّح من النافذة، عيناه تضيئان مثل مصباحين. قال: «أنا بيبو! سمعتُ أمنيتك يا {name}. هل [تأتي|تأتين] معي إلى الفضاء؟»"],
+                    ["p3", "right", "في الصباح [لبس|لبست] {name} بدلة الفضاء، [ووقف|ووقفت] أمام صاروخٍ عملاق. [وعدّ|وعدّت] مع بيبو: «ثلاثة… اثنان… واحد… انطلِق!»"],
+                    ["p4", "left", "طار الصاروخ عالياً… عالياً! ومن النافذة [رأى|رأت] {name} الأرض كرةً زرقاء جميلة، [فقال|فقالت]: «هناك عُمان… هناك بيتي!»"],
+                    ["p5", "right", "هبطا على القمر. [قفز|قفزت] {name} قفزةً عالية… ثم أعلى… ثم أعلى! [وضحك|وضحكت]: «أنا [خفيفٌ|خفيفةٌ] مثل الريشة!»"],
+                    ["p6", "left", "ثم طارا إلى كوكب زُحل، [وتزلّج|وتزلّجت] {name} على حلقاته الملوّنة: وِيييي! وبيبو يصفّق ويضيء من الفرح."],
+                    ["p7", "right", "وفي كوكبٍ ملوّن أشجاره مثل الحلوى، [قابل|قابلت] {name} مخلوقاً صغيراً لطيفاً اسمه زوزو. قال زوزو: «أهلاً يا {name}! [هل تلعب معي؟|هل تلعبين معي؟]»"],
+                    ["p8", "left", "وفي طريق العودة [سمع|سمعت] {name} بكاءً خفيفاً. نجمةٌ صغيرة ضلّت طريقها! [فقال|فقالت] {name}: «لا تخافي، سنوصلك إلى بيتك.»"],
+                    ["p9", "right", "[حمل|حملت] {name} النجمة بلطف حتى [أعادها|أعادتها] إلى أخواتها، فأضاءت السماء كلها وقالت النجوم: «شكراً يا {name}!»"],
+                    ["p10", "left", "عاد الصاروخ إلى البيت، [ونام|ونامت] {name} [سعيداً|سعيدةً]. وفي السماء نجمةٌ صغيرة تلمع وتهمس: «[تصبح|تصبحين] على خير يا {name}.»"]
+                ]
+            }
+        },
+        sea: {
+            id: "sea", title: "[بطل|بطلة] أعماق البحر", product: "قصة باسم طفلك: أعماق البحر", lesson: "clean",
+            color: P.sky, tint: "#E0F1F8", illustrated: true,
+            book: {
+                ready: false, badge: "رحلة إلى الشعاب المرجانية", photo: "helmet",
+                pages: [
+                    ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|البحر} كثيراً. وعند غروب الشمس على شاطئ مسقط، [وجد|وجدت] {name} صدفةً لامعة تضيء بين الرمال!"],
+                    ["p2", "left", "[همس|همست] {name} في الصدفة، فقفز من الموج دلفينٌ صغيرٌ لطيف وقال: «أنا دانة! هذه صدفة البحر السحرية. هل [تريد|تريدين] أن [تزور|تزوري] أعماق البحر؟»"],
+                    ["p3", "right", "لمعت الصدفة، فظهرت حول رأس {name} فقاعةٌ شفّافة مثل خوذةٍ سحرية. [قال|قالت]: «أستطيع أن أتنفّس تحت الماء!» [وأمسك|وأمسكت] بزعنفة دانة… وغطسا!"],
+                    ["p4", "left", "يا لجمال الشعاب المرجانية! مرجانٌ أحمر وأصفر وبنفسجي، وأسماكٌ ملوّنة تسبح حول {name} وتقول: «أهلاً بك في بيتنا!»"],
+                    ["p5", "right", "وفجأةً [سمع|سمعت] {name} صوتاً حزيناً. أخطبوطٌ صغير اسمه نونو يبكي: «حديقتي مليئةٌ بالأكياس والقوارير… والأسماك لا تستطيع اللعب!»"],
+                    ["p6", "left", "[قال|قالت] {name}: «لا تحزن يا نونو، سننظّفها معاً!» [وجمع|وجمعت] {name} ودانة ونونو الأكياس والقوارير في شبكةٍ كبيرة، واحدةً… واحدة."],
+                    ["p7", "right", "وحين صارت الحديقة نظيفة، رقصت الأسماك فرحاً، ورسم نونو بحبره دوائر ملوّنة في الماء وقال: «شكراً يا {name}، [أنت بطلُ|أنتِ بطلةُ] البحر!»"],
+                    ["p8", "left", "ثم سبحت دانة بـ{name} إلى سفينةٍ قديمة غارقة، وفيها صندوقٌ صغير. [فتحه|فتحته] {name}… [فوجد|فوجدت] لؤلؤةً بيضاء تلمع مثل القمر!"],
+                    ["p9", "right", "ظهر حوتٌ أزرقُ ضخمٌ لطيف وقال بصوتٍ عميق: «يا {name}، أجمل كنزٍ في البحر أن نحافظ عليه نظيفاً.» ثم حمل {name} على ظهره إلى السطح."],
+                    ["p10", "left", "عند الشاطئ لوّحت دانة بزعنفتها: «إلى اللقاء!» [وابتسم|وابتسمت] {name} [ووعد|ووعدت]: «سأحافظ على البحر نظيفاً دائماً!»"]
+                ]
+            }
+        },
+        dino: {
+            id: "dino", title: "[مستكشف|مستكشفة] الديناصورات", product: "قصة باسم طفلك: أرض الديناصورات", lesson: "brave",
+            color: P.leaf, tint: "#E7F1E2", illustrated: true,
+            book: {
+                ready: false, badge: "رحلة عبر الزمن", photo: "frame",
+                pages: [
+                    ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|الديناصورات} كثيراً. وفي غرفة [جدّه|جدّها] القديمة [وجد|وجدت] ساعةً رمليةً ذهبيةً تلمع، [فقلبها|فقلبتها]… ووووش!"],
+                    ["p2", "left", "دار كل شيءٍ حول {name}، ثم [وجد|وجدت] [نفسه|نفسها] في غابةٍ عجيبة، أشجارها عملاقة، وبركانٌ بعيد ينفث دخاناً أبيض. [قال|قالت]: «إنها أرض الديناصورات!»"],
+                    ["p3", "right", "ومن خلف ورقةٍ كبيرة أطلّ ديناصورٌ صغيرٌ خائف وقال وهو يبكي: «أنا دودو… أضعتُ ماما!» [فمسح|فمسحت] {name} دموعه [وقال|وقالت]: «لا تخف، سأساعدك.»"],
+                    ["p4", "left", "[ركب|ركبت] {name} ودودو على ظهر ديناصورٍ طويل العنق، فرفعهما عالياً فوق الأشجار. ومن هناك [رأى|رأت] {name} عشّاً كبيراً بجانب البحيرة!"],
+                    ["p5", "right", "لكن نهراً واسعاً كان يقطع الطريق. فجاءت ديناصوراتٌ طائرة لطيفة وحملت {name} ودودو فوق الماء: «تمسّكا جيداً… هيا نطير!»"],
+                    ["p6", "left", "وفجأةً… بووم! بووم! ظهر ديناصورٌ ضخمٌ بأسنانٍ كبيرة! [خاف|خافت] {name} قليلاً، ثم [لاحظ|لاحظت] أنه يبكي: في قدمه شوكةٌ تؤلمه."],
+                    ["p7", "right", "[اقترب|اقتربت] {name} بشجاعة، [ونزع|ونزعت] الشوكة بلطف. ابتسم الديناصور الكبير وقال: «شكراً يا {name}! كنتُ أظنّ أن الجميع يخاف مني.»"],
+                    ["p8", "left", "ثم أوصلهم الديناصور الكبير إلى العشّ، فركض دودو إلى أمّه وعانقته بفرحٍ كبير. وهتفت الديناصورات: «يعيش [البطل|البطلة] {name}!»"],
+                    ["p9", "right", "أهدى دودو {name} حجراً صغيراً عليه أثرُ قدمه وقال: «حتى لا [تنساني|تنسيني] أبداً.» ولمعت الساعة الرملية… حان وقت العودة."],
+                    ["p10", "left", "ووووش! [عاد|عادت] {name} إلى البيت، [ووضع|ووضعت] الحجر الصغير على الرف [وابتسم|وابتسمت]: «الشجاعة الحقيقية أن نساعد من يحتاجنا.»"]
+                ]
+            }
+        },
+        oman: {
+            id: "oman", title: "في مغامرةٍ عُمانية", product: "قصة باسم طفلك: مغامرة في عُمان", lesson: "home",
+            color: P.coral, tint: "#F8E9DF", illustrated: true,
+            book: {
+                ready: false, badge: "من القلعة إلى الصحراء والجبل", photo: "frame",
+                pages: [
+                    ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|المغامرات} كثيراً. وفي بيت الجدّ في نزوى [أعطاه|أعطاها] الجدّ خريطةً قديمة وقال: «من يتبع هذه الخريطة يجد كنز عُمان!»"],
+                    ["p2", "left", "وفجأةً حطّ على كتف {name} صقرٌ ذهبيّ العينين وقال: «أنا شاهين! سأطير أمامك وأدلّك على الطريق.» [فقال|فقالت] {name}: «هيا بنا!»"],
+                    ["p3", "right", "أولُ علامةٍ في الخريطة: قلعة نزوى! [صعد|صعدت] {name} درجات البرج العالي، ومن فوقه [رأى|رأت] بساتين النخيل الخضراء تمتدّ بعيداً."],
+                    ["p4", "left", "وعند باب القلعة [وجد|وجدت] {name} رسالةً صغيرة: «اتبع الرمال الذهبية.» فطار شاهين نحو الصحراء، [وركب|وركبت] {name} جملاً لطيفاً بين الكثبان العالية."],
+                    ["p5", "right", "وحين جاء الليل [جلس|جلست] {name} تحت سماءٍ مليئةٍ بالنجوم، [وأكل|وأكلت] التمر، وشاهين يعدّ النجوم: «واحدة… عشرة… ألف!»"],
+                    ["p6", "left", "في الصباح قادتهم الخريطة إلى الجبل الأخضر: هواءٌ بارد، وأشجار رمّان، وورودٌ تفوح منها رائحة ماء الورد. [قال|قالت] {name}: «ما أجمل بلادي!»"],
+                    ["p7", "right", "ثم نزلوا إلى البحر، [وركب|وركبت] {name} سفينةً خشبيةً قديمة في صور، [ورأى|ورأت] الدلافين تقفز حول السفينة وتلوّح بزعانفها."],
+                    ["p8", "left", "وفي آخر الخريطة جملةٌ غريبة: «الكنز حيث يجتمع الأحباب.» [فكّر|فكّرت] {name} قليلاً… ثم [ابتسم|ابتسمت]: «عرفتُ المكان!»"],
+                    ["p9", "right", "[رجع|رجعت] {name} إلى بيت الجدّ، فإذا العائلة كلها مجتمعة [تنتظره|تنتظرها]، والجدّ يبتسم ويقول: «[وجدتَ|وجدتِ] الكنز يا {name}!»"],
+                    ["p10", "left", "[عرف|عرفت] {name} أنّ كنز عُمان الحقيقي هو أهلها وجمالها، [فعانق|فعانقت] الجدّ، وطار شاهين فوق القلعة يغنّي: «تصبحون على خير!»"]
+                ]
+            }
+        }
+    });
+
     const DEFAULT_DED = "إلى [حبيبنا|حبيبتنا] {name}: نحبك كثيراً، ونفخر بك كل يوم. هذه القصة كُتبت لك وحدك.";
 
     // =====================================================
@@ -1532,6 +1614,24 @@
         ctx.restore();
     }
 
+    // خلفية مضيئة ناعمة تذوب في الرسمة (مثل كتب الأطفال ثلاثية الأبعاد)
+    function glowCard(ctx, x, y, w, h) {
+        ctx.save();
+        ctx.translate(x + w / 2, y + h / 2);
+        ctx.scale(1, (h + 120) / (w + 120));
+        const r = (w + 120) * 0.62;
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        g.addColorStop(0, "rgba(255,255,255,.94)");
+        g.addColorStop(0.66, "rgba(255,255,255,.9)");
+        g.addColorStop(0.84, "rgba(255,255,255,.55)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
     function measureParagraph(ctx, text, size, maxW, lh) {
         const lay = layoutWords(ctx, text, size, maxW);
         return { lay, height: lay.lines.length * size * lh };
@@ -1548,8 +1648,9 @@
         const cardH = m.height + pad * 2;
         const x = page.side === "left" ? 70 : BW - 70 - cardW;
         const y = Math.max(70, Math.min((BH - cardH) / 2 - 40, BH - 110 - cardH));
-        softCard(ctx, x, y, cardW, cardH);
-        drawParagraph(ctx, text, { cx: x + cardW / 2, top: y + pad, bottom: y + cardH - pad, maxW: cardW - pad * 2, size, minSize: size, lh: 1.78, color: "#2B2620", hi: "#D2614A" });
+        if (st.illustrated) glowCard(ctx, x, y, cardW, cardH);
+        else softCard(ctx, x, y, cardW, cardH);
+        drawParagraph(ctx, text, { cx: x + cardW / 2, top: y + pad, bottom: y + cardH - pad, maxW: cardW - pad * 2, size, minSize: size, lh: 1.78, color: st.illustrated ? "#1F2A4A" : "#2B2620", hi: st.illustrated ? "#7C3AED" : "#D2614A" });
         // رقم الصفحة
         const nx = page.side === "left" ? BW - 90 : 90;
         ctx.save();
@@ -1576,7 +1677,8 @@
         const nameSize = fitText(ctx, d.name, BW * 0.7, 200, 700, 90);
         glowText(ctx, d.name, BW / 2, 70 + nameSize * 0.95, { size: nameSize, line: 20, gradient: [[0, "#FFF3A6"], [0.55, "#FFD23F"], [1, "#F59E0B"]] });
         const subY = 70 + nameSize * 0.95 + 100;
-        glowText(ctx, st.title, BW / 2, subY, { size: fitText(ctx, st.title, BW * 0.75, 84, 700, 50), line: 12 });
+        const title = fill(st.title, d);
+        glowText(ctx, title, BW / 2, subY, { size: fitText(ctx, title, BW * 0.75, 84, 700, 50), line: 12 });
         // الشارة
         const badge = st.book.badge;
         ctx.save();
@@ -1601,8 +1703,66 @@
         ctx.direction = "rtl";
         ctx.fillText(badge, BW / 2, by + 39);
         ctx.restore();
-        if (photo) drawPhoto(ctx, photo, BW - 250, BH - 250, 170);
+        if (photo) drawBookPhoto(ctx, photo, BW - 270, BH - 270, 180, st.book.photo === "helmet");
         glowText(ctx, "حروف وألوان", photo ? 220 : BW / 2, BH - 52, { size: 40, line: 8 });
+    }
+
+    // صورة الطفل على غلاف الكتاب المصوّر: داخل خوذة فضاء/فقاعة زجاجية، أو في إطار ذهبي بنجوم
+    function drawBookPhoto(ctx, img, x, y, r, helmet) {
+        ctx.save();
+        ctx.shadowColor = "rgba(10,14,40,.45)";
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 10;
+        ctx.beginPath();
+        ctx.arc(x, y, r + (helmet ? 34 : 26), 0, Math.PI * 2);
+        if (helmet) {
+            const shell = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+            shell.addColorStop(0, "#FFFFFF");
+            shell.addColorStop(1, "#C9D3E6");
+            ctx.fillStyle = shell;
+        } else {
+            const gold = ctx.createLinearGradient(x, y - r, x, y + r);
+            gold.addColorStop(0, "#FFE38A");
+            gold.addColorStop(0.5, "#F5B83D");
+            gold.addColorStop(1, "#C98A1E");
+            ctx.fillStyle = gold;
+        }
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+        ctx.fillStyle = helmet ? "#1B2550" : "#FFFFFF";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.clip();
+        const iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+        const sc = Math.max((r * 2) / iw, (r * 2) / ih);
+        const dw = iw * sc, dh = ih * sc;
+        ctx.drawImage(img, x - dw / 2, y - dh * 0.42, dw, dh);
+        if (helmet) {
+            // لمعة الزجاج
+            const glare = ctx.createLinearGradient(x - r, y - r, x, y);
+            glare.addColorStop(0, "rgba(255,255,255,.55)");
+            glare.addColorStop(1, "rgba(255,255,255,0)");
+            ctx.fillStyle = glare;
+            ctx.beginPath();
+            ctx.ellipse(x - r * 0.35, y - r * 0.45, r * 0.55, r * 0.28, -0.6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+        if (helmet) {
+            ctx.save();
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = "#F28C38";
+            ctx.beginPath();
+            ctx.arc(x, y, r + 20, Math.PI * 0.15, Math.PI * 0.85);
+            ctx.stroke();
+            ctx.restore();
+        } else {
+            [[-1.1, 1], [-0.45, 0.8], [0.35, 0.9], [2.2, 0.7]].forEach(([a, k]) => cStar(ctx, x + Math.cos(a) * (r + 30), y + Math.sin(a) * (r + 30), 26 * k, "#FFD23F", "#C98A1E", 3));
+        }
     }
 
     async function drawBookEnd(ctx, storyId, st, d, small) {
@@ -1901,7 +2061,7 @@
         const st = STORIES[storyId];
         if (!st) return [];
         const ded = Boolean(custom && normalize(custom).ded);
-        if (st.book && st.book.ready) {
+        if (st.book && (st.book.ready || !st.pages)) {
             return [
                 { kind: "bcover" },
                 ...(ded ? [{ kind: "bded" }] : []),
@@ -2027,7 +2187,7 @@
     function bookTitle(storyId, custom) {
         const st = STORIES[storyId];
         const d = normalize(custom);
-        return st ? `${d.name || ""} ${st.title}`.trim() : "";
+        return st ? `${d.name || ""} ${fill(st.title, d)}`.trim() : "";
     }
 
     function fileName(storyId, custom) {
@@ -2045,7 +2205,7 @@
 
     function isIllustrated(storyId) {
         const st = STORIES[storyId];
-        return Boolean(st && st.book && st.book.ready);
+        return Boolean(st && st.book && (st.book.ready || !st.pages));
     }
 
     root.HUROOF_STORIES = {
