@@ -402,7 +402,7 @@
         });
     }
 
-    function wizardOpen({ pid = "", step = "" } = {}) {
+    function wizardOpen({ pid = "", step = "", ages = null } = {}) {
         if (!S.loaded) return;
         const p = pid ? productById(pid) : null;
         const story = p && ATHR.isStory(p) ? p : null;
@@ -423,8 +423,10 @@
             family: (inCart && inCart.family) || "",
             friend: (inCart && inCart.friend) || "",
             edit: Boolean(inCart),
+            ages: Array.isArray(ages) && ages.length === 2 ? ages : null,
             i: 0, err: "", ret: false
         };
+        if (WZ.st.ages && (WZ.st.age < WZ.st.ages[0] || WZ.st.age > WZ.st.ages[1])) WZ.st.age = 0;
         const steps = wzSteps();
         if (step && steps.includes(step)) WZ.st.i = steps.indexOf(step);
         else if (inCart) WZ.st.i = steps.indexOf("review");
@@ -520,7 +522,8 @@
             const s = WZ.st;
             return `<h2 class="wz-q">${esc(t("كم عمر {name}؟", { name: wzName() }))}</h2>
                 <p class="wz-sub">${esc(t("نكتب العمر في أول صفحة من القصة"))}</p>
-                <div class="wz-ages">${ATHR.STORY_AGES.map((a) => `<button type="button" class="wz-chip${s.age === a ? " on" : ""}" data-wz-age="${a}" aria-pressed="${s.age === a}">${esc(ATHR.ageText(a))}</button>`).join("")}</div>`;
+                <div class="wz-ages">${ATHR.STORY_AGES.filter((a) => !s.ages || (a >= s.ages[0] && a <= s.ages[1])).map((a) => `<button type="button" class="wz-chip${s.age === a ? " on" : ""}" data-wz-age="${a}" aria-pressed="${s.age === a}">${esc(ATHR.ageText(a))}</button>`).join("")}</div>
+                ${s.ages ? `<button type="button" class="link-btn wz-allages" data-wz-allages>${esc(t("عرض كل الأعمار"))}</button>` : ""}`;
         },
         likes() {
             const s = WZ.st;
@@ -750,6 +753,7 @@
         if (d.wz === "order" || d.wz === "cart") { wzFinish(d.wz); return; }
         if (d.wzG) { s.g = d.wzG; s.err = ""; wzAuto(); return; }
         if (d.wzAge) { s.age = Number(d.wzAge); s.err = ""; wzAuto(); return; }
+        if (d.wzAllages !== undefined) { s.ages = null; wzRender({ keepScroll: true }); return; }
         if (d.wzLike) {
             const id = d.wzLike;
             s.likes = s.likes.includes(id) ? s.likes.filter((x) => x !== id) : s.likes.concat(id).slice(0, 2);
@@ -1429,6 +1433,7 @@
         document.documentElement.classList.remove("i18n-wait");
         document.title = V.titles(v(), { ...route, product: route.name === "product" ? findProduct(route.slug) : null, cat: route.name === "category" ? findCategory(route.slug) : null });
         renderBars();
+        storyTopCta();
         renderBuyBar();
         renderCartFloat();
         const float = $("#waFloat");
@@ -1615,6 +1620,55 @@
         playAd();
         homeFavRail();
         giftPreviews();
+        liveCover();
+    }
+
+    // «اكتب اسمه… وشوف الغلاف الآن»: غلاف القصة يتغير مع كل حرف
+    let liveTimer = 0;
+    let liveSeq = 0;
+    function liveCover() {
+        const box = $(".sh-live-in");
+        if (!box || box.dataset.ready) return;
+        box.dataset.ready = "1";
+        const saved = storage.get(CHILD_KEY, null);
+        if (saved && saved.name) {
+            box.querySelector('[name="live_name"]').value = saved.name;
+            const r = box.querySelector(`[name="live_g"][value="${saved.g === "f" ? "f" : "m"}"]`);
+            if (r) r.checked = true;
+        }
+        const draw = async () => {
+            const seq = ++liveSeq;
+            const p = productById(box.dataset.liveStory);
+            const cv = box.querySelector("#liveCover");
+            if (!p || !cv) return;
+            let lib;
+            try { lib = await loadStories(); } catch { return; }
+            const name = box.querySelector('[name="live_name"]').value;
+            const g = box.querySelector('[name="live_g"]:checked')?.value === "f" ? "f" : "m";
+            const ok = ATHR.storyIssue({ name, g, age: 5 }) !== "name";
+            const tmp = document.createElement("canvas");
+            try { await lib.renderPage(p.story, { name: ok ? ATHR.storyClean({ name }).name : (g === "f" ? t("سارة") : t("سالم")), g, age: 5 }, lib.bookPages(p.story)[0], { width: 420, canvas: tmp }); } catch { return; }
+            if (seq !== liveSeq) return;
+            cv.width = tmp.width;
+            cv.height = tmp.height;
+            cv.getContext("2d").drawImage(tmp, 0, 0);
+        };
+        box.addEventListener("input", () => { clearTimeout(liveTimer); liveTimer = setTimeout(draw, 350); });
+        box.addEventListener("change", () => { clearTimeout(liveTimer); liveTimer = setTimeout(draw, 60); });
+        box.querySelector('[name="live_name"]').addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); box.querySelector("[data-live-go]").click(); } });
+        if ("IntersectionObserver" in window) {
+            const io = new IntersectionObserver((en) => { if (en[0].isIntersecting) { io.disconnect(); draw(); } }, { rootMargin: "300px" });
+            io.observe(box);
+        } else draw();
+    }
+
+    // زر «اصنع قصة» في الشريط العلوي لمتجر القصص
+    function storyTopCta() {
+        const cart = $(".top-row .cart-btn");
+        const on = S.loaded && V.isStoryStore(v());
+        const btn = $("#wizTop");
+        if (on && !btn && cart) cart.insertAdjacentHTML("beforebegin", `<button class="top-cta" id="wizTop" type="button" data-wiz-new>✨ ${esc(t("اصنع قصة"))}</button>`);
+        else if (!on && btn) btn.remove();
     }
 
     // معاينة هدايا القصة في الرئيسية (شهادة البطل، الملصقات، التلوين) باسم الطفل المحفوظ أو اسم مثال
@@ -3899,6 +3953,21 @@
         if (d.setCountry) { closeSheet(); setCountry(d.setCountry); return; }
         if (d.wiz) { const id = d.wiz; afterReady(() => wizardOpen({ pid: id })); return; }
         if (d.wizNew !== undefined) { afterReady(() => wizardOpen({})); return; }
+        if (d.wizAge) { const [a, b] = d.wizAge.split("-").map(Number); afterReady(() => wizardOpen({ ages: [a, b] })); return; }
+        if (d.liveGo !== undefined) {
+            afterReady(() => {
+                const box = $(".sh-live-in");
+                if (!box) return;
+                const name = box.querySelector('[name="live_name"]').value;
+                const g = box.querySelector('[name="live_g"]:checked')?.value === "f" ? "f" : "m";
+                if (ATHR.storyIssue({ name, g, age: 5 }) !== "name") {
+                    const saved = storage.get(CHILD_KEY, null) || {};
+                    storage.set(CHILD_KEY, { ...saved, name: ATHR.storyClean({ name }).name, g });
+                }
+                wizardOpen({ pid: box.dataset.liveStory });
+            });
+            return;
+        }
         if (d.flip) { const id = d.flip; afterReady(() => flipOpen(id)); return; }
         if (d.add) {
             const id = d.add;

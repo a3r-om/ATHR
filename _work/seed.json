@@ -311,7 +311,18 @@
   "theme": {
    "show_search": false,
    "home_filter": false,
-   "show_sort": false
+   "show_sort": false,
+   "template": "night",
+   "primary": "#8B5CF6",
+   "hero": "#120A22",
+   "bg": "#170D2B",
+   "text": "#EFEAF8",
+   "font_head": "Amiri",
+   "font_body": "Amiri",
+   "radius": "round",
+   "header": "light",
+   "hero_pattern": false,
+   "mode": "light"
   },
   "stories": {
    "pro_enabled": true,

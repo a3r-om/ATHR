@@ -921,6 +921,14 @@
     // متجر القصص الشخصية: واجهة بسيطة (العنوان، 3 خطوات، القصص، ليش بيحبها طفلك، الأسئلة)
     V.isStoryStore = (v) => v.products.length > 0 && v.products.every((p) => ATHR.isStory(p));
 
+    // أعمار بطاقات «اختر عمر طفلك» في الرئيسية
+    V.AGE_GROUPS = [
+        { id: "a1", min: 2, max: 3, e: "👶", t: "سنتان إلى 3" },
+        { id: "a2", min: 4, max: 5, e: "👧", t: "4 إلى 5 سنوات" },
+        { id: "a3", min: 6, max: 8, e: "👦", t: "6 إلى 8 سنوات" },
+        { id: "a4", min: 9, max: 12, e: "🧑‍🎓", t: "9 إلى 12 سنة" }
+    ];
+
     V.storyHome = function (v) {
         const cfg = v.cfg;
         const sc = ATHR.storyCfg(cfg);
@@ -928,57 +936,87 @@
         const books = list.filter((p) => V.img(p)).slice(0, 3);
         const proStory = ATHR.proOn(cfg) ? list.find((p) => ATHR.proOn(cfg, p.story)) : null;
         const print = ATHR.printOn(cfg, v.country);
+        const short = (p) => V.pname(p).replace(/^قصة باسم طفلك:\s*/, "");
+        const blurb = (p) => String(L(p, "description") || "").split("\n")[0].trim();
+        const minPrice = list.length ? Math.min(...list.map((p) => Number(p.price) || 0)) : 0;
+        const title = esc(fill(v, ct(v, "texts.hero_title")));
+        const titleHtml = title.includes("طفلك") ? title.replace("طفلك", "<em>طفلك</em>") : title;
         const steps = [
-            [t("جاوب على أسئلة بسيطة"), t("اسمه وعمره وماذا يحب")],
-            [t("اختر المغامرة"), t("وقيمة أو عادة يتعلمها")],
-            [t("شوف القصة باسمه"), t("قبل ما تطلب")],
-            [print ? t("تصلك PDF أو مطبوعة") : t("تصلك على واتساب"), print ? t("بغلاف مقوّى لباب بيتك") : t("ملف PDF جاهز للطباعة")]
-        ];
-        const why = [
-            ["❤️", t("يكون هو البطل"), t("اسمه في كل صفحة")],
-            ["⭐", t("يحب القراءة"), t("جمل قصيرة وسهلة")],
-            ["🎨", t("رسومات ساحرة"), t("ملوّنة ومليانة حياة")],
-            ["🎁", t("هدية لا تُنسى"), t("يحتفظ فيها سنين")]
+            ["📝", t("جاوب على أسئلة بسيطة"), t("اسمه وعمره وماذا يحب")],
+            ["🌟", t("اختر المغامرة"), t("وقيمة أو عادة يتعلمها")],
+            ["👀", t("شوف القصة باسمه"), t("قبل ما تطلب")],
+            ["📖", print ? t("تصلك PDF أو مطبوعة") : t("تصلك على واتساب"), print ? t("بغلاف مقوّى لباب بيتك") : t("ملف PDF جاهز للطباعة")]
         ];
         const promise = [
             sc.guarantee ? ["🛡️", t("ضمان الرضا"), t("إذا ما عجبتك القصة نعدّلها مجاناً، أو نرجّع لك المبلغ كاملاً.")] : null,
             proStory ? ["🔒", t("صورة طفلك بأمان"), t("نستخدمها لرسم قصته فقط، ولا نشاركها مع أحد، ونحذفها بعد التسليم.")] : null,
-            ["✍️", t("عربي سليم"), t("نص عربي مكتوب بعناية، بصيغة الولد أو البنت، وبخط واضح يسهل على الطفل قراءته.")]
+            ["✍️", t("عربي سليم وجميل"), t("نص عربي مكتوب بعناية، بصيغة الولد أو البنت، وبخط واضح يسهل على الطفل قراءته.")]
         ].filter(Boolean);
-        const short = (p) => V.pname(p).replace(/^قصة باسم طفلك:\s*/, "");
-        const minPrice = list.length ? Math.min(...list.map((p) => Number(p.price) || 0)) : 0;
+        const liveStory = list.find((p) => p.story === "space") || list[0];
         return `<section class="sh-hero">
                 <div class="wrap sh-inner">
                     <div class="sh-text">
-                        <span class="sh-kicker">✨ ${esc(t("قصص مخصّصة باسم طفلك"))}</span>
-                        <h1>${esc(fill(v, ct(v, "texts.hero_title")))}</h1>
+                        <span class="sh-kicker">🌙 ${esc(t("حكايات عربية بطلها طفلك"))}</span>
+                        <h1>${titleHtml}</h1>
                         <p>${esc(fill(v, ct(v, "texts.hero_text")))}</p>
                         <div class="sh-btns">
                             <button class="btn btn-primary sh-cta" type="button" data-wiz-new>✨ ${esc(ct(v, "texts.hero_button") || t("اصنع قصة طفلك"))}</button>
-                            <a class="link-btn sh-more" href="#examples">${esc(t("تصفّح قصة كاملة"))}</a>
+                            <a class="link-btn sh-more" href="#examples">${esc(t("شاهد مثال"))}</a>
                         </div>
+                        <ul class="sh-trust"><li>${esc(t("تشوفها قبل ما تطلب"))}</li><li>${esc(t("تصلك خلال ساعات"))}</li>${sc.guarantee ? `<li>${esc(t("ضمان الرضا"))}</li>` : ""}</ul>
                     </div>
-                    ${books.length ? `<div class="sh-books" aria-hidden="true">${books.map((p, i) => `<span class="shb shb${i + 1}"><img src="${esc(V.img(p))}" alt="" width="300" height="375"${i ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async"></span>`).join("")}</div>` : ""}
+                    ${books.length ? `<div class="sh-books" aria-hidden="true">${books.map((p, i) => `<span class="shb shb${i + 1}"><img src="${esc(V.img(p))}" alt="" width="300" height="375"${i ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async"></span>`).join("")}<span class="sh-float">✨ ${esc(t("اسم طفلك على الغلاف وفي كل صفحة، بصيغة الولد أو البنت"))}</span></div>` : ""}
                 </div>
             </section>
-            <section class="sh-steps" aria-label="${esc(t("طريقة الطلب"))}">
-                <ol class="wrap sh-steps-list four">${steps.map(([b, s], i) => `<li><span class="sh-n">${i + 1}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ol>
-            </section>
-            <section class="section sh-stories" id="stories" aria-labelledby="stories-t">
+            <section class="section sh-quiz" id="start" aria-labelledby="quiz-t">
                 <div class="wrap">
-                    <div class="section-head"><h2 id="stories-t">${esc(t("اختر مغامرة طفلك"))}</h2></div>
-                    ${V.curNote(v)}
-                    ${V.grid(v, list, { eagerCount: 4 })}
+                    <div class="sh-quiz-box">
+                        <h2 id="quiz-t">${esc(t("جاوب على أسئلة بسيطة، ونكتب قصة طفلك"))}</h2>
+                        <ul class="sh-quiz-pts">
+                            <li>⏱ ${esc(t("ما تاخذ أكثر من دقيقة"))}</li>
+                            <li>👀 ${esc(t("تشوف القصة كاملة باسمه قبل ما تطلب"))}</li>
+                            <li>🎁 ${esc(t("معها شهادة بطل وملصقات باسمه هدية"))}</li>
+                        </ul>
+                        <h3>${esc(t("اختر عمر طفلك"))}</h3>
+                        <div class="sh-ages">${V.AGE_GROUPS.map((a) => `<button type="button" class="sh-age ${a.id}" data-wiz-age="${a.min}-${a.max}"><span class="sh-age-e" aria-hidden="true">${a.e}</span><b>${esc(t(a.t))}</b><span class="sh-age-go">${esc(t("اختيار"))} ←</span></button>`).join("")}</div>
+                    </div>
                 </div>
             </section>
-            <section class="section sh-ex" id="examples" aria-labelledby="ex-t">
+            <section class="section sh-stories" id="examples" aria-labelledby="ex-t">
                 <div class="wrap">
-                    <div class="section-head"><h2 id="ex-t">${esc(t("تصفّح القصة كاملة قبل الشراء"))}</h2></div>
+                    <div class="section-head"><h2 id="ex-t">${esc(t("مغامرات تنتظر طفلك"))}</h2></div>
                     <p class="sh-lead">${esc(t("افتح أي قصة واقرأها صفحة صفحة، واكتب اسم طفلك لتشوفها باسمه."))}</p>
-                    <div class="sh-ex-list">${list.map((p) => `<button type="button" class="sh-ex-item" data-flip="${esc(p.id)}">
-                        ${V.img(p) ? `<img src="${esc(V.img(p))}" alt="" width="300" height="375" loading="lazy" decoding="async">` : ""}
-                        <span><b>${esc(short(p))}</b><small>📖 ${esc(t("تصفّح القصة"))}</small></span>
-                    </button>`).join("")}</div>
+                    <div class="sh-ex2" id="stories">${list.map((p) => `<article class="sh-ex2-item">
+                        ${V.img(p) ? `<img src="${esc(V.img(p))}" alt="${esc(short(p))}" width="300" height="375" loading="lazy" decoding="async">` : ""}
+                        <h3>${esc(short(p))}</h3>
+                        ${blurb(p) ? `<p>${esc(blurb(p))}</p>` : ""}
+                        <div class="sh-ex2-btns">
+                            <button class="btn btn-ghost" type="button" data-flip="${esc(p.id)}">📖 ${esc(t("شاهد القصة"))}</button>
+                            <button class="btn btn-primary" type="button" data-wiz="${esc(p.id)}">✎ ${esc(t("اصنعها باسم طفلك"))}</button>
+                        </div>
+                    </article>`).join("")}</div>
+                </div>
+            </section>
+            ${liveStory ? `<section class="section sh-live" aria-labelledby="live-t">
+                <div class="wrap">
+                    <div class="sh-live-in" data-live-story="${esc(liveStory.id)}">
+                        <div class="section-head"><h2 id="live-t">✨ ${esc(t("اكتب اسمه… وشوف الغلاف الآن"))}</h2></div>
+                        <div class="sh-live-row">
+                            <input class="input" name="live_name" maxlength="22" autocomplete="off" placeholder="${esc(t("اسم طفلك"))}" aria-label="${esc(t("اسم طفلك"))}">
+                            <div class="sf-seg" role="radiogroup" aria-label="${esc(t("ولد أو بنت"))}">
+                                <label><input type="radio" name="live_g" value="m" checked><span>${esc(t("ولد"))}</span></label>
+                                <label><input type="radio" name="live_g" value="f"><span>${esc(t("بنت"))}</span></label>
+                            </div>
+                        </div>
+                        <div class="sh-live-cv"><canvas id="liveCover" width="420" height="594"></canvas></div>
+                        <button class="btn btn-primary btn-block" type="button" data-live-go>${esc(t("كمّل قصته"))} ←</button>
+                    </div>
+                </div>
+            </section>` : ""}
+            <section class="sh-steps section" aria-labelledby="steps-t">
+                <div class="wrap">
+                    <div class="section-head"><h2 id="steps-t">${esc(t("كيف نصنع القصة؟"))}</h2></div>
+                    <ol class="sh-steps-list four">${steps.map(([e, b, s2], i) => `<li><span class="sh-n">${i + 1}</span><span class="sh-e" aria-hidden="true">${e}</span><b>${esc(b)}</b><small>${esc(s2)}</small></li>`).join("")}</ol>
                 </div>
             </section>
             <section class="section sh-plans" id="plans" aria-labelledby="plans-t">
@@ -1026,20 +1064,25 @@
                     </div>
                 </div>
             </section>
-            <section class="section sh-why" aria-labelledby="why-t">
-                <div class="wrap">
-                    <div class="section-head"><h2 id="why-t">${esc(t("ليش بيحبها طفلك؟"))}</h2></div>
-                    <ul class="sh-why-list">${why.map(([e, b, s]) => `<li><span class="sh-e" aria-hidden="true">${e}</span><b>${esc(b)}</b><small>${esc(s)}</small></li>`).join("")}</ul>
-                </div>
-            </section>
             <section class="section sh-promise" aria-labelledby="promise-t">
                 <div class="wrap">
                     <div class="section-head"><h2 id="promise-t">${esc(t("وعدنا لك"))}</h2></div>
-                    <ul class="sh-promise-list">${promise.map(([e, b, s]) => `<li><span class="sh-e" aria-hidden="true">${e}</span><div><b>${esc(b)}</b><small>${esc(s)}</small></div></li>`).join("")}</ul>
+                    <ul class="sh-promise-list">${promise.map(([e, b, s2]) => `<li><span class="sh-e" aria-hidden="true">${e}</span><div><b>${esc(b)}</b><small>${esc(s2)}</small></div></li>`).join("")}</ul>
                 </div>
             </section>
             ${V.storeReviews(v)}
-            ${V.homeFaq(v)}`;
+            ${V.homeFaq(v)}
+            <section class="section sh-final" aria-labelledby="final-t">
+                <div class="wrap">
+                    <div class="sh-final-in">
+                        <span aria-hidden="true" style="font-size:2.4rem">🌙</span>
+                        <h2 id="final-t">${esc(t("بطلك الصغير ينتظر قصته"))}</h2>
+                        <p>${esc(t("فاجئ طفلك بقصة يشوف فيها نفسه في كل صفحة، ويطلبها كل ليلة قبل النوم."))}</p>
+                        <div class="sh-final-badges"><span>✓ ${esc(t("تشوفها قبل الطلب"))}</span><span>✓ ${esc(t("عربي سليم"))}</span>${sc.guarantee ? `<span>✓ ${esc(t("ضمان الرضا"))}</span>` : ""}</div>
+                        <button class="btn" type="button" data-wiz-new>✨ ${esc(t("اصنع قصة طفلك"))}</button>
+                    </div>
+                </div>
+            </section>`;
     };
 
     V.home = function (v, { sort = "default", cat = "", shown = 0 } = {}) {
@@ -1332,7 +1375,7 @@
         const print = ATHR.printOn(cfg, v.country);
         const kinds = [
             ["📖", t("قصة عادية باسم طفلك"), local(v, p.price)],
-            pro ? ["🌟", t("مميّزة: نرسم طفلك بوجهه من صورته"), local(v, Number(p.price) + (Number(sc.pro_price) || 0))] : null,
+            pro ? ["🌟", t("مؤلفة خصيصاً: نرسم طفلك بوجهه من صورته"), local(v, Number(p.price) + (Number(sc.pro_price) || 0))] : null,
             print ? ["📦", t("نسخة مطبوعة بغلاف مقوّى"), "+" + local(v, Number(sc.print_price) || 0)] : null
         ].filter(Boolean);
         return `<div class="story-box" id="storyBox" data-story-for="${esc(p.id)}">
