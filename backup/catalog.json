@@ -12,6 +12,18 @@
      "bg": "#570418",
      "link": "",
      "text": "",
+     "type": "video",
+     "title": "",
+     "button": "",
+     "image_alt": "",
+     "image_url": "images/ads/sale-20-40.jpg",
+     "video_alt": "",
+     "video_url": "images/ads/sale-20-40.mp4"
+    },
+    {
+     "bg": "#570418",
+     "link": "",
+     "text": "",
      "type": "image",
      "title": "",
      "button": "",
@@ -39,9 +51,9 @@
    "title": "",
    "button": "",
    "image_alt": "",
-   "image_url": "images/ads/sale-20-40.jpg",
+   "image_url": "images/ads/national-day-56.jpg",
    "video_alt": "",
-   "video_url": "images/ads/sale-20-40.mp4"
+   "video_url": "images/ads/national-day-56.mp4"
   },
   "ai": {
    "model": "",
