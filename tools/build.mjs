@@ -500,7 +500,6 @@ async function main() {
         V_CFG: hashOf(read("js/supabase-config.js")),
         V_DEF: hashOf(read("js/defaults.js")),
         V_VIEWS: hashOf(read("js/views.js")),
-        V_I18N: hashOf(read("js/i18n-en.js")),
         V_THUMBS: hashOf(JSON.stringify(thumbs)),
         V_RATES: hashOf(ratesSrc),
         V_CATALOG: hashOf(catalogSrc),
@@ -525,7 +524,7 @@ async function main() {
 
     function page({ route, headHTML, view, prerendered = true }) {
         const values = {
-            MODE: ATHR.themeMode(cfg),
+            MODE: "light",
             HTML_CLASS: ATHR.themeClasses(cfg).join(" "),
             HEAD: headHTML,
             THEME_COLOR: ATHR.headColor(cfg),

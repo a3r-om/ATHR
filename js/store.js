@@ -489,7 +489,7 @@
         const vars = ATHR.themeVars(cfg);
         const style = $("#themeVars");
         if (style && style.textContent !== vars) style.textContent = vars;
-        root.dataset.mode = visitorMode() || ATHR.themeMode(cfg);
+        root.dataset.mode = "light"; // المتجر بالمظهر الفاتح فقط
         syncDark();
         const keep = Array.from(root.classList).filter((c) => !/^(r-sharp|r-round|head-light|tpl-[\w-]+)$/.test(c));
         const next = [...keep, ...ATHR.themeClasses(cfg)].join(" ");
@@ -2722,18 +2722,7 @@
             parts.push(`<div class="mgroup">${main.join("")}</div>`);
 
             const settings = [];
-            settings.push(`<div class="mrow mrow-set">${ico(V.icon.globe)}<span class="ml">${esc(t("اللغة"))}</span>
-                <span class="mini-seg" role="group" aria-label="${esc(t("اللغة"))}">
-                    <button type="button" data-set-lang="ar" aria-pressed="${!ATHR.isEn()}" lang="ar">العربية</button>
-                    <button type="button" data-set-lang="en" aria-pressed="${ATHR.isEn()}" lang="en">English</button>
-                </span></div>`);
             if (multi) settings.push(row(`<span class="mi flag">${esc(cur.flag)}</span><span class="ml">${esc(t("الدولة والعملة"))}</span><small class="mval">${esc(ATHR.isEn() ? cur.currency : cur.symbol)}</small>`, { attrs: "data-open-currency" }));
-            if (cfg.theme.visitor_mode !== false) {
-                const mode = document.documentElement.dataset.mode || "auto";
-                const opt = (m, icon, label) => `<button type="button" data-set-mode="${m}" aria-pressed="${mode === m}" aria-label="${esc(t(label))}">${icon}<span>${esc(t(label))}</span></button>`;
-                settings.push(`<div class="mrow mrow-set">${ico(mode === "dark" ? V.icon.moon : V.icon.sun)}<span class="ml">${esc(t("المظهر"))}</span>
-                    <span class="mini-seg mode-seg" role="group" aria-label="${esc(t("المظهر"))}">${opt("light", V.icon.sun, "فاتح")}${opt("dark", V.icon.moon, "داكن")}${opt("auto", V.icon.auto, "تلقائي")}</span></div>`);
-            }
             parts.push(`<p class="menu-label">${esc(t("الإعدادات"))}</p><div class="mgroup">${settings.join("")}</div>`);
 
             // آخر سطر: إنستغرام، تيك توك، واتساب (مع أيقوناتها)
@@ -3557,7 +3546,7 @@
     // =====================================================
 
     function applyLang(lang) {
-        const l = lang === "en" ? "en" : "ar";
+        const l = "ar"; // المتجر بالعربية فقط
         ATHR.lang = l;
         const root = document.documentElement;
         root.lang = l;
