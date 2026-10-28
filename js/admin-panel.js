@@ -2595,7 +2595,7 @@
         rate_limit: "وصلت حد الاستخدام المؤقت. انتظر دقيقة ثم حاول مرة أخرى.",
         not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى."
     };
-    const aiError = (e) => AI_ERRORS[e && e.code] || "تعذر الاتصال بالذكاء الاصطناعي. حاول مرة أخرى.";
+    const aiError = (e) => AI_ERRORS[e && e.code] || `تعذر الاتصال بالذكاء الاصطناعي${e && e.status ? ` (${e.status})` : ""}. حاول مرة أخرى بعد قليل.`;
 
     async function aiCall(body) {
         const { data } = await sb.auth.getSession();
@@ -2610,6 +2610,7 @@
         if (!res.ok || out.error) {
             const error = new Error(out.error || `http_${res.status}`);
             error.code = out.error;
+            error.status = out.status || res.status;
             throw error;
         }
         return out;

@@ -84,27 +84,52 @@ class ProviderError extends Error {
   constructor(public code: string, public status = 0) { super(code); }
 }
 
+// نماذج احتياطية: إذا فشل النموذج المختار (محجوب، غير متاح للمفتاح، أو حصته منتهية) نجرّب غيره
+const GEMINI_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
+
+async function geminiOnce(model: string, key: string, system: string, user: string, temperature: number, json: boolean) {
+  const generationConfig: Record<string, unknown> = { temperature, maxOutputTokens: 4096 };
+  if (json) generationConfig.responseMimeType = "application/json";
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    console.error("gemini", model, res.status, body.slice(0, 300));
+    if (res.status === 400 && /API key|API_KEY/i.test(body)) throw new ProviderError("bad_key", 400);
+    if (res.status === 401 || res.status === 403) throw new ProviderError(/API key|API_KEY|permission|denied/i.test(body) ? "bad_key" : "provider", res.status);
+    if (res.status === 429) throw new ProviderError("rate_limit", 429);
+    throw new ProviderError("provider", res.status);
+  }
+  const data = await res.json();
+  const text = (data.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("");
+  if (!text.trim()) throw new ProviderError("empty_text", 200);
+  return text;
+}
+
 async function generate(provider: string, key: string, system: string, user: string, temperature = 0.9) {
   if (provider === "gemini") {
-    const model = await geminiModel(key);
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: { temperature, responseMimeType: "application/json" },
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      if (res.status === 429) throw new ProviderError("rate_limit", 429);
-      if (res.status === 400 && /API key|API_KEY/i.test(body)) throw new ProviderError("bad_key", 400);
-      if (res.status === 403 || res.status === 401) throw new ProviderError("bad_key", res.status);
-      throw new ProviderError("provider", res.status);
+    const first = await geminiModel(key);
+    const models = [first, ...GEMINI_FALLBACKS.filter((m) => m !== first)];
+    let last: ProviderError | null = null;
+    for (const model of models) {
+      try {
+        const text = await geminiOnce(model, key, system, user, temperature, true);
+        if (parseJson(text)) { modelCache.gemini = { id: model, at: Date.now() }; return text; }
+        last = new ProviderError("empty_text", 200);
+      } catch (e) {
+        if (!(e instanceof ProviderError)) throw e;
+        if (e.code === "bad_key") throw e;
+        last = e; // rate_limit أو provider أو نص فارغ: نجرّب النموذج التالي
+      }
     }
-    const data = await res.json();
-    return (data.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("");
+    throw last || new ProviderError("provider", 0);
   }
   const model = await openaiModel(key);
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
