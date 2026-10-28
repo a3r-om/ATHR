@@ -16,6 +16,18 @@
      "title": "",
      "button": "",
      "image_alt": "",
+     "image_url": "images/ads/national-day-56.jpg",
+     "video_alt": "",
+     "video_url": "images/ads/national-day-56.mp4"
+    },
+    {
+     "bg": "#570418",
+     "link": "",
+     "text": "",
+     "type": "video",
+     "title": "",
+     "button": "",
+     "image_alt": "",
      "image_url": "images/ads/sale-20-40.jpg",
      "video_alt": "",
      "video_url": "images/ads/sale-20-40.mp4"
@@ -51,9 +63,9 @@
    "title": "",
    "button": "",
    "image_alt": "",
-   "image_url": "images/ads/national-day-56.jpg",
+   "image_url": "images/ads/discount-40.jpg",
    "video_alt": "",
-   "video_url": "images/ads/national-day-56.mp4"
+   "video_url": "images/ads/discount-40.mp4"
   },
   "ai": {
    "model": "",
@@ -934,7 +946,7 @@
    "price": 4.5,
    "old_price": null,
    "category_id": "330df6fd-7636-4c17-afca-fc35d2caf5ed",
-   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793124269661-6cab8726a7164206.jpg",
+   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793193316832-0aea8b9169134fe4.jpg",
    "thumb_url": null,
    "is_available": true,
    "is_visible": true,
@@ -1647,7 +1659,7 @@
    "price": 4.5,
    "old_price": null,
    "category_id": "330df6fd-7636-4c17-afca-fc35d2caf5ed",
-   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793122186680-39ef7190a80a4813.jpg",
+   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793193728283-e23fcc71ea2943ab.jpg",
    "thumb_url": null,
    "is_available": true,
    "is_visible": true,
@@ -1992,7 +2004,7 @@
    "price": 4.5,
    "old_price": null,
    "category_id": "330df6fd-7636-4c17-afca-fc35d2caf5ed",
-   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793124235470-b88715360ff74982.jpg",
+   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793193708973-aaf5c5f74bcb430f.jpg",
    "thumb_url": null,
    "is_available": true,
    "is_visible": true,
