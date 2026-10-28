@@ -151,7 +151,7 @@ function localMoney(ctx: Ctx, country: string, v: number) {
 
 function siteUrl(ctx: Ctx) {
   const s = String(ctx.store?.contact?.share_url || "").trim();
-  return /^https?:\/\//.test(s) ? (s.endsWith("/") ? s : `${s}/`) : "https://roaoman.com/";
+  return /^https?:\/\//.test(s) ? (s.endsWith("/") ? s : `${s}/`) : "https://roa-om.com/";
 }
 
 function absImage(ctx: Ctx, src: string) {

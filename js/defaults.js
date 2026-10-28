@@ -1037,7 +1037,7 @@ ATHR.url = {
 // الرابط الكامل للمتجر (للمشاركة وجوجل)
 ATHR.siteUrl = function (config) {
     const raw = String((config && config.contact && config.contact.share_url) || "").trim();
-    const url = ATHR.isUrl(raw) ? raw : "https://roaoman.com/";
+    const url = ATHR.isUrl(raw) ? raw : "https://roa-om.com/";
     return url.endsWith("/") ? url : url + "/";
 };
 
