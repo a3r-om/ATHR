@@ -189,7 +189,7 @@
             id: "astro", title: "[مستكشف|مستكشفة] الفضاء", product: "قصة باسم طفلك: مستكشف الفضاء", lesson: "help",
             color: P.plum, tint: "#E8E4F4", illustrated: true,
             book: {
-                ready: false, badge: "رحلة إلى القمر وزُحل", photo: "helmet",
+                ready: true, badge: "رحلة إلى القمر وزُحل", photo: "helmet",
                 pages: [
                     ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|النجوم} كثيراً. وفي ليلةٍ هادئة [جلس|جلست] عند النافذة [وهمس|وهمست]: «ليتني أطيرُ إلى القمر!»"],
                     ["p2", "left", "فجأةً… طَق طَق! روبوتٌ صغير يلوّح من النافذة، عيناه تضيئان مثل مصباحين. قال: «أنا بيبو! سمعتُ أمنيتك يا {name}. هل [تأتي|تأتين] معي إلى الفضاء؟»"],
@@ -208,7 +208,7 @@
             id: "sea", title: "[بطل|بطلة] أعماق البحر", product: "قصة باسم طفلك: أعماق البحر", lesson: "clean",
             color: P.sky, tint: "#E0F1F8", illustrated: true,
             book: {
-                ready: false, badge: "رحلة إلى الشعاب المرجانية", photo: "helmet",
+                ready: true, badge: "رحلة إلى الشعاب المرجانية", photo: "helmet",
                 pages: [
                     ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|البحر} كثيراً. وعند غروب الشمس على شاطئ مسقط، [وجد|وجدت] {name} صدفةً لامعة تضيء بين الرمال!"],
                     ["p2", "left", "[همس|همست] {name} في الصدفة، فقفز من الموج دلفينٌ صغيرٌ لطيف وقال: «أنا دانة! هذه صدفة البحر السحرية. هل [تريد|تريدين] أن [تزور|تزوري] أعماق البحر؟»"],
@@ -227,7 +227,7 @@
             id: "dino", title: "[مستكشف|مستكشفة] الديناصورات", product: "قصة باسم طفلك: أرض الديناصورات", lesson: "brave",
             color: P.leaf, tint: "#E7F1E2", illustrated: true,
             book: {
-                ready: false, badge: "رحلة عبر الزمن", photo: "frame",
+                ready: true, badge: "رحلة عبر الزمن", photo: "frame",
                 pages: [
                     ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|الديناصورات} كثيراً. وفي غرفة [جدّه|جدّها] القديمة [وجد|وجدت] ساعةً رمليةً ذهبيةً تلمع، [فقلبها|فقلبتها]… ووووش!"],
                     ["p2", "left", "دار كل شيءٍ حول {name}، ثم [وجد|وجدت] [نفسه|نفسها] في غابةٍ عجيبة، أشجارها عملاقة، وبركانٌ بعيد ينفث دخاناً أبيض. [قال|قالت]: «إنها أرض الديناصورات!»"],
@@ -246,7 +246,7 @@
             id: "oman", title: "في مغامرةٍ عُمانية", product: "قصة باسم طفلك: مغامرة في عُمان", lesson: "home",
             color: P.coral, tint: "#F8E9DF", illustrated: true,
             book: {
-                ready: false, badge: "من القلعة إلى الصحراء والجبل", photo: "frame",
+                ready: true, badge: "من القلعة إلى الصحراء والجبل", photo: "frame",
                 pages: [
                     ["p1", "right", "{name} في {age} من [عمره|عمرها]، [يحب|تحب] {likes|المغامرات} كثيراً. وفي بيت الجدّ في نزوى [أعطاه|أعطاها] الجدّ خريطةً قديمة وقال: «من يتبع هذه الخريطة يجد كنز عُمان!»"],
                     ["p2", "left", "وفجأةً حطّ على كتف {name} صقرٌ ذهبيّ العينين وقال: «أنا شاهين! سأطير أمامك وأدلّك على الطريق.» [فقال|فقالت] {name}: «هيا بنا!»"],
@@ -1618,12 +1618,12 @@
     function glowCard(ctx, x, y, w, h) {
         ctx.save();
         ctx.translate(x + w / 2, y + h / 2);
-        ctx.scale(1, (h + 120) / (w + 120));
-        const r = (w + 120) * 0.62;
+        ctx.scale(1, (h + 100) / (w + 100));
+        const r = (w + 100) * 0.6;
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
         g.addColorStop(0, "rgba(255,255,255,.94)");
-        g.addColorStop(0.66, "rgba(255,255,255,.9)");
-        g.addColorStop(0.84, "rgba(255,255,255,.55)");
+        g.addColorStop(0.7, "rgba(255,255,255,.9)");
+        g.addColorStop(0.86, "rgba(255,255,255,.5)");
         g.addColorStop(1, "rgba(255,255,255,0)");
         ctx.fillStyle = g;
         ctx.beginPath();
@@ -1641,12 +1641,12 @@
         const img = await artImage(artUrl(storyId, d.g, page.key, small));
         drawCoverImage(ctx, img, 0, 0, BW, BH);
         const text = fill(page.text, d, { mark: true });
-        const cardW = 720, pad = 58;
+        const cardW = 680, pad = 54;
         let size = 58;
         let m = measureParagraph(ctx, text, size, cardW - pad * 2, 1.78);
         while (m.height > BH - 300 && size > 38) { size -= 2; m = measureParagraph(ctx, text, size, cardW - pad * 2, 1.78); }
         const cardH = m.height + pad * 2;
-        const x = page.side === "left" ? 70 : BW - 70 - cardW;
+        const x = page.side === "left" ? 56 : BW - 56 - cardW;
         const y = Math.max(70, Math.min((BH - cardH) / 2 - 40, BH - 110 - cardH));
         if (st.illustrated) glowCard(ctx, x, y, cardW, cardH);
         else softCard(ctx, x, y, cardW, cardH);
@@ -1674,11 +1674,20 @@
         g.addColorStop(1, "rgba(12,16,48,0)");
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, BW, BH * 0.5);
+        // المسافات تُحسب من أبعاد الحروف الفعلية: أسماء مثل «مريم» تنزل حروفها تحت السطر كثيراً
         const nameSize = fitText(ctx, d.name, BW * 0.7, 200, 700, 90);
-        glowText(ctx, d.name, BW / 2, 70 + nameSize * 0.95, { size: nameSize, line: 20, gradient: [[0, "#FFF3A6"], [0.55, "#FFD23F"], [1, "#F59E0B"]] });
-        const subY = 70 + nameSize * 0.95 + 100;
+        ctx.font = font(nameSize, 700);
+        const nm = ctx.measureText(d.name);
+        const nAsc = nm.actualBoundingBoxAscent || nameSize * 0.75;
+        const nDesc = nm.actualBoundingBoxDescent || nameSize * 0.25;
+        const nameY = 80 + Math.max(nAsc, nameSize * 0.45);
+        glowText(ctx, d.name, BW / 2, nameY, { size: nameSize, line: 20, gradient: [[0, "#FFF3A6"], [0.55, "#FFD23F"], [1, "#F59E0B"]] });
         const title = fill(st.title, d);
-        glowText(ctx, title, BW / 2, subY, { size: fitText(ctx, title, BW * 0.75, 84, 700, 50), line: 12 });
+        const tSize = fitText(ctx, title, BW * 0.75, 84, 700, 50);
+        ctx.font = font(tSize, 700);
+        const tAsc = ctx.measureText(title).actualBoundingBoxAscent || tSize * 0.8;
+        const subY = nameY + nDesc + tAsc + 34;
+        glowText(ctx, title, BW / 2, subY, { size: tSize, line: 12 });
         // الشارة
         const badge = st.book.badge;
         ctx.save();
@@ -1791,6 +1800,20 @@
         ctx.fillText(d.name, mid - nw, y + 262);
         ctx.restore();
         if (lesson) drawParagraph(ctx, lesson, { cx: BW / 2, top: y + 296, bottom: y + ch - 30, maxW: cw - 140, size: 44, minSize: 32, lh: 1.6, color: "#4A4136", hi: "#7E62B5" });
+        // سطر توضيح صغير أسفل الصفحة (شروط Canva)
+        ctx.save();
+        ctx.direction = "rtl";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = font(26, 400);
+        const note = "الرسومات مُنشأة بمساعدة الذكاء الاصطناعي";
+        const pw = ctx.measureText(note).width + 48, ph = 46, py = BH - ph - 22;
+        ctx.fillStyle = "rgba(20,16,40,.5)";
+        roundRect(ctx, (BW - pw) / 2, py, pw, ph, ph / 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.92)";
+        ctx.fillText(note, BW / 2, py + ph / 2 + 2);
+        ctx.restore();
     }
 
     // الإهداء في الكتاب المصوّر: سماء ليلية ونجوم، وبطاقة ناعمة في الوسط
