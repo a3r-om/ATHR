@@ -81,7 +81,7 @@ async function openaiModel(key: string) {
 }
 
 class ProviderError extends Error {
-  constructor(public code: string, public status = 0) { super(code); }
+  constructor(public code: string, public status = 0, public detail = "") { super(code); }
 }
 
 // نماذج احتياطية: إذا فشل النموذج المختار (محجوب، غير متاح للمفتاح، أو حصته منتهية) نجرّب غيره
@@ -102,10 +102,13 @@ async function geminiOnce(model: string, key: string, system: string, user: stri
   if (!res.ok) {
     const body = await res.text();
     console.error("gemini", model, res.status, body.slice(0, 300));
-    if (res.status === 400 && /API key|API_KEY/i.test(body)) throw new ProviderError("bad_key", 400);
-    if (res.status === 401 || res.status === 403) throw new ProviderError(/API key|API_KEY|permission|denied/i.test(body) ? "bad_key" : "provider", res.status);
-    if (res.status === 429) throw new ProviderError("rate_limit", 429);
-    throw new ProviderError("provider", res.status);
+    let why = "";
+    try { why = String(JSON.parse(body)?.error?.message || ""); } catch { why = body; }
+    const detail = `${model}: ${why}`.replace(/\s+/g, " ").slice(0, 200);
+    if (res.status === 400 && /API key|API_KEY/i.test(body)) throw new ProviderError("bad_key", 400, detail);
+    if (res.status === 401 || res.status === 403) throw new ProviderError(/API key|API_KEY|expired|invalid/i.test(body) ? "bad_key" : "provider", res.status, detail);
+    if (res.status === 429) throw new ProviderError("rate_limit", 429, detail);
+    throw new ProviderError("provider", res.status, detail);
   }
   const data = await res.json();
   const text = (data.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("");
@@ -296,7 +299,7 @@ Deno.serve(async (req: Request) => {
       return json({ reply, actions, provider });
     }
   } catch (e) {
-    if (e instanceof ProviderError) return json({ error: e.code, status: e.status }, 502);
+    if (e instanceof ProviderError) return json({ error: e.code, status: e.status, detail: e.detail }, 502);
     console.error(e);
     return json({ error: "server" }, 500);
   }

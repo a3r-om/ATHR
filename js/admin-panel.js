@@ -2612,24 +2612,34 @@
         no_key: "أضف مفتاح الذكاء الاصطناعي أولاً من تبويب «النصوص».",
         bad_key: "مفتاح الذكاء الاصطناعي غير صحيح أو انتهى. غيّره من تبويب «النصوص».",
         rate_limit: "وصلت حد الاستخدام المؤقت. انتظر دقيقة ثم حاول مرة أخرى.",
-        not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى."
+        not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى.",
+        network: "ما قدرت أوصل للخادم. تأكد من الإنترنت وحدّث الصفحة ثم حاول."
     };
-    const aiError = (e) => AI_ERRORS[e && e.code] || `تعذر الاتصال بالذكاء الاصطناعي${e && e.status ? ` (${e.status})` : ""}. حاول مرة أخرى بعد قليل.`;
+    const aiError = (e) => AI_ERRORS[e && e.code] || `تعذر الاتصال بالذكاء الاصطناعي${e && e.status ? ` (${e.status})` : ""}${e && e.detail ? ` — ${e.detail}` : ""}. حاول مرة أخرى بعد قليل.`;
 
     async function aiCall(body) {
         const { data } = await sb.auth.getSession();
         const token = data && data.session && data.session.access_token;
-        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/ai-text`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
-            body: JSON.stringify({ store: ATHR.storeName(cfg()), ...body })
-        });
+        let res;
+        try {
+            res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/ai-text`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
+                body: JSON.stringify({ store: ATHR.storeName(cfg()), ...body })
+            });
+        } catch (netErr) {
+            const error = new Error("network");
+            error.code = "network";
+            error.detail = String(netErr && netErr.message || "").slice(0, 80);
+            throw error;
+        }
         let out = {};
         try { out = await res.json(); } catch { /* رد غير متوقع */ }
         if (!res.ok || out.error) {
             const error = new Error(out.error || `http_${res.status}`);
             error.code = out.error;
             error.status = out.status || res.status;
+            error.detail = out.detail || "";
             throw error;
         }
         return out;
