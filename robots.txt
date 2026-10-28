@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /backup/
 
-Sitemap: https://roaoman.com/sitemap.xml
+Sitemap: https://roa-om.com/sitemap.xml
