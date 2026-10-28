@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>فيديو إعلان المتجر — خصم على أكواب ريد بول والأكواب الحرارية (5 ثوانٍ)</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<style>
+/* إعلان الخصومات أعلى المتجر (الفيديو images/ads/redbull-thermal.mp4 وغلافه redbull-thermal.jpg). المقاس 1296×602 (نفس نسبة الصورة) */
+:root { --bg1: #6B0A20; --bg2: #3E0310; --cream: #F2E9DA; --sand: #E6D8C2; --pink: #D6DB89; --wine: #570418; --deep: #23120D; } /* ألوان هوية روا: روسو، كريما، سابيا، فستقي، إسبريسو */
+html, body { background: #111; }
+.reel { width: 1296px; height: 602px; position: relative; overflow: hidden; direction: rtl; font-family: "Plex", sans-serif;
+        background: radial-gradient(ellipse 520px 380px at 12% 0%, rgba(214,170,98,.30), transparent 70%), radial-gradient(ellipse 900px 520px at 70% 45%, #5A0719, #2C020C); color: var(--cream); }
+.abs { position: absolute; transform-origin: 50% 50%; }
+#ring { left: 247px; top: 330px; width: 500px; height: 500px; margin: -250px 0 0 -250px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,255,255,.07) 0%, rgba(255,255,255,.04) 60%, rgba(255,255,255,0) 61%);
+        border: 1px solid rgba(255,255,255,.06); }
+#dots { inset: 0; background: repeating-linear-gradient(135deg, rgba(255,255,255,.055) 0 2px, transparent 2px 26px); opacity: .55; }
+.txt { right: 70px; white-space: nowrap; transform-origin: 100% 50%; }
+#pill { top: 88px; padding: 4px 24px 9px; border: 1.5px solid rgba(241,228,211,.55); border-radius: 999px; font-size: 26px; font-weight: 600; color: var(--cream); }
+#h1 { top: 146px; font-size: 78px; font-weight: 700; line-height: 1.15; }
+#h2 { top: 214px; font-size: 116px; font-weight: 700; line-height: 1.15; display: flex; gap: 22px; align-items: baseline; }
+#h2 .num { direction: ltr; display: inline-block; }
+#h2 .to { font-size: 84px; }
+#sub { top: 342px; font-size: 42px; line-height: 1.2; font-weight: 500; color: rgba(241,228,211,.9); }
+#btn { top: 414px; right: 70px; padding: 12px 46px 18px; border-radius: 999px; background: var(--sand); color: var(--deep); font-size: 40px; font-weight: 700; overflow: hidden; transform-origin: 100% 50%;
+       box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+#btn .bs { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%); opacity: 0; }
+#notes { top: 416px; right: 370px; font-size: 27px; font-weight: 500; line-height: 1.45; color: rgba(241,228,211,.85); }
+.card { left: 0; top: 0; border: 9px solid #FBF7F2; border-radius: 22px; overflow: hidden; background: #ddd; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.badge { left: 0; top: 0; border-radius: 50%; display: grid; place-content: center; text-align: center; color: var(--wine); box-shadow: 0 10px 24px rgba(0,0,0,.25); }
+.badge small { font-size: .27em; font-weight: 700; display: block; line-height: 1.05; }
+.badge b { font-size: .43em; font-weight: 700; display: block; direction: ltr; line-height: 1.05; }
+.badge.pink { background: var(--pink); color: var(--deep); }
+.badge.sand { background: var(--sand); }
+#sweep { inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,240,225,.13) 50%, transparent 60%); pointer-events: none; }
+.spk { left: 0; top: 0; width: 34px; height: 34px; overflow: visible; }
+.spk path { fill: #FFE1A6; filter: drop-shadow(0 0 6px rgba(255,210,140,.9)); }
+</style>
+</head>
+<body>
+<div class="reel" id="reel">
+    <div class="abs" id="dots"></div>
+    <div class="abs" id="ring"></div>
+
+    <!-- الصور -->
+    <div class="abs card" id="cA" style="width:178px;height:192px"><img src="../../../images/t/1hc1b33jp27.webp" alt=""></div>
+    <div class="abs card" id="cC" style="width:222px;height:212px"><img src="../../../images/t/2aokbiqd9wv.webp" alt=""></div>
+    <div class="abs card" id="cB" style="width:246px;height:258px"><img src="../../../images/t/66s8xw22p8.webp" alt=""></div>
+    <div class="abs badge sand" id="bA" style="width:84px;height:84px;font-size:84px"><small>خصم</small><b>22%</b></div>
+    <div class="abs badge sand" id="bB" style="width:94px;height:94px;font-size:94px"><small>خصم</small><b>22%</b></div>
+    <div class="abs badge pink" id="bC" style="width:108px;height:108px;font-size:108px"><small>خصم</small><b>42%</b></div>
+
+    <!-- الكلام -->
+    <div class="abs txt" id="pill">عروض روا</div>
+    <div class="abs txt" id="h1">خصم من</div>
+    <div class="abs txt" id="h2"><span class="num" id="n1">22%</span><span class="to" id="to">إلى</span><span class="num" id="n2">42%</span></div>
+    <div class="abs txt" id="sub">على ريد بول والأكواب الحرارية</div>
+    <div class="abs" id="btn">تسوّق الآن<span class="bs"></span></div>
+    <div class="abs txt" id="notes" style="right:370px">الدفع عند الاستلام<br>توصيل لكل عُمان</div>
+    <div id="spks"></div>
+    <div class="abs" id="sweep"></div>
+</div>
+
+<script>
+window.DURATION = 5.0;
+window.COVER_T = 2.6;
+const $ = (s) => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const ei = (x) => x * x * x;
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.6; return x <= 0 ? 0 : 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+
+// الخروج قبل نهاية المقطع حتى يرجع يبدأ بسلاسة (الفيديو يتكرر في المتجر)
+const OUT = 4.4;
+const out = (t, d = 0) => eio(p(t, OUT + d, OUT + d + 0.55));
+
+function set(el, { o = 1, x = 0, y = 0, s = 1, r = 0, b = 0, center = false } = {}) {
+    if (typeof el === "string") el = $(el);
+    el.style.opacity = String(clamp(o));
+    el.style.transform = `${center ? "translate(-50%,-50%) " : ""}translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;
+    el.style.filter = b > 0.3 ? `blur(${b.toFixed(1)}px)` : "none";
+}
+
+// الصور: مكانها النهائي (المركز) وزاوية الميلان، ومن وين تدخل
+const CARDS = [
+    { id: "#cA", x: 128, y: 178, r: -5, at: 0.15, fx: -260, fy: -60, fr: -25, ph: 0.0 },
+    { id: "#cB", x: 312, y: 280, r: 4, at: 0.3, fx: -120, fy: 380, fr: 22, ph: 1.7 },
+    { id: "#cC", x: 134, y: 398, r: -6, at: 0.45, fx: -300, fy: 200, fr: -30, ph: 3.1 }
+];
+const BADGES = [
+    { id: "#bA", card: 0, dx: -64, dy: -66, at: 0.7 },
+    { id: "#bB", card: 1, dx: 98, dy: -100, at: 0.85 },
+    { id: "#bC", card: 2, dx: 92, dy: -68, at: 1.0, big: true }
+];
+
+// نجوم لامعة
+const SPK = [[470, 350, 1.4], [600, 300, 1.6], [455, 250, 2.9], [640, 380, 3.1], [250, 530, 3.6], [420, 90, 3.9]];
+const sp = SPK.map(([x, y, at]) => {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("class", "abs spk"); s.setAttribute("viewBox", "-40 -40 80 80");
+    s.innerHTML = '<path d="M0 -36 C3 -8 8 -3 36 0 C8 3 3 8 0 36 C-3 8 -8 3 -36 0 C-8 -3 -3 -8 0 -36Z"/>';
+    $("#spks").appendChild(s);
+    return { el: s, x, y, at };
+});
+
+window.render = function (t) {
+    // الخلفية
+    set("#ring", { o: 1, s: lerp(0.86, 1, eo(p(t, 0, 0.8))) * (1 + 0.015 * Math.sin(t * 1.3)) });
+    $("#dots").style.backgroundPosition = `${(t * 6) % 36.8}px 0px`;
+
+    // الصور تدخل وتطفو
+    CARDS.forEach((c, i) => {
+        const k = p(t, c.at, c.at + 0.6), ko = out(t, 0.06 * i);
+        const fl = Math.sin(t * 1.4 + c.ph) * 5;
+        set(c.id, {
+            o: clamp(k * 3) * (1 - ko),
+            x: c.x + lerp(c.fx, 0, eo(k)) + lerp(0, -200, ei(ko)),
+            y: c.y + lerp(c.fy, 0, eo(k)) + fl + lerp(0, 60, ei(ko)),
+            r: c.r + lerp(c.fr, 0, eo(k)) + Math.sin(t * 0.9 + c.ph) * 1.2 - 12 * ei(ko),
+            s: lerp(0.7, 1, back(k)) * (1 - 0.15 * ko), b: (1 - k) * 6 + ko * 6, center: true
+        });
+    });
+    // دوائر الخصم: تطلع بارتداد ثم تنبض بالتناوب
+    BADGES.forEach((bd, i) => {
+        const c = CARDS[bd.card];
+        const k = p(t, bd.at, bd.at + 0.45), ko = out(t, 0.04 * i);
+        const pulseAt = [2.0, 3.0].map((v) => v + i * 0.35);
+        const pulse = pulseAt.reduce((a, v) => a + Math.sin(Math.PI * p(t, v, v + 0.4)), 0);
+        const fl = Math.sin(t * 1.4 + c.ph) * 5;
+        set(bd.id, {
+            o: clamp(k * 4) * (1 - ko), x: c.x + bd.dx + lerp(0, -200, ei(ko)), y: c.y + bd.dy + fl + lerp(0, 60, ei(ko)),
+            r: lerp(-40, 0, eo(k)) + Math.sin(t * 1.1 + i) * 4, s: back(k) * (1 + (bd.big ? 0.12 : 0.08) * pulse) * (1 - 0.3 * ko), center: true
+        });
+    });
+
+    // الكلام من اليمين
+    const txt = (id, at, d = 0.45, dist = 70) => {
+        const k = p(t, at, at + d), ko = out(t, 0);
+        set(id, { o: clamp(k * 2) * (1 - ko), x: lerp(dist, 0, eo(k)) + lerp(0, 80, ei(ko)), b: (1 - k) * 8 + ko * 6 });
+    };
+    txt("#pill", 0.1);
+    txt("#h1", 0.2);
+    // الأرقام تعد
+    const k1 = p(t, 0.4, 0.8), k2 = p(t, 0.85, 1.35);
+    $("#n1").textContent = Math.round(22 * eo(k1)) + "%";
+    $("#n2").textContent = Math.round(42 * eo(k2)) + "%";
+    txt("#h2", 0.4, 0.4, 50);
+    $("#to").style.opacity = String(p(t, 0.75, 0.95));
+    $("#n2").style.opacity = String(p(t, 0.85, 1.0));
+    const pop2 = Math.sin(Math.PI * p(t, 1.35, 1.65)) + 0.5 * Math.sin(Math.PI * p(t, 2.9, 3.25));
+    $("#n2").style.transform = `scale(${1 + 0.1 * pop2})`;
+    $("#n2").style.textShadow = `0 0 ${(18 * pop2).toFixed(0)}px rgba(242,167,187,${(0.6 * pop2).toFixed(2)})`;
+    txt("#sub", 1.1);
+    const kb = p(t, 1.4, 1.8), ko = out(t, 0);
+    const bp = Math.sin(Math.PI * p(t, 2.5, 2.9)) + Math.sin(Math.PI * p(t, 3.7, 4.0));
+    set("#btn", { o: clamp(kb * 3) * (1 - ko), s: lerp(0.6, 1, back(kb)) * (1 + 0.05 * bp) * (1 - 0.2 * ko), x: lerp(0, 80, ei(ko)) });
+    const sw = (a) => { const k = p(t, a, a + 0.7); return k > 0 && k < 1 ? k : -1; };
+    const bs = $("#btn .bs"), ks = Math.max(sw(2.5), sw(3.7));
+    bs.style.opacity = ks > 0 ? "1" : "0";
+    bs.style.transform = `translateX(${lerp(-120, 120, ks)}%)`;
+    txt("#notes", 1.55, 0.45, 50);
+
+    // لمعة تمر على الإعلان كله
+    const kw = Math.max(sw(1.8), sw(3.3));
+    $("#sweep").style.opacity = kw > 0 ? "1" : "0";
+    $("#sweep").style.transform = `translateX(${lerp(-110, 110, kw)}%)`;
+
+    sp.forEach((s) => {
+        const u = (t - s.at) / 0.7, k = u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
+        s.el.style.opacity = String(k);
+        s.el.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-50%) scale(${0.2 + k}) rotate(${u * 90}deg)`;
+    });
+};
+window.render(0);
+</script>
+</body>
+</html>
