@@ -2846,7 +2846,7 @@ html.tpl-roa .price s { color: var(--muted); }
 html.tpl-roa .card-action .btn, html.tpl-roa .card-action button { border-radius: var(--r-pill); }
 html.tpl-roa .badge { border-radius: 7px; padding: 3px 9px; font-size: 12px; font-weight: 700; box-shadow: none; }
 html.tpl-roa .badge.hot { background: var(--roa-rosso); color: var(--roa-crema); }
-html.tpl-roa .badge.sale { background: var(--roa-sabbia); color: var(--roa-rosso); }
+html.tpl-roa .badge.sale { background: #fff; color: var(--roa-rosso); }
 html.tpl-roa .badge.out { background: var(--roa-espresso); color: var(--roa-crema); }
 html.tpl-roa .fav-btn { background: var(--roa-latte); color: var(--roa-rosso); box-shadow: none; }
 html.tpl-roa .fav-btn.on { color: var(--roa-rosso); }
