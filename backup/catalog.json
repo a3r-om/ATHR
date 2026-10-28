@@ -8,15 +8,15 @@
    "auto": true,
    "link": "",
    "more": [],
-   "show": false,
+   "show": true,
    "text": "",
-   "type": "image",
+   "type": "video",
    "title": "",
    "button": "",
    "image_alt": "",
    "image_url": "",
    "video_alt": "",
-   "video_url": ""
+   "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793216711291-0cfd0ed741fc4e66.mp4"
   },
   "ai": {
    "model": "",
@@ -274,29 +274,6 @@
       "SA",
       "KW",
       "QA",
-      "BH"
-     ]
-    },
-    {
-     "id": "p-x8nj9cx5m",
-     "bank": {
-      "bank": "",
-      "iban": "",
-      "swift": "",
-      "holder": "",
-      "number": "",
-      "account": ""
-     },
-     "link": "",
-     "name": "",
-     "note": "",
-     "type": "other",
-     "enabled": false,
-     "note_en": "Hh",
-     "countries": [
-      "AE",
-      "SA",
-      "KW",
       "BH"
      ]
     }
@@ -581,7 +558,7 @@
    "announce_text": "",
    "hero_features": [
     "الدفع عند الاستلام للطلبات فوق {free}",
-    "توصيل مجاني للمكتب داخل عُمان اكثر من {free}",
+    "توصيل مجاني للمكتب داخل عُمان أكثر من {free}",
     "توصيل لكل دول الخليج",
     ""
    ],
@@ -685,12 +662,12 @@
   {
    "id": "330df6fd-7636-4c17-afca-fc35d2caf5ed",
    "name": "أكواب الدول",
-   "name_en": null,
-   "slug": "أكواب-الدول",
+   "name_en": "Country Cups",
+   "slug": "countries",
    "sort_order": 11,
-   "image_url": null,
-   "description": null,
-   "description_en": null
+   "image_url": "images/categories/countries.jpg",
+   "description": "أكواب سيراميك بتصاميم الدول مثل عُمان والسعودية والإمارات. اعتزاز بالوطن مع كل رشفة، وهدية مناسبة في الأعياد الوطنية.",
+   "description_en": "Ceramic cups with country designs like Oman, Saudi Arabia and the UAE. National pride with every sip and a fitting gift for national days."
   },
   {
    "id": "51a1eb69-797e-45d8-8401-8977794c0611",
@@ -764,7 +741,7 @@
   },
   {
    "id": "f1f14a18-f3cd-4273-8391-6ca4dfcb9b96",
-   "name": "اكواب حرارية",
+   "name": "أكواب حرارية",
    "name_en": "Insulated Tumblers",
    "slug": "stanley",
    "sort_order": 4,
@@ -879,7 +856,7 @@
   {
    "id": "0a73cbcc-8363-4da6-9686-171487486683",
    "name": "كوب عمان",
-   "name_en": null,
+   "name_en": "Oman Cup",
    "slug": "كوب-عمان-أبيض",
    "price": 2.9,
    "old_price": 4.5,
@@ -902,7 +879,7 @@
   {
    "id": "1037b58a-1aa6-4e86-9573-2036b17a04b2",
    "name": "محفظة ريال مدريد",
-   "name_en": null,
+   "name_en": "Real Madrid Wallet",
    "slug": "محفظة-ريال-مدريد-أبيض",
    "price": 1.5,
    "old_price": null,
@@ -913,8 +890,8 @@
    "is_visible": true,
    "is_best_seller": true,
    "is_new_arrival": false,
-   "description": null,
-   "description_en": null,
+   "description": "محفظة بيضاء عملية مطبوع عليها شعار نادي ريال مدريد، تتسع لبطاقاتك وتناسب جيبك. هدية لعشاق الملكي، وتكمل طقم كوب ريال مدريد.",
+   "description_en": "Practical white wallet printed with the Real Madrid crest, made for your cards and your pocket. A gift for Madridistas and a match for the Real Madrid cup.",
    "color_id": "white",
    "sort_order": 3,
    "video_url": null,
@@ -1271,7 +1248,7 @@
    "id": "4c2a28a4-8657-43fc-bcce-f63fa4813941",
    "name": "كوب برشلونة",
    "name_en": "Barcelona Cup",
-   "slug": "كوب-برشلونة-أبيض-2",
+   "slug": "كوب-برشلونة-أسود",
    "price": 3.5,
    "old_price": 4.5,
    "category_id": "1615ffc9-aaf9-4255-ad51-cf97aa31d339",
@@ -1316,8 +1293,8 @@
   {
    "id": "512117c7-ef91-421c-9591-739092a25ab4",
    "name": "محفظة برشلونة",
-   "name_en": null,
-   "slug": "محفظة-برشلونة-أسود-2",
+   "name_en": "Barcelona Wallet",
+   "slug": "محفظة-برشلونة-أسود",
    "price": 1.5,
    "old_price": null,
    "category_id": "c1cce35a-5033-416c-be8d-b779b59a0512",
@@ -1327,8 +1304,8 @@
    "is_visible": true,
    "is_best_seller": false,
    "is_new_arrival": true,
-   "description": null,
-   "description_en": null,
+   "description": "محفظة سوداء أنيقة مطبوع عليها شعار نادي برشلونة، عملية لبطاقاتك اليومية. هدية مميزة لمشجع الفريق، وتكمل طقم كوب برشلونة الأسود.",
+   "description_en": "Sleek black wallet printed with the FC Barcelona crest, handy for your everyday cards. A great gift for Barça fans and a match for the black Barcelona cup.",
    "color_id": "black",
    "sort_order": 2,
    "video_url": null,
@@ -1776,7 +1753,7 @@
   {
    "id": "9f941837-17fa-4ae6-864b-0d99de743710",
    "name": "محفظة عمان",
-   "name_en": null,
+   "name_en": "Oman Wallet",
    "slug": "محفظة-عمان-أبيض",
    "price": 1.5,
    "old_price": null,
@@ -1799,8 +1776,8 @@
   {
    "id": "a2f68383-f6ba-4451-bb42-473c072e1583",
    "name": "محفظة ريال مدريد",
-   "name_en": null,
-   "slug": "محفظة-ريال-مدريد-أسود-2",
+   "name_en": "Real Madrid Wallet",
+   "slug": "محفظة-ريال-مدريد-أسود",
    "price": 1.5,
    "old_price": null,
    "category_id": "c1cce35a-5033-416c-be8d-b779b59a0512",
@@ -1810,8 +1787,8 @@
    "is_visible": true,
    "is_best_seller": true,
    "is_new_arrival": false,
-   "description": null,
-   "description_en": null,
+   "description": "محفظة سوداء أنيقة مطبوع عليها شعار نادي ريال مدريد، عملية لبطاقاتك اليومية. هدية مميزة لمشجع الملكي، وتكمل طقم كوب ريال مدريد الأسود.",
+   "description_en": "Sleek black wallet printed with the Real Madrid crest, handy for your everyday cards. A great gift for Real Madrid fans and a match for the black Real Madrid cup.",
    "color_id": "black",
    "sort_order": 4,
    "video_url": null,
@@ -1983,7 +1960,7 @@
   {
    "id": "d2dc5035-71a6-4257-bcb6-3cf5f63ec734",
    "name": "كوب الامارات",
-   "name_en": null,
+   "name_en": "UAE Cup",
    "slug": "كوب-الامارات-أبيض",
    "price": 3.5,
    "old_price": 4.5,
@@ -2052,7 +2029,7 @@
   {
    "id": "e37d707f-70e3-4139-b1ae-6f424f0c23af",
    "name": "محفظة عمان",
-   "name_en": null,
+   "name_en": "Oman Wallet",
    "slug": "محفظة-عمان-أسود",
    "price": 1.5,
    "old_price": null,
@@ -2190,7 +2167,7 @@
   {
    "id": "f45772ad-2750-4e1e-8bc7-637b0718d564",
    "name": "محفظة برشلونة",
-   "name_en": null,
+   "name_en": "Barcelona Wallet",
    "slug": "محفظة-برشلونة-أبيض",
    "price": 1.5,
    "old_price": null,
@@ -2201,8 +2178,8 @@
    "is_visible": true,
    "is_best_seller": false,
    "is_new_arrival": true,
-   "description": null,
-   "description_en": null,
+   "description": "محفظة بيضاء عملية مطبوع عليها شعار نادي برشلونة، تتسع لبطاقاتك وتناسب جيبك. هدية جميلة لمشجعي البلوغرانا، وتكمل طقم كوب برشلونة.",
+   "description_en": "Practical white wallet printed with the FC Barcelona crest, made for your cards and your pocket. A lovely gift for Barça fans and a match for the Barcelona cup.",
    "color_id": "white",
    "sort_order": 1,
    "video_url": null,
