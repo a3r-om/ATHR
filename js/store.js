@@ -1937,7 +1937,9 @@
         const c = CC();
         const rule = ATHR.PHONE_RULES[c.code] || ATHR.PHONE_RULES.OM;
         const delivery = ATHR.deliveriesFor(cfg, c.code);
-        const payments = giftPayments(ATHR.paymentsFor(cfg, c.code), gift);
+        const payments = giftPayments(ATHR.paymentsFor(cfg, c.code, totals.afterDiscount), gift);
+        const hiddenCod = ATHR.paymentsFor(cfg, c.code).find((p) => p.type === "cod" && Number(p.min_total) > totals.afterDiscount);
+        const codHidden = hiddenCod ? Number(hiddenCod.min_total) : 0;
         const pickDelivery = delivery.find((d) => d.id === saved.delivery) || delivery[0];
         const pickPayment = payments.find((p) => p.id === saved.payment) || payments[0];
         const countries = ATHR.countries(cfg).filter((x) => x.enabled);
@@ -2017,6 +2019,7 @@
                                     <span></span>
                                 </label>`).join("")}
                             </div>` : `<p class="err">${esc(t("لا توجد طريقة دفع متاحة لـ{country} حاليًا.", { country: L(c, "name") }))}</p>`}
+                            ${codHidden ? `<p class="muted" style="margin:10px 0 0">${esc(t("الدفع عند الاستلام يتوفر للطلبات من {amount} فأكثر.", { amount: ATHR.trimZeros(local(codHidden)) }))}</p>` : ""}
                             <div id="payExtra"></div>
                         </div>
                     </div>
@@ -2053,7 +2056,7 @@
 
     function selectedPayment() {
         const id = $('input[name="payment"]:checked')?.value;
-        return ATHR.paymentsFor(C(), S.country).find((p) => p.id === id);
+        return ATHR.paymentsFor(C(), S.country, computeCart().afterDiscount).find((p) => p.id === id);
     }
 
     function renderAddressField(saved = {}) {

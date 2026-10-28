@@ -571,13 +571,19 @@
         </div>`;
     };
 
+    // «الدفع عند الاستلام» مع حد أدنى للطلب لو مفعّل (مثل: للطلبات فوق 11 ر.ع)
+    V.codText = function (v) {
+        const min = ATHR.codMin(v.cfg);
+        return min > 0 ? t("الدفع عند الاستلام للطلبات من {amount}", { amount: ATHR.trimZeros(money(v, min)) }) : t("الدفع عند الاستلام");
+    };
+
     V.trust = function (v) {
         const cfg = v.cfg;
         if (!cfg.sales.trust_show) return "";
         const pays = ATHR.paymentsFor(cfg, v.country);
         const items = [];
         (ct(v, "sales.trust_custom") || []).filter(Boolean).slice(0, 3).forEach((x) => items.push(fill(v, x)));
-        if (pays.some((p) => p.type === "cod")) items.push(t("الدفع عند الاستلام"));
+        if (pays.some((p) => p.type === "cod")) items.push(V.codText(v));
         if (pays.some((p) => p.type === "bank")) items.push(pays.some((p) => p.type === "bank" && /دولي/.test(p.name)) ? t("تحويل بنكي دولي") : t("تحويل بنكي مباشر"));
         if (pays.some((p) => p.type === "online")) items.push(t("دفع إلكتروني آمن"));
         const gulf = (cfg.order.delivery || []).some((d) => d.enabled && Array.isArray(d.countries) && d.countries.some((x) => x !== "OM"));
@@ -648,7 +654,7 @@
         const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
         return [
             free ? [V.icon.tag, ATHR.freeOfficeOnly(cfg) ? t("توصيل مجاني للمكتب فوق {amount}", { amount: ATHR.trimZeros(money(v, cfg.order.free_min)) }) : t("توصيل مجاني فوق {amount}", { amount: ATHR.trimZeros(money(v, cfg.order.free_min)) })] : null,
-            [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")],
+            [V.icon.card, cod ? V.codText(v) : t("تحويل بنكي آمن")],
             [V.icon.truck, gulf ? t("توصيل للخليج") : t("توصيل لكل عُمان")]
         ].filter(Boolean);
     };
@@ -1139,7 +1145,7 @@
                 : (Number(p.price) >= min ? t("الشحن مجاناً") : t("شحن مجاني فوق {amount}", { amount: ATHR.trimZeros(local(v, min)) })), true]);
         }
         const pays = ATHR.paymentsFor(cfg, v.country);
-        if (pays.some((x) => x.type === "cod")) items.push([t("الدفع عند الاستلام")]);
+        if (pays.some((x) => x.type === "cod")) items.push([V.codText(v)]);
         (ct(v, "sales.trust_custom") || []).filter(Boolean).forEach((x) => items.push([fill(v, x)]));
         if (items.length < 2) {
             const gulf = (cfg.order.delivery || []).some((d) => d.enabled && Array.isArray(d.countries) && d.countries.some((x) => x !== "OM"));
@@ -1370,7 +1376,7 @@
             free ? [V.icon.tag, gulf && enabled.filter((c) => ATHR.freeAppliesTo(cfg, c.code)).every((c) => c.code === ATHR.BASE_COUNTRY)
                 ? (ATHR.freeOfficeOnly(cfg) ? t("توصيل مجاني للمكتب في عُمان فوق {amount}", { amount: money(v, cfg.order.free_min) }) : t("توصيل مجاني في عُمان فوق {amount}", { amount: money(v, cfg.order.free_min) }))
                 : (ATHR.freeOfficeOnly(cfg) ? t("توصيل مجاني للمكتب فوق {amount}", { amount: money(v, cfg.order.free_min) }) : t("توصيل مجاني فوق {amount}", { amount: money(v, cfg.order.free_min) }))] : null,
-            [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
+            [V.icon.card, cod ? V.codText(v) : t("تحويل بنكي آمن")]
         ].filter(Boolean);
         const socials = (cfg.texts.socials || []).filter((x) => ATHR.isUrl(x.url));
         const ig = socials.find((x) => /instagram\.com/i.test(x.url));

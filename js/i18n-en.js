@@ -95,6 +95,8 @@
         "الدفع": "Payment",
         "لست في {country}؟ غيّر الدولة": "Not in {country}? Change country",
         "الدفع عند الاستلام": "Cash on delivery",
+        "الدفع عند الاستلام للطلبات من {amount}": "Cash on delivery for orders from {amount}",
+        "الدفع عند الاستلام يتوفر للطلبات من {amount} فأكثر.": "Cash on delivery is available for orders of {amount} or more.",
         "تحويل بنكي دولي": "International bank transfer",
         "تحويل بنكي مباشر": "Direct bank transfer",
         "دفع إلكتروني آمن": "Secure online payment",

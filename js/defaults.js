@@ -71,7 +71,7 @@ const ATHR_DEFAULTS = {
         hero_title: "طقوس القهوة تبدأ من كوبك",
         hero_text: "أكواب ومجات ومحافظ بتصاميم الأندية والجامعات والشخصيات. اختر تصميمك ويوصلك أينما كنت في الخليج.",
         hero_button: "تصفّح المنتجات",
-        hero_features: ["توصيل لكل دول الخليج", "توصيل مجاني للمكتب داخل عُمان فوق {free}", "الدفع عند الاستلام في عُمان والإمارات"],
+        hero_features: ["توصيل لكل دول الخليج", "توصيل مجاني للمكتب داخل عُمان فوق {free}", "الدفع عند الاستلام للطلبات فوق {free}"],
         search_placeholder: "ابحث",
         all_label: "الكل",
         add_to_cart: "أضف للسلة",
@@ -614,7 +614,15 @@ ATHR.inCountries = (item, code) => !Array.isArray(item.countries) || !item.count
 
 ATHR.deliveriesFor = (config, code) => (config.order.delivery || []).filter((d) => d.enabled && ATHR.inCountries(d, code));
 
-ATHR.paymentsFor = (config, code) => (config.order.payments || []).filter((p) => p.enabled && ATHR.inCountries(p, code));
+// total (اختياري): مبلغ الطلب. الطريقة اللي لها min_total (مثل الدفع عند الاستلام من 11 ر.ع) ما تظهر لو المبلغ أقل منه
+ATHR.paymentsFor = (config, code, total) => (config.order.payments || []).filter((p) => p.enabled && ATHR.inCountries(p, code)
+    && (total === undefined || !(Number(p.min_total) > 0) || Number(total) >= Number(p.min_total)));
+
+// أقل مبلغ للدفع عند الاستلام (0 = بدون حد)
+ATHR.codMin = (config) => {
+    const p = ((config.order && config.order.payments) || []).find((x) => x.enabled && x.type === "cod" && Number(x.min_total) > 0);
+    return p ? Number(p.min_total) : 0;
+};
 
 // التوصيل المجاني يشمل: order.free_scope = "office" (الاستلام من المكتب فقط) أو "all" (البيت والمكتب)
 ATHR.freeOfficeOnly = (config) => Boolean(config && config.order && config.order.free_scope === "office");
