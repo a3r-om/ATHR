@@ -653,7 +653,7 @@
             ${card("✨ وصف المنتجات بالذكاء الاصطناعي", `
                 <p class="adm-sentence">${noDesc ? `${noDesc} منتج بدون وصف خاص (يظهر لها وصف القسم).` : "كل المنتجات لها وصف خاص ✓"}</p>
                 ${noDesc ? `<button class="ab ab-primary ab-sm" type="button" data-a="ai-bulk">✨ اكتب وصفاً لـ ${noDesc} منتج</button>` : ""}
-                <small class="adm-muted">يكتب وصفاً قصيراً بالعربي والإنجليزي من اسم المنتج وقسمه ولونه، ويضعه في المسودة لتراجعه ثم تنشر. يحتاج مفتاح الذكاء الاصطناعي من تبويب «النصوص».</small>`)}
+                <small class="adm-muted">يكتب وصفاً قصيراً بالعربي من اسم المنتج وقسمه ولونه، ويضعه في المسودة لتراجعه ثم تنشر. يحتاج مفتاح الذكاء الاصطناعي من تبويب «النصوص».</small>`)}
             ${card("📥 Excel: تنزيل ورفع المنتجات", `
                 <div class="inline">
                     <button class="ab ab-soft ab-sm" type="button" data-a="xlsx-products">⬇️ تنزيل المنتجات (Excel)</button>
@@ -683,7 +683,6 @@
                     <small class="adm-muted">يفضّل صورة عمودية بنسبة 4:5 بخلفية نظيفة وإضاءة جيدة.</small>
                 </div>
                 ${text(`${base}.name`, "اسم المنتج", { max: 120 })}
-                ${text(`${base}.name_en`, "اسم المنتج بالإنجليزي (لزوار المتجر بالإنجليزي)", { max: 160, dir: "ltr", placeholder: "Real Madrid Cup" })}
                 <div class="adm-card flat price-box">
                     <div class="two">
                         <label class="af"><span>السعر الأصلي</span><input class="ai" type="number" inputmode="decimal" step="0.001" min="0" data-price-base="${esc(p.id)}" value="${basePrice(p) === null || basePrice(p) === undefined ? "" : esc(basePrice(p))}"></label>
@@ -698,7 +697,6 @@
                 </div>
                 ${area(`${base}.description`, "الوصف", { rows: 3, placeholder: (A.draft.categories.find((c) => c.id === p.category_id) || {}).description ? `إذا تركته فارغاً يظهر وصف القسم: ${(A.draft.categories.find((c) => c.id === p.category_id) || {}).description}` : "" })}
                 <button class="ab ab-soft ab-sm ai-btn" type="button" data-ai-desc="${esc(p.id)}">✨ اكتب الوصف بالذكاء الاصطناعي</button>
-                ${area(`${base}.description_en`, "الوصف بالإنجليزي (اختياري)", { rows: 2 })}
                 ${cfg().order.delivery.some((d) => d.enabled && d.pricing === "per_kg") ? number(`${base}.weight_g`, "الوزن مع التغليف (غرام)", { step: "10", min: "1", help: "يُستخدم لحساب التوصيل بالكيلو." }) : ""}
                 ${toggle(`${base}.is_visible`, "ظاهر في المتجر")}
                 ${toggle(`${base}.is_best_seller`, "من «الأكثر طلباً»", { help: "يظهر في قسم الأكثر طلباً أعلى الصفحة الرئيسية مع شارة على صورته (يحتاج منتجين على الأقل)." })}
@@ -1146,12 +1144,10 @@
             <ul class="items">${cats.map((c, i) => `<li class="item-card">
                 <div class="lst-row">
                     <input class="ai" data-bind="categories.#${esc(c.id)}.name" value="${esc(c.name)}" placeholder="اسم القسم" aria-label="اسم القسم">
-                    <input class="ai" data-bind="categories.#${esc(c.id)}.name_en" value="${esc(c.name_en || "")}" placeholder="English name" aria-label="اسم القسم بالإنجليزي" dir="ltr">
                     <span class="adm-muted nowrap">${counts.get(c.id) || 0} منتج</span>
                 </div>
                 <div class="af"><span>صورة القسم</span>${uploadButton(c.image_url ? "تغيير الصورة" : "اختيار صورة", `data-upload="categories.#${esc(c.id)}.image_url" data-kind="category"`, { current: c.image_url ? ATHR.thumb(c.image_url, "s") : "", remove: c.image_url ? `data-clear="categories.#${esc(c.id)}.image_url"` : "" })}<small>تظهر في أعلى المتجر وفي القائمة. الأفضل صورة عمودية بنسبة 3:4 بخلفية بيج مثل باقي الأقسام.</small></div>
                 <label class="af"><span>وصف القسم (يظهر في صفحته وفي جوجل)</span><textarea class="ai" rows="2" maxlength="300" data-bind="categories.#${esc(c.id)}.description" placeholder="مثال: أكواب سيراميك بشعارات الأندية، هدية مثالية لكل مشجع.">${esc(c.description || "")}</textarea></label>
-                <label class="af"><span>وصف القسم بالإنجليزي (اختياري)</span><textarea class="ai" rows="2" maxlength="600" dir="ltr" data-bind="categories.#${esc(c.id)}.description_en">${esc(c.description_en || "")}</textarea></label>
                 ${c.slug ? `<small class="adm-muted" dir="ltr">${esc(decodeURI(siteLink(ATHR.url.category(c))))}</small>` : ""}
                 ${listControls("categories", i, cats.length)}
             </li>`).join("")}</ul>
@@ -1160,7 +1156,6 @@
             <ul class="lst">${colors.map((c, i) => `<li class="lst-row">
                 <input type="color" data-bind="config.colors.${i}.hex" value="${esc(c.hex || "#ffffff")}" aria-label="درجة اللون">
                 <input class="ai" data-bind="config.colors.${i}.name" value="${esc(c.name)}" placeholder="اسم اللون" aria-label="اسم اللون">
-                <input class="ai sm" data-bind="config.colors.${i}.name_en" value="${esc(c.name_en || "")}" placeholder="English" aria-label="اسم اللون بالإنجليزي" dir="ltr">
                 <span class="adm-muted nowrap">${colorCounts.get(c.id) || 0}</span>
                 ${listControls("config.colors", i, colors.length)}
             </li>`).join("")}</ul>
@@ -1362,28 +1357,7 @@
                 ${area("config.texts.thanks_text", "نص الخطوة الأخيرة بعد إتمام الطلب", { rows: 2, placeholder: d.thanks_text })}
                 ${text("config.texts.wa_first_line", "أول سطر في رسالة واتساب", { placeholder: d.wa_first_line })}
                 ${area("config.texts.wa_last_line", "آخر سطر في رسالة واتساب (اختياري)", { rows: 2, placeholder: "مثال: شكراً لتسوقكم من متجر روا ✨" })}`)
-            + tabTextsEn();
-    }
-
-    // نصوص المتجر للزائر الذي يحوّل اللغة إلى الإنجليزي (الفارغ يُكتب تلقائياً)
-    function tabTextsEn() {
-        const en = cfg().en || {};
-        const feats = (cfg().texts.hero_features || []).filter(Boolean).slice(0, 4);
-        const enFeats = (en.texts && en.texts.hero_features) || [];
-        const ex = (path) => ATHR.withLang("en", () => ATHR.ct({ ...cfg(), en: {} }, path)) || "";
-        const ltr = (path, label, opts = {}) => text(path, label, { dir: "ltr", ...opts });
-        return card("النصوص بالإنجليزي", `
-                ${ltr("config.en.name", "اسم المتجر بالإنجليزي", { placeholder: "ROA", max: 40 })}
-                ${ltr("config.en.texts.hero_title", "العنوان الرئيسي", { placeholder: ex("texts.hero_title"), max: 60 })}
-                ${area("config.en.texts.hero_text", "النص التعريفي", { rows: 2, placeholder: ex("texts.hero_text") })}
-                <div class="af"><span>المزايا الصغيرة تحت النص</span>
-                    ${feats.map((f, i) => `<input class="ai" dir="ltr" data-bind="config.en.texts.hero_features.${i}" value="${esc(enFeats[i] || "")}" placeholder="${esc(f)}" aria-label="ميزة ${i + 1} بالإنجليزي">`).join("")}
-                </div>
-                ${area("config.en.texts.about", "نبذة عن المتجر", { rows: 2, placeholder: ex("texts.about") })}
-                ${ltr("config.en.texts.announce_text", "نص شريط الإعلان", { max: 140 })}
-                ${(cfg().sales.trust_custom || []).filter(Boolean).map((tc, i) => ltr(`config.en.sales.trust_custom.${i}`, `شارة الثقة ${i + 1}`, { placeholder: tc, max: 80 })).join("")}
-                ${ltr("config.en.seo.home_title", "عنوان المتجر في جوجل بالإنجليزي", { max: 70 })}`,
-            "يظهر للزائر عندما يضغط زر EN أعلى المتجر. أسماء المنتجات والأقسام بالإنجليزي تكتبها في تفاصيل كل منتج وفي «الأقسام والألوان». رسائل الطلب تصلك بالعربي دائماً.");
+            ;
     }
 
     // =====================================================
@@ -1403,10 +1377,6 @@
             ${number(`config.order.delivery.${i}.price`, d.pricing === "per_kg" ? "السعر لكل كيلو" : "السعر", { help: d.pricing === "per_kg" ? "يُقرَّب الوزن لأعلى كيلو، والحد الأدنى كيلو واحد." : "" })}
             ${countryChecks(`config.order.delivery.${i}.countries`, "متاحة لـ")}
             ${text(`config.order.delivery.${i}.note`, "شرح قصير (اختياري)")}
-            <div class="two">
-                ${text(`config.order.delivery.${i}.name_en`, "الاسم بالإنجليزي", { dir: "ltr" })}
-                ${text(`config.order.delivery.${i}.note_en`, "الشرح بالإنجليزي", { dir: "ltr" })}
-            </div>
             ${listControls("config.order.delivery", i, o.delivery.length)}
         </li>`).join("");
 
@@ -1433,10 +1403,6 @@
                 </div>
                 ${p.type === "cod" ? number(`${base}.min_total`, "أقل قيمة للطلب للدفع عند الاستلام", { help: "إذا كان مبلغ الطلب أقل منها يظهر للعميل التحويل البنكي فقط. اتركها فارغة لكل الطلبات." }) : ""}
                 ${area(`${base}.note`, "الشرح الذي يظهر للعميل", { rows: 2 })}
-                <div class="two">
-                    ${text(`${base}.name_en`, "الاسم بالإنجليزي", { dir: "ltr" })}
-                    ${text(`${base}.note_en`, "الشرح بالإنجليزي", { dir: "ltr" })}
-                </div>
                 ${countryChecks(`${base}.countries`, "متاحة لـ")}
                 ${extra}
                 ${listControls("config.order.payments", i, o.payments.length)}
@@ -2702,7 +2668,7 @@
     const aiItem = (p) => {
         const cat = A.draft.categories.find((c) => c.id === p.category_id) || {};
         const color = cfg().colors.find((c) => c.id === p.color_id) || {};
-        return { id: p.id, name: p.name, name_en: p.name_en || "", category: cat.name || "", category_desc: cat.description || "", color: color.name || "" };
+        return { id: p.id, name: p.name, category: cat.name || "", category_desc: cat.description || "", color: color.name || "" };
     };
 
     async function aiDescribe(id) {
@@ -2715,7 +2681,6 @@
             const it = (out.items || [])[0];
             if (it) {
                 p.description = it.ar;
-                if (it.en) p.description_en = it.en;
                 saveDraft();
                 refreshSheet();
                 toast("كُتب الوصف ✓ راجعه وعدّله إن أردت");
@@ -2747,7 +2712,6 @@
                     const p = A.draft.products.find((x) => x.id === it.id);
                     if (p && !String(p.description || "").trim()) {
                         p.description = it.ar;
-                        if (it.en && !p.description_en) p.description_en = it.en;
                         done++;
                     }
                 });
@@ -5216,8 +5180,8 @@
                 return {
                     id: c.id,
                     name: c.name.trim(),
-                    name_en: String(c.name_en || "").trim() || null,
-                    description_en: String(c.description_en || "").trim() || null,
+                    name_en: null,
+                    description_en: null,
                     slug,
                     image_url: c.image_url || null,
                     description: String(c.description || "").trim() || null,
@@ -5261,8 +5225,8 @@
             const prodRows = draft.products.map((p, i) => ({
                 id: p.id,
                 name: p.name.trim(),
-                name_en: String(p.name_en || "").trim() || null,
-                description_en: String(p.description_en || "").trim() || null,
+                name_en: null,
+                description_en: null,
                 slug: p.slug,
                 price: Number(p.price),
                 old_price: p.old_price === null || p.old_price === undefined ? null : Number(p.old_price),
