@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعلان المتجر — العيد الوطني 56</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<script src="../../kit/anim.js"></script>
+<style>
+html, body { background: #111; margin: 0; }
+.reel { width: 1296px; height: 602px; position: relative; overflow: hidden; direction: rtl; font-family: "Plex", sans-serif; background: radial-gradient(ellipse 900px 520px at 70% 45%, #6B0A20, #3E0310); color: #F2E9DA; }
+.abs { position: absolute; }
+.flag { top: 0; right: 0; left: 0; height: 14px; display: flex; direction: ltr; }
+.flag i { flex: 1; } .w { background: #fff; } .r { background: #DB161B; } .g { background: #008000; }
+.txt { right: 70px; white-space: nowrap; transform-origin: 100% 50%; }
+#pill { top: 60px; padding: 4px 24px 9px; border: 1.5px solid rgba(241,228,211,.55); border-radius: 999px; font-size: 28px; font-weight: 600; }
+#h1 { top: 120px; font-size: 64px; font-weight: 700; display: flex; gap: 20px; align-items: center; }
+#n56 { background: #F5B301; color: #45030F; border-radius: 40px; padding: 0 30px 6px; font-size: 62px; direction: ltr; }
+#h2 { top: 214px; font-size: 62px; font-weight: 600; }
+#h3 { top: 268px; font-size: 190px; font-weight: 700; line-height: 1.05; color: #F5B301; direction: ltr; right: 70px; }
+#sub { top: 482px; font-size: 44px; font-weight: 600; }
+.card { top: 120px; width: 190px; height: 260px; border: 8px solid #FBF7F2; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.35); background: #ddd; }
+.card img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; display: block; }
+.card span { position: absolute; bottom: 0; right: 0; left: 0; text-align: center; background: rgba(69,3,15,.9); font-size: 30px; font-weight: 700; padding: 2px 0 6px; }
+#c1 { left: 60px; top: 90px; } #c2 { left: 270px; top: 190px; } #c3 { left: 480px; top: 90px; }
+#lg { left: 70px; bottom: 36px; width: 120px; height: auto; }
+</style>
+</head>
+<body>
+<div class="reel">
+  <div class="abs flag"><i class="w"></i><i class="r"></i><i class="g"></i></div>
+  <div class="abs txt" id="pill">العيد الوطني العُماني</div>
+  <div class="abs txt" id="h1"><span>بمناسبة</span><span id="n56">56</span></div>
+  <div class="abs txt" id="h2">خصم يصل إلى</div>
+  <div class="abs" id="h3">40%</div>
+  <div class="abs txt" id="sub">على مج وكوب ومحفظة</div>
+  <div class="abs card" id="c1"><img src="../../../images/categories/mugs.jpg" alt=""><span>مج</span></div>
+  <div class="abs card" id="c2"><img src="../../../images/categories/quotes.jpg" alt=""><span>كوب</span></div>
+  <div class="abs card" id="c3"><img src="../../../images/categories/clubs-wallets.jpg" alt=""><span>محفظة</span></div>
+  <img class="abs" id="lg" src="../../kit/logo_white.png" alt="روا">
+</div>
+<script>
+window.DURATION = 5;
+window.COVER_T = 3.2;
+window.render = (t) => {
+  A.rise("#pill", t, 0.05, 0.4, 20);
+  A.pop("#h1", t, 0.3, 0.5);
+  A.rise("#h2", t, 0.9, 0.4, 30);
+  A.pop("#h3", t, 1.15, 0.6);
+  A.rise("#sub", t, 1.9, 0.4, 30);
+  A.rise("#c1", t, 1.6, 0.5, 100);
+  A.rise("#c2", t, 1.85, 0.5, 100);
+  A.rise("#c3", t, 2.1, 0.5, 100);
+  A.rise("#lg", t, 2.6, 0.5, 20);
+};
+window.render(0);
+</script>
+</body>
+</html>
