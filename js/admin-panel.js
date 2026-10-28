@@ -2589,6 +2589,25 @@
     // ✨ الذكاء الاصطناعي: وصف المنتجات ورسائل العروض
     // =====================================================
 
+    // نافذة تأكيد داخل الصفحة: confirm() الأصلية تُحجب بصمت في بعض متصفحات الجوال (تطبيق الشاشة الرئيسية، متصفح انستغرام...) فلا يحدث شيء عند الحذف
+    function askConfirm(message, okText = "حذف") {
+        return new Promise((resolve) => {
+            const wrap = document.createElement("div");
+            wrap.setAttribute("role", "alertdialog");
+            wrap.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;font-family:inherit";
+            wrap.innerHTML = `<div style="background:#fff;color:#2b1a1a;border-radius:16px;padding:22px 20px;max-width:340px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+                <p style="margin:0 0 18px;font-size:17px;line-height:1.6;font-weight:600"></p>
+                <div style="display:flex;gap:10px"><button type="button" data-ok style="flex:1;padding:12px;border:0;border-radius:12px;background:#b3261e;color:#fff;font:inherit;font-weight:700"></button><button type="button" data-no style="flex:1;padding:12px;border:0;border-radius:12px;background:#eee;color:#333;font:inherit;font-weight:700">إلغاء</button></div></div>`;
+            wrap.querySelector("p").textContent = message;
+            wrap.querySelector("[data-ok]").textContent = okText;
+            const done = (v) => { wrap.remove(); resolve(v); };
+            wrap.querySelector("[data-ok]").addEventListener("click", () => done(true));
+            wrap.querySelector("[data-no]").addEventListener("click", () => done(false));
+            wrap.addEventListener("click", (e) => { if (e.target === wrap) done(false); });
+            document.body.appendChild(wrap);
+        });
+    }
+
     const AI_ERRORS = {
         no_key: "أضف مفتاح الذكاء الاصطناعي أولاً من تبويب «النصوص».",
         bad_key: "مفتاح الذكاء الاصطناعي غير صحيح أو انتهى. غيّره من تبويب «النصوص».",
@@ -4592,13 +4611,19 @@
         }
         if (d.delProduct) {
             const p = A.draft.products.find((x) => x.id === d.delProduct);
-            if (p && confirm(`حذف «${p.name || "المنتج"}»؟ يُحذف من المتجر عند النشر.`)) {
-                A.draft.products = A.draft.products.filter((x) => x.id !== d.delProduct);
-                cfg().sales.bundles.forEach((b) => {
-                    if (b.a === d.delProduct) b.a = "";
-                    if (b.b === d.delProduct) b.b = "";
+            const pid = d.delProduct;
+            if (p) {
+                askConfirm(`حذف «${p.name || "المنتج"}»؟`).then((ok) => {
+                    if (!ok) return;
+                    A.draft.products = A.draft.products.filter((x) => x.id !== pid);
+                    cfg().sales.bundles.forEach((b) => {
+                        if (b.a === pid) b.a = "";
+                        if (b.b === pid) b.b = "";
+                    });
+                    A.rowMenu = null;
+                    afterChange();
+                    toast("حُذف من المسودة. اضغط «نشر التغييرات» ليختفي من المتجر");
                 });
-                afterChange();
             }
             return;
         }
@@ -4613,15 +4638,21 @@
             if (!Array.isArray(arr)) return;
             const item = arr[Number(d.i)];
             const label = d.del === "categories" ? `القسم «${item?.name || ""}»` : "هذا العنصر";
-            if (!confirm(`حذف ${label}؟`)) return;
-            arr.splice(Number(d.i), 1);
-            if (d.del === "categories" && item) {
-                A.draft.products.forEach((p) => { if (p.category_id === item.id) p.category_id = null; });
-            }
-            if (d.del === "config.colors" && item) {
-                A.draft.products.forEach((p) => { if (p.color_id === item.id) p.color_id = ""; });
-            }
-            afterChange();
+            const idx = Number(d.i), path = d.del;
+            askConfirm(`حذف ${label}؟`).then((ok) => {
+                if (!ok) return;
+                const list = getPath(path);
+                if (!Array.isArray(list) || list[idx] !== item) return;
+                list.splice(idx, 1);
+                if (path === "categories" && item) {
+                    A.draft.products.forEach((p) => { if (p.category_id === item.id) p.category_id = null; });
+                }
+                if (path === "config.colors" && item) {
+                    A.draft.products.forEach((p) => { if (p.color_id === item.id) p.color_id = ""; });
+                }
+                afterChange();
+                if (path === "categories") toast("حُذف القسم من المسودة. اضغط «نشر التغييرات» ليختفي من المتجر");
+            });
             return;
         }
         if (d.addItem) {
