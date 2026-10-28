@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ريلز: العيد الوطني 56</title>
+<link rel="stylesheet" href="../../kit/brand.css">
+<script src="../../kit/anim.js"></script>
+<style>
+.reel { background: var(--deep); }
+.flag { position: absolute; top: 0; right: 0; left: 0; height: 40px; display: flex; direction: ltr; z-index: 8; }
+.flag i { flex: 1; }
+.flag .w { background: #fff; } .flag .r { background: #DB161B; } .flag .g { background: #008000; }
+.top { position: absolute; top: 120px; right: 0; left: 0; text-align: center; color: var(--cream); }
+.top .a { font-size: 64px; font-weight: 600; color: #E4D3BF; }
+.top .b { font-size: 92px; font-weight: 700; margin-top: 6px; }
+.top .n { display: inline-block; margin-top: 20px; font-size: 150px; font-weight: 700; color: var(--deep); background: var(--gold); border-radius: 70px; padding: 0 70px 12px; line-height: 1.15; }
+.off { position: absolute; top: 640px; right: 0; left: 0; text-align: center; color: var(--cream); }
+.off .a { font-size: 70px; font-weight: 600; }
+.off .p { font-size: 360px; font-weight: 700; line-height: 1; color: var(--gold); direction: ltr; margin-top: 4px; }
+.tiles { position: absolute; top: 1170px; right: 50px; left: 50px; display: flex; gap: 24px; direction: rtl; }
+.tile { flex: 1; position: relative; height: 380px; border-radius: 28px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,.35); }
+.tile img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; display: block; }
+.tile span { position: absolute; bottom: 0; right: 0; left: 0; text-align: center; background: rgba(69,3,15,.88); color: var(--cream); font-size: 48px; font-weight: 700; padding: 6px 0 12px; }
+.foot { position: absolute; bottom: 90px; right: 0; left: 0; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.foot img { width: 190px; height: auto; }
+.foot .chip { font-size: 44px; padding: 12px 44px 16px; background: var(--cream); color: var(--wine); border-radius: 60px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="reel">
+  <div class="flag"><i class="w"></i><i class="r"></i><i class="g"></i></div>
+  <div class="top">
+    <div class="a" id="t1">بمناسبة</div>
+    <div class="b" id="t2">العيد الوطني العُماني</div>
+    <div class="n" id="t3">56</div>
+  </div>
+  <div class="off">
+    <div class="a" id="o1">خصم يصل إلى</div>
+    <div class="p" id="o2">40%</div>
+  </div>
+  <div class="tiles">
+    <div class="tile" id="k1"><img src="../../../images/categories/mugs.jpg" alt=""><span>مج</span></div>
+    <div class="tile" id="k2"><img src="../../../images/categories/quotes.jpg" alt=""><span>كوب</span></div>
+    <div class="tile" id="k3"><img src="../../../images/categories/clubs-wallets.jpg" alt=""><span>محفظة</span></div>
+  </div>
+  <div class="foot" id="ft">
+    <img src="../../kit/logo_white.png" alt="روا">
+    <span class="chip">روا · عُمان 🇴🇲</span>
+  </div>
+</div>
+<script>
+window.DURATION = 5;
+window.COVER_T = 3.6;
+window.render = (t) => {
+  A.pop("#t1", t, 0.05, 0.4);
+  A.pop("#t2", t, 0.2, 0.5);
+  A.pop("#t3", t, 0.45, 0.5, { r: -6 });
+  A.rise("#o1", t, 1.0, 0.4, 40);
+  A.pop("#o2", t, 1.2, 0.6);
+  A.rise("#k1", t, 2.0, 0.45, 120);
+  A.rise("#k2", t, 2.25, 0.45, 120);
+  A.rise("#k3", t, 2.5, 0.45, 120);
+  A.rise("#ft", t, 3.3, 0.5, 40);
+};
+window.render(0);
+</script>
+</body>
+</html>
