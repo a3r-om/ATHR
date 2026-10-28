@@ -162,7 +162,7 @@ function resolveSite(config) {
     }
     const share = String((config.contact && config.contact.share_url) || "").trim();
     if (/^https?:\/\//.test(share)) return share.endsWith("/") ? share : `${share}/`;
-    return "https://a3r-om.github.io/ATHR/";
+    return "https://roaoman.com/";
 }
 
 // =====================================================
