@@ -199,7 +199,7 @@ const ATHR_DEFAULTS = {
     stories: {
         pro_enabled: true,
         pro_price: 5,
-        pro_stories: ["space"],
+        pro_stories: ["astro", "sea", "dino", "oman"],
         pro_time: "خلال 48 ساعة من وصول الصورة",
         print_enabled: true,
         print_price: 6,
