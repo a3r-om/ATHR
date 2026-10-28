@@ -22,6 +22,11 @@ class Mock:
             "admin_users": [{"id": "u-owner"}],
         }
         self.log = []
+        self.photos = {}
+        self.deleted_photos = []
+        self.fail_upload = False
+        self.clean_list = []
+        self.photo_bytes = b""
         self.user = {"id": "u-owner", "email": "owner@example.com", "aud": "authenticated", "role": "authenticated",
                      "user_metadata": {"must_change_password": True}, "app_metadata": {"provider": "email"}}
 
@@ -85,6 +90,7 @@ class Mock:
         if name in ("backup_list",): return 200, []
         if name in ("ai_key_status",): return 200, {}
         if name == "store_stats": return 200, None
+        if name == "huroof_photos_to_clean": return 200, list(self.clean_list)
         return 200, None
 
     # ---------- the route handler ----------
@@ -95,9 +101,11 @@ class Mock:
         path = unquote(u.path)
         method = req.method
         body = None
-        if req.post_data:
-            try: body = json.loads(req.post_data)
-            except Exception: body = req.post_data
+        try: raw = req.post_data
+        except Exception: raw = None
+        if raw:
+            try: body = json.loads(raw)
+            except Exception: body = raw
         self.log.append((method, path, u.query, body))
         hdr = {"content-type": "application/json", "access-control-allow-origin": "*",
                "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-expose-headers": "content-range"}
@@ -119,6 +127,30 @@ class Mock:
             return send(200, self.user)
         if path.startswith("/auth/v1/logout"):
             return send(204)
+        if path.startswith("/storage/v1/object/story-photos/") and method == "POST":
+            key = path[len("/storage/v1/object/story-photos/"):]
+            if not re.match(r"^[0-9]{8}/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.jpg$", key):
+                return send(400, {"statusCode": "403", "error": "Unauthorized", "message": "new row violates row-level security policy"})
+            if self.fail_upload:
+                return send(500, {"message": "boom"})
+            self.photos[key] = {"size": len(req.post_data_buffer or b""), "at": time.time(), "auth": req.headers.get("authorization"), "type": req.headers.get("content-type")}
+            return send(200, {"Key": "story-photos/" + key, "Id": str(uuid.uuid4())})
+        if path.startswith("/storage/v1/object/sign/story-photos/") and method == "GET":
+            return route.fulfill(status=200, headers={"content-type": "image/jpeg", "access-control-allow-origin": "*"}, body=self.photo_bytes)
+        if path.startswith("/storage/v1/object/sign/story-photos/"):
+            key = path[len("/storage/v1/object/sign/story-photos/"):]
+            return send(200, {"signedURL": "/object/sign/story-photos/" + key + "?token=t"})
+        if path.startswith("/storage/v1/object/list/story-photos"):
+            pre = (body or {}).get("prefix", "") if isinstance(body, dict) else ""
+            if not pre:
+                days = sorted({k.split("/")[0] for k in self.photos})
+                return send(200, [{"name": d, "id": None, "metadata": None} for d in days])
+            items = [{"name": k.split("/")[1], "id": k, "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(v["at"])), "metadata": {"size": v["size"]}} for k, v in self.photos.items() if k.startswith(pre.rstrip("/") + "/")]
+            return send(200, items)
+        if path == "/storage/v1/object/story-photos" and method == "DELETE":
+            gone = [k for k in (body or {}).get("prefixes", []) if self.photos.pop(k, None) is not None]
+            self.deleted_photos.extend(gone)
+            return send(200, [{"name": k} for k in gone])
         if path.startswith("/storage/v1/"):
             return send(200, {"Key": "product-images/x.jpg"})
         if path.startswith("/functions/v1/"):
