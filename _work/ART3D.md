@@ -9,7 +9,9 @@
 - ✅ صور المنتجات images/p/st-{id}-0..4.jpg (ثيم ليلي) وصورة القسم images/categories/personal.jpg — السكربت _work/product_images.py.
 - ✅ seed.json فيه المنتجات الأربعة + pro_stories، والملف _work/sql/v22_stories3d.sql (إضافة فقط).
 - ✅ نُشر المتجر في main/huroof (commit df2d8a8).
-- ⏳ تنفيذ v22_stories3d.sql على Supabase أُلغي عند طلب الموافقة — راجع الحالة قبل أي شيء (select من products where story in (...)).
+- ✅ Supabase: المنتجات الأربعة (ظاهرة) + 16 صورة معرض أُضيفت (insert فقط). القديمة مخفية كما هي.
+- ⏳ الباقي الوحيد: تحديث config.stories.pro_stories إلى ["astro","sea","dino","oman"] — طلب الموافقة انتهى وقته 3 مرات.
+  حتى يُنفَّذ: خيار «القصة المؤلفة خصيصاً» لا يظهر للقصص الجديدة (وصف المنتجات يذكره). السطر الأخير في _work/sql/v22_stories3d.sql.
 - مراجعة الكتب: _work/review_books.py (كل الصفحات) و _work/render_some.py (صفحات محددة بحجم أكبر).
 
 ## الخطوات الباقية (بالترتيب)
