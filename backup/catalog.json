@@ -66,7 +66,7 @@
     "hero_features": [
      "Delivery to all GCC countries",
      "Free office pickup in Oman over {free}",
-     "Cash on delivery in Oman & UAE"
+     "Cash on delivery for orders over {free}"
     ]
    }
   },
@@ -255,7 +255,8 @@
      "countries": [
       "OM",
       "AE"
-     ]
+     ],
+     "min_total": 11
     },
     {
      "id": "bank",
@@ -597,7 +598,7 @@
    "announce_show": false,
    "announce_text": "",
    "hero_features": [
-    "الدفع عند الاستلام في عُمان والإمارات",
+    "الدفع عند الاستلام للطلبات فوق {free}",
     "توصيل مجاني للمكتب داخل عُمان اكثر من {free}",
     "توصيل لكل دول الخليج",
     ""
