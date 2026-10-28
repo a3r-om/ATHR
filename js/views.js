@@ -158,6 +158,8 @@
     V.colorOf = (v, p) => v.colorById.get(p.color_id) || null;
     V.label = (v, p) => ATHR.displayLabel(p, v.cfg);
     V.pname = (p) => L(p, "name");
+    // اسم طريقة الدفع مع حدّها الأدنى إن وُجد: «الدفع عند الاستلام (للطلبات من 11 ر.ع)»
+    V.payLabel = (v, p) => Number(p.min_total) > 0 ? t("{name} (للطلبات من {amount})", { name: L(p, "name"), amount: ATHR.trimZeros(money(v, p.min_total)) }) : L(p, "name");
     V.cname = (c) => L(c, "name");
     V.img = (p) => p.thumb_url || ATHR.thumb(p.image_url, "s");
     V.big = (p) => ATHR.thumb(p.image_url, "m");
@@ -502,7 +504,7 @@
     V.paymentGroups = function (v) {
         const groups = new Map();
         ATHR.countries(v.cfg).filter((c) => c.enabled).forEach((c) => {
-            const names = ATHR.paymentsFor(v.cfg, c.code).map((p) => L(p, "name"));
+            const names = ATHR.paymentsFor(v.cfg, c.code).map((p) => V.payLabel(v, p));
             if (!names.length) return;
             const key = names.join(sep());
             if (!groups.has(key)) groups.set(key, []);
@@ -566,7 +568,7 @@
                         : t("التوصيل للمكتب مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))
                     : t("مجاني للطلبات من {free} أو أكثر", { free: money(v, cfg.order.free_min) }))}</span>` : ""}
             </div></div>
-            ${pays.length ? `<div class="info-row">${ICON.card}<div><b>${esc(t("الدفع"))}</b><span>${esc(pays.map((x) => L(x, "name")).join(sep()))}</span></div></div>` : ""}
+            ${pays.length ? `<div class="info-row">${ICON.card}<div><b>${esc(t("الدفع"))}</b><span>${esc(pays.map((x) => V.payLabel(v, x)).join(sep()))}</span></div></div>` : ""}
             ${multi ? `<button class="link-btn" type="button" data-open-currency>${esc(t("لست في {country}؟ غيّر الدولة", { country: V.countryName(c) }))}</button>` : ""}
         </div>`;
     };
