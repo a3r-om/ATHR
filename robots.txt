@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /backup/
 
-Sitemap: https://a3r-om.github.io/ATHR/sitemap.xml
+Sitemap: https://roaoman.com/sitemap.xml
