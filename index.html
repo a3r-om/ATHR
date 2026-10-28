@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap"></noscript>
-<link rel="stylesheet" href="/css/store.css?v=048e5d9a47">
+<link rel="stylesheet" href="/css/store.css?v=11efce3020">
 <style id="themeVars">:root{--primary:#570418;--hero:#570418;--bg:#F2E9DA;--text:#23120D;--on-primary:#FFFFFF;--logo-filter:none;--font-head:"Amiri","IBM Plex Sans Arabic",system-ui,sans-serif;--font-body:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif}html[data-mode="dark"]{--btn-bg:#F1EEE8;--btn-ink:#141414}@media (prefers-color-scheme:dark){html[data-mode="auto"]{--btn-bg:#F1EEE8;--btn-ink:#141414}}</style>
 <script>window.ATHR_BASE = "/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("athr_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
@@ -57,7 +57,10 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <div id="bars" class="bars"><div class="bar bar-ship"><div>للطلبات من 11.000 ر.ع أو أكثر: التوصيل للمكتب مجاني وللبيت بـ1 ر.ع</div></div></div>
 
 <main id="view" tabindex="-1" data-route="home" data-prerendered="1">
-<section class="ad wrap" id="ad"><div class="ad-media"><video muted loop playsinline autoplay preload="auto" src="/images/ad/d5f720ba30.mp4" poster="/images/ad/d5f720ba30-cover.jpg" width="720" height="334" aria-label=""></video><span class="ad-play" aria-hidden="true"></span></div></section>
+<section class="ad wrap ad-multi" id="ad" aria-roledescription="carousel" aria-label="العروض">
+            <div class="ad-track"><div class="ad-slide" role="group" aria-roledescription="slide" aria-label="1 / 4"><div class="ad-media"><video muted loop playsinline autoplay preload="auto" src="/images/ad/679d081aad.mp4" poster="/images/ad/679d081aad-cover.jpg" width="720" height="334" aria-label=""></video><span class="ad-play" aria-hidden="true"></span></div></div><div class="ad-slide" role="group" aria-roledescription="slide" aria-label="2 / 4"><div class="ad-media"><video muted loop playsinline preload="none" src="/images/ad/0df38beea1.mp4" poster="/images/ad/0df38beea1-cover.jpg" width="720" height="334" aria-label=""></video><span class="ad-play" aria-hidden="true"></span></div></div><div class="ad-slide" role="group" aria-roledescription="slide" aria-label="3 / 4"><a class="ad-media" href="https://roa-om.com/p/%D9%83%D9%88%D8%A8-%D8%B1%D9%8A%D8%AF%D8%A8%D9%88%D9%84-%D8%A7%D9%84%D9%85%D8%B6%D9%8A%D8%A6-%D9%88%D8%B1%D8%AF%D9%8A/" target="_blank" rel="noopener"><video muted loop playsinline preload="none" src="/images/ad/a33b3116da.mp4" poster="/images/ad/a33b3116da-cover.jpg" width="720" height="334" aria-label=""></video><span class="ad-play" aria-hidden="true"></span></a></div><div class="ad-slide" role="group" aria-roledescription="slide" aria-label="4 / 4"><a class="ad-media" href="https://roa-om.com/p/%D9%83%D9%88%D8%A8-%D8%AD%D8%B1%D8%A7%D8%B1%D9%8A-750-%D9%85%D9%84-%D9%88%D8%B1%D8%AF%D9%8A/" target="_blank" rel="noopener"><video muted loop playsinline preload="none" src="/images/ad/4c2e7058bf.mp4" poster="/images/ad/4c2e7058bf-cover.jpg" width="720" height="334" aria-label=""></video><span class="ad-play" aria-hidden="true"></span></a></div></div>
+            <div class="ad-dots"><button type="button" data-ad-dot="0" aria-label="إعلان 1" aria-current="true"></button><button type="button" data-ad-dot="1" aria-label="إعلان 2"></button><button type="button" data-ad-dot="2" aria-label="إعلان 3"></button><button type="button" data-ad-dot="3" aria-label="إعلان 4"></button></div>
+        </section>
             <h1 class="sr-only">روا</h1>
             <nav class="tiles wrap" aria-label="الأقسام">
             <a class="tile" href="/c/clubs/">
@@ -111,7 +114,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                 <div class="rail"><article class="card" data-card="1037b58a-1aa6-4e86-9573-2036b17a04b2">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%B1%D9%8A%D8%A7%D9%84-%D9%85%D8%AF%D8%B1%D9%8A%D8%AF-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/1iybsdphdc4.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                <span class="badge hot">الأكثر طلباً</span>
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="1037b58a-1aa6-4e86-9573-2036b17a04b2" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -123,8 +126,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <span class="sw-name">أبيض</span>
         </div>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -177,7 +180,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </article><article class="card" data-card="e2a0c2e1-5256-4b9b-8f0f-947454fc1652">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%A7%D9%84%D8%AA%D9%82%D9%86%D9%8A%D8%A9-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/pvytfyh49o.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                <span class="badge hot">الأكثر طلباً</span>
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="e2a0c2e1-5256-4b9b-8f0f-947454fc1652" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -186,8 +189,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                 
                 <span class="color-tag"><span class="dot" style="background:#FFFFFF"></span>أبيض</span>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -297,7 +300,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب عمان + محفظة عمان</b>
-                <div class="price"><b>4.250 ر.ع</b><s>4.400 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة عمان بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="0a73cbcc-8363-4da6-9686-171487486683|9f941837-17fa-4ae6-864b-0d99de743710">أضف الطقم</button>
@@ -309,7 +312,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب ريال مدريد + محفظة ريال مدريد</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة ريال مدريد بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="38ed6350-0b43-47b6-aaa7-a707cd8bc18e|1037b58a-1aa6-4e86-9573-2036b17a04b2">أضف الطقم</button>
@@ -321,7 +324,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب ريال مدريد + محفظة ريال مدريد</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة ريال مدريد بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="073bc4a0-75aa-4eba-873a-310a2008b4b7|a2f68383-f6ba-4451-bb42-473c072e1583">أضف الطقم</button>
@@ -333,7 +336,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب برشلونة + محفظة برشلونة</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة برشلونة بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="5b8a9753-052e-4218-9049-fd6013fdf93f|f45772ad-2750-4e1e-8bc7-637b0718d564">أضف الطقم</button>
@@ -345,7 +348,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب برشلونة + محفظة برشلونة</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة برشلونة بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="4c2a28a4-8657-43fc-bcce-f63fa4813941|512117c7-ef91-421c-9591-739092a25ab4">أضف الطقم</button>
@@ -393,7 +396,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب الهلال + محفظة الهلال</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة الهلال بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="2dbd7536-290a-48d2-a6b7-b939e28b36be|bd8b9190-c932-421b-af94-727e997c83a2">أضف الطقم</button>
@@ -405,7 +408,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب الهلال + محفظة الهلال</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة الهلال بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="a6a19d05-bb8e-4eb6-8aca-78823ad96f7a|be9b5d4a-f26a-4a04-bdf8-c5c80441554b">أضف الطقم</button>
@@ -417,7 +420,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب الاتحاد + محفظة الاتحاد</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة الاتحاد بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="714e1a49-f2b5-4800-9def-f82ac11927b5|5348254e-cfe6-4f04-9220-887d9122656e">أضف الطقم</button>
@@ -429,7 +432,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </a>
             <div class="set-body">
                 <b class="set-name">كوب الاتحاد + محفظة الاتحاد</b>
-                <div class="price"><b>4.850 ر.ع</b><s>5.000 ر.ع</s></div>
+                <div class="price"><b>4.310 ر.ع</b><s>4.400 ر.ع</s></div>
                 <span class="set-save">محفظة الاتحاد بخصم 10%</span>
             </div>
             <button class="btn btn-primary btn-sm" type="button" data-add-bundle="6c74a0ca-ce04-4d21-8746-f89441141a46|e09687c7-e273-4e8e-8de2-2e3e6f9465fa">أضف الطقم</button>
@@ -438,7 +441,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </section>
             <section class="catalog section" id="catalog" aria-labelledby="catalog-t">
                 <div class="wrap" id="catalogInner"><div class="section-head">
-                <h2 id="catalog-t">كل المنتجات <small class="muted">(55)</small></h2>
+                <h2 id="catalog-t">كل المنتجات <small class="muted">(56)</small></h2>
                 <label class="sr-only" for="sortSelect">ترتيب حسب السعر</label>
             <select class="select" id="sortSelect">
                 <option value="default" selected>الترتيب الافتراضي</option>
@@ -447,14 +450,34 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </select>
             </div>
             <div class="cat-chips" role="group" aria-label="تصفية حسب القسم">
-                <button type="button" class="chip on" data-home-cat="" aria-pressed="true">الكل <small>55</small></button>
-                <button type="button" class="chip" data-home-cat="1615ffc9-aaf9-4255-ad51-cf97aa31d339" aria-pressed="false">أكواب الأندية <small>14</small></button><button type="button" class="chip" data-home-cat="86f815ac-d565-4ccf-b9db-4801478cc2f4" aria-pressed="false">أكواب البنات <small>6</small></button><button type="button" class="chip" data-home-cat="f0cc5e0b-53fd-4ac5-89e3-fb7dd854be62" aria-pressed="false">Red Bull المضيئة <small>1</small></button><button type="button" class="chip" data-home-cat="f1f14a18-f3cd-4273-8391-6ca4dfcb9b96" aria-pressed="false">أكواب حرارية <small>1</small></button><button type="button" class="chip" data-home-cat="c1cce35a-5033-416c-be8d-b779b59a0512" aria-pressed="false">المحافظ <small>16</small></button><button type="button" class="chip" data-home-cat="df88951c-793d-4241-9cdd-0006153c9e76" aria-pressed="false">المجات <small>5</small></button><button type="button" class="chip" data-home-cat="f66bfc95-7b3c-4587-b990-121d6061bb90" aria-pressed="false">أدوات القهوة <small>1</small></button><button type="button" class="chip" data-home-cat="9772fcab-9f6d-44df-8e1d-38bc498b1283" aria-pressed="false">أكواب العبارات <small>3</small></button><button type="button" class="chip" data-home-cat="a13e9d07-50df-445b-8763-fb644a58d472" aria-pressed="false">أكواب الجامعات <small>4</small></button><button type="button" class="chip" data-home-cat="51a1eb69-797e-45d8-8401-8977794c0611" aria-pressed="false">حقائب المكياج <small>1</small></button><button type="button" class="chip" data-home-cat="330df6fd-7636-4c17-afca-fc35d2caf5ed" aria-pressed="false">أكواب الدول <small>3</small></button>
+                <button type="button" class="chip on" data-home-cat="" aria-pressed="true">الكل <small>56</small></button>
+                <button type="button" class="chip" data-home-cat="1615ffc9-aaf9-4255-ad51-cf97aa31d339" aria-pressed="false">أكواب الأندية <small>14</small></button><button type="button" class="chip" data-home-cat="86f815ac-d565-4ccf-b9db-4801478cc2f4" aria-pressed="false">أكواب البنات <small>6</small></button><button type="button" class="chip" data-home-cat="f0cc5e0b-53fd-4ac5-89e3-fb7dd854be62" aria-pressed="false">Red Bull المضيئة <small>1</small></button><button type="button" class="chip" data-home-cat="f1f14a18-f3cd-4273-8391-6ca4dfcb9b96" aria-pressed="false">أكواب حرارية <small>1</small></button><button type="button" class="chip" data-home-cat="c1cce35a-5033-416c-be8d-b779b59a0512" aria-pressed="false">المحافظ <small>16</small></button><button type="button" class="chip" data-home-cat="df88951c-793d-4241-9cdd-0006153c9e76" aria-pressed="false">المجات <small>6</small></button><button type="button" class="chip" data-home-cat="f66bfc95-7b3c-4587-b990-121d6061bb90" aria-pressed="false">أدوات القهوة <small>1</small></button><button type="button" class="chip" data-home-cat="9772fcab-9f6d-44df-8e1d-38bc498b1283" aria-pressed="false">أكواب العبارات <small>3</small></button><button type="button" class="chip" data-home-cat="a13e9d07-50df-445b-8763-fb644a58d472" aria-pressed="false">أكواب الجامعات <small>4</small></button><button type="button" class="chip" data-home-cat="51a1eb69-797e-45d8-8401-8977794c0611" aria-pressed="false">حقائب المكياج <small>1</small></button><button type="button" class="chip" data-home-cat="330df6fd-7636-4c17-afca-fc35d2caf5ed" aria-pressed="false">أكواب الدول <small>3</small></button>
             </div>
             
-            <div id="gridBox"><div class="grid"><article class="card" data-card="5348254e-cfe6-4f04-9220-887d9122656e">
+            <div id="gridBox"><div class="grid"><article class="card" data-card="99a068ef-3327-4698-a14f-8aa960a3d57e">
+            <a class="card-img" href="/p/%D9%85%D8%AC-%D8%B9%D9%85%D8%A7%D9%86-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
+                <img src="/images/t/2dla5dz93fx.webp" alt="" width="400" height="500" fetchpriority="high" decoding="async">
+                <span class="badge sale">خصم 20%</span>
+            </a>
+            <button class="fav-btn" type="button" data-fav="99a068ef-3327-4698-a14f-8aa960a3d57e" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
+            <div class="card-body">
+                <a class="card-name" href="/p/%D9%85%D8%AC-%D8%B9%D9%85%D8%A7%D9%86-%D8%A3%D8%A8%D9%8A%D8%B6/">مج عمان</a>
+                
+                
+                <span class="color-tag"><span class="dot" style="background:#FFFFFF"></span>أبيض</span>
+                <div class="price">
+            <b>4.800 ر.ع</b>
+            <s>6.000 ر.ع</s>
+            
+            
+        </div>
+                
+            </div>
+            <div class="card-action" data-action-for="99a068ef-3327-4698-a14f-8aa960a3d57e"><button class="btn btn-primary" type="button" data-add="99a068ef-3327-4698-a14f-8aa960a3d57e">أضف للسلة</button></div>
+        </article><article class="card" data-card="5348254e-cfe6-4f04-9220-887d9122656e">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%A7%D9%84%D8%A7%D8%AA%D8%AD%D8%A7%D8%AF-%D8%A3%D8%B3%D9%88%D8%AF/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/18krko4ddo1.webp" alt="" width="400" height="500" fetchpriority="high" decoding="async">
-                
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="5348254e-cfe6-4f04-9220-887d9122656e" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -463,8 +486,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                 
                 <span class="color-tag"><span class="dot" style="background:#1E1E1E"></span>أسود</span>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -473,8 +496,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <div class="card-action" data-action-for="5348254e-cfe6-4f04-9220-887d9122656e"><button class="btn btn-primary" type="button" data-add="5348254e-cfe6-4f04-9220-887d9122656e">أضف للسلة</button></div>
         </article><article class="card" data-card="e09687c7-e273-4e8e-8de2-2e3e6f9465fa">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%A7%D9%84%D8%A7%D8%AA%D8%AD%D8%A7%D8%AF-%D8%A3%D8%A8%D9%8A%D8%B6-2/" tabindex="-1" aria-hidden="true">
-                <img src="/images/t/soi2esjsae.webp" alt="" width="400" height="500" fetchpriority="high" decoding="async">
-                
+                <img src="/images/t/soi2esjsae.webp" alt="" width="400" height="500" decoding="async">
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="e09687c7-e273-4e8e-8de2-2e3e6f9465fa" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -483,8 +506,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                 
                 <span class="color-tag"><span class="dot" style="background:#FFFFFF"></span>أبيض</span>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -494,7 +517,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </article><article class="card" data-card="be9b5d4a-f26a-4a04-bdf8-c5c80441554b">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%A7%D9%84%D9%87%D9%84%D8%A7%D9%84-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/jykwzckznn.webp" alt="" width="400" height="500" decoding="async">
-                
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="be9b5d4a-f26a-4a04-bdf8-c5c80441554b" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -506,8 +529,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <span class="sw-name">أبيض</span>
         </div>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -516,8 +539,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <div class="card-action" data-action-for="be9b5d4a-f26a-4a04-bdf8-c5c80441554b"><button class="btn btn-primary" type="button" data-add="be9b5d4a-f26a-4a04-bdf8-c5c80441554b">أضف للسلة</button></div>
         </article><article class="card" data-card="f45772ad-2750-4e1e-8bc7-637b0718d564">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%A8%D8%B1%D8%B4%D9%84%D9%88%D9%86%D8%A9-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
-                <img src="/images/t/27e4p0kktvw.webp" alt="" width="400" height="500" decoding="async">
-                
+                <img src="/images/t/27e4p0kktvw.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="f45772ad-2750-4e1e-8bc7-637b0718d564" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -529,8 +552,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <span class="sw-name">أبيض</span>
         </div>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -540,7 +563,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </article><article class="card" data-card="1037b58a-1aa6-4e86-9573-2036b17a04b2">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%B1%D9%8A%D8%A7%D9%84-%D9%85%D8%AF%D8%B1%D9%8A%D8%AF-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/1iybsdphdc4.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                <span class="badge hot">الأكثر طلباً</span>
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="1037b58a-1aa6-4e86-9573-2036b17a04b2" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -552,8 +575,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <span class="sw-name">أبيض</span>
         </div>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -563,7 +586,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </article><article class="card" data-card="9f941837-17fa-4ae6-864b-0d99de743710">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-%D8%B9%D9%85%D8%A7%D9%86-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/1l8nbfcnlp0.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="9f941837-17fa-4ae6-864b-0d99de743710" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -575,8 +598,8 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <span class="sw-name">أبيض</span>
         </div>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
@@ -586,7 +609,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </article><article class="card" data-card="0a73cbcc-8363-4da6-9686-171487486683">
             <a class="card-img" href="/p/%D9%83%D9%88%D8%A8-%D8%B9%D9%85%D8%A7%D9%86-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/2x5javnkg0.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                <span class="badge sale">خصم 36%</span>
+                <span class="badge sale">خصم 22%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="0a73cbcc-8363-4da6-9686-171487486683" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -595,7 +618,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                 
                 <span class="color-tag"><span class="dot" style="background:#FFFFFF"></span>أبيض</span>
                 <div class="price">
-            <b>2.900 ر.ع</b>
+            <b>3.500 ر.ع</b>
             <s>4.500 ر.ع</s>
             
             
@@ -669,7 +692,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
         </article><article class="card" data-card="8b328676-2570-40b3-8318-faca7ba715a1">
             <a class="card-img" href="/p/%D9%85%D8%AD%D9%81%D8%B8%D8%A9-f-sport-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
                 <img src="/images/t/ht6g7rdr50.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                
+                <span class="badge sale">خصم 40%</span>
             </a>
             <button class="fav-btn" type="button" data-fav="8b328676-2570-40b3-8318-faca7ba715a1" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
             <div class="card-body">
@@ -678,35 +701,15 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                 
                 <span class="color-tag"><span class="dot" style="background:#FFFFFF"></span>أبيض</span>
                 <div class="price">
-            <b>1.500 ر.ع</b>
-            
+            <b>0.900 ر.ع</b>
+            <s>1.500 ر.ع</s>
             
             
         </div>
                 
             </div>
             <div class="card-action" data-action-for="8b328676-2570-40b3-8318-faca7ba715a1"><button class="btn btn-primary" type="button" data-add="8b328676-2570-40b3-8318-faca7ba715a1">أضف للسلة</button></div>
-        </article><article class="card" data-card="562787e7-5e03-4c62-8355-0e3507da3bd4">
-            <a class="card-img" href="/p/%D9%85%D8%AC-%D8%B1%D9%88%D9%86%D8%A7%D9%84%D8%AF%D9%88-%D8%A3%D8%A8%D9%8A%D8%B6/" tabindex="-1" aria-hidden="true">
-                <img src="/images/t/n1lxadxfhy.webp" alt="" width="400" height="500" loading="lazy" decoding="async">
-                <span class="badge sale">خصم 20%</span>
-            </a>
-            <button class="fav-btn" type="button" data-fav="562787e7-5e03-4c62-8355-0e3507da3bd4" aria-pressed="false" aria-label="أضف للمفضلة"><svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.8-4.6-7.8-10.3A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 7.8 2.7c0 5.7-7.8 10.3-7.8 10.3Z"/></svg></button>
-            <div class="card-body">
-                <a class="card-name" href="/p/%D9%85%D8%AC-%D8%B1%D9%88%D9%86%D8%A7%D9%84%D8%AF%D9%88-%D8%A3%D8%A8%D9%8A%D8%B6/">مج رونالدو</a>
-                
-                
-                <span class="color-tag"><span class="dot" style="background:#FFFFFF"></span>أبيض</span>
-                <div class="price">
-            <b>4.800 ر.ع</b>
-            <s>6.000 ر.ع</s>
-            
-            
-        </div>
-                
-            </div>
-            <div class="card-action" data-action-for="562787e7-5e03-4c62-8355-0e3507da3bd4"><button class="btn btn-primary" type="button" data-add="562787e7-5e03-4c62-8355-0e3507da3bd4">أضف للسلة</button></div>
-        </article></div><div class="more-wrap"><button class="btn btn-ghost more-btn" type="button" data-more>عرض المزيد <small>(43)</small></button></div></div></div>
+        </article></div><div class="more-wrap"><button class="btn btn-ghost more-btn" type="button" data-more>عرض المزيد <small>(44)</small></button></div></div></div>
             </section>
             
             
@@ -744,9 +747,9 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <script src="/js/defaults.js?v=38d55ba2a1" defer></script>
 <script src="/js/views.js?v=96b09bdbdc" defer></script>
 <script src="/js/i18n-en.js?v=9c0b6ce8ee" defer></script>
-<script src="/js/thumbs.js?v=dff724ed76" defer></script>
+<script src="/js/thumbs.js?v=bd17432220" defer></script>
 <script src="/js/rates.js?v=8e2e3e8def" defer></script>
-<script src="/js/catalog.js?v=1efa12d874" defer></script>
+<script src="/js/catalog.js?v=cfc5b60228" defer></script>
 <script src="/js/store.js?v=25dbcc469a" defer></script>
 </body>
 </html>
