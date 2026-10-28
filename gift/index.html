@@ -29,7 +29,7 @@
 <script>window.ATHR_BASE = "/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("athr_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("athr_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
 /* رابط لوحة التحكم: شاشة انتظار من أول لحظة، وملفات اللوحة تبدأ التحميل مع ملفات المتجر */
-if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=70422a5ab1"], ["style", B + "css/admin-panel.css?v=70422a5ab1"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
+if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=3952cec028"], ["style", B + "css/admin-panel.css?v=3952cec028"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
 </head>
 <body>
 
@@ -93,9 +93,9 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <script src="/js/defaults.js?v=38d55ba2a1" defer></script>
 <script src="/js/views.js?v=96b09bdbdc" defer></script>
 <script src="/js/i18n-en.js?v=9c0b6ce8ee" defer></script>
-<script src="/js/thumbs.js?v=fc6efbf595" defer></script>
+<script src="/js/thumbs.js?v=3a8f6dba7f" defer></script>
 <script src="/js/rates.js?v=8e2e3e8def" defer></script>
-<script src="/js/catalog.js?v=9641104e7e" defer></script>
-<script src="/js/store.js?v=70422a5ab1" defer></script>
+<script src="/js/catalog.js?v=9eb85bc6c4" defer></script>
+<script src="/js/store.js?v=3952cec028" defer></script>
 </body>
 </html>
