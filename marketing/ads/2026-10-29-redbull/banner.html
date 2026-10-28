@@ -2,14 +2,14 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>فيديو إعلان المتجر — خصم على أكواب ريد بول المضيئة (5 ثوانٍ)</title>
+<title>فيديو إعلان — خصم 36% على أكواب ريد بول المضيئة (5 ثوانٍ)</title>
 <link rel="stylesheet" href="../../kit/brand.css">
 <style>
-/* إعلان الخصومات أعلى المتجر (الفيديو images/ads/redbull.mp4 وغلافه redbull.jpg). المقاس 1296×602 (نفس نسبة الصورة) */
-:root { --bg1: #7C1028; --bg2: #2A020B; --cream: #F2E9DA; --sand: #E6D8C2; --pink: #D6DB89; --wine: #570418; --deep: #23120D; } /* ألوان هوية روا: روسو، كريما، سابيا، فستقي، إسبريسو */
+/* إعلان الخصومات أعلى المتجر (الفيديو images/ads/redbull-36.mp4 وغلافه redbull-36.jpg). المقاس 1296×602 (نفس نسبة الصورة) */
+:root { --bg1: #6B0A20; --bg2: #3E0310; --cream: #F2E9DA; --sand: #E6D8C2; --pink: #D6DB89; --wine: #570418; --deep: #23120D; } /* ألوان هوية روا: روسو، كريما، سابيا، فستقي، إسبريسو */
 html, body { background: #111; }
 .reel { width: 1296px; height: 602px; position: relative; overflow: hidden; direction: rtl; font-family: "Plex", sans-serif;
-        background: radial-gradient(ellipse 700px 560px at 24% 55%, rgba(214,170,110,.28), transparent 70%), radial-gradient(ellipse 900px 520px at 70% 45%, var(--bg1), var(--bg2)); color: var(--cream); }
+        background: radial-gradient(ellipse 460px 460px at 250px 320px, rgba(230,216,194,.20), rgba(230,216,194,0) 70%), radial-gradient(ellipse 900px 520px at 70% 45%, #5A0A1E, #260109); color: var(--cream); }
 .abs { position: absolute; transform-origin: 50% 50%; }
 #ring { left: 247px; top: 330px; width: 500px; height: 500px; margin: -250px 0 0 -250px; border-radius: 50%;
         background: radial-gradient(circle, rgba(255,255,255,.07) 0%, rgba(255,255,255,.04) 60%, rgba(255,255,255,0) 61%);
@@ -17,11 +17,11 @@ html, body { background: #111; }
 #dots { inset: 0; background: radial-gradient(circle, rgba(255,255,255,.07) 1.4px, transparent 1.8px) 0 0 / 22px 22px; opacity: .55; }
 .txt { right: 70px; white-space: nowrap; transform-origin: 100% 50%; }
 #pill { top: 88px; padding: 4px 24px 9px; border: 1.5px solid rgba(241,228,211,.55); border-radius: 999px; font-size: 26px; font-weight: 600; color: var(--cream); }
-#h1 { top: 138px; font-size: 78px; font-weight: 700; line-height: 1.15; }
-#h2 { top: 214px; font-size: 138px; font-weight: 700; line-height: 1.15; display: flex; gap: 22px; align-items: baseline; }
+#h1 { top: 146px; font-size: 78px; font-weight: 700; line-height: 1.15; }
+#h2 { top: 214px; font-size: 116px; font-weight: 700; line-height: 1.15; display: flex; gap: 22px; align-items: baseline; }
 #h2 .num { direction: ltr; display: inline-block; }
 #h2 .to { font-size: 84px; }
-#sub { top: 364px; font-size: 40px; line-height: 1.2; font-weight: 500; color: rgba(241,228,211,.9); }
+#sub { top: 342px; font-size: 42px; line-height: 1.2; font-weight: 500; color: rgba(241,228,211,.9); }
 #btn { top: 414px; right: 70px; padding: 12px 46px 18px; border-radius: 999px; background: var(--sand); color: var(--deep); font-size: 40px; font-weight: 700; overflow: hidden; transform-origin: 100% 50%;
        box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 #btn .bs { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%); opacity: 0; }
@@ -44,17 +44,17 @@ html, body { background: #111; }
     <div class="abs" id="ring"></div>
 
     <!-- الصور -->
-    <div class="abs card" id="cA" style="width:270px;height:300px"><img src="1hc1b33jp27-m.webp" alt=""></div>
-    <div class="abs card" id="cB" style="width:220px;height:250px"><img src="66s8xw22p8-m.webp" alt=""></div>
-    <div class="abs badge pink" id="bC" style="width:132px;height:132px;font-size:132px"><small>خصم</small><b>22%</b></div>
+    <div class="abs card" id="cA" style="width:232px;height:300px"><img src="../../../images/t/66s8xw22p8.webp" alt=""></div>
+    <div class="abs card" id="cB" style="width:252px;height:330px"><img src="../../../images/t/1hc1b33jp27.webp" alt=""></div>
+    <div class="abs badge pink" id="bC" style="width:128px;height:128px;font-size:128px"><small>خصم</small><b>36%</b></div>
 
     <!-- الكلام -->
     <div class="abs txt" id="pill">عروض روا</div>
     <div class="abs txt" id="h1">خصم</div>
-    <div class="abs txt" id="h2"><span class="num" id="n2">22%</span></div>
+    <div class="abs txt" id="h2"><span class="num" id="n1" style="display:none">0%</span><span class="to" id="to" style="display:none">إلى</span><span class="num" id="n2">36%</span></div>
     <div class="abs txt" id="sub">على أكواب ريد بول المضيئة</div>
     <div class="abs" id="btn">تسوّق الآن<span class="bs"></span></div>
-    <div class="abs txt" id="notes" style="right:370px">الآن 3.500 ر.ع بدل 4.500<br>الدفع عند الاستلام</div>
+    <div class="abs txt" id="notes" style="right:370px">الدفع عند الاستلام<br>توصيل لكل عُمان</div>
     <div id="spks"></div>
     <div class="abs" id="sweep"></div>
 </div>
@@ -84,11 +84,11 @@ function set(el, { o = 1, x = 0, y = 0, s = 1, r = 0, b = 0, center = false } = 
 
 // الصور: مكانها النهائي (المركز) وزاوية الميلان، ومن وين تدخل
 const CARDS = [
-    { id: "#cA", x: 150, y: 318, r: -4, at: 0.15, fx: -260, fy: 60, fr: -25, ph: 0.0 },
-    { id: "#cB", x: 345, y: 285, r: 6, at: 0.3, fx: -120, fy: 380, fr: 22, ph: 1.7 }
+    { id: "#cA", x: 150, y: 318, r: -6, at: 0.15, fx: -260, fy: 120, fr: -25, ph: 0.0 },
+    { id: "#cB", x: 352, y: 292, r: 4, at: 0.3, fx: -120, fy: 380, fr: 22, ph: 1.7 }
 ];
 const BADGES = [
-    { id: "#bC", card: 1, dx: 20, dy: -150, at: 0.9, big: true }
+    { id: "#bC", card: 1, dx: -118, dy: -140, at: 0.8, big: true }
 ];
 
 // نجوم لامعة
@@ -139,9 +139,12 @@ window.render = function (t) {
     txt("#pill", 0.1);
     txt("#h1", 0.2);
     // الأرقام تعد
-    const k2 = p(t, 0.5, 1.2);
-    $("#n2").textContent = Math.round(22 * eo(k2)) + "%";
+    const k1 = p(t, 0.4, 0.8), k2 = p(t, 0.6, 1.2);
+    $("#n1").textContent = Math.round(20 * eo(k1)) + "%";
+    $("#n2").textContent = Math.round(36 * eo(k2)) + "%";
     txt("#h2", 0.4, 0.4, 50);
+    $("#to").style.opacity = String(p(t, 0.75, 0.95));
+    $("#n2").style.opacity = String(p(t, 0.6, 0.8));
     const pop2 = Math.sin(Math.PI * p(t, 1.35, 1.65)) + 0.5 * Math.sin(Math.PI * p(t, 2.9, 3.25));
     $("#n2").style.transform = `scale(${1 + 0.1 * pop2})`;
     $("#n2").style.textShadow = `0 0 ${(18 * pop2).toFixed(0)}px rgba(242,167,187,${(0.6 * pop2).toFixed(2)})`;
