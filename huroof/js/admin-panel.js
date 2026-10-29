@@ -6422,6 +6422,7 @@
             SM.photo = await lib.readPhoto(blob);
             SM.raw = blob;
             SM.cartoon = out.image;
+            SM.art = null;
             $("#smPhotoName").textContent = "✓ الرسم الكرتوني جاهز على الغلاف";
             btn.textContent = "🎨 ارسمه مرة ثانية";
             smReset();
@@ -6448,7 +6449,7 @@
             const targets = [["smCover", pages[0]], ["smPage", pages[2]]];
             for (const [id, pg] of targets) {
                 const tmp = document.createElement("canvas");
-                await lib.renderPage(story, data, pg, { width: 300, canvas: tmp, photo: SM.photo });
+                await lib.renderPage(story, data, pg, { width: 300, canvas: tmp, photo: SM.cartoon ? null : SM.photo });
                 if (seq !== SM.seq) return;
                 const c = $(`#${id}`);
                 if (!c) return;
@@ -6475,11 +6476,46 @@
         $("#smActions").innerHTML = "";
         try {
             const lib = await loadStoriesLib();
+            let art = null;
+            if (SM.cartoon) {
+                SM.art = SM.art && SM.artFor === `${story}|${custom.g}|${SM.cartoon.length}` ? SM.art : {};
+                SM.artFor = `${story}|${custom.g}|${SM.cartoon.length}`;
+                const keys = lib.artKeys(story);
+                let done = 0;
+                const todo = keys.filter((k) => !SM.art[k]);
+                const total = keys.length;
+                done = total - todo.length;
+                const upd = () => {
+                    const bar = $("#smBar"), step = $("#smStep");
+                    if (bar) bar.style.width = `${Math.round((done / total) * 50)}%`;
+                    if (step) step.textContent = `نرسم الطفل في الصفحة ${Math.min(done + 1, total)} من ${total}...`;
+                };
+                upd();
+                const queue = todo.slice();
+                const worker = async () => {
+                    while (queue.length) {
+                        const k = queue.shift();
+                        let img = null;
+                        for (let t = 0; t < 2 && !img; t++) {
+                            try {
+                                const out = await aiCall({ task: "scene", character: SM.cartoon, scene: new URL(lib.artSrc(story, custom.g, k), location.href).href, g: custom.g }, "ai-draw");
+                                img = await lib.readPhoto(await (await fetch(out.image)).blob());
+                            } catch (e) { if (t) throw e; }
+                        }
+                        SM.art[k] = img;
+                        done++;
+                        upd();
+                    }
+                };
+                await Promise.all([worker(), worker()]);
+                art = SM.art;
+            }
             const blob = await lib.buildPDF(story, custom, {
-                photo: SM.photo,
+                photo: SM.cartoon ? null : SM.photo,
+                art,
                 onProgress: (i, n) => {
                     const bar = $("#smBar"), step = $("#smStep");
-                    if (bar) bar.style.width = `${Math.round((i / n) * 100)}%`;
+                    if (bar) bar.style.width = `${(SM.cartoon ? 50 : 0) + Math.round((i / n) * (SM.cartoon ? 50 : 100))}%`;
                     if (step) step.textContent = i < n ? `نرسم الصفحة ${i + 1} من ${n}...` : "جاهز ✓";
                 }
             });

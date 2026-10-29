@@ -1559,6 +1559,7 @@
         return `${base}${storyId}/${g === "f" ? "f" : "m"}/${small ? "s/" : ""}${key}.jpg`;
     }
 
+    let ARTOVR = null; // رسومات مولّدة بوجه الطفل: {مفتاح الصفحة: صورة}
     function artImage(url) {
         if (!imgCache.has(url)) {
             const p = loadImage(url).catch((e) => { imgCache.delete(url); throw e; });
@@ -1639,7 +1640,7 @@
 
     // صفحة القصة: خلفية واحدة، الكلام فوق والرسمة تحته، وكأنهما لوحة واحدة
     async function drawBookPage(ctx, storyId, st, d, page, small) {
-        const img = await artImage(artUrl(storyId, d.g, page.key, small));
+        const img = (ARTOVR && ARTOVR[page.key]) || await artImage(artUrl(storyId, d.g, page.key, small));
         const text = fill(page.text, d, { mark: true });
         const maxW = BW - 300, pad = 50;
         let size = 66;
@@ -1713,7 +1714,8 @@
     }
 
     async function drawBookCover(ctx, storyId, st, d, photo, small) {
-        const img = await artImage(artUrl(storyId, d.g, "cover", small));
+        photo = null; // لا صورة حقيقية على الغلاف: الطفل يظهر كرسم كرتوني داخل الصفحات
+        const img = (ARTOVR && ARTOVR.cover) || await artImage(artUrl(storyId, d.g, "cover", small));
         drawCoverImage(ctx, img, 0, 0, BW, BH);
         const g = ctx.createLinearGradient(0, 0, 0, BH * 0.5);
         g.addColorStop(0, "rgba(12,16,48,.62)");
@@ -2997,8 +2999,9 @@
         ];
     }
 
-    async function renderPage(storyId, custom, page, { width = W, photo = null, canvas = null } = {}) {
+    async function renderPage(storyId, custom, page, { width = W, photo = null, canvas = null, art = null } = {}) {
         await loadFonts();
+        ARTOVR = art;
         const st = STORIES[storyId];
         const d = normalize(custom);
         if (!d.name) d.name = d.g === "f" ? "سارة" : "سالم";
@@ -3099,13 +3102,13 @@
         return new Blob(chunks, { type: "application/pdf" });
     }
 
-    async function buildPDF(storyId, custom, { photo = null, onProgress = null, quality = 0.88 } = {}) {
+    async function buildPDF(storyId, custom, { photo = null, art = null, onProgress = null, quality = 0.88 } = {}) {
         const pages = bookPages(storyId, custom);
         const canvas = document.createElement("canvas");
         const images = [];
         for (let i = 0; i < pages.length; i++) {
             if (onProgress) onProgress(i, pages.length);
-            await renderPage(storyId, custom, pages[i], { canvas, photo, width: pages[i].kind[0] === "b" ? BW : W });
+            await renderPage(storyId, custom, pages[i], { canvas, photo, art, width: pages[i].kind[0] === "b" ? BW : W });
             images.push({ bytes: await toJpeg(canvas, quality), w: canvas.width, h: canvas.height });
             await new Promise((r) => setTimeout(r, 0));
         }
@@ -3148,6 +3151,8 @@
         list: () => Object.values(STORIES).map((s) => ({ id: s.id, title: s.title, product: s.product, color: s.color })),
         get: (id) => STORIES[id] || null,
         normalize, problem, fill, letters, bookPages, renderPage, buildPDF, bookTitle, fileName, readPhoto, loadFonts,
+        artKeys: (id) => { const st = STORIES[id]; return st && st.book && st.book.pages ? ["cover", ...st.book.pages.map((p) => p[0])] : []; },
+        artSrc: (id, g, key) => artUrl(id, g, key, false),
         _scenes: SCENES
     };
 })(window);
