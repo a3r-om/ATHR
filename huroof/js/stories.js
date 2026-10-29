@@ -1637,26 +1637,50 @@
         return { lay, height: lay.lines.length * size * lh };
     }
 
+    // صفحة القصة: الكلام في الأعلى على ورق ناعم، والرسمة تحتها (مثل الكتب المصوّرة)
     async function drawBookPage(ctx, storyId, st, d, page, small) {
         const img = await artImage(artUrl(storyId, d.g, page.key, small));
-        drawCoverImage(ctx, img, 0, 0, BW, BH);
         const text = fill(page.text, d, { mark: true });
-        const cardW = 680, pad = 54;
-        let size = 58;
-        let m = measureParagraph(ctx, text, size, cardW - pad * 2, 1.78);
-        while (m.height > BH - 300 && size > 38) { size -= 2; m = measureParagraph(ctx, text, size, cardW - pad * 2, 1.78); }
-        const cardH = m.height + pad * 2;
-        const x = page.side === "left" ? 56 : BW - 56 - cardW;
-        const y = Math.max(70, Math.min((BH - cardH) / 2 - 40, BH - 110 - cardH));
-        if (st.illustrated) glowCard(ctx, x, y, cardW, cardH);
-        else softCard(ctx, x, y, cardW, cardH);
-        drawParagraph(ctx, text, { cx: x + cardW / 2, top: y + pad, bottom: y + cardH - pad, maxW: cardW - pad * 2, size, minSize: size, lh: 1.78, color: st.illustrated ? "#1F2A4A" : "#2B2620", hi: st.illustrated ? "#7C3AED" : "#D2614A" });
+        const maxW = BW - 300, pad = 46;
+        let size = 66;
+        let m = measureParagraph(ctx, text, size, maxW, 1.7);
+        while (m.height > 420 && size > 38) { size -= 2; m = measureParagraph(ctx, text, size, maxW, 1.7); }
+        const bandH = Math.round(Math.max(250, m.height + pad * 2));
+        // الورق
+        ctx.fillStyle = "#FFFBF2";
+        ctx.fillRect(0, 0, BW, BH);
+        // الرسمة تحت النص
+        const iy = bandH - 6, ih = BH - iy;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, iy, BW, ih);
+        ctx.clip();
+        const iw0 = img.naturalWidth || img.width, ih0 = img.naturalHeight || img.height;
+        const sc = Math.max(BW / iw0, ih / ih0);
+        const dw = iw0 * sc, dh = ih0 * sc;
+        ctx.drawImage(img, (BW - dw) / 2, iy - (dh - ih) * 0.3, dw, dh);
+        ctx.restore();
+        // انتقال ناعم بين الورق والرسمة
+        const g = ctx.createLinearGradient(0, iy - 4, 0, iy + 36);
+        g.addColorStop(0, "rgba(255,251,242,1)");
+        g.addColorStop(1, "rgba(255,251,242,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, iy - 4, BW, 40);
+        // الكلام
+        drawParagraph(ctx, text, { cx: BW / 2, top: Math.round((bandH - m.height) / 2) - 4, bottom: Math.round((bandH + m.height) / 2) - 4, maxW, size, minSize: size, lh: 1.7, color: "#1F2A4A", hi: "#7C3AED" });
+        // إطار خفيف
+        ctx.save();
+        roundRect(ctx, 14, 14, BW - 28, BH - 28, 30);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(126,98,181,.28)";
+        ctx.stroke();
+        ctx.restore();
         // رقم الصفحة
         const nx = page.side === "left" ? BW - 90 : 90;
         ctx.save();
         ctx.beginPath();
         ctx.arc(nx, BH - 80, 34, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,252,246,.92)";
+        ctx.fillStyle = "rgba(255,252,246,.94)";
         ctx.fill();
         ctx.font = font(32, 700);
         ctx.fillStyle = "#7E62B5";
