@@ -2078,11 +2078,862 @@
         }
     }
 
+    // =====================================================
+    // كتب الأنشطة باسم الطفل: كتاب تلوين، وتعلّم الحروف (صفحات A4 طولية)
+    // =====================================================
+    const XCOL = ["#E8573F", "#F5A623", "#F2C230", "#58B368", "#2FA7C9", "#4C7BD9", "#8E5CC8", "#E86AA6"];
+    const EMOJI_FONT = '"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji","Twemoji Mozilla",sans-serif';
+
+    // الحروف: الاسم، كلمة مثال، رمز
+    const ABC = [
+        ["ا", "ألف", "أرنب", "🐰"], ["ب", "باء", "بطة", "🦆"], ["ت", "تاء", "تفاحة", "🍎"], ["ث", "ثاء", "ثعلب", "🦊"],
+        ["ج", "جيم", "جمل", "🐪"], ["ح", "حاء", "حصان", "🐴"], ["خ", "خاء", "خروف", "🐑"], ["د", "دال", "دجاجة", "🐔"],
+        ["ذ", "ذال", "ذرة", "🌽"], ["ر", "راء", "روبوت", "🤖"], ["ز", "زاي", "زرافة", "🦒"], ["س", "سين", "سمكة", "🐟"],
+        ["ش", "شين", "شمس", "☀️"], ["ص", "صاد", "صاروخ", "🚀"], ["ض", "ضاد", "ضفدع", "🐸"], ["ط", "طاء", "طائرة", "✈️"],
+        ["ظ", "ظاء", "ظرف", "✉️"], ["ع", "عين", "عنب", "🍇"], ["غ", "غين", "غيمة", "☁️"], ["ف", "فاء", "فراشة", "🦋"],
+        ["ق", "قاف", "قمر", "🌙"], ["ك", "كاف", "كتاب", "📖"], ["ل", "لام", "ليمون", "🍋"], ["م", "ميم", "موزة", "🍌"],
+        ["ن", "نون", "نجمة", "⭐"], ["ه", "هاء", "هاتف", "📱"], ["و", "واو", "وردة", "🌹"], ["ي", "ياء", "يد", "✋"]
+    ];
+    const ABC_MAP = { "أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ئ": "ي", "ؤ": "و" };
+
+    // حروف الاسم الأساسية بلا تكرار (حتى 6)
+    function nameBase(name) {
+        const out = [];
+        Array.from(cleanName(name)).forEach((ch) => {
+            const b = ABC_MAP[ch] || ch;
+            const row = ABC.find((r) => r[0] === b);
+            if (row && !out.includes(row[0])) out.push(row[0]);
+        });
+        return out.slice(0, 6);
+    }
+    const abcRow = (b) => ABC.find((r) => r[0] === b) || ABC[0];
+
+    // أشكال الحرف: منفصل، أول، وسط، آخر
+    function letterForms(b) {
+        return [["منفصل", b], ["أول الكلمة", b + "‍"], ["وسط الكلمة", "‍" + b + "‍"], ["آخر الكلمة", "‍" + b]];
+    }
+
+    function seeded(seed) {
+        let s = seed % 2147483647; if (s <= 0) s += 2147483646;
+        return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+    }
+    function nameSeed(name) { let h = 7; for (const ch of String(name)) h = (h * 31 + ch.codePointAt(0)) % 2147483647; return h || 7; }
+
+    function xEmoji(ctx, ch, x, y, size) {
+        ctx.save();
+        ctx.font = `${Math.round(size)}px ${EMOJI_FONT}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.direction = "ltr";
+        ctx.fillText(ch, x, y);
+        ctx.restore();
+    }
+
+    function xText(ctx, text, x, y, { size = 60, weight = 700, color = INK, align = "center", base = "alphabetic", stroke = null, lw = 0, dash = null }) {
+        ctx.save();
+        ctx.font = font(size, weight);
+        ctx.textAlign = align;
+        ctx.textBaseline = base;
+        ctx.direction = "rtl";
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        if (stroke) {
+            ctx.lineWidth = lw;
+            ctx.strokeStyle = stroke;
+            if (dash) ctx.setLineDash(dash);
+            ctx.strokeText(text, x, y);
+            ctx.setLineDash([]);
+        }
+        if (color) { ctx.fillStyle = color; ctx.fillText(text, x, y); }
+        ctx.restore();
+    }
+
+    function xCloud(ctx, x, y, s, a = 0.9) {
+        ctx.save();
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.beginPath();
+        [[0, 0, 46], [52, -20, 58], [112, 0, 46], [56, 18, 54]].forEach(([dx, dy, r]) => { ctx.moveTo(x + dx * s + r * s, y + dy * s); ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); });
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function xHeart(ctx, x, y, s, fillC, strokeC, lw = 5) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, y + s * 0.9);
+        ctx.bezierCurveTo(x - s * 1.5, y - s * 0.1, x - s * 0.7, y - s * 1.1, x, y - s * 0.4);
+        ctx.bezierCurveTo(x + s * 0.7, y - s * 1.1, x + s * 1.5, y - s * 0.1, x, y + s * 0.9);
+        ctx.closePath();
+        if (fillC) { ctx.fillStyle = fillC; ctx.fill(); }
+        if (strokeC) { ctx.lineWidth = lw; ctx.strokeStyle = strokeC; ctx.lineJoin = "round"; ctx.stroke(); }
+        ctx.restore();
+    }
+
+    function xFlower(ctx, x, y, r, petalC, centerC, strokeC, lw = 5) {
+        ctx.save();
+        for (let i = 0; i < 6; i++) {
+            const a = (i * Math.PI) / 3;
+            ctx.beginPath();
+            ctx.arc(x + Math.cos(a) * r * 0.62, y + Math.sin(a) * r * 0.62, r * 0.42, 0, Math.PI * 2);
+            if (petalC) { ctx.fillStyle = petalC; ctx.fill(); }
+            if (strokeC) { ctx.lineWidth = lw; ctx.strokeStyle = strokeC; ctx.stroke(); }
+        }
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.36, 0, Math.PI * 2);
+        if (centerC) { ctx.fillStyle = centerC; ctx.fill(); }
+        if (strokeC) { ctx.lineWidth = lw; ctx.strokeStyle = strokeC; ctx.stroke(); }
+        ctx.restore();
+    }
+
+    function xRainbow(ctx, cx, cy, r, bw) {
+        const cols = ["#EF5B5B", "#F59E3B", "#F6D43F", "#5CBF6B", "#3BB0E0", "#5B6FD8", "#9A62CF"];
+        cols.forEach((c, i) => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r - i * bw, Math.PI, 0);
+            ctx.lineWidth = bw + 1;
+            ctx.strokeStyle = c;
+            ctx.stroke();
+        });
+    }
+
+    function xCrayon(ctx, x, y, w, h, color, angle = 0) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.lineJoin = "round";
+        ctx.fillStyle = color;
+        roundRect(ctx, -w / 2, -h / 2, w, h, w * 0.18);
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.88)";
+        ctx.fillRect(-w / 2 + 3, -h * 0.18, w - 6, h * 0.26);
+        ctx.beginPath();
+        ctx.moveTo(-w / 2, -h / 2);
+        ctx.lineTo(0, -h / 2 - w * 0.9);
+        ctx.lineTo(w / 2, -h / 2);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function xPencil(ctx, x, y, w, h, color, angle = 0) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.lineJoin = "round";
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = INK;
+        ctx.fillStyle = color;
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.strokeRect(-w / 2, -h / 2, w, h);
+        ctx.fillStyle = "#F4B6C2";
+        ctx.fillRect(-w / 2, -h / 2 - w * 0.55, w, w * 0.55);
+        ctx.strokeRect(-w / 2, -h / 2 - w * 0.55, w, w * 0.55);
+        ctx.beginPath();
+        ctx.moveTo(-w / 2, h / 2);
+        ctx.lineTo(0, h / 2 + w * 1.1);
+        ctx.lineTo(w / 2, h / 2);
+        ctx.closePath();
+        ctx.fillStyle = "#F3D9A8";
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.17, h / 2 + w * 0.75);
+        ctx.lineTo(0, h / 2 + w * 1.1);
+        ctx.lineTo(w * 0.17, h / 2 + w * 0.75);
+        ctx.closePath();
+        ctx.fillStyle = INK;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // اسم الطفل بحروف منفوخة: تعبئة وحد سميك
+    function xBubble(ctx, text, cx, cy, maxW, size, { fillC = "#FFFFFF", strokeC = INK, lw = 14, shadow = null, weight = 700 } = {}) {
+        const s = fitText(ctx, text, maxW, size, weight, 40);
+        ctx.save();
+        ctx.font = font(s, weight);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.direction = "rtl";
+        ctx.lineJoin = "round";
+        if (shadow) { ctx.fillStyle = shadow; ctx.fillText(text, cx + 6, cy + 12); ctx.lineWidth = lw; ctx.strokeStyle = shadow; ctx.strokeText(text, cx + 6, cy + 12); }
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = strokeC;
+        ctx.strokeText(text, cx, cy);
+        if (fillC) { ctx.fillStyle = fillC; ctx.fillText(text, cx, cy); }
+        ctx.restore();
+        return s;
+    }
+
+    function xRibbon(ctx, text, cx, y, w, h, color) {
+        ctx.save();
+        ctx.lineJoin = "round";
+        [[-1], [1]].forEach(([s]) => {
+            ctx.beginPath();
+            ctx.moveTo(cx + s * (w / 2 - 10), y + h * 0.18);
+            ctx.lineTo(cx + s * (w / 2 + 70), y + h * 0.18);
+            ctx.lineTo(cx + s * (w / 2 + 38), y + h * 0.58);
+            ctx.lineTo(cx + s * (w / 2 + 70), y + h * 0.98);
+            ctx.lineTo(cx + s * (w / 2 - 10), y + h * 0.98);
+            ctx.closePath();
+            ctx.fillStyle = color + "CC";
+            ctx.fill();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+        });
+        roundRect(ctx, cx - w / 2, y, w, h, 24);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.restore();
+        const s = fitText(ctx, text, w - 70, h * 0.58, 700, 30);
+        xText(ctx, text, cx, y + h / 2 + s * 0.3, { size: s, color: "#FFFFFF" });
+    }
+
+    function xFooter(ctx, st, d, n, color = "#8A7E6E") {
+        ctx.save();
+        ctx.fillStyle = "#EFE7D8";
+        ctx.fillRect(100, H - 138, W - 200, 3);
+        ctx.restore();
+        xText(ctx, "حروف وألوان", W / 2, H - 82, { size: 32, color });
+        if (n) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(W - 125, H - 94, 26, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+            xText(ctx, String(n), W - 125, H - 94, { size: 30, color: "#FFFFFF", base: "middle" });
+        }
+        xText(ctx, d.name, 125, H - 82, { size: 32, color, align: "left" });
+    }
+
+    function xFrame(ctx, color, m = 46) {
+        ctx.save();
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = color;
+        roundRect(ctx, m, m, W - 2 * m, H - 2 * m, 46);
+        ctx.stroke();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color + "88";
+        ctx.setLineDash([16, 12]);
+        roundRect(ctx, m + 18, m + 18, W - 2 * m - 36, H - 2 * m - 36, 34);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function xMandala(ctx, cx, cy, R, color = INK) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = color;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        const ring = (n, r0, r1, wd, lw) => {
+            for (let i = 0; i < n; i++) {
+                ctx.save();
+                ctx.rotate((i * Math.PI * 2) / n);
+                ctx.beginPath();
+                ctx.moveTo(0, -r0);
+                ctx.bezierCurveTo(wd, -(r0 + r1) / 2, wd * 0.6, -r1 + 18, 0, -r1);
+                ctx.bezierCurveTo(-wd * 0.6, -r1 + 18, -wd, -(r0 + r1) / 2, 0, -r0);
+                ctx.closePath();
+                ctx.lineWidth = lw;
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+        const dots = (n, r, rad) => {
+            for (let i = 0; i < n; i++) {
+                const a = (i * Math.PI * 2) / n;
+                ctx.beginPath();
+                ctx.arc(Math.cos(a) * r, Math.sin(a) * r, rad, 0, Math.PI * 2);
+                ctx.lineWidth = 5;
+                ctx.stroke();
+            }
+        };
+        ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(0, 0, R * 0.13, 0, Math.PI * 2); ctx.stroke();
+        ring(8, R * 0.13, R * 0.34, R * 0.16, 5);
+        dots(16, R * 0.4, R * 0.028);
+        ring(16, R * 0.44, R * 0.68, R * 0.13, 5);
+        ctx.beginPath(); ctx.arc(0, 0, R * 0.7, 0, Math.PI * 2); ctx.lineWidth = 6; ctx.stroke();
+        dots(32, R * 0.76, R * 0.022);
+        ring(16, R * 0.8, R * 1.0, R * 0.14, 5);
+        for (let i = 0; i < 16; i++) {
+            const a = ((i + 0.5) * Math.PI * 2) / 16;
+            ctx.beginPath();
+            ctx.arc(Math.cos(a) * R * 0.88, Math.sin(a) * R * 0.88, R * 0.04, 0, Math.PI * 2);
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    // نجمة ثمانية مكرّرة (زخرفة إسلامية) داخل مستطيل
+    function xGeometric(ctx, x, y, w, h, cell, color = INK) {
+        ctx.save();
+        roundRect(ctx, x, y, w, h, 30);
+        ctx.clip();
+        ctx.strokeStyle = color;
+        ctx.lineJoin = "round";
+        const cols = Math.ceil(w / cell) + 1, rows = Math.ceil(h / cell) + 1;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cx = x + c * cell, cy = y + r * cell, a = cell * 0.5;
+                ctx.lineWidth = 5;
+                [0, Math.PI / 4].forEach((rot) => {
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.rotate(rot);
+                    ctx.strokeRect(-a * 0.72, -a * 0.72, a * 1.44, a * 1.44);
+                    ctx.restore();
+                });
+                ctx.beginPath(); ctx.arc(cx, cy, a * 0.3, 0, Math.PI * 2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx + cell / 2, cy + cell / 2, a * 0.22, 0, Math.PI * 2); ctx.stroke();
+                ctx.save();
+                ctx.translate(cx + cell / 2, cy + cell / 2);
+                ctx.rotate(Math.PI / 4);
+                ctx.strokeRect(-a * 0.32, -a * 0.32, a * 0.64, a * 0.64);
+                ctx.restore();
+            }
+        }
+        ctx.restore();
+        ctx.save();
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = color;
+        roundRect(ctx, x, y, w, h, 30);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // حرف كبير سميك مفرّغ للتلوين، وداخله زخارف (دوائر ونجوم) تُلوَّن
+    function xLetterOutline(ctx, text, cx, cy, size, { lw = 14, fat = 0, doodle = true, seed = 3 } = {}) {
+        const f = fat || Math.round(size * 0.075);
+        const cw = Math.round(size * 1.9), ch = Math.round(size * 2.0);
+        const setup = (c) => { c.font = font(size, 700); c.textAlign = "center"; c.textBaseline = "middle"; c.direction = "rtl"; c.lineJoin = "round"; c.lineCap = "round"; };
+        // الحد الخارجي الأسود
+        const outer = document.createElement("canvas");
+        outer.width = cw; outer.height = ch;
+        const oc = outer.getContext("2d");
+        setup(oc);
+        oc.lineWidth = f + lw * 2; oc.strokeStyle = INK; oc.strokeText(text, cw / 2, ch / 2);
+        oc.fillStyle = INK; oc.fillText(text, cw / 2, ch / 2);
+        ctx.drawImage(outer, cx - cw / 2, cy - ch / 2);
+        // الجسم الأبيض + الزخارف
+        const off = document.createElement("canvas");
+        off.width = cw; off.height = ch;
+        const o = off.getContext("2d");
+        setup(o);
+        o.lineWidth = f; o.strokeStyle = "#FFFFFF"; o.strokeText(text, cw / 2, ch / 2);
+        o.fillStyle = "#FFFFFF"; o.fillText(text, cw / 2, ch / 2);
+        if (doodle) {
+            o.globalCompositeOperation = "source-atop";
+            const rnd = seeded(seed);
+            o.strokeStyle = "#B9AE9C";
+            o.lineWidth = 4;
+            const step = Math.max(46, size * 0.12);
+            for (let yy = 0; yy < ch; yy += step) {
+                for (let xx = 0; xx < cw; xx += step) {
+                    const k = Math.floor(rnd() * 4);
+                    const px = xx + step / 2, py = yy + step / 2, r = step * 0.28;
+                    o.beginPath();
+                    if (k === 0) o.arc(px, py, r, 0, Math.PI * 2);
+                    else if (k === 1) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; o[i ? "lineTo" : "moveTo"](px + Math.cos(a) * rr, py + Math.sin(a) * rr); } o.closePath(); }
+                    else if (k === 2) { o.moveTo(px, py + r * 0.8); o.bezierCurveTo(px - r * 1.5, py - r * 0.1, px - r * 0.7, py - r * 1.1, px, py - r * 0.4); o.bezierCurveTo(px + r * 0.7, py - r * 1.1, px + r * 1.5, py - r * 0.1, px, py + r * 0.8); }
+                    else o.arc(px, py, r * 0.4, 0, Math.PI * 2);
+                    o.stroke();
+                }
+            }
+        }
+        ctx.drawImage(off, cx - cw / 2, cy - ch / 2);
+        return f;
+    }
+
+    function xGuideLines(ctx, x, y, w, h, color = "#B9AE9C") {
+        // سطر كتابة: أعلى ووسط (متقطع) وأسفل
+        ctx.save();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke();
+        ctx.setLineDash([12, 12]);
+        ctx.strokeStyle = color + "AA";
+        ctx.beginPath(); ctx.moveTo(x, y + h / 2); ctx.lineTo(x + w, y + h / 2); ctx.stroke();
+        ctx.restore();
+    }
+
+    // صف تتبّع: نسخ منقّطة من النص من اليمين، والباقي فارغ للكتابة
+    function xTraceRow(ctx, text, x, y, w, h, { size, count, color = "#9A8F80", startColor = "#D2614A" }) {
+        xGuideLines(ctx, x, y, w, h);
+        ctx.save();
+        ctx.font = font(size, 700);
+        const tw = ctx.measureText(text).width;
+        ctx.restore();
+        const gap = Math.max(34, size * 0.34);
+        for (let i = 0; i < count; i++) {
+            const px = x + w - 30 - tw / 2 - i * (tw + gap);
+            if (px - tw / 2 < x + 10) break;
+            xText(ctx, text, px, y + h * 0.78, { size, color: null, stroke: i === 0 ? startColor : color, lw: 4, dash: i === 0 ? null : [3, 11] });
+            if (i === 0) xText(ctx, text, px, y + h * 0.78, { size, color: startColor + "22" });
+        }
+    }
+
+    function xCard(ctx, x, y, w, h, color, { fillC = "#FFFFFF", lw = 6, r = 34, tint = true } = {}) {
+        ctx.save();
+        roundRect(ctx, x, y, w, h, r);
+        ctx.fillStyle = tint ? color + "18" : fillC;
+        ctx.fill();
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function xStarsDeco(ctx, d, n, area, cols = XCOL) {
+        const rnd = seeded(nameSeed(d.name) + n);
+        for (let i = 0; i < 18; i++) {
+            const x = area.x + rnd() * area.w, y = area.y + rnd() * area.h, r = 10 + rnd() * 16;
+            cStar(ctx, x, y, r, cols[i % cols.length] + "AA", null);
+        }
+    }
+
+    // -------- الأغلفة --------
+    function drawColoringCover(ctx, st, d) {
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, "#A9E1FF"); g.addColorStop(0.55, "#E6F6FF"); g.addColorStop(1, "#FFF3CF");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+        // أشعة خفيفة
+        ctx.save();
+        ctx.translate(W / 2, 420);
+        for (let i = 0; i < 18; i++) { ctx.rotate((Math.PI * 2) / 18); ctx.fillStyle = i % 2 ? "rgba(255,255,255,.22)" : "rgba(255,255,255,0)"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-90, -1300); ctx.lineTo(90, -1300); ctx.closePath(); ctx.fill(); }
+        ctx.restore();
+        xRainbow(ctx, W / 2, 520, 470, 46);
+        xCloud(ctx, 120, 470, 1.25); xCloud(ctx, W - 330, 450, 1.35); xCloud(ctx, 430, 560, 0.8, 0.85);
+        const rnd = seeded(nameSeed(d.name));
+        for (let i = 0; i < 16; i++) cStar(ctx, 70 + rnd() * (W - 140), 80 + rnd() * 380, 9 + rnd() * 15, i % 2 ? "#FFE27A" : "#FFFFFF", null);
+        // العنوان
+        xBubble(ctx, "كتاب التلوين", W / 2, 670, W - 220, 150, { fillC: "#FFD23F", strokeC: INK, lw: 18, shadow: "rgba(30,50,110,.30)" });
+        xText(ctx, fill("[للبطل الصغير|للبطلة الصغيرة]", d), W / 2, 800, { size: 54, color: "#2B4C7E" });
+        // بطاقة الاسم
+        ctx.save();
+        ctx.shadowColor = "rgba(30,50,110,.28)"; ctx.shadowBlur = 36; ctx.shadowOffsetY = 14;
+        roundRect(ctx, 150, 850, W - 300, 380, 70);
+        ctx.fillStyle = "#FFFFFF"; ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.lineWidth = 8; ctx.strokeStyle = "#F26B5B"; roundRect(ctx, 168, 868, W - 336, 344, 56); ctx.stroke();
+        ctx.setLineDash([2, 18]); ctx.lineCap = "round"; ctx.lineWidth = 8; ctx.strokeStyle = "#FFB74D"; roundRect(ctx, 192, 892, W - 384, 296, 40); ctx.stroke();
+        ctx.restore();
+        const cols = ["#EF5B5B", "#F59E3B", "#58B368", "#3BB0E0", "#8E5CC8", "#E86AA6"];
+        // الاسم بلون واحد حتى لا ينكسر اتصال الحروف
+        xBubble(ctx, d.name, W / 2, 1040, W - 520, 230, { fillC: cols[nameSeed(d.name) % cols.length], strokeC: INK, lw: 14 });
+        xText(ctx, "ألوان وأشكال وحروف… وخيالٌ بلا حدود", W / 2, 1320, { size: 44, color: "#4C6A92", weight: 400 });
+        // الألوان
+        const cc = ["#EF5B5B", "#F59E3B", "#F6D43F", "#5CBF6B", "#3BB0E0", "#5B6FD8", "#9A62CF", "#E86AA6"];
+        cc.forEach((c, i) => xCrayon(ctx, 130 + i * ((W - 260) / 7), 1530 + (i % 2) * 14, 74, 250, c, (i - 3.5) * 0.045));
+        ctx.save(); ctx.fillStyle = "#7DCB6C"; ctx.beginPath(); ctx.ellipse(W / 2, H + 60, W * 0.7, 190, 0, Math.PI, 0); ctx.fill(); ctx.restore();
+        xText(ctx, "حروف وألوان", W / 2, H - 40, { size: 40, color: "#FFFFFF", stroke: "#3F7F38", lw: 10 });
+    }
+
+    function drawAbcCover(ctx, st, d) {
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, "#FFE7A8"); g.addColorStop(1, "#FFC9B6");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+        // حروف متناثرة في الخلفية
+        const rnd = seeded(nameSeed(d.name) + 5);
+        for (let i = 0; i < 34; i++) {
+            const row = ABC[Math.floor(rnd() * ABC.length)];
+            ctx.save();
+            ctx.translate(40 + rnd() * (W - 80), 60 + rnd() * (H - 120));
+            ctx.rotate((rnd() - 0.5) * 0.7);
+            xText(ctx, row[0], 0, 0, { size: 90 + rnd() * 90, color: XCOL[i % XCOL.length] + "55", base: "middle" });
+            ctx.restore();
+        }
+        // شارة العنوان
+        ctx.save();
+        ctx.shadowColor = "rgba(120,50,20,.30)"; ctx.shadowBlur = 32; ctx.shadowOffsetY = 14;
+        roundRect(ctx, 100, 150, W - 200, 520, 80);
+        ctx.fillStyle = "#FFFFFF"; ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.lineWidth = 10; ctx.strokeStyle = "#E8573F"; roundRect(ctx, 122, 172, W - 244, 476, 62); ctx.stroke();
+        ctx.restore();
+        xText(ctx, "أتعلّم الحروف", W / 2, 360, { size: 170, color: "#2FA7C9", stroke: INK, lw: 16 });
+        xText(ctx, "أتعلّم الحروف", W / 2, 360, { size: 170, color: "#4DBAD6" });
+        xText(ctx, "مع اسمي", W / 2, 520, { size: 130, color: "#E8573F", stroke: INK, lw: 14 });
+        xText(ctx, "مع اسمي", W / 2, 520, { size: 130, color: "#F2755E" });
+        // حروف الاسم كمكعبات ملوّنة
+        const letters_ = Array.from(d.name).filter((ch) => /[ء-يٱ]/.test(ch));
+        const n = Math.min(letters_.length, 7);
+        const tile = Math.min(190, (W - 300) / Math.max(n, 1) - 14);
+        const total = n * tile + (n - 1) * 14;
+        letters_.slice(0, n).forEach((ch, i) => {
+            const x = W / 2 + total / 2 - (i + 1) * tile - i * 14;
+            const y = 800 + (i % 2 ? 22 : -10);
+            ctx.save();
+            ctx.translate(x + tile / 2, y + tile / 2);
+            ctx.rotate(((i % 3) - 1) * 0.07);
+            ctx.shadowColor = "rgba(60,30,10,.25)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 8;
+            roundRect(ctx, -tile / 2, -tile / 2, tile, tile, 30);
+            ctx.fillStyle = XCOL[(i * 3 + 1) % XCOL.length]; ctx.fill();
+            ctx.shadowColor = "transparent";
+            ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke();
+            ctx.restore();
+            ctx.save();
+            ctx.translate(x + tile / 2, y + tile / 2);
+            ctx.rotate(((i % 3) - 1) * 0.07);
+            xText(ctx, ch, 0, 6, { size: tile * 0.74, color: "#FFFFFF", base: "middle" });
+            ctx.restore();
+        });
+        xBubble(ctx, d.name, W / 2, 1180, W - 260, 230, { fillC: "#FFFFFF", strokeC: INK, lw: 16, shadow: "rgba(120,50,20,.25)" });
+        xText(ctx, fill("كتاب [حروفه|حروفها] الأولى", d), W / 2, 1340, { size: 56, color: "#7B3F2A" });
+        xPencil(ctx, 230, 1560, 70, 300, "#F2C230", -0.5);
+        xPencil(ctx, W - 230, 1560, 70, 300, "#58B368", 0.5);
+                xText(ctx, "حروف وألوان", W / 2, H - 34, { size: 36, color: "#7B3F2A" });
+    }
+
+    // -------- صفحات كتاب التلوين --------
+    function drawColoringOwn(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#F26B5B");
+        xRibbon(ctx, "هذا الكتاب لي", W / 2, 130, 700, 150, "#F26B5B");
+        xText(ctx, fill("اسم [صاحب|صاحبة] الكتاب", d), W / 2, 420, { size: 58, color: "#6F6557", weight: 400 });
+        xBubble(ctx, d.name, W / 2, 640, W - 240, 250, { fillC: "#FFFFFF", strokeC: INK, lw: 16 });
+        xText(ctx, d.age === 2 ? "عمري سنتان" : `عمري ${d.age} ${d.age <= 10 ? "سنوات" : "سنة"}`, W / 2, 880, { size: 60, color: "#2B2620" });
+        // مربع «ارسم وجهك»
+        ctx.save(); ctx.setLineDash([18, 14]); ctx.lineWidth = 6; ctx.strokeStyle = "#9A8F80"; roundRect(ctx, W / 2 - 240, 960, 480, 440, 40); ctx.stroke(); ctx.restore();
+        xText(ctx, "ارسم نفسك هنا", W / 2, 1010, { size: 40, color: "#9A8F80", weight: 400 });
+        xText(ctx, "ألواني المفضلة", W / 2, 1470, { size: 50, color: INK });
+        for (let i = 0; i < 8; i++) {
+            ctx.save(); ctx.beginPath(); ctx.arc(190 + i * ((W - 380) / 7), 1545, 44, 0, Math.PI * 2); ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.setLineDash([]); ctx.stroke(); ctx.restore();
+        }
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawColoringName(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#3BB0E0");
+        xRibbon(ctx, "لوّن اسمك", W / 2, 130, 640, 150, "#3BB0E0");
+        const rnd = seeded(nameSeed(d.name));
+        for (let i = 0; i < 12; i++) {
+            const x = 150 + rnd() * (W - 300), y = 380 + rnd() * 1050, r = 20 + rnd() * 28;
+            if (Math.abs(x - W / 2) < W * 0.34 && Math.abs(y - 900) < 220) continue;
+            const k = i % 3;
+            if (k === 0) cStar(ctx, x, y, r, "#FFFFFF", INK, 5);
+            else if (k === 1) xHeart(ctx, x, y, r, "#FFFFFF", INK, 5);
+            else xFlower(ctx, x, y, r * 1.1, "#FFFFFF", "#FFFFFF", INK, 4);
+        }
+        xBubble(ctx, d.name, W / 2, 900, W - 200, 340, { fillC: "#FFFFFF", strokeC: INK, lw: 22 });
+        xText(ctx, "لوّن كل حرف بلون مختلف", W / 2, 1500, { size: 50, color: "#6F6557", weight: 400 });
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawColoringLetter(ctx, st, d, n, k) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        const b = nameBase(d.name)[k] || ABC[(k * 5 + 1) % ABC.length][0];
+        const row = abcRow(b);
+        const col = XCOL[(k * 2 + 1) % XCOL.length];
+        xFrame(ctx, col);
+        xRibbon(ctx, `حرف ${row[1]} في اسمك`, W / 2, 130, 760, 150, col);
+        xLetterOutline(ctx, row[0], W / 2, 800, 720, { lw: 16, seed: 11 + k });
+        for (let i = 0; i < 5; i++) {
+            const x = 170 + i * ((W - 340) / 4), y = 1420 + (i % 2) * 26;
+            const kk = i % 3;
+            if (kk === 0) cStar(ctx, x, y, 38, "#FFFFFF", INK, 5);
+            else if (kk === 1) xHeart(ctx, x, y, 38, "#FFFFFF", INK, 5);
+            else xFlower(ctx, x, y, 44, "#FFFFFF", "#FFFFFF", INK, 4);
+        }
+        xText(ctx, `${row[1]} مثل ${row[2]}`, W / 2, 1545, { size: 52, color: INK });
+        xFooter(ctx, st, d, n);
+    }
+
+    async function drawColoringArt(ctx, st, d, n, storyId, small) {
+        const src = STORIES[storyId];
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        const col = src.color;
+        xFrame(ctx, col);
+        xRibbon(ctx, fill(src.title, d), W / 2, 120, 760, 140, col);
+        const img = await artImage(artUrl(storyId, d.g, "color", small));
+        const iw = W - 160, ih = Math.round(iw * (img.naturalHeight || img.height) / (img.naturalWidth || img.width));
+        const iy = 330;
+        ctx.save();
+        roundRect(ctx, 80, iy, iw, ih, 30);
+        ctx.clip();
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(80, iy, iw, ih);
+        ctx.drawImage(img, 80, iy, iw, ih);
+        ctx.restore();
+        ctx.save(); ctx.lineWidth = 7; ctx.strokeStyle = INK; roundRect(ctx, 80, iy, iw, ih, 30); ctx.stroke(); ctx.restore();
+        const by = iy + ih + 90;
+        xText(ctx, fill("لوّن المغامرة يا {name}", d), W / 2, by, { size: 56, color: INK });
+        xBubble(ctx, d.name, W / 2, by + 150, W - 360, 150, { fillC: "#FFFFFF", strokeC: INK, lw: 12 });
+        const fy = by + 260;
+        if (fy + 150 < H - 170) {
+            ctx.save(); ctx.setLineDash([16, 12]); ctx.lineWidth = 5; ctx.strokeStyle = "#9A8F80"; roundRect(ctx, 130, fy, W - 260, H - 170 - fy - 50, 36); ctx.stroke(); ctx.restore();
+            xText(ctx, "وماذا حدث بعد ذلك؟ ارسم نهاية المغامرة", W / 2, fy + 64, { size: 42, color: "#9A8F80", weight: 400 });
+        }
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawColoringMandala(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#8E5CC8");
+        xRibbon(ctx, "ماندالا اسمك", W / 2, 130, 700, 150, "#8E5CC8");
+        xMandala(ctx, W / 2, 900, 470);
+        ctx.save(); ctx.beginPath(); ctx.arc(W / 2, 900, 118, 0, Math.PI * 2); ctx.fillStyle = "#FFFFFF"; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke(); ctx.restore();
+        xBubble(ctx, d.name, W / 2, 906, 190, 90, { fillC: "#FFFFFF", strokeC: INK, lw: 6 });
+        xText(ctx, "لوّنها بألوانك المفضلة", W / 2, 1500, { size: 50, color: "#6F6557", weight: 400 });
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawColoringGeo(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#2E9C8F");
+        xRibbon(ctx, "زخرفة عُمانية", W / 2, 130, 700, 150, "#2E9C8F");
+        xGeometric(ctx, 130, 340, W - 260, 1060, 220);
+        xText(ctx, fill("زيّنها يا {name}", d), W / 2, 1500, { size: 54, color: INK });
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawColoringDraw(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#F59E3B");
+        xRibbon(ctx, "ارسم ما تحب", W / 2, 130, 700, 150, "#F59E3B");
+        ctx.save(); ctx.lineWidth = 8; ctx.strokeStyle = INK; roundRect(ctx, 120, 340, W - 240, 1000, 50); ctx.stroke(); ctx.restore();
+        [[170, 390], [W - 170, 390], [170, 1290], [W - 170, 1290]].forEach(([x, y], i) => { if (i % 2) xHeart(ctx, x, y, 34, "#FFFFFF", INK, 5); else cStar(ctx, x, y, 38, "#FFFFFF", INK, 5); });
+        xText(ctx, fill("ماذا ترسم يا {name}؟ ارسم ولوّن!", d), W / 2, 1430, { size: 54, color: INK });
+        xText(ctx, "اكتب اسم رسمتك:", W / 2 + 200, 1530, { size: 40, color: "#6F6557", weight: 400 });
+        ctx.save(); ctx.setLineDash([10, 10]); ctx.lineWidth = 4; ctx.strokeStyle = "#9A8F80"; ctx.beginPath(); ctx.moveTo(130, 1535); ctx.lineTo(W / 2 + 40, 1535); ctx.stroke(); ctx.restore();
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawActivityCert(ctx, st, d, n, title, line1, line2) {
+        ctx.fillStyle = "#FFFCF6"; ctx.fillRect(0, 0, W, H);
+        stripeW(ctx, W, 0, 20); stripeW(ctx, W, H - 20, 20);
+        const m = 58;
+        ctx.save();
+        ctx.lineWidth = 10; ctx.strokeStyle = st.color; roundRect(ctx, m, m, W - 2 * m, H - 2 * m, 44); ctx.stroke();
+        ctx.lineWidth = 3; ctx.strokeStyle = P.gold; ctx.setLineDash([18, 12]); roundRect(ctx, m + 24, m + 24, W - 2 * m - 48, H - 2 * m - 48, 32); ctx.stroke();
+        ctx.restore();
+        [[m + 70, m + 70], [W - m - 70, m + 70], [m + 70, H - m - 70], [W - m - 70, H - m - 70]].forEach(([x, y]) => cStar(ctx, x, y, 28, P.gold, INK));
+        medal(ctx, W / 2, 330, 96);
+        xText(ctx, title, W / 2, 640, { size: 100, color: INK });
+        xText(ctx, "تُمنح هذه الشهادة بكل فخر إلى", W / 2, 730, { size: 48, color: "#6F6557", weight: 400 });
+        const s = fitText(ctx, d.name, W - 2 * m - 220, 190, 700, 80);
+        xText(ctx, d.name, W / 2, 920, { size: s, color: P.coral, stroke: INK, lw: 14 });
+        drawParagraph(ctx, fill(line1, d), { cx: W / 2, top: 980, bottom: 1180, maxW: W - 2 * m - 220, size: 54, minSize: 36, lh: 1.7 });
+        if (line2) drawParagraph(ctx, fill(line2, d), { cx: W / 2, top: 1200, bottom: 1340, maxW: W - 2 * m - 240, size: 46, minSize: 32, lh: 1.7, color: "#4A4136", hi: st.color });
+        const sy = 1520;
+        [[W / 2 + 270, "التاريخ"], [W / 2 - 270, "توقيع ماما وبابا"]].forEach(([x, label]) => {
+            ctx.save(); ctx.strokeStyle = "#8A7E6E"; ctx.lineWidth = 3; ctx.setLineDash([10, 9]); ctx.beginPath(); ctx.moveTo(x - 170, sy); ctx.lineTo(x + 170, sy); ctx.stroke(); ctx.restore();
+            xText(ctx, label, x, sy + 56, { size: 38, color: "#6F6557" });
+        });
+        xText(ctx, "حروف وألوان", W / 2, H - m - 40, { size: 34, color: st.color });
+    }
+
+    // -------- صفحات تعلّم الحروف --------
+    function drawAbcName(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFDF8"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#F59E3B");
+        xRibbon(ctx, "هذا اسمي", W / 2, 130, 640, 150, "#F59E3B");
+        ctx.save(); ctx.shadowColor = "rgba(120,80,20,.18)"; ctx.shadowBlur = 26; ctx.shadowOffsetY = 10; roundRect(ctx, 130, 340, W - 260, 420, 60); ctx.fillStyle = "#FFFFFF"; ctx.fill(); ctx.restore();
+        ctx.save(); ctx.lineWidth = 7; ctx.strokeStyle = "#F59E3B"; roundRect(ctx, 130, 340, W - 260, 420, 60); ctx.stroke(); ctx.restore();
+        xBubble(ctx, d.name, W / 2, 550, W - 380, 270, { fillC: "#E8573F", strokeC: INK, lw: 14 });
+        const chars = Array.from(d.name).filter((ch) => /[ء-يٱ]/.test(ch));
+        xText(ctx, `اسمي يتكوّن من ${chars.length} حروف`, W / 2, 880, { size: 60, color: INK });
+        const n_ = Math.min(chars.length, 7);
+        const tile = Math.min(150, (W - 300) / Math.max(n_, 1) - 16);
+        const total = n_ * tile + (n_ - 1) * 16;
+        chars.slice(0, n_).forEach((ch, i) => {
+            const x = W / 2 + total / 2 - (i + 1) * tile - i * 16, y = 960;
+            const c = XCOL[(i * 3 + 1) % XCOL.length];
+            roundRect(ctx, x, y, tile, tile, 26); ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke();
+            xText(ctx, ch, x + tile / 2, y + tile / 2 + 6, { size: tile * 0.74, color: "#FFFFFF", base: "middle" });
+            xText(ctx, String(i + 1), x + tile / 2, y + tile + 50, { size: 38, color: "#6F6557" });
+        });
+        const first = abcRow(nameBase(d.name)[0] || "ا");
+        xCard(ctx, 200, 1230, W - 400, 270, "#58B368");
+        xText(ctx, `أول حرف في اسمي هو «${first[1]}»`, W / 2, 1320, { size: 54, color: INK });
+        xText(ctx, `${first[0]}  مثل  ${first[2]}`, W / 2 + 70, 1430, { size: 70, color: "#2E7D43" });
+        xEmoji(ctx, first[3], W / 2 - 260, 1405, 100);
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawAbcLetter(ctx, st, d, n, k) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        const b = nameBase(d.name)[k] || ABC[(k * 5 + 1) % ABC.length][0];
+        const row = abcRow(b);
+        const col = XCOL[(k * 2 + 1) % XCOL.length];
+        xFrame(ctx, col);
+        xRibbon(ctx, `حرف الـ${row[1]}`, W / 2, 120, 640, 140, col);
+        // الحرف الكبير
+        xCard(ctx, W - 130 - 540, 290, 540, 520, col, { lw: 8 });
+        xText(ctx, row[0], W - 130 - 270, 550, { size: 500, color: col, base: "middle" });
+        // الكلمة
+        xCard(ctx, 130, 290, 410, 520, "#F59E3B", { lw: 8 });
+        xEmoji(ctx, row[3], 335, 500, 200);
+        xText(ctx, row[2], 335, 710, { size: fitText(ctx, row[2], 370, 100, 700, 50), color: INK });
+        xText(ctx, `${row[0]} مثل ${row[2]}`, 335, 775, { size: 36, color: "#9A8F80", weight: 400 });
+        // الأشكال
+        const forms = letterForms(row[0]);
+        const cw = (W - 260 - 3 * 22) / 4;
+        forms.forEach(([label, str], i) => {
+            const x = W - 130 - (i + 1) * cw - i * 22;
+            xCard(ctx, x, 850, cw, 220, col, { lw: 5, r: 28 });
+            xText(ctx, str, x + cw / 2, 940, { size: 108, color: INK, base: "middle" });
+            xText(ctx, label, x + cw / 2, 1042, { size: 32, color: "#6F6557", weight: 400 });
+        });
+        // التتبّع
+        xText(ctx, "تتبّع الحرف ثم اكتبه", W / 2, 1150, { size: 48, color: INK });
+        xTraceRow(ctx, row[0], 130, 1180, W - 260, 130, { size: 118, count: 8, startColor: col });
+        xTraceRow(ctx, row[0], 130, 1340, W - 260, 130, { size: 118, count: 4, startColor: col });
+        xGuideLines(ctx, 130, 1500, W - 260, 100);
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawAbcTrace(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#4C7BD9");
+        xRibbon(ctx, "أكتب اسمي", W / 2, 120, 640, 140, "#4C7BD9");
+        const s = fitText(ctx, d.name, W - 400, 190, 700, 90);
+        for (let i = 0; i < 4; i++) {
+            const y = 310 + i * 235;
+            xTraceRow(ctx, d.name, 130, y, W - 260, 190, { size: s, count: i === 0 ? 1 : 2, startColor: "#4C7BD9" });
+        }
+        xText(ctx, "الآن اكتب اسمي وحدك", W / 2, 1310, { size: 50, color: INK });
+        for (let i = 0; i < 2; i++) xGuideLines(ctx, 130, 1350 + i * 120, W - 260, 90);
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawAbcFind(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#58B368");
+        const target = nameBase(d.name)[0] || "ا";
+        const row = abcRow(target);
+        xRibbon(ctx, `أين حرف ${row[1]}؟`, W / 2, 120, 700, 140, "#58B368");
+        xText(ctx, `ضع دائرة حول كل حرف ${row[0]}`, W / 2, 360, { size: 50, color: INK });
+        const rnd = seeded(nameSeed(d.name) + 99);
+        const cols_ = 5, rows_ = 7, cw = (W - 260) / cols_, chh = 155;
+        let count = 0;
+        const cells = [];
+        for (let r = 0; r < rows_; r++) for (let c = 0; c < cols_; c++) cells.push([r, c]);
+        const hit = new Set();
+        while (hit.size < 9) hit.add(Math.floor(rnd() * cells.length));
+        cells.forEach(([r, c], i) => {
+            const x = W - 130 - (c + 1) * cw, y = 410 + r * chh;
+            let ch = target;
+            if (!hit.has(i)) { do { ch = ABC[Math.floor(rnd() * ABC.length)][0]; } while (ch === target); } else count++;
+            xText(ctx, ch, x + cw / 2, y + chh / 2 + 4, { size: 108, color: XCOL[(r * 3 + c) % XCOL.length], base: "middle" });
+        });
+        xText(ctx, `وجدتُ ______ حروف`, W / 2, 1570, { size: 46, color: "#6F6557", weight: 400 });
+        xFooter(ctx, st, d, n);
+        void count;
+    }
+
+    function drawAbcColorLetters(ctx, st, d, n) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        xFrame(ctx, "#E86AA6");
+        xRibbon(ctx, "لوّن حروف اسمي", W / 2, 120, 700, 140, "#E86AA6");
+        const letters_ = Array.from(d.name).filter((ch) => /[ء-يٱ]/.test(ch)).slice(0, 6);
+        const per = 2, rows = Math.ceil(Math.max(letters_.length, 1) / per);
+        const cw = (W - 260 - 30) / per, chh = Math.min(430, (1200 - (rows - 1) * 30) / rows);
+        letters_.forEach((ch, i) => {
+            const r = Math.floor(i / per), c = i % per;
+            const x = W - 130 - (c + 1) * cw - c * 30, y = 330 + r * (chh + 30);
+            xCard(ctx, x, y, cw, chh, "#E86AA6", { lw: 5, r: 36 });
+            xLetterOutline(ctx, ch, x + cw / 2, y + chh / 2, chh * 0.64, { lw: 12, seed: 20 + i });
+        });
+        xText(ctx, "لوّن كل حرف بلون جميل", W / 2, 1560, { size: 46, color: "#6F6557", weight: 400 });
+        xFooter(ctx, st, d, n);
+    }
+
+    function drawAbcAlpha(ctx, st, d, n, part) {
+        ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+        const col = part ? "#8E5CC8" : "#2FA7C9";
+        xFrame(ctx, col);
+        xRibbon(ctx, part ? "الحروف الهجائية 2" : "الحروف الهجائية 1", W / 2, 110, 700, 130, col);
+        const mine = new Set(nameBase(d.name));
+        const items = ABC.slice(part * 14, part * 14 + 14);
+        const cols_ = 2, rows_ = 7, gx = 24, gy = 20;
+        const cw = (W - 240 - gx) / cols_, chh = (1560 - 290 - gy * (rows_ - 1)) / rows_;
+        items.forEach((row, i) => {
+            const r = Math.floor(i / cols_), c = i % cols_;
+            const x = W - 120 - (c + 1) * cw - c * gx, y = 290 + r * (chh + gy);
+            const c0 = XCOL[(i + part * 3) % XCOL.length];
+            xCard(ctx, x, y, cw, chh, c0, { lw: mine.has(row[0]) ? 9 : 5, r: 30 });
+            xText(ctx, row[0], x + cw - 105, y + chh / 2 + 8, { size: chh * 0.78, color: c0, base: "middle" });
+            xText(ctx, row[2], x + cw / 2 - 40, y + chh / 2 + 4, { size: chh * 0.4, color: INK, base: "middle" });
+            xEmoji(ctx, row[3], x + 80, y + chh / 2 + 4, chh * 0.5);
+            if (mine.has(row[0])) cStar(ctx, x + cw - 28, y + 30, 20, "#FFD23F", INK, 3);
+        });
+        xText(ctx, "النجمة تعني أن الحرف موجود في اسمي", W / 2, 1596, { size: 34, color: "#6F6557", weight: 400 });
+        xFooter(ctx, st, d, n);
+    }
+
+    async function drawActivityPage(ctx, st, d, page, small) {
+        const n = page.n;
+        const sub = page.kind.slice(1);
+        if (st.id === "coloring") {
+            if (sub === "cover") return drawColoringCover(ctx, st, d);
+            if (sub === "own") return drawColoringOwn(ctx, st, d, n);
+            if (sub === "name") return drawColoringName(ctx, st, d, n);
+            if (sub === "letter") return drawColoringLetter(ctx, st, d, n, page.k);
+            if (sub === "art") return drawColoringArt(ctx, st, d, n, page.src, small);
+            if (sub === "mandala") return drawColoringMandala(ctx, st, d, n);
+            if (sub === "geo") return drawColoringGeo(ctx, st, d, n);
+            if (sub === "draw") return drawColoringDraw(ctx, st, d, n);
+            return drawActivityCert(ctx, st, d, n, "شهادة فنّان صغير", "لأنك [لوّنتَ|لوّنتِ] كتابك بإبداعٍ وألوانٍ جميلة،\nو[أنهيتَ|أنهيتِ] كل صفحاته بكل حب.", "كل لونٍ تضعه يجعل الدنيا أجمل.");
+        }
+        if (sub === "cover") return drawAbcCover(ctx, st, d);
+        if (sub === "name") return drawAbcName(ctx, st, d, n);
+        if (sub === "letter") return drawAbcLetter(ctx, st, d, n, page.k);
+        if (sub === "trace") return drawAbcTrace(ctx, st, d, n);
+        if (sub === "find") return drawAbcFind(ctx, st, d, n);
+        if (sub === "colorl") return drawAbcColorLetters(ctx, st, d, n);
+        if (sub === "alpha1") return drawAbcAlpha(ctx, st, d, n, 0);
+        if (sub === "alpha2") return drawAbcAlpha(ctx, st, d, n, 1);
+        return drawActivityCert(ctx, st, d, n, "شهادة تعلّم الحروف", "لأنك [تعلّمتَ|تعلّمتِ] كتابة اسمك بنفسك،\nو[عرفتَ|عرفتِ] حروفك الأولى.", "كل حرفٍ جديد هو بابٌ لقصةٍ جديدة.");
+    }
+
+    function activityPages(storyId, custom) {
+        const d = normalize(custom || {});
+        const have = custom && d.name ? nameBase(d.name).length : 0;
+        const nl = Math.max(1, Math.min(6, have || 3));
+        const out = [];
+        const add = (sub, extra = {}) => out.push({ kind: "x" + sub, ...extra });
+        if (storyId === "coloring") {
+            add("cover"); add("own"); add("name");
+            for (let k = 0; k < nl; k++) add("letter", { k });
+            ["astro", "sea", "dino", "oman"].forEach((src) => add("art", { src }));
+            add("mandala"); add("geo"); add("draw"); add("cert");
+        } else {
+            add("cover"); add("name");
+            for (let k = 0; k < nl; k++) add("letter", { k });
+            add("trace"); add("find"); add("colorl"); add("alpha1"); add("alpha2"); add("cert");
+        }
+        out.forEach((p, i) => { p.n = i; });
+        return out;
+    }
+
+    Object.assign(STORIES, {
+        coloring: { id: "coloring", title: "كتاب التلوين", product: "كتاب تلوين باسم طفلك", lesson: "", color: "#F26B5B", tint: "#FDE8E3", activity: true },
+        abc: { id: "abc", title: "أتعلّم الحروف مع اسمي", product: "تعلّم الحروف باسم طفلك", lesson: "", color: "#2FA7C9", tint: "#DDF1F8", activity: true }
+    });
+
     // ---------- ترتيب صفحات الكتاب ----------
     // ترتيب صفحات الكتاب. صفحة الإهداء بعد الغلاف إذا كتب الأهل إهداء
     function bookPages(storyId, custom = null) {
         const st = STORIES[storyId];
         if (!st) return [];
+        if (st.activity) return activityPages(storyId, custom);
         const ded = Boolean(custom && normalize(custom).ded);
         if (st.book && (st.book.ready || !st.pages)) {
             return [
@@ -2108,6 +2959,15 @@
         if (!d.age) d.age = 5;
         uidN = 0;
         const cv = canvas || document.createElement("canvas");
+        if (page.kind && page.kind[0] === "x") {
+            const xs = width / W;
+            cv.width = Math.round(W * xs);
+            cv.height = Math.round(H * xs);
+            const xctx = cv.getContext("2d");
+            xctx.setTransform(xs, 0, 0, xs, 0, 0);
+            await drawActivityPage(xctx, st, d, page, width <= 900);
+            return cv;
+        }
         if (page.kind && page.kind[0] === "b") {
             const sc = width / BW;
             cv.width = Math.round(BW * sc);
@@ -2226,13 +3086,18 @@
         try { return await loadImage(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 2000); }
     }
 
+    function isActivity(storyId) {
+        const st = STORIES[storyId];
+        return Boolean(st && st.activity);
+    }
+
     function isIllustrated(storyId) {
         const st = STORIES[storyId];
         return Boolean(st && st.book && (st.book.ready || !st.pages));
     }
 
     root.HUROOF_STORIES = {
-        isIllustrated,
+        isIllustrated, isActivity,
         STORIES, AGES, ORD,
         list: () => Object.values(STORIES).map((s) => ({ id: s.id, title: s.title, product: s.product, color: s.color })),
         get: (id) => STORIES[id] || null,

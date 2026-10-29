@@ -373,12 +373,12 @@
         const pct = sale ? Math.round((1 - p.price / p.old_price) * 100) : 0;
         const stats = V.reviewStats(v.reviewsByProduct.get(p.id));
         const src = V.img(p);
-        const pro = ATHR.proOn(v.cfg, p.story);
+        const pro = ATHR.proOn(v.cfg, p.story) && !ATHR.isActivity(p);
         const blurb = V.storyBlurb(p);
         return `<article class="ks-card" data-card="${esc(p.id)}">
             <div class="ks-media"><a class="ks-img" href="${url}" tabindex="-1" aria-hidden="true">
                 ${src ? `<img src="${esc(src)}" alt="" width="400" height="500"${eager ? "" : ' loading="lazy"'}${high ? ' fetchpriority="high"' : ""} decoding="async">` : ""}
-                <span class="ks-badge">👦👧 ${esc(t("للأولاد والبنات"))}</span>
+                <span class="ks-badge">${ATHR.isActivity(p) ? (p.story === "abc" ? "🔤 " + esc(t("تعليمي")) : "🖍️ " + esc(t("للتلوين"))) : "👦👧 " + esc(t("للأولاد والبنات"))}</span>
                 ${sale ? `<span class="ks-sale">${esc(t("خصم {pct}%", { pct }))}</span>` : pro ? `<span class="ks-sale pro">🌟 ${esc(t("متاحة بوجه طفلك"))}</span>` : ""}
             </a>
             <button class="ks-peek" type="button" data-flip="${esc(p.id)}" aria-label="${esc(t("تصفّح القصة"))}">👁</button></div>
@@ -390,7 +390,7 @@
             </div>
             ${p.is_available === false
                 ? `<div class="ks-act">${V.cardAction(v, p)}</div>`
-                : `<a class="ks-cta" href="${url}#personalize">✏️ ${esc(t("خصّص القصة لطفلك"))}</a>`}
+                : `<a class="ks-cta" href="${url}#personalize">✏️ ${esc(ATHR.isActivity(p) ? t("اكتب اسم طفلك") : t("خصّص القصة لطفلك"))}</a>`}
         </article>`;
     };
 
@@ -1013,8 +1013,11 @@
     V.storyHome = function (v) {
         const cfg = v.cfg;
         const sc = ATHR.storyCfg(cfg);
-        const list = V.listings(v, v.products.filter((p) => ATHR.isStory(p)));
-        const live = list.filter((p) => p.is_available !== false);
+        const all = V.listings(v, v.products.filter((p) => ATHR.isStory(p)));
+        const list = all.filter((p) => !ATHR.isActivity(p));
+        const colorList = all.filter((p) => p.story === "coloring");
+        const abcList = all.filter((p) => p.story === "abc");
+        const live = all.filter((p) => p.is_available !== false);
         const books = live.filter((p) => V.img(p)).slice(0, 3);
         const proStory = ATHR.proOn(cfg) ? live.find((p) => ATHR.proOn(cfg, p.story)) : null;
         const print = ATHR.printOn(cfg, v.country);
@@ -1022,19 +1025,15 @@
         const raw = fill(v, ct(v, "texts.hero_title")) || t("قصص أطفال مخصصة باسم وصورة طفلك");
         const cut = raw.indexOf(" باسم ");
         const titleHtml = cut > 0 ? `${esc(raw.slice(0, cut))} <em>${esc(raw.slice(cut + 1))}</em>` : esc(raw).replace("طفلك", "<em>طفلك</em>");
-        const first = live.find((p) => p.story === "space") || live[0];
+        const first = list.find((p) => p.is_available !== false) || live[0];
         const why = [
             ["👀", t("تشوفها قبل الطلب"), t("اكتب اسم طفلك وتصفّح القصة كاملة باسمه قبل ما تدفع.")],
             [photo ? "📷" : "✏️", photo ? t("باسمه وصورته") : t("باسمه في كل صفحة"), photo ? t("اسم طفلك في كل صفحة، وصورته على الغلاف.") : t("اسم طفلك وعمره وهواياته في القصة.")],
             proStory ? ["🌟", t("بوجه طفلك"), t("في القصة المؤلفة خصيصاً نرسم طفلك من صورته في كل صفحة.")] : null,
             ["✍️", t("عربي سليم"), t("نص عربي جميل بصيغة الولد أو البنت، سهل يقرؤه الطفل.")],
-            sc.ded_enabled !== false || (print && sc.wrap_enabled !== false) ? ["🎁", print && sc.wrap_enabled !== false ? t("تغليف وإهداء مجاني") : t("إهداء مجاني"), print && sc.wrap_enabled !== false ? t("نغلّف الكتاب المطبوع كهدية، ونكتب إهداءك في أول صفحة.") : t("نكتب إهداءك لطفلك في أول صفحة من القصة.")] : null,
-            ["🏅", t("هدايا مع كل قصة"), t("شهادة بطل القصة، وملصقات اسمه للمدرسة، وصفحة تلوين.")],
             print ? ["📦", t("PDF أو كتاب مطبوع"), t("ملف على واتساب خلال ساعات، أو كتاب بغلاف مقوّى لباب بيتك.")] : null,
             sc.guarantee ? ["🛡️", t("ضمان الرضا"), t("إذا ما عجبتك القصة نعدّلها مجاناً، أو نرجّع لك المبلغ كاملاً.")] : null
         ].filter(Boolean).slice(0, 6);
-        const giftLine = print && sc.wrap_enabled !== false ? t("كل قصة مطبوعة نغلّفها كهدية مجاناً") : t("إهداء مجاني منك في أول صفحة");
-        const giftSub = print && sc.wrap_enabled !== false && sc.ded_enabled !== false ? t("ومعها إهداء منك لطفلك في أول صفحة، بدون أي تكلفة إضافية.") : t("اكتب رسالتك لطفلك، ونطبعها في صفحة خاصة بداية القصة.");
         return `<section class="sh-hero ks-hero">
                 <div class="wrap sh-inner">
                     <div class="sh-text">
@@ -1044,29 +1043,34 @@
                             <a class="btn btn-primary sh-cta" href="#stories">✨ ${esc(ct(v, "texts.hero_button") || t("تصفّح جميع القصص"))}</a>
                             ${first ? `<button class="btn btn-ghost sh-more" type="button" data-flip="${esc(first.id)}">📖 ${esc(t("شاهد مثال"))}</button>` : ""}
                         </div>
-                        <ul class="sh-trust"><li>👀 ${esc(t("تشوفها قبل الطلب"))}</li>${sc.guarantee ? `<li>🛡️ ${esc(t("ضمان الرضا"))}</li>` : ""}${sc.ded_enabled !== false ? `<li>💌 ${esc(t("إهداء مجاني"))}</li>` : ""}</ul>
+                        <ul class="sh-trust"><li>👀 ${esc(t("تشوفها قبل الطلب"))}</li>${sc.guarantee ? `<li>🛡️ ${esc(t("ضمان الرضا"))}</li>` : ""}</ul>
                     </div>
                     ${books.length ? `<div class="sh-books" aria-hidden="true">${books.map((p, i) => `<span class="shb shb${i + 1}"><img src="${esc(V.img(p))}" alt="" width="300" height="375"${i ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async"></span>`).join("")}<span class="sh-float">✨ ${esc(photo ? t("اسم طفلك وصورته على الغلاف") : t("اسم طفلك على الغلاف وفي كل صفحة"))}</span></div>` : ""}
                 </div>
             </section>
             <section class="section ks-best" id="stories" aria-labelledby="best-t">
                 <div class="wrap">
-                    <div class="section-head ks-head"><h2 id="best-t">${esc(list.length ? t("قصص يكون طفلك بطلها") : t("قصصنا الجديدة قريباً"))}</h2></div>
+                    <div class="section-head ks-head"><h2 id="best-t">${esc(list.length ? t("📚 قصص ثلاثية الأبعاد، طفلك بطلها") : t("قصصنا الجديدة قريباً"))}</h2></div>
                     <p class="sh-lead">${esc(list.length ? t("اختر القصة، واكتب بيانات طفلك، وشوفها باسمه قبل ما تطلب.") : t("نرسم الحين مغامرات جديدة بأسلوب ثلاثي الأبعاد، طفلك بطلها باسمه وصورته."))}</p>
                     ${list.length ? `<div class="ks-grid">${list.map((p, i) => V.storyCard(v, p, { eager: i < 2, high: i < 2 })).join("")}</div>`
                         : `<div class="ks-grid">${V.SOON.map((x) => `<article class="ks-card ks-soon"><span class="ks-soon-e" aria-hidden="true">${x.e}</span><div class="ks-body"><b class="ks-name">${esc(t(x.t))}</b><p class="ks-blurb">${esc(t(x.s))}</p></div><span class="ks-soon-tag">✨ ${esc(t("قريباً"))}</span></article>`).join("")}</div>
                         ${ATHR.isValidWhatsapp(cfg.order.whatsapp) ? `<a class="btn btn-wa btn-block ks-soon-wa" href="${esc(ATHR.waLink(cfg.order.whatsapp, t("السلام عليكم، خبّروني أول ما تنزل القصص الجديدة 📚")))}" target="_blank" rel="noopener">${V.waIcon()}${esc(t("خبّرني أول ما تنزل"))}</a>` : ""}`}
                 </div>
             </section>
-            <section class="section ks-giftban-s" aria-label="${esc(giftLine)}">
+            ${colorList.length ? `<section class="section ks-best ks-color" id="coloring" aria-labelledby="col-t">
                 <div class="wrap">
-                    <div class="ks-giftban">
-                        <span class="ks-gb-e" aria-hidden="true">🎁</span>
-                        <div><b>${esc(giftLine)}</b><small>${esc(giftSub)}</small></div>
-                        <a class="btn btn-primary" href="#stories">${esc(t("اختر القصة"))}</a>
-                    </div>
+                    <div class="section-head ks-head"><h2 id="col-t">🖍️ ${esc(t("كتب التلوين باسم طفلك"))}</h2></div>
+                    <p class="sh-lead">${esc(t("كتاب تلوين احترافي: اسمه بحروف كبيرة يلوّنها، ورسومات الفضاء والبحر والديناصورات وعُمان، وماندالا وأشكال هندسية. جاهز للطباعة."))}</p>
+                    <div class="ks-grid">${colorList.map((p) => V.storyCard(v, p, {})).join("")}</div>
                 </div>
-            </section>
+            </section>` : ""}
+            ${abcList.length ? `<section class="section ks-best ks-abc" id="letters" aria-labelledby="abc-t">
+                <div class="wrap">
+                    <div class="section-head ks-head"><h2 id="abc-t">🔤 ${esc(t("يتعلّم الحروف باسمه"))}</h2></div>
+                    <p class="sh-lead">${esc(t("يكتب الطفل اسمه ويتعلّم الحروف: يتتبّع حروف اسمه، يبحث عنها، يلوّنها، ويتعرّف على الحروف الهجائية كاملة."))}</p>
+                    <div class="ks-grid">${abcList.map((p) => V.storyCard(v, p, {})).join("")}</div>
+                </div>
+            </section>` : ""}
             ${first ? `<section class="section sh-live" aria-labelledby="live-t">
                 <div class="wrap">
                     <div class="sh-live-in" data-live-story="${esc(first.id)}">
@@ -1080,17 +1084,6 @@
                         </div>
                         <div class="sh-live-cv"><canvas id="liveCover" width="420" height="594"></canvas></div>
                         <button class="btn btn-primary btn-block" type="button" data-live-go>${esc(t("خصص قصته الآن"))} ←</button>
-                    </div>
-                </div>
-            </section>` : ""}
-            ${list.length ? `<section class="section sh-gifts" aria-labelledby="gifts-t">
-                <div class="wrap">
-                    <div class="section-head"><h2 id="gifts-t">🎁 ${esc(t("هدايا مجانية مع كل قصة"))}</h2></div>
-                    <p class="sh-lead">${esc(t("في آخر كل قصة صفحات إضافية باسم طفلك، يطبعها ويفرح فيها."))}</p>
-                    <div class="sh-gift-list">
-                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="cert" width="300" height="424"></canvas></span><figcaption><b>🏅 ${esc(t("شهادة بطل القصة"))}</b><small>${esc(t("باسمه والرسالة اللي تعلّمها"))}</small></figcaption></figure>
-                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="labels" width="300" height="424"></canvas></span><figcaption><b>🏷️ ${esc(t("ملصقات اسمه"))}</b><small>${esc(t("لدفاتره وأغراض المدرسة"))}</small></figcaption></figure>
-                        <figure class="sh-gift"><span class="sh-gift-c"><canvas data-gift-prev="color" width="300" height="424"></canvas></span><figcaption><b>🖍️ ${esc(t("صفحة تلوين"))}</b><small>${esc(t("يلوّن اسمه بنفسه"))}</small></figcaption></figure>
                     </div>
                 </div>
             </section>` : ""}
@@ -1439,13 +1432,12 @@
         const cfg = v.cfg;
         const sc = ATHR.storyCfg(cfg);
         return ATHR.storyClean({
-            name: st.name, g: st.g, age: st.age, likes: st.likes, lesson: st.lesson,
+            name: st.name, g: ATHR.isActivity(p) ? "m" : st.g, age: ATHR.isActivity(p) ? 5 : st.age, likes: ATHR.isActivity(p) ? [] : st.likes, lesson: ATHR.isActivity(p) ? "" : st.lesson,
             tier: st.tier === "pro" && ATHR.proOn(cfg, p.story) ? "pro" : "std",
-            fmt: st.fmt === "print" && ATHR.printOn(cfg, v.country) ? "print" : "pdf",
-            wrap: st.wrap && sc.wrap_enabled !== false,
-            ded_t: st.ded_on && sc.ded_enabled !== false ? st.ded_t : "",
-            ded: st.ded, ded_from: st.ded_from,
-            photo_path: sc.photo_upload !== false ? st.photo_path : "",
+            fmt: st.fmt === "print" && ATHR.printOn(cfg, v.country) && !ATHR.isActivity(p) ? "print" : "pdf",
+            wrap: false,
+            ded_t: "", ded: "", ded_from: "",
+            photo_path: sc.photo_upload !== false && !ATHR.isActivity(p) ? st.photo_path : "",
             hijab: st.hijab, note: st.note, family: st.family, friend: st.friend
         });
     };
@@ -1494,22 +1486,22 @@
             <span class="sf-opt-p">${price}</span>
         </button>`;
         const ship = (cfg.order.delivery || []).find((d) => d.enabled && d.type !== "digital" && ATHR.inCountries(d, v.country));
-        const dedQ = st.ded_t === "own" ? "" : ATHR.dedText(st.ded_t, { name, g: st.g });
+        const act = ATHR.isActivity(p);
         return `<div class="sf-f${st.bad === "name" ? " bad" : ""}" id="sfNameF">
                 <label class="sf-l" for="sfName">${esc(t("اسم الطفل"))} <i>*</i></label>
                 <input class="input" id="sfName" name="sf_name" maxlength="22" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="${esc(G(t("مثال: محمد"), t("مثال: سارة")))}" value="${esc(st.name)}">
-                <small class="sf-hint">${esc(t("يظهر على الغلاف وفي كل صفحة، تأكد من الإملاء"))}</small>
+                <small class="sf-hint">${esc(act ? t("تُرسم حروف اسمه في الكتاب، تأكد من الإملاء") : t("يظهر على الغلاف وفي كل صفحة، تأكد من الإملاء"))}</small>
             </div>
-            <div class="sf-f${st.bad === "g" ? " bad" : ""}" id="sfGF">
+            ${act ? "" : `<div class="sf-f${st.bad === "g" ? " bad" : ""}" id="sfGF">
                 <span class="sf-l">${esc(t("ولد أو بنت؟"))} <i>*</i></span>
                 <div class="sf-g2">${[["m", "👦", t("ولد")], ["f", "👧", t("بنت")]].map(([val, e, label]) => `<button type="button" class="sf-gc${st.g === val ? " on" : ""}" data-sf-g="${val}" aria-pressed="${st.g === val}"><span aria-hidden="true">${e}</span><b>${esc(label)}</b></button>`).join("")}</div>
             </div>
             <div class="sf-f${st.bad === "age" ? " bad" : ""}" id="sfAgeF">
                 <label class="sf-l" for="sfAge">${esc(t("العمر"))} <i>*</i></label>
                 <select class="input" id="sfAge" name="sf_age"><option value="">${esc(t("اختر العمر"))}</option>${ATHR.STORY_AGES.map((a) => `<option value="${a}"${st.age === a ? " selected" : ""}>${esc(ATHR.ageText(a))}</option>`).join("")}</select>
-            </div>
-            ${sc.photo_upload !== false ? V.sfPhoto(v, p, st) : ""}
-            <details class="sf-more" id="sfMore"${st.more ? " open" : ""}>
+            </div>`}
+            ${sc.photo_upload !== false && !act ? V.sfPhoto(v, p, st) : ""}
+            ${act ? "" : `<details class="sf-more" id="sfMore"${st.more ? " open" : ""}>
                 <summary><span>✨ ${esc(t("خصّصها أكثر"))}</span><small>${esc(t("هواياته ورسالة القصة · اختياري"))}</small></summary>
                 <div class="sf-f">
                     <span class="sf-l">${esc(G(t("ماذا يحب {name}؟", { name }), t("ماذا تحب {name}؟", { name })))} <small>${esc(t("(شيئين على الأكثر)"))}</small></span>
@@ -1527,8 +1519,8 @@
                     </select>
                     <small class="sf-hint">${esc(t("نكتبها في نهاية القصة وفي شهادة البطل"))}</small>
                 </div>
-            </details>
-            ${pro ? `<div class="sf-f">
+            </details>`}
+            ${pro && !act ? `<div class="sf-f">
                 <span class="sf-l">${esc(t("نوع القصة"))}</span>
                 <div class="sf-opts">
                     ${opt("data-sf-tier", "std", st.tier !== "pro", "📖", t("قصة جاهزة باسمه"), t("رسومات القصة الجميلة، و{name} البطل باسمه", { name }), local(v, p.price))}
@@ -1544,34 +1536,14 @@
                     <label class="sf-f"><span class="sf-l">${esc(t("تفاصيل خاصة"))} <small>${esc(t("(اختياري)"))}</small></span><textarea class="input" name="sf_note" rows="2" maxlength="200" placeholder="${esc(G(t("مثال: يلبس نظارة، يحب الديناصورات"), t("مثال: تلبس نظارة، تحب الفراشات")))}">${esc(st.note)}</textarea></label>
                 </div>` : ""}
             </div>` : ""}
-            ${print ? `<div class="sf-f">
+            ${print && !act ? `<div class="sf-f">
                 <span class="sf-l">${esc(t("كيف تصلك القصة؟"))}</span>
                 <div class="sf-opts two">
                     ${opt("data-sf-fmt", "pdf", st.fmt !== "print", "📱", t("ملف PDF"), t("على واتساب خلال ساعات"), esc(t("ضمن السعر")))}
                     ${opt("data-sf-fmt", "print", st.fmt === "print", "📦", t("كتاب مطبوع"), `${t("غلاف مقوّى + PDF")} · ${sc.print_time}`, "+" + local(v, Number(sc.print_price) || 0))}
                 </div>
                 ${st.fmt === "print" && ship && Number(ship.price) > 0 ? `<small class="sf-hint">🚚 ${esc(t("التوصيل {price} يُضاف في صفحة الطلب", { price: local(v, ship.price) }))}</small>` : ""}
-            </div>` : ""}
-            ${print && st.fmt === "print" && sc.wrap_enabled !== false ? `<label class="sf-check${st.wrap ? " on" : ""}">
-                <input type="checkbox" name="sf_wrap"${st.wrap ? " checked" : ""}>
-                <span class="sf-check-e" aria-hidden="true">🎁</span>
-                <span class="sf-check-t"><b>${esc(t("تغليف هدية"))}</b><small>${esc(t("نغلّف الكتاب بورق هدايا وشريطة، جاهز للإهداء"))}</small></span>
-                <em>${esc(t("مجاناً"))}</em>
-            </label>` : ""}
-            ${sc.ded_enabled !== false ? `<label class="sf-check${st.ded_on ? " on" : ""}">
-                <input type="checkbox" name="sf_ded_on"${st.ded_on ? " checked" : ""}>
-                <span class="sf-check-e" aria-hidden="true">💌</span>
-                <span class="sf-check-t"><b>${esc(t("إهداء في أول صفحة"))}</b><small>${esc(t("رسالة منك يقرؤها طفلك كل مرة"))}</small></span>
-                <em>${esc(t("مجاناً"))}</em>
-            </label>
-            ${st.ded_on ? `<div class="sf-ded${st.bad === "ded" ? " bad" : ""}" id="sfDedF">
-                <span class="sf-l">${esc(t("اختر إهداءً جاهزاً أو اكتب إهداءك"))}</span>
-                <div class="sf-chips">${ATHR.STORY_DEDS.map((d) => `<button type="button" class="sf-chip${st.ded_t === d.id ? " on" : ""}" data-sf-ded="${d.id}" aria-pressed="${st.ded_t === d.id}"><span aria-hidden="true">${d.e}</span> ${esc(t(d.t))}</button>`).join("")}<button type="button" class="sf-chip${st.ded_t === "own" ? " on" : ""}" data-sf-ded="own" aria-pressed="${st.ded_t === "own"}">✍️ ${esc(t("اكتب إهداءك"))}</button></div>
-                ${st.ded_t === "own"
-                    ? `<textarea class="input" name="sf_ded" rows="3" maxlength="220" placeholder="${esc(t("اكتب رسالتك لطفلك هنا…"))}">${esc(st.ded)}</textarea><small class="sf-hint" id="sfDedLeft">${esc(t("{n} حرف متبقي", { n: 220 - String(st.ded || "").length }))}</small>`
-                    : `<blockquote class="sf-ded-q" id="sfDedQ">${esc(dedQ)}</blockquote>`}
-                <label class="sf-f"><span class="sf-l">${esc(t("من؟"))} <small>${esc(t("(يظهر تحت الإهداء)"))}</small></span><input class="input" name="sf_ded_from" maxlength="40" autocomplete="off" placeholder="${esc(t("مثال: ماما وبابا"))}" value="${esc(st.ded_from)}"></label>
-            </div>` : ""}` : ""}`;
+            </div>` : ""}`;
     };
 
     // ملخص السعر تحت النموذج
@@ -1580,12 +1552,9 @@
         const sc = ATHR.storyCfg(cfg);
         const c = V.sfCustom(v, p, st);
         const unit = ATHR.storyUnit(p, c, cfg);
-        const rows = [[t("سعر القصة"), local(v, p.price)]];
+        const rows = [[ATHR.isActivity(p) ? t("سعر الكتاب") : t("سعر القصة"), local(v, p.price)]];
         if (c.tier === "pro") rows.push([t("مؤلفة خصيصاً بوجهه"), "+" + local(v, Number(sc.pro_price) || 0)]);
         if (c.fmt === "print") rows.push([t("كتاب مطبوع بغلاف مقوّى"), "+" + local(v, Number(sc.print_price) || 0)]);
-        if (c.wrap) rows.push([t("تغليف هدية"), `<span class="free">${esc(t("مجاناً"))}</span>`]);
-        if (c.ded) rows.push([t("الإهداء"), `<span class="free">${esc(t("مجاناً"))}</span>`]);
-        rows.push([t("هدايا: شهادة البطل وملصقات وتلوين"), `<span class="free">${esc(t("مجاناً"))}</span>`]);
         return `${Number(p.old_price) > Number(p.price) ? `<div class="sf-sum-save">🎉 ${esc(t("وفّرت {amount}", { amount: local(v, Math.round((p.old_price - p.price) * 1000) / 1000) }))}</div>` : ""}
             ${rows.map(([a, b]) => `<div><span>${esc(a)}</span><b>${b}</b></div>`).join("")}
             <div class="tot"><span>${esc(t("الإجمالي"))}</span><b>${local(v, unit)}</b></div>`;
@@ -1682,13 +1651,14 @@
         const stats = V.reviewStats(v.reviewsByProduct.get(p.id));
         const desc = V.description(v, p);
         const print = ATHR.printOn(cfg, v.country);
-        const related = V.listings(v, v.products.filter((x) => ATHR.isStory(x) && x.id !== p.id && x.is_available !== false)).slice(0, 6);
-        const how = [
+        const related = V.listings(v, v.products.filter((x) => ATHR.isStory(x) && x.id !== p.id && x.is_available !== false && ATHR.isActivity(x) === ATHR.isActivity(p))).slice(0, 6);
+        const act = ATHR.isActivity(p);
+        const how = act ? [["✏️", t("اكتب اسم طفلك")], ["✨", t("نجهّز الكتاب باسمه")], ["📱", t("يصلك PDF على واتساب")]] : [
             sc.photo_upload !== false ? ["📷", t("ارفع صورة طفلك")] : ["✏️", t("اكتب اسم طفلك")],
             ["✨", sc.photo_upload !== false ? t("نضيف اسمه وصورته") : t("نكتب القصة باسمه")],
             [print ? "📦" : "📱", print ? t("تصلك PDF أو مطبوعة") : t("تصلك على واتساب")]
         ];
-        const badges = [`📄 ${t("{n} صفحة", { n: V.STORY_PAGES })}`, `🧒 ${t("من 3 إلى 8 سنوات")}`, `🎁 ${t("هدايا مجانية")}`];
+        const badges = act ? [`📄 ${t("جاهز للطباعة A4")}`, `🧒 ${t("من 3 إلى 8 سنوات")}`, `⚡ ${t("يصلك خلال ساعات")}`] : [`📄 ${t("{n} صفحة", { n: V.STORY_PAGES })}`, `🧒 ${t("من 3 إلى 8 سنوات")}`, `⚡ ${t("يصلك خلال ساعات")}`];
         return `${V.crumbs([{ name: t("الرئيسية"), href: ATHR.url.home() }, { name: V.storyShort(p) }])}
             <div class="wrap">
                 <div class="pdp ks-pdp">
@@ -1700,7 +1670,7 @@
                         ${V.storyBlurb(p) ? `<p class="ks-lead">${esc(V.storyBlurb(p))}</p>` : ""}
                         <ol class="ks-how">${how.map(([e, x], i) => `<li><span class="ks-how-e" aria-hidden="true">${e}</span><small>${i + 1}</small><b>${esc(x)}</b></li>`).join("")}</ol>
                         <ul class="ks-badges">${badges.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-                        <button class="ks-flipbtn" type="button" data-flip="${esc(p.id)}"><span aria-hidden="true">📖</span><span><b>${esc(t("تصفّح القصة كاملة"))}</b><small>${esc(t("اقرأها صفحة صفحة قبل ما تطلب"))}</small></span><span aria-hidden="true">←</span></button>
+                        <button class="ks-flipbtn" type="button" data-flip="${esc(p.id)}"><span aria-hidden="true">📖</span><span><b>${esc((act ? t("تصفّح الكتاب كاملاً") : t("تصفّح القصة كاملة")))}</b><small>${esc((act ? t("شاهد صفحاته باسم طفلك قبل ما تطلب") : t("اقرأها صفحة صفحة قبل ما تطلب")))}</small></span><span aria-hidden="true">←</span></button>
                         ${p.is_available === false ? V.buyBox(v, p) : V.storyForm(v, p)}
                         ${V.deliveryBox(v, p)}
                         ${desc ? `<details class="ks-more"><summary>${esc(t("تفاصيل القصة"))}</summary>${V.descHTML(desc)}</details>` : ""}
@@ -1711,7 +1681,7 @@
                 </div>
                 ${V.productReviews(v, p)}
             </div>
-            ${related.length ? V.rail(v, { id: "related", title: t("قصص أخرى لطفلك"), items: related }) : ""}`;
+            ${related.length ? V.rail(v, { id: "related", title: act ? t("كتب أخرى لطفلك") : t("قصص أخرى لطفلك"), items: related }) : ""}`;
     };
 
     V.product = function (v, p) {

@@ -356,7 +356,16 @@ ATHR.merge = function merge(base, over) {
     return out;
 };
 
-ATHR.fullConfig = (saved) => ATHR.merge(ATHR_DEFAULTS, saved || {});
+ATHR.fullConfig = (saved) => {
+    const c = ATHR.merge(ATHR_DEFAULTS, saved || {});
+    // المتجر بدون هدايا/تغليف/إهداء
+    c.sales.gift_enabled = false;
+    c.sales.gift_banner = false;
+    c.sales.gift_button = false;
+    c.stories.wrap_enabled = false;
+    c.stories.ded_enabled = false;
+    return c;
+};
 
 ATHR.escape = (value) => String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -462,6 +471,7 @@ ATHR.isDigitalDelivery = (d) => Boolean(d && d.type === "digital");
 // القصص الشخصية: بيانات الطفل (الاسم، ولد/بنت، العمر، الإهداء، صورة الغلاف)
 // =====================================================
 ATHR.isStory = (p) => Boolean(p && p.story);
+ATHR.isActivity = (p) => Boolean(p && (p.story === "coloring" || p.story === "abc"));
 ATHR.STORY_AGES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 ATHR.ageText = (n) => {
     const a = Math.round(Number(n)) || 0;
