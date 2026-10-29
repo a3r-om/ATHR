@@ -6255,16 +6255,8 @@
             const res = await fetch(url);
             if (!res.ok) throw new Error(`photo ${res.status}`);
             const blob = await res.blob();
-            const lib = await loadStoriesLib();
-            const img = await lib.readPhoto(blob);
             if (!$("#storyMaker") || SM.photo) return;
-            SM.photo = img;
-            SM.raw = blob;
-            if ($("#smDraw")) $("#smDraw").hidden = false;
-            if ($("#smPhotoName")) $("#smPhotoName").textContent = "✓ صورة الطفل من الطلب على الغلاف";
-            if ($("#smPhotoClear")) $("#smPhotoClear").hidden = false;
-            smReset();
-            smPreview(0);
+            await smSetPhoto(blob, "✓ صورة الطفل من الطلب");
         } catch (e) {
             console.warn("Order photo:", e);
             if ($("#smPhotoName")) $("#smPhotoName").textContent = "تعذر تحميل الصورة (ربما انحذفت). اختر صورة يدوياً.";
@@ -6323,6 +6315,53 @@
         } catch (e) { console.warn("Photo cleanup:", e); }
     }
 
+    // =====================================================
+    // 📖 صانع القصص: تحكم كامل بالطفل وصفحات القصة
+    // =====================================================
+    const SM_STYLES = [
+        ["real", "📷", "واقعي 100%", "كل الصفحة بصورة حقيقية، والطفل بوجهه الحقيقي"],
+        ["mixed", "🎬", "وجه حقيقي + خلفية 3D", "وجه الطفل الحقيقي داخل رسم القصة"],
+        ["orig", "🧸", "الرسم الأصلي", "بدون صورة الطفل"]
+    ];
+    const SM_OUTFITS = {
+        astro: ["بدلة رائد فضاء بيضاء مع خوذة", "بدلة رائد فضاء برتقالية"],
+        sea: ["بدلة غوص زرقاء مع نظارة غوص", "ملابس سباحة وزعانف"],
+        dino: ["قبعة سفاري وقميص كاكي (مستكشف)", "سترة مستكشف خضراء"],
+        oman: ["دشداشة بيضاء وكمة عمانية", "فستان عماني تقليدي ملوّن", "ثوب عماني مطرّز مع وشاح"]
+    };
+
+    const smUseAI = () => Boolean(SM.ref && SM.style !== "orig");
+    const smSig = () => `${$("#smStory") ? $("#smStory").value : ""}|${$("#smG") ? $("#smG").value : "m"}|${SM.style}|${SM.outfit}|${SM.note}|${SM.ref ? SM.ref.length : 0}`;
+    function smSyncSig() {
+        const sig = smSig();
+        if (SM.sigFor !== sig) { SM.art = {}; SM.artNote = {}; SM.sigFor = sig; }
+    }
+
+    async function smSetPhoto(blob, label) {
+        const lib = await loadStoriesLib();
+        const img = await lib.readPhoto(blob);
+        const sc = Math.min(1, 1024 / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * sc);
+        cv.height = Math.round(img.height * sc);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        SM.photo = img;
+        SM.raw = blob;
+        SM.ref = cv.toDataURL("image/jpeg", 0.9);
+        SM.art = {};
+        SM.artNote = {};
+        if ($("#smThumb")) { $("#smThumb").src = SM.ref; $("#smThumbBox").hidden = false; }
+        if ($("#smPhotoName")) $("#smPhotoName").textContent = label || "✓ الصورة جاهزة";
+        if ($("#smPhotoClear")) $("#smPhotoClear").hidden = false;
+        smSyncSig();
+        smReset();
+        smRefresh();
+    }
+
+    function smOutfitChips(story) {
+        return (SM_OUTFITS[story] || []).map((t) => `<button class="sm-chip" type="button" data-sm="outfit" data-v="${esc(t)}">${esc(t)}</button>`).join("");
+    }
+
     function openStoryMaker(o, i) {
         const it = o && Array.isArray(o.items) ? o.items[i] : null;
         const c = (it && it.custom) || {};
@@ -6330,130 +6369,323 @@
         SM.index = i;
         SM.photo = null;
         SM.raw = null;
-        SM.orig = null;
-        SM.cartoon = null;
-        SM.art = null;
+        SM.ref = null;
+        SM.art = {};
+        SM.artNote = {};
+        SM.texts = {};
+        SM.notes = {};
+        SM.style = "real";
+        SM.outfit = "";
+        SM.note = "";
+        SM.sigFor = "";
+        SM.sel = null;
         SM.extra = { likes: Array.isArray(c.likes) ? c.likes : [], lesson: c.lesson || "", ded_t: c.ded_t || "", ded: c.ded || "", ded_from: c.ded_from || "" };
         smReset();
         const story = it ? storyIdOf(it) : "letters";
         const ages = ATHR.STORY_AGES.map((a) => `<option value="${a}"${Number(c.age) === a ? " selected" : ""}>${esc(ATHR.ageText(a))}</option>`).join("");
         openOrderSheet(`${offerSheetHead("📖 صانع القصص")}
-            <div class="sm-body" id="storyMaker">
-                <p class="adm-muted">${it ? `طلب <b dir="ltr">${esc(o.order_no || "")}</b> · ${esc(o.customer_name || "")}. راجع البيانات وصحّح الاسم إذا لزم.` : "اصنع قصة لأي طفل، مثل طلب وصلك على واتساب."}</p>
-                ${c.tier === "pro" ? `<p class="sm-pro">🌟 هذه قصة <b>مؤلفة خصيصاً بوجه الطفل</b>: نصها يُكتب حول أسرته وتفاصيله، ورسوماتها من صورته. أرسل صورة الطفل ورقم الطلب في محادثة Claude، ويجهّز لك ملف القصة كاملاً. الملف هنا بالشخصية الجاهزة (للمراجعة فقط).</p>` : ""}
-                ${c.fmt === "print" ? `<p class="sm-print">📦 العميل طلب نسخة مطبوعة: اصنع الملف وأرسله للمطبعة (A4، غلاف مقوّى)، وأرسل نسخة PDF للعميل.</p>` : ""}
-                ${c.ded ? `<p class="adm-muted">💌 الإهداء في أول صفحة: «${esc(c.ded)}»${c.ded_from ? ` — ${esc(c.ded_from)}` : ""}</p>` : ""}
+            <div class="sm-body sm2" id="storyMaker">
+                <p class="adm-muted">${it ? `طلب <b dir="ltr">${esc(o.order_no || "")}</b> · ${esc(o.customer_name || "")}. راجع كل شيء قبل الصنع.` : "اصنع قصة لأي طفل، مثل طلب وصلك على واتساب."}</p>
+                ${c.tier === "pro" ? `<p class="sm-pro">🌟 قصة <b>مؤلفة خصيصاً بوجه الطفل</b>: نصها حول أسرته وتفاصيله.</p>` : ""}
+                ${c.fmt === "print" ? `<p class="sm-print">📦 العميل طلب نسخة مطبوعة: اصنع الملف وأرسله للمطبعة (A4، غلاف مقوّى).</p>` : ""}
+                ${c.ded ? `<p class="adm-muted">💌 الإهداء: «${esc(c.ded)}»${c.ded_from ? ` — ${esc(c.ded_from)}` : ""}</p>` : ""}
                 ${c.wrap ? `<p class="sm-print">🎁 غلّف الكتاب المطبوع كهدية قبل التوصيل.</p>` : ""}
-                ${(c.likes || []).length || ATHR.lessonOf(c.lesson) ? `<p class="adm-muted">${(c.likes || []).length ? `🎈 يحب: ${esc(ATHR.likesText(c.likes))}` : ""}${(c.likes || []).length && ATHR.lessonOf(c.lesson) ? " · " : ""}${ATHR.lessonOf(c.lesson) ? `✨ الرسالة: ${esc(ATHR.lessonOf(c.lesson).t)}` : ""} — مكتوبة في القصة تلقائياً.</p>` : ""}
-                <label class="af"><span>القصة</span><select class="ai" id="smStory">${STORY_OPTS.map(([v, l]) => `<option value="${v}"${v === story ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
-                <label class="af"><span>اسم الطفل</span><input class="ai" id="smName" maxlength="22" autocomplete="off" value="${esc(c.name || "")}"></label>
-                <div class="two">
-                    <label class="af"><span>ولد أو بنت</span><select class="ai" id="smG"><option value="m"${c.g === "f" ? "" : " selected"}>ولد</option><option value="f"${c.g === "f" ? " selected" : ""}>بنت</option></select></label>
-                    <label class="af"><span>العمر</span><select class="ai" id="smAge"><option value="">اختر</option>${ages}</select></label>
-                </div>
-                <div class="sm-photo">
-                    <label class="ab ab-ghost ab-sm" for="smPhoto">📷 ${c.photo_path ? "صورة ثانية بدل صورة الطلب" : c.photo ? "اختر صورة الطفل اللي أرسلها العميل" : "صورة الطفل للغلاف (اختياري)"}</label>
-                    <input type="file" id="smPhoto" accept="image/*" hidden>
-                    <span class="adm-muted" id="smPhotoName"></span>
-                    <button class="ab-mini danger" type="button" data-sm="photo-clear" id="smPhotoClear" hidden>إزالة الصورة</button>
-                    <button class="ab ab-primary ab-sm" type="button" data-sm="draw" id="smDraw" hidden>📸 صورة الطفل الحقيقية في كل الصفحات</button>
-                </div>
-                <label class="af" id="smOutfitBox" hidden><span>ملابس الطفل (اختياري)</span><input class="ai" id="smOutfit" maxlength="120" autocomplete="off" placeholder="مثلاً: بدلة رائد فضاء بيضاء — أو اتركه وتُختار حسب القصة"><small>اكتب ما تريده، وإلا يلبس ما يناسب كل مشهد من القصة.</small></label>
-                <small class="adm-muted">${c.photo_path ? "صورة الطفل من الطلب (مخزن خاص لا يراه غيرك)." : "الصورة تبقى في جوالك فقط ولا تُرفع لأي مكان."}</small>
-                <div class="sm-prev"><canvas id="smCover" width="300" height="424"></canvas><canvas id="smPage" width="300" height="424"></canvas></div>
-                <p class="sm-err" id="smErr" hidden></p>
-                <div class="sm-progress" id="smProgress" hidden><span class="sm-bar"><i id="smBar"></i></span><small id="smStep"></small></div>
-                <div class="sm-actions" id="smActions"></div>
+                ${(c.likes || []).length || ATHR.lessonOf(c.lesson) ? `<p class="adm-muted">${(c.likes || []).length ? `🎈 يحب: ${esc(ATHR.likesText(c.likes))}` : ""}${(c.likes || []).length && ATHR.lessonOf(c.lesson) ? " · " : ""}${ATHR.lessonOf(c.lesson) ? `✨ الرسالة: ${esc(ATHR.lessonOf(c.lesson).t)}` : ""}</p>` : ""}
+
+                <section class="sm-card">
+                    <h4><b>1</b> الطفل والقصة</h4>
+                    <label class="af"><span>القصة</span><select class="ai" id="smStory">${STORY_OPTS.map(([v, l]) => `<option value="${v}"${v === story ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+                    <label class="af"><span>اسم الطفل</span><input class="ai" id="smName" maxlength="22" autocomplete="off" value="${esc(c.name || "")}"></label>
+                    <div class="two">
+                        <label class="af"><span>ولد أو بنت</span><select class="ai" id="smG"><option value="m"${c.g === "f" ? "" : " selected"}>ولد</option><option value="f"${c.g === "f" ? " selected" : ""}>بنت</option></select></label>
+                        <label class="af"><span>العمر</span><select class="ai" id="smAge"><option value="">اختر</option>${ages}</select></label>
+                    </div>
+                </section>
+
+                <section class="sm-card">
+                    <h4><b>2</b> صورة الطفل وشكلها في القصة</h4>
+                    <div class="sm-photo">
+                        <span class="sm-thumbbox" id="smThumbBox" hidden><img id="smThumb" alt=""></span>
+                        <div class="sm-photo-side">
+                            <label class="ab ab-ghost ab-sm" for="smPhoto">📷 ${c.photo_path ? "صورة ثانية بدل صورة الطلب" : "اختر صورة الطفل"}</label>
+                            <input type="file" id="smPhoto" accept="image/*" hidden>
+                            <span class="adm-muted" id="smPhotoName"></span>
+                            <button class="ab-mini danger" type="button" data-sm="photo-clear" id="smPhotoClear" hidden>إزالة الصورة</button>
+                        </div>
+                    </div>
+                    <div class="sm-lbl">شكل الطفل في الصفحات</div>
+                    <div class="sm-seg" id="smStyleSeg">${SM_STYLES.map(([v, ic, t, d]) => `<button type="button" class="sm-opt${v === "real" ? " on" : ""}" data-sm="style" data-v="${v}"><span>${ic}</span><b>${t}</b><small>${d}</small></button>`).join("")}</div>
+                    <div id="smAiBox">
+                        <div class="sm-lbl">ملابس الطفل <small>(اتركها فارغة وتُختار حسب القصة)</small></div>
+                        <div class="sm-chips" id="smChips">${smOutfitChips(story)}</div>
+                        <input class="ai" id="smOutfit" maxlength="120" autocomplete="off" placeholder="أو اكتب ما تريده بنفسك">
+                        <div class="sm-lbl">تفاصيل إضافية على شكل الطفل <small>(اختياري)</small></div>
+                        <input class="ai" id="smNote" maxlength="160" autocomplete="off" placeholder="مثلاً: يضع نظارة، شعره قصير، ابتسامة كبيرة">
+                    </div>
+                </section>
+
+                <section class="sm-card">
+                    <h4><b>3</b> صفحات القصة <small id="smCount"></small></h4>
+                    <p class="adm-muted" id="smHint">اضغط أي صفحة لتعديل نصها أو إعادة رسمها وحدها.</p>
+                    <div class="sm-tools" id="smTools"><button class="ab ab-primary ab-sm" type="button" data-sm="gen-all">✨ ارسم كل الصفحات بصورة الطفل</button></div>
+                    <div class="sm-grid" id="smGrid"></div>
+                    <div class="sm-editor" id="smEditor" hidden></div>
+                </section>
+
+                <section class="sm-card">
+                    <h4><b>4</b> الملف</h4>
+                    <p class="sm-err" id="smErr" hidden></p>
+                    <div class="sm-progress" id="smProgress" hidden><span class="sm-bar"><i id="smBar"></i></span><small id="smStep"></small></div>
+                    <div class="sm-actions" id="smActions"></div>
+                </section>
             </div>`);
         smReset();
+        smUiState();
         if (c.photo_path) smOrderPhoto(c.photo_path);
         const box = $("#storyMaker");
-        box.addEventListener("input", (e) => { e.stopPropagation(); smReset(); smPreview(400); });
+        box.addEventListener("input", (e) => {
+            e.stopPropagation();
+            if (e.target.id === "smOutfit") SM.outfit = e.target.value.trim();
+            else if (e.target.id === "smNote") SM.note = e.target.value.trim();
+            else if (e.target.id === "smPageText") { SM.texts[SM.sel] = e.target.value; }
+            else if (e.target.id === "smPageNote") { SM.notes[SM.sel] = e.target.value; }
+            smSyncSig();
+            smReset();
+            if (e.target.id === "smName" || e.target.id === "smPageText") smRefresh(400);
+        });
         box.addEventListener("change", async (e) => {
             e.stopPropagation();
             if (e.target.id === "smPhoto") {
                 const f = e.target.files && e.target.files[0];
                 if (f) {
-                    try {
-                        const lib = await loadStoriesLib();
-                        SM.photo = await lib.readPhoto(f);
-                        SM.raw = f;
-                        SM.orig = null;
-                        if ($("#smDraw")) $("#smDraw").hidden = false;
-                        $("#smPhotoName").textContent = "✓ الصورة جاهزة على الغلاف";
-                        $("#smPhotoClear").hidden = false;
-                    } catch { toast("تعذر فتح الصورة. جرّب صورة ثانية."); }
+                    try { await smSetPhoto(f, "✓ الصورة جاهزة"); } catch { toast("تعذر فتح الصورة. جرّب صورة ثانية."); }
                 }
                 e.target.value = "";
             }
+            if (e.target.id === "smStory") { $("#smChips").innerHTML = smOutfitChips(e.target.value); SM.texts = {}; SM.notes = {}; SM.sel = null; smCloseEditor(); }
+            smSyncSig();
             smReset();
-            smPreview(80);
+            smUiState();
+            smRefresh(80);
         });
         box.addEventListener("click", (e) => {
+            const card = e.target.closest("[data-pg]");
+            if (card) { e.stopPropagation(); smOpenEditor(card.dataset.pg); return; }
             const b = e.target.closest("[data-sm]");
             if (!b) return;
             e.stopPropagation();
             const k = b.dataset.sm;
-            if (k === "draw") smDraw(b);
-            if (k === "photo-clear") { SM.photo = null; SM.raw = null; SM.orig = null; $("#smDraw").hidden = true; SM.cartoon = null; SM.art = null; if ($("#smOutfitBox")) $("#smOutfitBox").hidden = true; $("#smPhotoName").textContent = ""; b.hidden = true; smReset(); smPreview(0); }
+            if (k === "style") { SM.style = b.dataset.v; smSyncSig(); smUiState(); smReset(); smRefresh(0); }
+            if (k === "outfit") { $("#smOutfit").value = b.dataset.v; SM.outfit = b.dataset.v; smSyncSig(); smUiState(); smReset(); }
+            if (k === "photo-clear") { SM.photo = null; SM.raw = null; SM.ref = null; SM.art = {}; $("#smThumbBox").hidden = true; $("#smPhotoName").textContent = ""; b.hidden = true; smSyncSig(); smUiState(); smReset(); smRefresh(0); }
+            if (k === "gen-all") smGenAllClick(b);
+            if (k === "gen-page") smGenPageClick(b);
+            if (k === "reset-page") { delete SM.art[SM.sel]; smReset(); smOpenEditor(SM.sel); smRefresh(0); }
+            if (k === "reset-text") { delete SM.texts[SM.sel]; smReset(); smOpenEditor(SM.sel); smRefresh(0); }
+            if (k === "close-editor") smCloseEditor();
             if (k === "make") smMake();
             if (k === "share") smShare();
             if (k === "wa") smWa();
             if (k === "done" && SM.order) { updateOrderField(SM.order.id, "status", "delivered"); b.disabled = true; b.textContent = "✓ تم التسليم"; }
         });
-        smPreview(0);
+        smRefresh(0);
     }
 
-    // الطفل الحقيقي في كل الصفحات: صورته هي المرجع، وكل صفحة تُعاد برسمه بملابس القصة
-    async function smDraw(btn) {
-        if (!SM.raw || SM.drawing) return;
-        if (!SM.orig) SM.orig = SM.raw;
-        SM.drawing = true;
-        btn.disabled = true;
-        try {
-            const bmp = await createImageBitmap(SM.orig);
-            const sc = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
-            const cv = document.createElement("canvas");
-            cv.width = Math.round(bmp.width * sc);
-            cv.height = Math.round(bmp.height * sc);
-            cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
-            SM.cartoon = cv.toDataURL("image/jpeg", 0.9);
-            SM.art = null;
-            $("#smPhotoName").textContent = "✓ ستظهر صورة الطفل الحقيقية في كل صفحات القصة عند صنع الملف";
-            btn.textContent = "✓ مفعّل: الطفل الحقيقي في كل الصفحات";
-            if ($("#smOutfitBox")) $("#smOutfitBox").hidden = false;
-            smReset();
-            smPreview(0);
-        } catch (e) {
-            console.warn("Real photo:", e);
-            toast("تعذر قراءة الصورة. جرّب صورة ثانية.");
-        } finally {
-            btn.disabled = false;
-            SM.drawing = false;
+    function smUiState() {
+        const seg = $("#smStyleSeg");
+        if (seg) $$(".sm-opt", seg).forEach((b) => b.classList.toggle("on", b.dataset.v === SM.style));
+        const ai = $("#smAiBox");
+        if (ai) ai.hidden = SM.style === "orig";
+        const tools = $("#smTools");
+        if (tools) {
+            const on = smUseAI();
+            tools.hidden = SM.style === "orig";
+            const hint = $("#smHint");
+            if (hint) hint.textContent = on ? "اضغط أي صفحة لتعديل نصها أو إعادة رسمها وحدها. الصفحات التي لم تُرسم بعد تظهر بالرسم الأصلي." : SM.style === "orig" ? "القصة بالرسومات الأصلية. اضغط أي صفحة لتعديل نصها." : "اختر صورة الطفل أولاً ليظهر في الصفحات.";
         }
     }
 
-    function smPreview(delay = 300) {
+    function smPageList() {
+        const lib = window.HUROOF_STORIES;
+        const story = $("#smStory") ? $("#smStory").value : "letters";
+        return lib ? lib.bookPages(story).filter((p) => p.kind === "bcover" || p.kind === "bpage").map((p) => ({ ...p, key: p.kind === "bcover" ? "cover" : p.key })) : [];
+    }
+
+    function smPageData() {
+        const { custom } = smValues();
+        return { ...custom, age: custom.age || 5, name: ATHR.storyClean(custom).name || (custom.g === "f" ? "سارة" : "سالم") };
+    }
+
+    function smRefresh(delay = 300) {
         clearTimeout(SM.timer);
         SM.timer = setTimeout(async () => {
             const seq = ++SM.seq;
             let lib;
-            try { lib = await loadStoriesLib(); } catch { $("#smErr").textContent = "تعذر تحميل أداة القصص. تأكد من الإنترنت."; $("#smErr").hidden = false; return; }
-            const { story, custom } = smValues();
-            const pages = lib.bookPages(story);
-            const data = { ...custom, age: custom.age || 5, name: ATHR.storyClean(custom).name || (custom.g === "f" ? "سارة" : "سالم") };
-            const targets = [["smCover", pages[0]], ["smPage", pages[2]]];
-            for (const [id, pg] of targets) {
-                const tmp = document.createElement("canvas");
-                await lib.renderPage(story, data, pg, { width: 300, canvas: tmp, photo: SM.cartoon ? null : SM.photo });
-                if (seq !== SM.seq) return;
-                const c = $(`#${id}`);
-                if (!c) return;
-                c.width = tmp.width; c.height = tmp.height;
-                c.getContext("2d").drawImage(tmp, 0, 0);
+            try { lib = await loadStoriesLib(); } catch { const er = $("#smErr"); if (er) { er.textContent = "تعذر تحميل أداة القصص. تأكد من الإنترنت."; er.hidden = false; } return; }
+            const grid = $("#smGrid");
+            if (!grid) return;
+            const story = $("#smStory").value;
+            const list = smPageList();
+            const total = list.length;
+            if ($("#smCount")) $("#smCount").textContent = `(${total} صفحة · ${Object.keys(SM.art).length} بصورة الطفل)`;
+            if (!grid.children.length || grid.dataset.story !== story || grid.children.length !== total) {
+                grid.dataset.story = story;
+                grid.innerHTML = list.map((p) => `<button type="button" class="sm-pg" data-pg="${esc(p.key)}"><canvas></canvas><span class="sm-pgl">${p.key === "cover" ? "الغلاف" : `صفحة ${p.n}`}</span><i class="sm-pgb"></i></button>`).join("");
             }
+            const data = smPageData();
+            for (let n = 0; n < list.length; n++) {
+                const p = list[n];
+                const cell = grid.children[n];
+                if (!cell) return;
+                const page = { ...p, text: SM.texts[p.key] != null ? SM.texts[p.key] : p.text };
+                const tmp = document.createElement("canvas");
+                await lib.renderPage(story, data, page, { width: 260, canvas: tmp, art: SM.art });
+                if (seq !== SM.seq) return;
+                const cv = cell.querySelector("canvas");
+                cv.width = tmp.width; cv.height = tmp.height;
+                cv.getContext("2d").drawImage(tmp, 0, 0);
+                const done = Boolean(SM.art[p.key]);
+                cell.classList.toggle("done", done);
+                cell.classList.toggle("sel", SM.sel === p.key);
+                cell.querySelector(".sm-pgb").textContent = done ? "✓ بصورة الطفل" : SM.busyKeys && SM.busyKeys.has(p.key) ? "⏳ يرسم" : "";
+            }
+            if (SM.sel) smDrawEditorCanvas();
         }, delay);
     }
+
+    function smCloseEditor() {
+        SM.sel = null;
+        const ed = $("#smEditor");
+        if (ed) ed.hidden = true;
+        $$("#smGrid .sm-pg").forEach((x) => x.classList.remove("sel"));
+    }
+
+    function smOpenEditor(key) {
+        SM.sel = key;
+        const list = smPageList();
+        const p = list.find((x) => x.key === key);
+        const ed = $("#smEditor");
+        if (!p || !ed) return;
+        $$("#smGrid .sm-pg").forEach((x) => x.classList.toggle("sel", x.dataset.pg === key));
+        const text = SM.texts[key] != null ? SM.texts[key] : p.text || "";
+        const ai = smUseAI();
+        ed.hidden = false;
+        ed.innerHTML = `
+            <div class="sm-ed-head"><b>${key === "cover" ? "الغلاف" : `صفحة ${p.n}`}</b><button type="button" class="ab-mini" data-sm="close-editor">إغلاق ✕</button></div>
+            <canvas id="smBig"></canvas>
+            ${key !== "cover" ? `<label class="af"><span>نص الصفحة <small>(الكلمات الملوّنة بين [ ] حسب الولد والبنت. عدّله بحرية)</small></span><textarea class="ai" id="smPageText" rows="4">${esc(text)}</textarea></label>
+            ${SM.texts[key] != null ? `<button type="button" class="ab-mini" data-sm="reset-text">↩ النص الأصلي</button>` : ""}` : ""}
+            ${ai ? `<label class="af"><span>وصف خاص بهذه الصفحة <small>(اختياري: الملابس، التعبير، حركة الطفل)</small></span><input class="ai" id="smPageNote" maxlength="160" value="${esc(SM.notes[key] || "")}" placeholder="مثلاً: يبتسم ويلوّح بيده، أو: يرتدي خوذة"></label>
+            <div class="inline"><button type="button" class="ab ab-primary ab-sm" data-sm="gen-page">${SM.art[key] ? "🔄 أعد رسم هذه الصفحة" : "🎨 ارسم هذه الصفحة"}</button>${SM.art[key] ? `<button type="button" class="ab ab-ghost ab-sm" data-sm="reset-page">↩ الرسم الأصلي</button>` : ""}</div>` : ""}`;
+        smDrawEditorCanvas();
+        ed.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    async function smDrawEditorCanvas() {
+        const key = SM.sel;
+        const cv = $("#smBig");
+        if (!key || !cv) return;
+        const lib = await loadStoriesLib();
+        const story = $("#smStory").value;
+        const p = smPageList().find((x) => x.key === key);
+        if (!p) return;
+        const page = { ...p, text: SM.texts[key] != null ? SM.texts[key] : p.text };
+        const tmp = document.createElement("canvas");
+        await lib.renderPage(story, smPageData(), page, { width: 760, canvas: tmp, art: SM.art });
+        if (SM.sel !== key || !$("#smBig")) return;
+        cv.width = tmp.width; cv.height = tmp.height;
+        cv.getContext("2d").drawImage(tmp, 0, 0);
+    }
+
+    // يرسم صفحة واحدة بصورة الطفل (مع إعادة محاولة)
+    async function smGenPage(key) {
+        const lib = await loadStoriesLib();
+        const story = $("#smStory").value;
+        const g = $("#smG").value;
+        const note = [SM.notes[key] || "", SM.note || ""].filter(Boolean).join(". ");
+        let last = null;
+        for (let t = 0; t < 2; t++) {
+            try {
+                const out = await aiCall({ task: "scene", character: SM.ref, scene: new URL(lib.artSrc(story, g, key), location.href).href, g, mode: SM.style, outfit: SM.outfit, note, provider: "openai" }, "ai-draw");
+                SM.art[key] = await lib.readPhoto(await (await fetch(out.image)).blob());
+                return;
+            } catch (e) { last = e; if (e && (e.code === "no_key" || e.code === "bad_key" || e.code === "not_admin")) break; }
+        }
+        throw last;
+    }
+
+    function smShowError(e) {
+        const er = $("#smErr");
+        if (!er) return;
+        er.textContent = e && e.code ? `${aiError(e)}${e.detail ? ` — ${String(e.detail).slice(0, 160)}` : ""}` : "تعذر إكمال العملية. حاول مرة ثانية.";
+        er.hidden = false;
+    }
+
+    async function smGenPageClick(btn) {
+        const key = SM.sel;
+        if (!key || SM.busy) return;
+        if (!SM.ref) { toast("اختر صورة الطفل أولاً."); return; }
+        SM.busy = true;
+        SM.busyKeys = new Set([key]);
+        const old = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "⏳ يرسم... (حوالي نصف دقيقة)";
+        $("#smErr").hidden = true;
+        try {
+            await smGenPage(key);
+            smReset();
+        } catch (e) { console.warn("Page draw:", e); smShowError(e); }
+        SM.busy = false;
+        SM.busyKeys = null;
+        btn.disabled = false;
+        btn.textContent = old;
+        smOpenEditor(key);
+        smRefresh(0);
+    }
+
+    // يرسم كل الصفحات الناقصة، يُرجع خريطة الصور
+    async function smGenAll(onStep) {
+        const keys = smPageList().map((p) => p.key);
+        const todo = keys.filter((k) => !SM.art[k]);
+        let done = keys.length - todo.length;
+        if (onStep) onStep(done, keys.length);
+        for (const k of todo) {
+            SM.busyKeys = new Set([k]);
+            await smGenPage(k);
+            done++;
+            if (onStep) onStep(done, keys.length);
+            smRefresh(0);
+        }
+        SM.busyKeys = null;
+        return SM.art;
+    }
+
+    async function smGenAllClick(btn) {
+        if (SM.busy) return;
+        if (!SM.ref) { toast("اختر صورة الطفل أولاً."); return; }
+        SM.busy = true;
+        const old = btn.textContent;
+        btn.disabled = true;
+        $("#smErr").hidden = true;
+        const prog = $("#smProgress");
+        prog.hidden = false;
+        try {
+            await smGenAll((d, n) => {
+                if ($("#smBar")) $("#smBar").style.width = `${Math.round((d / n) * 100)}%`;
+                if ($("#smStep")) $("#smStep").textContent = d < n ? `نرسم الطفل في الصفحة ${d + 1} من ${n}...` : "اكتمل رسم كل الصفحات ✓";
+                btn.textContent = `⏳ ${d}/${n}`;
+            });
+            smReset();
+        } catch (e) { console.warn("Draw all:", e); smShowError(e); }
+        SM.busy = false;
+        SM.busyKeys = null;
+        btn.disabled = false;
+        btn.textContent = old;
+        setTimeout(() => { if (prog) prog.hidden = true; }, 1200);
+        smRefresh(0);
+    }
+
+    const smPreview = smRefresh;
 
     async function smMake() {
         if (SM.busy) return;
@@ -6473,46 +6705,21 @@
         try {
             const lib = await loadStoriesLib();
             let art = null;
-            if (SM.cartoon) {
-                const outfit = String(($("#smOutfit") || {}).value || "").trim();
-                SM.art = SM.art && SM.artFor === `${story}|${custom.g}|${SM.cartoon.length}|${outfit}` ? SM.art : {};
-                SM.artFor = `${story}|${custom.g}|${SM.cartoon.length}|${($("#smOutfit") || {}).value || ""}`;
-                const keys = lib.artKeys(story);
-                let done = 0;
-                const todo = keys.filter((k) => !SM.art[k]);
-                const total = keys.length;
-                done = total - todo.length;
-                const upd = () => {
+            if (smUseAI()) {
+                smSyncSig();
+                art = await smGenAll((d, n) => {
                     const bar = $("#smBar"), step = $("#smStep");
-                    if (bar) bar.style.width = `${Math.round((done / total) * 50)}%`;
-                    if (step) step.textContent = `نرسم الطفل في الصفحة ${Math.min(done + 1, total)} من ${total}...`;
-                };
-                upd();
-                const queue = todo.slice();
-                const worker = async () => {
-                    while (queue.length) {
-                        const k = queue.shift();
-                        let img = null;
-                        for (let t = 0; t < 2 && !img; t++) {
-                            try {
-                                const out = await aiCall({ task: "scene", character: SM.cartoon, scene: new URL(lib.artSrc(story, custom.g, k), location.href).href, g: custom.g, mode: "real", outfit: String(($("#smOutfit") || {}).value || "").trim(), provider: "openai" }, "ai-draw");
-                                img = await lib.readPhoto(await (await fetch(out.image)).blob());
-                            } catch (e) { if (t) throw e; }
-                        }
-                        SM.art[k] = img;
-                        done++;
-                        upd();
-                    }
-                };
-                await worker();
-                art = SM.art;
+                    if (bar) bar.style.width = `${Math.round((d / n) * 50)}%`;
+                    if (step) step.textContent = d < n ? `نرسم الطفل في الصفحة ${d + 1} من ${n}...` : "جاري تجميع الملف...";
+                });
             }
             const blob = await lib.buildPDF(story, custom, {
-                photo: SM.cartoon ? null : SM.photo,
+                photo: null,
                 art,
+                texts: SM.texts,
                 onProgress: (i, n) => {
                     const bar = $("#smBar"), step = $("#smStep");
-                    if (bar) bar.style.width = `${(SM.cartoon ? 50 : 0) + Math.round((i / n) * (SM.cartoon ? 50 : 100))}%`;
+                    if (bar) bar.style.width = `${(smUseAI() ? 50 : 0) + Math.round((i / n) * (smUseAI() ? 50 : 100))}%`;
                     if (step) step.textContent = i < n ? `نرسم الصفحة ${i + 1} من ${n}...` : "جاهز ✓";
                 }
             });
@@ -6528,8 +6735,7 @@
                 ${o && o.status !== "delivered" ? `<button class="ab-mini" type="button" data-sm="done">✓ علّم الطلب «تم التسليم»</button>` : ""}`;
         } catch (e) {
             console.error("Story PDF:", e);
-            err.textContent = e && e.code ? `${aiError(e)}${e.detail ? ` — ${String(e.detail).slice(0, 160)}` : ""}` : "تعذر صنع الملف. حاول مرة ثانية.";
-            err.hidden = false;
+            smShowError(e);
             smReset();
         } finally {
             SM.busy = false;

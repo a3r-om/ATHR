@@ -1559,6 +1559,7 @@
         return `${base}${storyId}/${g === "f" ? "f" : "m"}/${small ? "s/" : ""}${key}.jpg`;
     }
 
+    let TXTOVR = null; // نصوص معدّلة لصفحات القصة: {مفتاح الصفحة: نص}
     let ARTOVR = null; // رسومات مولّدة بوجه الطفل: {مفتاح الصفحة: صورة}
     function artImage(url) {
         if (!imgCache.has(url)) {
@@ -1641,7 +1642,7 @@
     // صفحة القصة: خلفية واحدة، الكلام فوق والرسمة تحته، وكأنهما لوحة واحدة
     async function drawBookPage(ctx, storyId, st, d, page, small) {
         const img = (ARTOVR && ARTOVR[page.key]) || await artImage(artUrl(storyId, d.g, page.key, small));
-        const text = fill(page.text, d, { mark: true });
+        const text = fill(TXTOVR && TXTOVR[page.key] != null ? TXTOVR[page.key] : page.text, d, { mark: true });
         const maxW = BW - 300, pad = 50;
         let size = 66;
         let m = measureParagraph(ctx, text, size, maxW, 1.7);
@@ -2999,9 +3000,10 @@
         ];
     }
 
-    async function renderPage(storyId, custom, page, { width = W, photo = null, canvas = null, art = null } = {}) {
+    async function renderPage(storyId, custom, page, { width = W, photo = null, canvas = null, art = null, texts = null } = {}) {
         await loadFonts();
         ARTOVR = art;
+        TXTOVR = texts;
         const st = STORIES[storyId];
         const d = normalize(custom);
         if (!d.name) d.name = d.g === "f" ? "سارة" : "سالم";
@@ -3102,13 +3104,13 @@
         return new Blob(chunks, { type: "application/pdf" });
     }
 
-    async function buildPDF(storyId, custom, { photo = null, art = null, onProgress = null, quality = 0.88 } = {}) {
+    async function buildPDF(storyId, custom, { photo = null, art = null, texts = null, onProgress = null, quality = 0.88 } = {}) {
         const pages = bookPages(storyId, custom);
         const canvas = document.createElement("canvas");
         const images = [];
         for (let i = 0; i < pages.length; i++) {
             if (onProgress) onProgress(i, pages.length);
-            await renderPage(storyId, custom, pages[i], { canvas, photo, art, width: pages[i].kind[0] === "b" ? BW : W });
+            await renderPage(storyId, custom, pages[i], { canvas, photo, art, texts, width: pages[i].kind[0] === "b" ? BW : W });
             images.push({ bytes: await toJpeg(canvas, quality), w: canvas.width, h: canvas.height });
             await new Promise((r) => setTimeout(r, 0));
         }
