@@ -2601,7 +2601,7 @@
     const AI_ERRORS = {
         no_key: "أضف مفتاح الذكاء الاصطناعي أولاً من تبويب «النصوص».",
         bad_key: "مفتاح الذكاء الاصطناعي غير صحيح أو انتهى. غيّره من تبويب «النصوص».",
-        rate_limit: "وصلت حد الاستخدام المؤقت. انتظر دقيقة ثم حاول مرة أخرى.",
+        rate_limit: "وصلت حد الاستخدام المؤقت عند خدمة الرسم. انتظر دقيقة ثم حاول مرة أخرى.",
         not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى.",
         bad_photo: "الصورة غير صالحة. جرّب صورة ثانية.",
         provider: "خدمة الرسم رفضت الطلب (غالباً الرصيد أو الحصة المجانية انتهت، أو الرسم غير متاح لمفتاحك). حاول بعد قليل."
@@ -2621,6 +2621,7 @@
         if (!res.ok || out.error) {
             const error = new Error(out.error || `http_${res.status}`);
             error.code = out.error;
+            error.detail = out.detail || "";
             throw error;
         }
         return out;
@@ -6429,7 +6430,7 @@
             smPreview(0);
         } catch (e) {
             console.warn("Draw:", e);
-            toast(aiError(e));
+            toast(aiError(e) + (e && e.detail ? ` (${String(e.detail).slice(0, 140)})` : ""));
             btn.textContent = old;
         } finally {
             btn.disabled = false;
@@ -6507,7 +6508,7 @@
                         upd();
                     }
                 };
-                await Promise.all([worker(), worker()]);
+                await worker();
                 art = SM.art;
             }
             const blob = await lib.buildPDF(story, custom, {
@@ -6531,7 +6532,7 @@
                 ${o && o.status !== "delivered" ? `<button class="ab-mini" type="button" data-sm="done">✓ علّم الطلب «تم التسليم»</button>` : ""}`;
         } catch (e) {
             console.error("Story PDF:", e);
-            err.textContent = "تعذر صنع الملف. حاول مرة ثانية.";
+            err.textContent = e && e.code ? `${aiError(e)}${e.detail ? ` — ${String(e.detail).slice(0, 160)}` : ""}` : "تعذر صنع الملف. حاول مرة ثانية.";
             err.hidden = false;
             smReset();
         } finally {
