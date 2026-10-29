@@ -6331,6 +6331,8 @@
         SM.photo = null;
         SM.raw = null;
         SM.orig = null;
+        SM.cartoon = null;
+        SM.art = null;
         SM.extra = { likes: Array.isArray(c.likes) ? c.likes : [], lesson: c.lesson || "", ded_t: c.ded_t || "", ded: c.ded || "", ded_from: c.ded_from || "" };
         smReset();
         const story = it ? storyIdOf(it) : "letters";
@@ -6354,8 +6356,9 @@
                     <input type="file" id="smPhoto" accept="image/*" hidden>
                     <span class="adm-muted" id="smPhotoName"></span>
                     <button class="ab-mini danger" type="button" data-sm="photo-clear" id="smPhotoClear" hidden>إزالة الصورة</button>
-                    <button class="ab ab-primary ab-sm" type="button" data-sm="draw" id="smDraw" hidden>🎨 ارسم الطفل كرتونياً</button>
+                    <button class="ab ab-primary ab-sm" type="button" data-sm="draw" id="smDraw" hidden>📸 صورة الطفل الحقيقية في كل الصفحات</button>
                 </div>
+                <label class="af" id="smOutfitBox" hidden><span>ملابس الطفل (اختياري)</span><input class="ai" id="smOutfit" maxlength="120" autocomplete="off" placeholder="مثلاً: بدلة رائد فضاء بيضاء — أو اتركه وتُختار حسب القصة"><small>اكتب ما تريده، وإلا يلبس ما يناسب كل مشهد من القصة.</small></label>
                 <small class="adm-muted">${c.photo_path ? "صورة الطفل من الطلب (مخزن خاص لا يراه غيرك)." : "الصورة تبقى في جوالك فقط ولا تُرفع لأي مكان."}</small>
                 <div class="sm-prev"><canvas id="smCover" width="300" height="424"></canvas><canvas id="smPage" width="300" height="424"></canvas></div>
                 <p class="sm-err" id="smErr" hidden></p>
@@ -6392,7 +6395,7 @@
             e.stopPropagation();
             const k = b.dataset.sm;
             if (k === "draw") smDraw(b);
-            if (k === "photo-clear") { SM.photo = null; SM.raw = null; SM.orig = null; $("#smDraw").hidden = true; $("#smPhotoName").textContent = ""; b.hidden = true; smReset(); smPreview(0); }
+            if (k === "photo-clear") { SM.photo = null; SM.raw = null; SM.orig = null; $("#smDraw").hidden = true; SM.cartoon = null; SM.art = null; if ($("#smOutfitBox")) $("#smOutfitBox").hidden = true; $("#smPhotoName").textContent = ""; b.hidden = true; smReset(); smPreview(0); }
             if (k === "make") smMake();
             if (k === "share") smShare();
             if (k === "wa") smWa();
@@ -6401,14 +6404,12 @@
         smPreview(0);
     }
 
-    // وكيل الرسم: يحوّل صورة الطفل إلى رسم كرتوني 3D يشبهه (OpenAI عبر الخادم)
+    // الطفل الحقيقي في كل الصفحات: صورته هي المرجع، وكل صفحة تُعاد برسمه بملابس القصة
     async function smDraw(btn) {
         if (!SM.raw || SM.drawing) return;
         if (!SM.orig) SM.orig = SM.raw;
         SM.drawing = true;
-        const old = btn.textContent;
         btn.disabled = true;
-        btn.textContent = "⏳ يرسم... (حوالي نصف دقيقة)";
         try {
             const bmp = await createImageBitmap(SM.orig);
             const sc = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
@@ -6416,22 +6417,16 @@
             cv.width = Math.round(bmp.width * sc);
             cv.height = Math.round(bmp.height * sc);
             cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
-            const photo = cv.toDataURL("image/jpeg", 0.88);
-            const out = await aiCall({ photo, g: $("#smG") ? $("#smG").value : "m", provider: "openai" }, "ai-draw");
-            const blob = await (await fetch(out.image)).blob();
-            const lib = await loadStoriesLib();
-            SM.photo = await lib.readPhoto(blob);
-            SM.raw = blob;
-            SM.cartoon = out.image;
+            SM.cartoon = cv.toDataURL("image/jpeg", 0.9);
             SM.art = null;
-            $("#smPhotoName").textContent = "✓ الرسم الكرتوني جاهز على الغلاف";
-            btn.textContent = "🎨 ارسمه مرة ثانية";
+            $("#smPhotoName").textContent = "✓ ستظهر صورة الطفل الحقيقية في كل صفحات القصة عند صنع الملف";
+            btn.textContent = "✓ مفعّل: الطفل الحقيقي في كل الصفحات";
+            if ($("#smOutfitBox")) $("#smOutfitBox").hidden = false;
             smReset();
             smPreview(0);
         } catch (e) {
-            console.warn("Draw:", e);
-            toast(aiError(e) + (e && e.detail ? ` (${String(e.detail).slice(0, 140)})` : ""));
-            btn.textContent = old;
+            console.warn("Real photo:", e);
+            toast("تعذر قراءة الصورة. جرّب صورة ثانية.");
         } finally {
             btn.disabled = false;
             SM.drawing = false;
@@ -6479,8 +6474,9 @@
             const lib = await loadStoriesLib();
             let art = null;
             if (SM.cartoon) {
-                SM.art = SM.art && SM.artFor === `${story}|${custom.g}|${SM.cartoon.length}` ? SM.art : {};
-                SM.artFor = `${story}|${custom.g}|${SM.cartoon.length}`;
+                const outfit = String(($("#smOutfit") || {}).value || "").trim();
+                SM.art = SM.art && SM.artFor === `${story}|${custom.g}|${SM.cartoon.length}|${outfit}` ? SM.art : {};
+                SM.artFor = `${story}|${custom.g}|${SM.cartoon.length}|${($("#smOutfit") || {}).value || ""}`;
                 const keys = lib.artKeys(story);
                 let done = 0;
                 const todo = keys.filter((k) => !SM.art[k]);
@@ -6499,7 +6495,7 @@
                         let img = null;
                         for (let t = 0; t < 2 && !img; t++) {
                             try {
-                                const out = await aiCall({ task: "scene", character: SM.cartoon, scene: new URL(lib.artSrc(story, custom.g, k), location.href).href, g: custom.g, provider: "openai" }, "ai-draw");
+                                const out = await aiCall({ task: "scene", character: SM.cartoon, scene: new URL(lib.artSrc(story, custom.g, k), location.href).href, g: custom.g, mode: "real", outfit: String(($("#smOutfit") || {}).value || "").trim(), provider: "openai" }, "ai-draw");
                                 img = await lib.readPhoto(await (await fetch(out.image)).blob());
                             } catch (e) { if (t) throw e; }
                         }
