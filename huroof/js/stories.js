@@ -1637,43 +1637,65 @@
         return { lay, height: lay.lines.length * size * lh };
     }
 
-    // صفحة القصة: الكلام في الأعلى على ورق ناعم، والرسمة تحتها (مثل الكتب المصوّرة)
+    // صفحة القصة: خلفية واحدة، الكلام فوق والرسمة تحته، وكأنهما لوحة واحدة
     async function drawBookPage(ctx, storyId, st, d, page, small) {
         const img = await artImage(artUrl(storyId, d.g, page.key, small));
         const text = fill(page.text, d, { mark: true });
-        const maxW = BW - 300, pad = 46;
+        const maxW = BW - 300, pad = 50;
         let size = 66;
         let m = measureParagraph(ctx, text, size, maxW, 1.7);
         while (m.height > 420 && size > 38) { size -= 2; m = measureParagraph(ctx, text, size, maxW, 1.7); }
         const bandH = Math.round(Math.max(250, m.height + pad * 2));
-        // الورق
-        ctx.fillStyle = "#FFFBF2";
-        ctx.fillRect(0, 0, BW, BH);
-        // الرسمة تحت النص
-        const iy = bandH - 6, ih = BH - iy;
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, iy, BW, ih);
-        ctx.clip();
         const iw0 = img.naturalWidth || img.width, ih0 = img.naturalHeight || img.height;
+        // 1) الرسمة في الأسفل، وفوقها امتداد لحافتها العليا فتبدو خلفية واحدة
+        const iy = Math.max(120, bandH - 60), ih = BH - iy;
         const sc = Math.max(BW / iw0, ih / ih0);
         const dw = iw0 * sc, dh = ih0 * sc;
-        ctx.drawImage(img, (BW - dw) / 2, iy - (dh - ih) * 0.3, dw, dh);
-        ctx.restore();
-        // انتقال ناعم بين الورق والرسمة
-        const g = ctx.createLinearGradient(0, iy - 4, 0, iy + 36);
-        g.addColorStop(0, "rgba(255,251,242,1)");
-        g.addColorStop(1, "rgba(255,251,242,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, iy - 4, BW, 40);
-        // الكلام
-        drawParagraph(ctx, text, { cx: BW / 2, top: Math.round((bandH - m.height) / 2) - 4, bottom: Math.round((bandH + m.height) / 2) - 4, maxW, size, minSize: size, lh: 1.7, color: "#1F2A4A", hi: "#7C3AED" });
-        // إطار خفيف
+        const dx = (BW - dw) / 2, dy = -(dh - ih) * 0.3;
+        // الامتداد: الصفوف العليا من الرسمة تُمدّد عمودياً
+        const rowsSrc = 6;
+        const sx0 = Math.max(0, -dx / sc), sw0 = Math.min(iw0, BW / sc);
+        const sy0 = Math.max(0, -dy / sc);
+        const ext = document.createElement("canvas");
+        ext.width = BW; ext.height = 8;
+        ext.getContext("2d").drawImage(img, sx0, sy0, sw0, rowsSrc, 0, 0, BW, 8);
         ctx.save();
-        roundRect(ctx, 14, 14, BW - 28, BH - 28, 30);
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = "rgba(126,98,181,.28)";
-        ctx.stroke();
+        ctx.filter = "blur(10px)";
+        ctx.drawImage(ext, 0, -20, BW, iy + 400);
+        ctx.restore();
+        // 2) الرسمة الحادّة، وأعلاها يذوب في الامتداد
+        const off = document.createElement("canvas");
+        off.width = BW;
+        off.height = ih;
+        const oc = off.getContext("2d");
+        oc.drawImage(img, dx, dy, dw, dh);
+        oc.globalCompositeOperation = "destination-in";
+        const mk = oc.createLinearGradient(0, 0, 0, 200);
+        mk.addColorStop(0, "rgba(0,0,0,0)");
+        mk.addColorStop(1, "rgba(0,0,0,1)");
+        oc.fillStyle = mk;
+        oc.fillRect(0, 0, BW, ih);
+        ctx.drawImage(off, 0, iy);
+        // 3) لون الكلام حسب سطوع الخلفية خلف النص
+        let lum = 0.5;
+        try {
+            const px = ctx.getImageData(0, 0, BW, Math.min(bandH, BH), { willReadFrequently: true });
+            let sum = 0, n = 0;
+            for (let i = 0; i < px.data.length; i += 4 * 97) { sum += px.data[i] * 0.3 + px.data[i + 1] * 0.59 + px.data[i + 2] * 0.11; n++; }
+            lum = n ? sum / n / 255 : 0.5;
+        } catch { /* */ }
+        const dark = lum < 0.5;
+        const sh = ctx.createLinearGradient(0, 0, 0, bandH + 150);
+        const c0 = dark ? "6,10,34" : "255,255,255";
+        sh.addColorStop(0, `rgba(${c0},${dark ? .4 : .5})`);
+        sh.addColorStop(0.5, `rgba(${c0},${dark ? .28 : .35})`);
+        sh.addColorStop(1, `rgba(${c0},0)`);
+        ctx.fillStyle = sh;
+        ctx.fillRect(0, 0, BW, bandH + 150);
+        // 4) الكلام
+        ctx.save();
+        if (dark) { ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 2; }
+        drawParagraph(ctx, text, { cx: BW / 2, top: Math.round((bandH - m.height) / 2) - 6, bottom: Math.round((bandH + m.height) / 2) - 6, maxW, size, minSize: size, lh: 1.7, color: dark ? "#FFFFFF" : "#1B2347", hi: dark ? "#FFE27A" : "#6D28D9" });
         ctx.restore();
         // رقم الصفحة
         const nx = page.side === "left" ? BW - 90 : 90;
