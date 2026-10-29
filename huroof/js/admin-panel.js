@@ -2599,17 +2599,19 @@
     // =====================================================
 
     const AI_ERRORS = {
-        no_key: "أضف مفتاح الذكاء الاصطناعي أولاً من تبويب «النصوص».",
+        no_key: "أضف مفتاح OpenAI من تبويب «النصوص» (الرسم يحتاج OpenAI تحديداً).",
         bad_key: "مفتاح الذكاء الاصطناعي غير صحيح أو انتهى. غيّره من تبويب «النصوص».",
         rate_limit: "وصلت حد الاستخدام المؤقت. انتظر دقيقة ثم حاول مرة أخرى.",
-        not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى."
+        not_admin: "انتهت الجلسة. سجّل الدخول مرة أخرى.",
+        bad_photo: "الصورة غير صالحة. جرّب صورة ثانية.",
+        provider: "خدمة الرسم رفضت الطلب (غالباً الرصيد في حساب OpenAI خلص). تأكد من الرصيد وحاول."
     };
     const aiError = (e) => AI_ERRORS[e && e.code] || "تعذر الاتصال بالذكاء الاصطناعي. حاول مرة أخرى.";
 
-    async function aiCall(body) {
+    async function aiCall(body, fn = "ai-text") {
         const { data } = await sb.auth.getSession();
         const token = data && data.session && data.session.access_token;
-        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/ai-text`, {
+        const res = await fetch(`${window.ATHR_SUPABASE_URL}/functions/v1/${fn}`, {
             method: "POST",
             headers: { "Content-Type": "application/json", apikey: window.ATHR_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token || ""}` },
             body: JSON.stringify({ store: ATHR.storeName(cfg()), ...body })
@@ -6256,6 +6258,8 @@
             const img = await lib.readPhoto(blob);
             if (!$("#storyMaker") || SM.photo) return;
             SM.photo = img;
+            SM.raw = blob;
+            if ($("#smDraw")) $("#smDraw").hidden = false;
             if ($("#smPhotoName")) $("#smPhotoName").textContent = "✓ صورة الطفل من الطلب على الغلاف";
             if ($("#smPhotoClear")) $("#smPhotoClear").hidden = false;
             smReset();
@@ -6324,6 +6328,8 @@
         SM.order = o;
         SM.index = i;
         SM.photo = null;
+        SM.raw = null;
+        SM.orig = null;
         SM.extra = { likes: Array.isArray(c.likes) ? c.likes : [], lesson: c.lesson || "", ded_t: c.ded_t || "", ded: c.ded || "", ded_from: c.ded_from || "" };
         smReset();
         const story = it ? storyIdOf(it) : "letters";
@@ -6347,6 +6353,7 @@
                     <input type="file" id="smPhoto" accept="image/*" hidden>
                     <span class="adm-muted" id="smPhotoName"></span>
                     <button class="ab-mini danger" type="button" data-sm="photo-clear" id="smPhotoClear" hidden>إزالة الصورة</button>
+                    <button class="ab ab-primary ab-sm" type="button" data-sm="draw" id="smDraw" hidden>🎨 ارسم الطفل كرتونياً</button>
                 </div>
                 <small class="adm-muted">${c.photo_path ? "صورة الطفل من الطلب (مخزن خاص لا يراه غيرك)." : "الصورة تبقى في جوالك فقط ولا تُرفع لأي مكان."}</small>
                 <div class="sm-prev"><canvas id="smCover" width="300" height="424"></canvas><canvas id="smPage" width="300" height="424"></canvas></div>
@@ -6366,6 +6373,9 @@
                     try {
                         const lib = await loadStoriesLib();
                         SM.photo = await lib.readPhoto(f);
+                        SM.raw = f;
+                        SM.orig = null;
+                        if ($("#smDraw")) $("#smDraw").hidden = false;
                         $("#smPhotoName").textContent = "✓ الصورة جاهزة على الغلاف";
                         $("#smPhotoClear").hidden = false;
                     } catch { toast("تعذر فتح الصورة. جرّب صورة ثانية."); }
@@ -6380,13 +6390,50 @@
             if (!b) return;
             e.stopPropagation();
             const k = b.dataset.sm;
-            if (k === "photo-clear") { SM.photo = null; $("#smPhotoName").textContent = ""; b.hidden = true; smReset(); smPreview(0); }
+            if (k === "draw") smDraw(b);
+            if (k === "photo-clear") { SM.photo = null; SM.raw = null; SM.orig = null; $("#smDraw").hidden = true; $("#smPhotoName").textContent = ""; b.hidden = true; smReset(); smPreview(0); }
             if (k === "make") smMake();
             if (k === "share") smShare();
             if (k === "wa") smWa();
             if (k === "done" && SM.order) { updateOrderField(SM.order.id, "status", "delivered"); b.disabled = true; b.textContent = "✓ تم التسليم"; }
         });
         smPreview(0);
+    }
+
+    // وكيل الرسم: يحوّل صورة الطفل إلى رسم كرتوني 3D يشبهه (OpenAI عبر الخادم)
+    async function smDraw(btn) {
+        if (!SM.raw || SM.drawing) return;
+        if (!SM.orig) SM.orig = SM.raw;
+        SM.drawing = true;
+        const old = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "⏳ يرسم... (حوالي نصف دقيقة)";
+        try {
+            const bmp = await createImageBitmap(SM.orig);
+            const sc = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
+            const cv = document.createElement("canvas");
+            cv.width = Math.round(bmp.width * sc);
+            cv.height = Math.round(bmp.height * sc);
+            cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+            const photo = cv.toDataURL("image/jpeg", 0.88);
+            const out = await aiCall({ photo, g: $("#smG") ? $("#smG").value : "m" }, "ai-draw");
+            const blob = await (await fetch(out.image)).blob();
+            const lib = await loadStoriesLib();
+            SM.photo = await lib.readPhoto(blob);
+            SM.raw = blob;
+            SM.cartoon = out.image;
+            $("#smPhotoName").textContent = "✓ الرسم الكرتوني جاهز على الغلاف";
+            btn.textContent = "🎨 ارسمه مرة ثانية";
+            smReset();
+            smPreview(0);
+        } catch (e) {
+            console.warn("Draw:", e);
+            toast(aiError(e));
+            btn.textContent = old;
+        } finally {
+            btn.disabled = false;
+            SM.drawing = false;
+        }
     }
 
     function smPreview(delay = 300) {
