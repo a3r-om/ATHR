@@ -3484,4 +3484,62 @@ html:not(.tpl-night) .ks-cta { background: var(--text); box-shadow: none; }
 .lang-btn { display: none !important; }
 
 /* قسما الكتب (تلوين / حروف): بطاقة واحدة في الوسط */
-.ks-color .ks-grid, .ks-abc .ks-grid { grid-template-columns: minmax(0, 340px); justify-content: center; }
+
+/* =====================================================
+   خلفية بيضاء: نفس ألوان الثيم (بنفسجي وذهبي) لكن على أبيض، والنص داكن
+===================================================== */
+html.tpl-night.tpl-huroof {
+    color-scheme: light;
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --desk-2: #FAF7FF;
+    --text: #2B1B4F;
+    --muted: #6A5F85;
+    --line: rgba(124, 58, 237, .16);
+    --soft: rgba(139, 92, 246, .08);
+    --img-bg: #F6F1FF;
+    --accent: #6D3FD6;
+    --head-bg: rgba(255, 255, 255, .94);
+    --head-ink: #2B1B4F;
+    --card: #FBF9FF;
+    --card-2: #F3EEFF;
+    --shadow: 0 1px 2px rgba(60, 30, 120, .08), 0 8px 22px rgba(60, 30, 120, .1);
+    --shadow-up: 0 -6px 20px rgba(60, 30, 120, .12);
+    --glow: 0 8px 22px rgba(124, 58, 237, .28);
+}
+html.tpl-night body { background: #FFFFFF; background-image: none; }
+html.tpl-night .icon-btn svg { stroke: var(--text); }
+html.tpl-night .sh-text h1, html.tpl-night .section-head h2, html.tpl-night .wz-q { color: var(--text); }
+html.tpl-night .sh-text h1 em { background: none; -webkit-background-clip: initial; background-clip: initial; color: #7C3AED; }
+html.tpl-night .sh-books::before { display: none; }
+html.tpl-night .shb { border-color: #FFFFFF; box-shadow: 0 14px 30px rgba(60, 30, 120, .22); }
+html.tpl-night .btn-ghost { background: #FFFFFF; border-color: rgba(124, 58, 237, .35); color: #5B2FC2; }
+html.tpl-night .input, html.tpl-night select.input, html.tpl-night textarea.input { background: #FFFFFF; color: var(--text); border-color: rgba(124, 58, 237, .28); }
+html.tpl-night .input::placeholder { color: rgba(43, 27, 79, .4); }
+html.tpl-night .panel, html.tpl-night .card, html.tpl-night .faq-item { background: #FFFFFF; }
+html.tpl-night .footer { background: #F6F1FF; border-top: 1px solid var(--line); color: var(--text); }
+html.tpl-night .foot-points li, html.tpl-night .foot-icons a { background: #FFFFFF; }
+html.tpl-night .stage { background: #F6F1FF; }
+html.tpl-night .buybar { background: rgba(255, 255, 255, .96); }
+html.tpl-night #toast { background: #2B1B4F; color: #FFFFFF; }
+html.tpl-night .sheet-panel { background: #FFFFFF; color: var(--text); }
+html.tpl-night .sh-plan-p b { color: #B7791F; }
+html.tpl-night .ks-badge { box-shadow: 0 2px 8px rgba(60, 30, 120, .18); }
+html.tpl-night .ks-peek { background: rgba(43, 27, 79, .78); color: #FFFFFF; }
+html.tpl-night .sh-live-cv canvas { box-shadow: 0 10px 26px rgba(60, 30, 120, .22); }
+html.tpl-night .wz { background: rgba(43, 27, 79, .35); }
+html.tpl-night .wz-panel { background: #FFFFFF; color: var(--text); }
+html.tpl-night .wz-foot { background: rgba(255, 255, 255, .96); }
+html.tpl-night .sf-ph-bar, html.tpl-night .wz-prog { background: rgba(124, 58, 237, .12); }
+html.tpl-night .fb-page canvas { box-shadow: 0 10px 26px rgba(60, 30, 120, .22); }
+
+/* تنقّل الأقسام في الرئيسية */
+.hs-nav { position: sticky; top: 0; z-index: 20; background: #FFFFFF; border-bottom: 1px solid var(--line); }
+.hs-nav .wrap { display: flex; gap: 8px; overflow-x: auto; padding-block: 8px; scrollbar-width: none; }
+.hs-nav a { flex: 0 0 auto; padding: 7px 14px; border-radius: 99px; background: var(--card-2); color: var(--text); font-weight: 700; font-size: .92rem; text-decoration: none; white-space: nowrap; }
+.hs-sec .grid { margin-top: 4px; }
+.hs-all { margin-top: 14px; }
+html.tpl-night .ks-price b { color: #B7791F; }
+.ks-books .ks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.tpl-night .sh-float { background: #FFFFFF; color: var(--text); box-shadow: 0 8px 22px rgba(60, 30, 120, .2); border: 1px solid var(--line); }
+.hs-nav { position: static; }
