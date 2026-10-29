@@ -3480,3 +3480,8 @@ html:not(.tpl-night) .ks-cta { background: var(--text); box-shadow: none; }
 .ks-soon .ks-blurb { -webkit-line-clamp: 3; }
 .ks-soon-tag { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: .82rem; font-weight: 700; color: #1A0F2E; background: var(--gold, #F5C451); }
 .ks-soon-wa { margin-top: 14px; min-height: 50px; border-radius: 99px; }
+
+.lang-btn { display: none !important; }
+
+/* قسما الكتب (تلوين / حروف): بطاقة واحدة في الوسط */
+.ks-color .ks-grid, .ks-abc .ks-grid { grid-template-columns: minmax(0, 340px); justify-content: center; }

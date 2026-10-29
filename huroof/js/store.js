@@ -465,13 +465,14 @@
             const base = V.sfCustom(v(), p, { ...st, g });
             const name = sample ? (g === "f" ? t("سارة") : t("سالم")) : base.name;
             const data = { ...base, name, age: base.age || 5 };
-            if (data.ded_t && data.ded_t !== "own") data.ded = ATHR.dedText(data.ded_t, data);
+            if (data.ded_t && data.ded_t !== "own" && !ATHR.isActivity(p)) data.ded = ATHR.dedText(data.ded_t, data);
             const photo = await sfPhotoImg();
             if (seq !== storySeq) return;
             const pages = lib.bookPages(p.story, data);
             const wide = Boolean(lib.isIllustrated && lib.isIllustrated(p.story));
             const at = (kinds) => pages.findIndex((pg) => kinds.includes(pg.kind));
-            const pick = [0, at(["ded", "bded"]), at(["page", "bpage"]), at(["page", "bpage"]) + 4, at(["end", "bend"]), at(["cert", "bcert"])].filter((i, k, all) => i >= 0 && pages[i] && all.indexOf(i) === k);
+            const nP = pages.length;
+            const pick = ATHR.isActivity(p) ? [0, 1, 2, Math.floor(nP / 2), nP - 2, nP - 1].filter((i, k, all) => i >= 0 && i < nP && all.indexOf(i) === k) : [0, at(["ded", "bded"]), at(["page", "bpage"]), at(["page", "bpage"]) + 4, at(["end", "bend"]), at(["cert", "bcert"])].filter((i, k, all) => i >= 0 && pages[i] && all.indexOf(i) === k);
             const note = $("#stPrevNote");
             if (note) note.textContent = sample ? t("مثال باسم «{name}». اكتب اسم طفلك وتتغير القصة كلها", { name }) : t("{n} صفحة · اسحب لتشوف أكثر", { n: pages.length });
             box.classList.toggle("wide", wide);
@@ -512,11 +513,11 @@
         const cfg = C();
         const proOn = st.tier === "pro" && ATHR.proOn(cfg, SF.p.story);
         if (ATHR.storyIssue({ name: st.name, g: "m", age: 5 }) === "name") return ["name", t("اكتب اسم الطفل بالحروف (حرفين على الأقل)")];
-        if (st.g !== "m" && st.g !== "f") return ["g", t("اختر: ولد أو بنت")];
-        if (!st.age) return ["age", t("اختر عمر الطفل")];
+        const act = ATHR.isActivity(SF.p);
+        if (!act && st.g !== "m" && st.g !== "f") return ["g", t("اختر: ولد أو بنت")];
+        if (!act && !st.age) return ["age", t("اختر عمر الطفل")];
         if (st.up && st.up.busy) return ["photo", t("انتظر لحظة حتى ينتهي رفع الصورة")];
-        if (proOn && !st.photo_path && ATHR.storyCfg(cfg).photo_upload !== false) return ["photo", t("ارفع صورة طفلك، نحتاجها لنرسمه بوجهه في القصة")];
-        if (st.ded_on && st.ded_t === "own" && String(st.ded || "").trim().length < 3) return ["ded", t("اكتب الإهداء، أو اختر إهداءً جاهزاً")];
+        if (proOn && !ATHR.isActivity(SF.p) && !st.photo_path && ATHR.storyCfg(cfg).photo_upload !== false) return ["photo", t("ارفع صورة طفلك، نحتاجها لنرسمه بوجهه في القصة")];
         return null;
     }
 
@@ -760,11 +761,12 @@
         let lib;
         try { lib = await loadStories(); } catch { toast(t("تعذر فتح القصة. تأكد من الإنترنت.")); return; }
         if (seq !== FB.seq) return;
-        const pages = lib.bookPages(p.story);
-        FB.n = pages.length;
         const clean = ATHR.storyClean({ name: FB.name, g: FB.g, age: 5 });
         const ok = ATHR.storyIssue({ name: FB.name, g: FB.g, age: 5 }) !== "name";
         const data = { name: ok ? clean.name : (FB.g === "f" ? t("سارة") : t("سالم")), g: FB.g, age: 5 };
+        const pages = lib.bookPages(p.story, data);
+        FB.n = pages.length;
+        if (FB.i >= FB.n) FB.i = FB.n - 1;
         const page = pages[FB.i];
         const wide = page.kind && page.kind[0] === "b";
         const box = FB.el.querySelector(".fb-page");
@@ -3403,11 +3405,6 @@
             parts.push(`<div class="mgroup">${main.join("")}</div>`);
 
             const settings = [];
-            settings.push(`<div class="mrow mrow-set">${ico(V.icon.globe)}<span class="ml">${esc(t("اللغة"))}</span>
-                <span class="mini-seg" role="group" aria-label="${esc(t("اللغة"))}">
-                    <button type="button" data-set-lang="ar" aria-pressed="${!ATHR.isEn()}" lang="ar">العربية</button>
-                    <button type="button" data-set-lang="en" aria-pressed="${ATHR.isEn()}" lang="en">English</button>
-                </span></div>`);
             if (multi) settings.push(row(`<span class="mi flag">${esc(cur.flag)}</span><span class="ml">${esc(t("الدولة والعملة"))}</span><small class="mval">${esc(ATHR.isEn() ? cur.currency : cur.symbol)}</small>`, { attrs: "data-open-currency" }));
             if (cfg.theme.visitor_mode !== false) {
                 const mode = document.documentElement.dataset.mode || "auto";
@@ -4274,7 +4271,7 @@
     // =====================================================
 
     function applyLang(lang) {
-        const l = lang === "en" ? "en" : "ar";
+        const l = "ar"; // المتجر بالعربية فقط
         ATHR.lang = l;
         const root = document.documentElement;
         root.lang = l;
