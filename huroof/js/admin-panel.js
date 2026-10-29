@@ -6417,7 +6417,7 @@
             cv.height = Math.round(bmp.height * sc);
             cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
             const photo = cv.toDataURL("image/jpeg", 0.88);
-            const out = await aiCall({ photo, g: $("#smG") ? $("#smG").value : "m" }, "ai-draw");
+            const out = await aiCall({ photo, g: $("#smG") ? $("#smG").value : "m", provider: "openai" }, "ai-draw");
             const blob = await (await fetch(out.image)).blob();
             const lib = await loadStoriesLib();
             SM.photo = await lib.readPhoto(blob);
@@ -6499,7 +6499,7 @@
                         let img = null;
                         for (let t = 0; t < 2 && !img; t++) {
                             try {
-                                const out = await aiCall({ task: "scene", character: SM.cartoon, scene: new URL(lib.artSrc(story, custom.g, k), location.href).href, g: custom.g }, "ai-draw");
+                                const out = await aiCall({ task: "scene", character: SM.cartoon, scene: new URL(lib.artSrc(story, custom.g, k), location.href).href, g: custom.g, provider: "openai" }, "ai-draw");
                                 img = await lib.readPhoto(await (await fetch(out.image)).blob());
                             } catch (e) { if (t) throw e; }
                         }
