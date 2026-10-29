@@ -1476,7 +1476,7 @@
             <span class="sf-l">${esc(t("صورة الطفل"))} ${pro ? `<i>*</i>` : `<small>${esc(t("(اختياري)"))}</small>`}</span>
             ${box}${input}
             <ul class="sf-tips">${tips.map(([k, e, x]) => `<li class="${k}"><span aria-hidden="true">${e}</span><b aria-hidden="true">${k === "ok" ? "✓" : "✕"}</b>${esc(x)}</li>`).join("")}</ul>
-            <p class="sf-safe">🔒 ${esc(t("الصورة خاصة: لا يراها غيرنا، ونستخدمها لقصة طفلك فقط، ونحذفها بعد التسليم."))}</p>
+            <p class="sf-safe">🔒 ${esc(t("الصورة خاصة: نستخدمها لقصة طفلك فقط، ونرسمه منها بأداة ذكاء اصطناعي، ونحذفها بعد التسليم."))}</p>
         </div>`;
     };
 
