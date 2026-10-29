@@ -2784,8 +2784,16 @@
         try { return `sb-${new URL(API.url).hostname.split(".")[0]}-auth-token`; } catch { return ""; }
     })();
 
+    // جهاز صاحب المتجر لا يُحتسب في الزيارات: إما مسجّل دخول للوحة، أو عليه علامة دائمة
+    // (تُوضع تلقائياً عند أول دخول للوحة، أو بفتح الرابط roa-om.com/?notrack=1 ، ويلغيها ?notrack=0)
+    const NOTRACK_KEY = "athr_notrack";
+    try {
+        const nt = new URLSearchParams(location.search).get("notrack");
+        if (nt === "1") localStorage.setItem(NOTRACK_KEY, "1");
+        else if (nt === "0") localStorage.removeItem(NOTRACK_KEY);
+    } catch { /* اختياري */ }
     const ownerDevice = () => {
-        try { return Boolean(AUTH_KEY && localStorage.getItem(AUTH_KEY)); } catch { return false; }
+        try { return Boolean((AUTH_KEY && localStorage.getItem(AUTH_KEY)) || localStorage.getItem(NOTRACK_KEY) === "1"); } catch { return false; }
     };
 
     function detectChannel() {
@@ -3491,6 +3499,7 @@
             if (!data || !data.session) return;
             const { data: row } = await sb.from("admin_users").select("id").eq("id", data.session.user.id).maybeSingle();
             S.isAdmin = Boolean(row);
+            if (S.isAdmin) { try { localStorage.setItem(NOTRACK_KEY, "1"); } catch { /* اختياري */ } }
             renderChrome();
             if (S.isAdmin) (window.requestIdleCallback || ((fn) => setTimeout(fn, 1500)))(() => loadAdminScripts().catch(() => {}), { timeout: 5000 });
         } catch { /* not signed in */ }
