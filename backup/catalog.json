@@ -418,84 +418,84 @@
      "a": "0a73cbcc-8363-4da6-9686-171487486683",
      "b": "9f941837-17fa-4ae6-864b-0d99de743710",
      "id": "b-kh76xjvpy",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "38ed6350-0b43-47b6-aaa7-a707cd8bc18e",
      "b": "1037b58a-1aa6-4e86-9573-2036b17a04b2",
      "id": "b-rm-w",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "073bc4a0-75aa-4eba-873a-310a2008b4b7",
      "b": "a2f68383-f6ba-4451-bb42-473c072e1583",
      "id": "b-rm-b",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "5b8a9753-052e-4218-9049-fd6013fdf93f",
      "b": "f45772ad-2750-4e1e-8bc7-637b0718d564",
      "id": "b-fcb-1",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "4c2a28a4-8657-43fc-bcce-f63fa4813941",
      "b": "512117c7-ef91-421c-9591-739092a25ab4",
      "id": "b-fcb-2",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "1c1c9369-eb78-4fa1-9c07-468f80cf0d1d",
      "b": "1bb71b44-c9a0-4468-936e-4b8b394cb661",
      "id": "b-angel",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "ec23da4a-efa1-48d7-8299-ef0cd575932f",
      "b": "e5b9b25a-242f-407e-8cd0-bf8d4dedd875",
      "id": "b-stitch",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "8e72fce0-f01a-4238-98b3-d99b26ebaeac",
      "b": "d12e9754-d081-4767-8a18-e567130b1798",
      "id": "b-hk",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "2dbd7536-290a-48d2-a6b7-b939e28b36be",
      "b": "bd8b9190-c932-421b-af94-727e997c83a2",
      "id": "b-q-ayon",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "a6a19d05-bb8e-4eb6-8aca-78823ad96f7a",
      "b": "be9b5d4a-f26a-4a04-bdf8-c5c80441554b",
      "id": "b-q-zarni",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "714e1a49-f2b5-4800-9def-f82ac11927b5",
      "b": "5348254e-cfe6-4f04-9220-887d9122656e",
      "id": "b-q-allm",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     },
     {
      "a": "6c74a0ca-ce04-4d21-8746-f89441141a46",
      "b": "e09687c7-e273-4e8e-8de2-2e3e6f9465fa",
      "id": "b-jicwle302",
-     "pct": 10,
+     "pct": 20,
      "enabled": true
     }
    ],
@@ -526,6 +526,16 @@
    "gift_banner": true,
    "gift_button": true,
    "upsell_show": false,
+   "featured_set": {
+    "id": "017f117f-9a24-4d1c-bdcd-af299fc73157",
+    "note": "وفّر 20% على الباقة كاملة",
+    "items": [
+     "99a068ef-3327-4698-a14f-8aa960a3d57e",
+     "0a73cbcc-8363-4da6-9686-171487486683",
+     "9f941837-17fa-4ae6-864b-0d99de743710"
+    ],
+    "enabled": true
+   },
    "gift_enabled": true,
    "gift_prepaid": true,
    "related_show": true,
@@ -792,7 +802,7 @@
    "description": "باقة هدية جاهزة بمناسبة اليوم الوطني العماني: مج وكوب سيراميك أبيض ومحفظة بطاقات بيضاء، كلها مطبوع عليها شعار سلطنة عُمان. اعتزاز بالوطن وهدية مميزة للأهل والأصدقاء داخل السلطنة وخارجها، بخصم 20% عن شرائها منفصلة.",
    "description_en": null,
    "color_id": null,
-   "sort_order": 0,
+   "sort_order": 82,
    "video_url": null,
    "weight_g": 1200,
    "stock": null,
@@ -925,7 +935,7 @@
    "thumb_url": null,
    "is_available": true,
    "is_visible": true,
-   "is_best_seller": true,
+   "is_best_seller": false,
    "is_new_arrival": false,
    "description": "محفظة بيضاء عملية مطبوع عليها شعار نادي ريال مدريد، تتسع لبطاقاتك وتناسب جيبك. هدية لعشاق الملكي، وتكمل طقم كوب ريال مدريد.",
    "description_en": null,
@@ -1891,7 +1901,7 @@
    "thumb_url": null,
    "is_available": true,
    "is_visible": true,
-   "is_best_seller": true,
+   "is_best_seller": false,
    "is_new_arrival": false,
    "description": "محفظة سوداء أنيقة مطبوع عليها شعار نادي ريال مدريد، عملية لبطاقاتك اليومية. هدية مميزة لمشجع الملكي، وتكمل طقم كوب ريال مدريد الأسود.",
    "description_en": null,
@@ -2186,7 +2196,7 @@
    "price": 0.9,
    "old_price": 1.5,
    "category_id": "c1cce35a-5033-416c-be8d-b779b59a0512",
-   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1791346721622-f295670ab95d4fafbaf1ba48dc4d33d4.jpg",
+   "image_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793380729882-ee3e79ec795547ba.jpg",
    "thumb_url": null,
    "is_available": true,
    "is_visible": true,
