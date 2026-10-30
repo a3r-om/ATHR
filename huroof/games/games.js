@@ -74,7 +74,6 @@ function unlockAudio() {
   if (unlocked) return; unlocked = true;
   // خفيف: عنصر واحد لأصوات الحروف والجمل، ولا نولّد كل الأصوات دفعة واحدة
   try { if (!AEL) AEL = new Audio(); AEL.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA="; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
-  try { if ("speechSynthesis" in window) speechSynthesis.getVoices(); } catch { /* */ }
   // تسخين الأصوات تدريجياً في أوقات الفراغ (صوت كل 150ms) بدل تجميد الشاشة
   const names = Object.keys(DEFS); let i = 0;
   const step = () => { if (i >= names.length) return; try { makeSnd(names[i++]); } catch { /* */ } setTimeout(step, 150); };
@@ -97,27 +96,6 @@ const sfx = {
 ["pointerdown", "touchstart", "click", "keydown"].forEach((ev) => addEventListener(ev, unlockAudio, { once: false, passive: true }));
 // أي زر يُضغط يصدر نقرة خفيفة (والألعاب تضيف أصواتها الخاصة)
 addEventListener("pointerdown", (e) => { const b = e.target.closest && e.target.closest("button, a.pill, a.cta"); if (b && !b.classList.contains("opt") && !b.classList.contains("tile") && !b.classList.contains("ord") && !b.classList.contains("bubble") && !b.classList.contains("card") && !b.classList.contains("seqbtn")) sfx.tap(); }, true);
-let ARVOICE = null;
-function pickVoice() {
-  try {
-    const vs = speechSynthesis.getVoices().filter((v) => /^ar/i.test(v.lang));
-    const score = (v) => { const n = v.name.toLowerCase(); let p = 0;
-      if (/majed|maged|tarik|tareq|hamed|naayf|naif|male|ماجد|طارق|حامد|نايف/.test(n)) p += 50;
-      if (/google|enhanced|premium|neural|natural|online/.test(n)) p += 20;
-      if (/ar-sa|ar_sa/i.test(v.lang)) p += 8;
-      if (/laila|maryam|salma|zariyah|fatima|hoda|female|ليلى|مريم|سلمى/.test(n)) p -= 40;
-      if (v.localService === false) p += 3; return p; };
-    ARVOICE = vs.sort((a, b) => score(b) - score(a))[0] || null;
-  } catch { /* */ }
-}
-try { if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } } catch { /* */ }
-/* تشكيل الكلمات ليكون النطق صحيحاً */
-const TASH = {"تفاحة":"تُفَّاحَة","قطة":"قِطَّة","بطة":"بَطَّة","جمل":"جَمَل","سمكة":"سَمَكَة","شمس":"شَمْس","قمر":"قَمَر","نجمة":"نَجْمَة","بيت":"بَيْت","كتاب":"كِتَاب","وردة":"وَرْدَة","فيل":"فِيل","أسد":"أَسَد","موزة":"مَوْزَة","ليمون":"لَيْمُون","عنب":"عِنَب","سيارة":"سَيَّارَة","طائرة":"طَائِرَة","قلم":"قَلَم","كرة":"كُرَة","حصان":"حِصَان","أرنب":"أَرْنَب","فراشة":"فَرَاشَة","نخلة":"نَخْلَة","سفينة":"سَفِينَة","دب":"دُبّ","ديك":"دِيك","زرافة":"زَرَافَة","تمساح":"تِمْسَاح","يد":"يَد","سلحفاة":"سُلَحْفَاة","نحلة":"نَحْلَة","عصفور":"عُصْفُور","جزرة":"جَزَرَة","بطيخ":"بِطِّيخ","حليب":"حَلِيب","عين":"عَيْن","مطر":"مَطَر","مفتاح":"مِفْتَاح","مسجد":"مَسْجِد","خروف":"خَرُوف","ذئب":"ذِئْب","ثعلب":"ثَعْلَب","حوت":"حُوت","عسل":"عَسَل","بالون":"بَالُون","خبز":"خُبْز","ظرف":"ظَرْف","ضفدع":"ضِفْدَع","صقر":"صَقْر","غيمة":"غَيْمَة","طبل":"طَبْل","زهرة":"زَهْرَة","دمية":"دُمْيَة","حقيبة":"حَقِيبَة","بسكويت":"بِسْكُوِيت",
-"الأحد":"الأَحَد","الاثنين":"الاثْنَيْن","الثلاثاء":"الثُّلَاثَاء","الأربعاء":"الأَرْبِعَاء","الخميس":"الخَمِيس","الجمعة":"الجُمُعَة","السبت":"السَّبْت",
-"محرّم":"مُحَرَّم","صفر":"صَفَر","ربيع الأول":"رَبِيعُ الأَوَّل","ربيع الآخر":"رَبِيعُ الآخِر","جمادى الأولى":"جُمَادَى الأُولَى","جمادى الآخرة":"جُمَادَى الآخِرَة","رجب":"رَجَب","شعبان":"شَعْبَان","رمضان":"رَمَضَان","شوّال":"شَوَّال","ذو القعدة":"ذُو القَعْدَة","ذو الحجة":"ذُو الحِجَّة",
-"أحسنت":"أَحْسَنْتَ","ممتاز":"مُمْتَاز","رائع":"رَائِع","شاطر":"شَاطِر","برافو":"بَرَافُو","بارك الله فيك":"بَارَكَ اللهُ فِيك","مرحبا":"مَرْحَبًا","مرحباً":"مَرْحَبًا","حاول":"حَاوِلْ","مرة":"مَرَّة","ثانية":"ثَانِيَة"};
-const TASHRE = new RegExp("(^|[\\s،.؟!])(" + Object.keys(TASH).sort((a, b) => b.length - a.length).join("|") + ")(?=$|[\\s،.؟!])", "g");
-const vowel = (t) => t.replace(TASHRE, (m, p, w) => p + TASH[w]);
 /* اسم الطفل وعبارات التشجيع */
 let CHILD = "";
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -125,56 +103,68 @@ const CHEERS_N = ["أحسنت يا {n}", "بارك الله فيك يا {n}", "�
 const TRY_N = ["حاول مرة ثانية يا {n}", "لا بأس يا {n}، جرّب مرة أخرى", "أنت تستطيع يا {n}"];
 const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has && Math.random() < 0.7 ? CHEERS_N[0] : CHEERS_N[rnd(CHEERS_N.length)]).replace("{n}", CHILD); };
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
-/* ---------- أصوات حقيقية مسجّلة (وئام) مع رجوع لصوت الجهاز ---------- */
-let AMAN = null, AEL = null;
-fetch("audio/manifest.json?v=6").then((r) => r.json()).then((m) => { AMAN = m; }).catch(() => { /* */ });
-const anorm = (t) => String(t).replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\u0621-\u064Aa-z0-9 ]/g, "").trim();
-function clipFor(text) {
-  if (!AMAN) return null;
-  const t = anorm(text);
-  if (AMAN.w[t]) return AMAN.w[t];
-  const m = t.match(/^(احسنت|بارك الله|ممتاز|رائع|شاطر|برافو|احسنت وبارك الله).* يا (.+)$/);
-  if (m && AMAN.praise[m[2]]) return AMAN.praise[m[2]];
-  return null;
+/* ---------- صوت وئام (تسجيلات حقيقية فقط، بلا صوت الجهاز) ---------- */
+let AMAN = null, AEL = null, AKEYS = [], AQ = [], AGEN = {};
+fetch("audio/manifest.json?v=7").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
+const anorm = (t) => String(t).replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^ء-يa-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function segment(t) {
+  const tok = t.split(" "), out = [];
+  for (let i = 0; i < tok.length;) {
+    let hit = null, n = 0;
+    for (let j = Math.min(tok.length, i + 5); j > i; j--) { const k = tok.slice(i, j).join(" "); if (AKEYS[k]) { hit = AKEYS[k]; n = j - i; break; } }
+    if (hit) { out.push(hit); i += n; } else i++;
+  }
+  return out;
 }
-window.__hg = { clipFor: (t) => clipFor(t), speak: (t) => speak(t) };
-function playClip(fn) {
-  try {
-    if (!AEL) AEL = new Audio();
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
-    AEL.pause(); AEL.src = "audio/" + fn + "?v=6"; AEL.currentTime = 0;
-    const p = AEL.play(); if (p && p.catch) p.catch(() => {});
-    return true;
-  } catch { return false; }
+function clipsFor(text) {
+  if (!AMAN) return [];
+  const t = anorm(text);
+  const m = t.match(/^(.*?) يا (.+)$/);
+  if (m) {
+    const pre = m[1], nm = m[2].split(" ")[0];
+    if (/^(احسنت|بارك الله|ممتاز|رائع|شاطر|برافو)/.test(pre)) {
+      if (AMAN.praise[nm]) return [AMAN.praise[nm]];
+      if (/وبارك الله|بارك الله/.test(pre)) return [AGEN["احسنت وبارك الله فيك"]].filter(Boolean);
+      const k = /ممتاز/.test(pre) ? "ممتاز" : /رائع/.test(pre) ? "رائع" : "احسنت";
+      return [AGEN[k]].filter(Boolean);
+    }
+    if (/^مرحبا/.test(pre)) return [AGEN["هيا نلعب"]].filter(Boolean);
+    if (/^(حاول|لا باس|انت تستطيع)/.test(pre)) return [AGEN["حاول مره اخري"]].filter(Boolean);
+  }
+  if (AKEYS[t]) return [AKEYS[t]];
+  return segment(t);
+}
+const clipFor = (t) => clipsFor(t)[0] || null;
+window.__hg = { clipFor, clipsFor: (t) => clipsFor(t), speak: (t) => speak(t) };
+function stopVoice() { AQ = []; try { if (AEL) AEL.pause(); } catch { /* */ } }
+function nextClip() {
+  const fn = AQ.shift(); if (!fn) return;
+  try { AEL.src = "audio/" + fn + "?v=7"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
 }
 function speak(text) {
   if (muted) return;
-  const fn = clipFor(text);
-  if (fn && playClip(fn)) return;
-  if (!("speechSynthesis" in window)) return;
+  const q = clipsFor(text); if (!q.length) return;
   try {
-    speechSynthesis.cancel();
-    setTimeout(() => {
-      const u = new SpeechSynthesisUtterance(vowel(String(text)));
-      u.lang = (ARVOICE && ARVOICE.lang) || "ar-SA"; if (ARVOICE) u.voice = ARVOICE; u.rate = 0.78; u.pitch = 0.95; u.volume = 1;
-      speechSynthesis.speak(u);
-    }, 60);
+    if (!AEL) { AEL = new Audio(); AEL.preload = "auto"; AEL.addEventListener("ended", nextClip); }
+    AEL.pause(); AQ = q.slice(0, 6); nextClip();
   } catch { /* */ }
 }
 
 /* ---------- الاحتفال ---------- */
 const cv = $("#confetti"), cx = cv.getContext("2d");
 let parts = [], raf = 0;
-function sizeCv() { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; }
+const DPR = Math.min(devicePixelRatio || 1, 1.5);
+function sizeCv() { cv.width = innerWidth * DPR; cv.height = innerHeight * DPR; }
 addEventListener("resize", sizeCv); sizeCv();
 function confetti(x = innerWidth / 2, y = innerHeight / 3, n = 70) {
+  n = Math.min(n, 60); if (parts.length > 160) return;
   for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 12, vy: -Math.random() * 12 - 3, g: .35, s: 6 + Math.random() * 7, c: COLORS[rnd(COLORS.length)], r: Math.random() * 6, vr: (Math.random() - .5) * .4, life: 70 + rnd(40) });
   if (!raf) loop();
 }
 function loop() {
   cx.clearRect(0, 0, cv.width, cv.height);
   parts = parts.filter((p) => p.life > 0);
-  const k = devicePixelRatio;
+  const k = DPR;
   for (const p of parts) {
     p.x += p.vx; p.y += p.vy; p.vy += p.g; p.r += p.vr; p.life--;
     cx.save(); cx.translate(p.x * k, p.y * k); cx.rotate(p.r); cx.fillStyle = p.c; cx.globalAlpha = Math.min(1, p.life / 25);
@@ -255,7 +245,7 @@ const GAMES = [
   { cat: "time", id: "gregorder", get ic() { return calIcon(); }, t: "رتّب أشهر السنة", s: "يناير، فبراير، مارس...", c: "linear-gradient(135deg,#DB2777,#831843)", run: gGregOrder }
 ];
 let cleanup = null;
-function go(fn) { if (cleanup) { cleanup(); cleanup = null; } try { speechSynthesis.cancel(); } catch { /* */ } fn(); window.scrollTo(0, 0); }
+function go(fn) { if (cleanup) { cleanup(); cleanup = null; } stopVoice(); fn(); window.scrollTo(0, 0); }
 
 const CATSTY = { abc: ["#8B5CF6", "#5B21B6", "ابدأ بالحروف والكلمات"], num: ["#10B981", "#047857", "أعداد وجمع وطرح"], col: ["#F59E0B", "#B45309", "ألوان وأشكال جميلة"], ani: ["#EC4899", "#9D174D", "حيوانات وأصوات ومعاني"], rel: ["#14B8A6", "#0F766E", "سور قصيرة وأدعية"], time: ["#3B82F6", "#1D4ED8", "أيام الأسبوع والأشهر"] };
 const catIcon = (name) => name.split(" ")[0], catTitle = (name) => name.split(" ").slice(1).join(" ");
