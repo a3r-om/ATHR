@@ -5,7 +5,7 @@ const app = $("#app");
 const rnd = (n) => Math.floor(Math.random() * n);
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pick = (a, n) => shuffle(a).slice(0, n);
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const wait = (ms) => Promise.all([new Promise((r) => setTimeout(r, ms)), voiceIdle()]);
 
 const LETTERS = [["ا","ألف"],["ب","باء"],["ت","تاء"],["ث","ثاء"],["ج","جيم"],["ح","حاء"],["خ","خاء"],["د","دال"],["ذ","ذال"],["ر","راء"],["ز","زاي"],["س","سين"],["ش","شين"],["ص","صاد"],["ض","ضاد"],["ط","طاء"],["ظ","ظاء"],["ع","عين"],["غ","غين"],["ف","فاء"],["ق","قاف"],["ك","كاف"],["ل","لام"],["م","ميم"],["ن","نون"],["ه","هاء"],["و","واو"],["ي","ياء"]];
 const LN = Object.fromEntries(LETTERS);
@@ -105,7 +105,7 @@ const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
 /* ---------- صوت وئام (تسجيلات حقيقية فقط، بلا صوت الجهاز) ---------- */
 let AMAN = null, AEL = null, AKEYS = [], AQ = [], AGEN = {};
-fetch("audio/manifest.json?v=8").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
+fetch("audio/manifest.json?v=9").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
 const anorm = (t) => String(t).replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^ء-يa-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 function segment(t) {
   const tok = t.split(" "), out = [];
@@ -136,10 +136,19 @@ function clipsFor(text) {
 }
 const clipFor = (t) => clipsFor(t)[0] || null;
 window.__hg = { clipFor, clipsFor: (t) => clipsFor(t), speak: (t) => speak(t) };
+function voiceIdle() {
+  return new Promise((res) => {
+    const t0 = Date.now();
+    (function chk() {
+      const busy = AQ.length || (AEL && !AEL.paused && !AEL.ended);
+      if (!busy || Date.now() - t0 > 7000) setTimeout(res, 150); else setTimeout(chk, 80);
+    })();
+  });
+}
 function stopVoice() { AQ = []; try { if (AEL) AEL.pause(); } catch { /* */ } }
 function nextClip() {
   const fn = AQ.shift(); if (!fn) return;
-  try { AEL.src = "audio/" + fn + "?v=8"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
+  try { AEL.src = "audio/" + fn + "?v=9"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
 }
 function speak(text) {
   if (muted) return;
@@ -467,7 +476,7 @@ function gMatch(stage) {
         const a = eEl.getBoundingClientRect(), b = wEl.getBoundingClientRect(), m = mt.getBoundingClientRect();
         doneLines += line(a.left - m.left, a.top + a.height / 2 - m.top, b.right - m.left, b.top + b.height / 2 - m.top, "#22B45E");
         draw(); good++; matched++; const rr = wEl.getBoundingClientRect(); confetti(rr.left + rr.width / 2, rr.top, 24);
-        if (matched === 4) setTimeout(() => { r++; next(); }, 1100);
+        if (matched === 4) wait(1100).then(() => { r++; next(); });
         return true;
       }
       bad++; sfx.bad(); wEl.classList.add("no"); setTimeout(() => wEl.classList.remove("no"), 450); return false;
