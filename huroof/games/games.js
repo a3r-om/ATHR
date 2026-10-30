@@ -93,16 +93,40 @@ const sfx = {
 // أي زر يُضغط يصدر نقرة خفيفة (والألعاب تضيف أصواتها الخاصة)
 addEventListener("pointerdown", (e) => { const b = e.target.closest && e.target.closest("button, a.pill, a.cta"); if (b && !b.classList.contains("opt") && !b.classList.contains("tile") && !b.classList.contains("ord") && !b.classList.contains("bubble") && !b.classList.contains("card") && !b.classList.contains("seqbtn")) sfx.tap(); }, true);
 let ARVOICE = null;
-function pickVoice() { try { const vs = speechSynthesis.getVoices(); ARVOICE = vs.find((v) => /^ar/i.test(v.lang)) || null; } catch { /* */ } }
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices().filter((v) => /^ar/i.test(v.lang));
+    const score = (v) => { const n = v.name.toLowerCase(); let p = 0;
+      if (/majed|maged|tarik|tareq|hamed|naayf|naif|male|ماجد|طارق|حامد|نايف/.test(n)) p += 50;
+      if (/google|enhanced|premium|neural|natural|online/.test(n)) p += 20;
+      if (/ar-sa|ar_sa/i.test(v.lang)) p += 8;
+      if (/laila|maryam|salma|zariyah|fatima|hoda|female|ليلى|مريم|سلمى/.test(n)) p -= 40;
+      if (v.localService === false) p += 3; return p; };
+    ARVOICE = vs.sort((a, b) => score(b) - score(a))[0] || null;
+  } catch { /* */ }
+}
 try { if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } } catch { /* */ }
-const CHEERS = ["أحسنت", "ممتاز", "رائع", "برافو", "شاطر"];
+/* تشكيل الكلمات ليكون النطق صحيحاً */
+const TASH = {"تفاحة":"تُفَّاحَة","قطة":"قِطَّة","بطة":"بَطَّة","جمل":"جَمَل","سمكة":"سَمَكَة","شمس":"شَمْس","قمر":"قَمَر","نجمة":"نَجْمَة","بيت":"بَيْت","كتاب":"كِتَاب","وردة":"وَرْدَة","فيل":"فِيل","أسد":"أَسَد","موزة":"مَوْزَة","ليمون":"لَيْمُون","عنب":"عِنَب","سيارة":"سَيَّارَة","طائرة":"طَائِرَة","قلم":"قَلَم","كرة":"كُرَة","حصان":"حِصَان","أرنب":"أَرْنَب","فراشة":"فَرَاشَة","نخلة":"نَخْلَة","سفينة":"سَفِينَة","دب":"دُبّ","ديك":"دِيك","زرافة":"زَرَافَة","تمساح":"تِمْسَاح","يد":"يَد","سلحفاة":"سُلَحْفَاة","نحلة":"نَحْلَة","عصفور":"عُصْفُور","جزرة":"جَزَرَة","بطيخ":"بِطِّيخ","حليب":"حَلِيب","عين":"عَيْن","مطر":"مَطَر","مفتاح":"مِفْتَاح","مسجد":"مَسْجِد","خروف":"خَرُوف","ذئب":"ذِئْب","ثعلب":"ثَعْلَب","حوت":"حُوت","عسل":"عَسَل","بالون":"بَالُون","خبز":"خُبْز","ظرف":"ظَرْف","ضفدع":"ضِفْدَع","صقر":"صَقْر","غيمة":"غَيْمَة","طبل":"طَبْل","زهرة":"زَهْرَة","دمية":"دُمْيَة","حقيبة":"حَقِيبَة","بسكويت":"بِسْكُوِيت",
+"الأحد":"الأَحَد","الاثنين":"الاثْنَيْن","الثلاثاء":"الثُّلَاثَاء","الأربعاء":"الأَرْبِعَاء","الخميس":"الخَمِيس","الجمعة":"الجُمُعَة","السبت":"السَّبْت",
+"محرّم":"مُحَرَّم","صفر":"صَفَر","ربيع الأول":"رَبِيعُ الأَوَّل","ربيع الآخر":"رَبِيعُ الآخِر","جمادى الأولى":"جُمَادَى الأُولَى","جمادى الآخرة":"جُمَادَى الآخِرَة","رجب":"رَجَب","شعبان":"شَعْبَان","رمضان":"رَمَضَان","شوّال":"شَوَّال","ذو القعدة":"ذُو القَعْدَة","ذو الحجة":"ذُو الحِجَّة",
+"أحسنت":"أَحْسَنْتَ","ممتاز":"مُمْتَاز","رائع":"رَائِع","شاطر":"شَاطِر","برافو":"بَرَافُو","بارك الله فيك":"بَارَكَ اللهُ فِيك","مرحبا":"مَرْحَبًا","مرحباً":"مَرْحَبًا","حاول":"حَاوِلْ","مرة":"مَرَّة","ثانية":"ثَانِيَة"};
+const TASHRE = new RegExp("(^|[\\s،.؟!])(" + Object.keys(TASH).sort((a, b) => b.length - a.length).join("|") + ")(?=$|[\\s،.؟!])", "g");
+const vowel = (t) => t.replace(TASHRE, (m, p, w) => p + TASH[w]);
+/* اسم الطفل وعبارات التشجيع */
+let CHILD = "";
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const CHEERS_N = ["أحسنت يا {n}", "بارك الله فيك يا {n}", "ممتاز يا {n}", "رائع يا {n}", "شاطر يا {n}", "برافو يا {n}", "أحسنت وبارك الله فيك يا {n}"];
+const TRY_N = ["حاول مرة ثانية يا {n}", "لا بأس يا {n}، جرّب مرة أخرى", "أنت تستطيع يا {n}"];
+const cheer = () => CHEERS_N[rnd(CHEERS_N.length)].replace("{n}", CHILD);
+const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
 function speak(text) {
   if (muted || !("speechSynthesis" in window)) return;
   try {
     speechSynthesis.cancel();
     setTimeout(() => {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = (ARVOICE && ARVOICE.lang) || "ar-SA"; if (ARVOICE) u.voice = ARVOICE; u.rate = 0.85; u.pitch = 1.1; u.volume = 1;
+      const u = new SpeechSynthesisUtterance(vowel(String(text)));
+      u.lang = (ARVOICE && ARVOICE.lang) || "ar-SA"; if (ARVOICE) u.voice = ARVOICE; u.rate = 0.78; u.pitch = 0.95; u.volume = 1;
       speechSynthesis.speak(u);
     }, 60);
   } catch { /* */ }
@@ -132,11 +156,24 @@ function loop() {
 
 /* ---------- التقدّم ---------- */
 let prog = {};
-try { prog = JSON.parse(localStorage.getItem("hg_prog") || "{}") || {}; } catch { prog = {}; }
-const saveStars = (id, n) => { if ((prog[id] || 0) < n) { prog[id] = n; try { localStorage.setItem("hg_prog", JSON.stringify(prog)); } catch { /* */ } } };
 let dly = { last: "", streak: 0, done: 0 };
-try { dly = Object.assign(dly, JSON.parse(localStorage.getItem("hg_daily") || "{}")); } catch { /* */ }
-const saveDly = () => { try { localStorage.setItem("hg_daily", JSON.stringify(dly)); } catch { /* */ } };
+const PK = (k) => `${k}:${CHILD}`;
+const readJ = (k, d) => { try { return Object.assign(Array.isArray(d) ? [] : {}, JSON.parse(localStorage.getItem(k) || "null") || d); } catch { return d; } };
+const writeJ = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* */ } };
+const profiles = () => { try { const p = JSON.parse(localStorage.getItem("hg_profiles") || "[]"); return Array.isArray(p) ? p : []; } catch { return []; } };
+function loadProfile(name) {
+  CHILD = name;
+  if (!profiles().includes(name)) {
+    const first = profiles().length === 0;
+    writeJ("hg_profiles", [...profiles(), name]);
+    if (first) { /* نقل التقدّم القديم (قبل تسجيل الدخول) إلى أول طفل */ try { const op = localStorage.getItem("hg_prog"), od = localStorage.getItem("hg_daily"); if (op) localStorage.setItem(PK("hg_prog"), op); if (od) localStorage.setItem(PK("hg_daily"), od); } catch { /* */ } }
+  }
+  try { localStorage.setItem("hg_cur", name); } catch { /* */ }
+  prog = readJ(PK("hg_prog"), {});
+  dly = Object.assign({ last: "", streak: 0, done: 0 }, readJ(PK("hg_daily"), {}));
+}
+const saveStars = (id, n) => { if ((prog[id] || 0) < n) { prog[id] = n; writeJ(PK("hg_prog"), prog); } };
+const saveDly = () => writeJ(PK("hg_daily"), dly);
 const totalStars = () => Object.values(prog).reduce((a, b) => a + b, 0) + dly.done * 3;
 const CHARS = [["🐣", "كتكوت"], ["🐰", "أرنوب"], ["🐱", "قطوة"], ["🐶", "جرجور"], ["🐼", "باندا"], ["🦊", "ثعلوب"], ["🦁", "الأسد ليو"], ["🐯", "نمرود"], ["🐨", "كوالا"], ["🐸", "قفقف"], ["🐵", "قرقور"], ["🦄", "يونيكورن"], ["🐬", "دلفين"], ["🐙", "أخطوط"], ["🦋", "فراشة"], ["🐢", "سلحوف"], ["🦉", "بومة الحكمة"], ["🐘", "دمبو"], ["🦒", "زرافة"], ["🐧", "بطريق"], ["🦕", "ديناصور"], ["🐲", "التنين"], ["🚀", "الصاروخ"], ["👑", "تاج الأبطال"]];
 const thr = (k) => k * 3;
@@ -181,28 +218,61 @@ const GAMES = [
   { q: true, cat: "rel", id: "whichsurah", ic: "🕋", t: "من أي سورة؟", s: "اعرف السورة من آيتها", c: "linear-gradient(135deg,#16A34A,#14532D)", run: gWhichSurah },
   { q: true, cat: "rel", id: "duawhen", ic: "🤲", t: "ماذا نقول؟", s: "الدعاء المناسب لكل موقف", c: "linear-gradient(135deg,#7C3AED,#4C1D95)", run: gDuaWhen },
   { q: true, cat: "rel", id: "duaend", ic: "🌙", t: "أكمل الدعاء", s: "ما الكلمة الناقصة؟", c: "linear-gradient(135deg,#6366F1,#3730A3)", run: gDuaEnd },
-  { cat: "time", id: "dayorder", ic: "📅", t: "رتّب أيام الأسبوع", s: "الأحد، الاثنين...", c: "linear-gradient(135deg,#F59E0B,#B45309)", run: gDayOrder },
+  { cat: "time", id: "dayorder", get ic() { return calIcon(); }, t: "رتّب أيام الأسبوع", s: "الأحد، الاثنين...", c: "linear-gradient(135deg,#F59E0B,#B45309)", run: gDayOrder },
   { q: true, cat: "time", id: "daynext", ic: "🗓️", t: "ما اليوم؟", s: "قبل وبعد وترتيب الأيام", c: "linear-gradient(135deg,#EA580C,#9A3412)", run: gDayNext },
   { cat: "time", id: "monthorder", ic: "🌙", t: "رتّب الأشهر الهجرية", s: "محرم، صفر، ربيع...", c: "linear-gradient(135deg,#0EA5E9,#075985)", run: gMonthOrder },
   { q: true, cat: "time", id: "monthnext", ic: "🌛", t: "ما الشهر؟", s: "الأشهر الهجرية بالترتيب", c: "linear-gradient(135deg,#2563EB,#1E3A8A)", run: gMonthNext },
-  { cat: "time", id: "gregorder", ic: "📆", t: "رتّب أشهر السنة", s: "يناير، فبراير، مارس...", c: "linear-gradient(135deg,#DB2777,#831843)", run: gGregOrder }
+  { cat: "time", id: "gregorder", get ic() { return calIcon(); }, t: "رتّب أشهر السنة", s: "يناير، فبراير، مارس...", c: "linear-gradient(135deg,#DB2777,#831843)", run: gGregOrder }
 ];
 let cleanup = null;
 function go(fn) { if (cleanup) { cleanup(); cleanup = null; } try { speechSynthesis.cancel(); } catch { /* */ } fn(); window.scrollTo(0, 0); }
 
-function home() {
-  app.innerHTML = `
-    <div class="top"><a class="pill" href="../">🏪 المتجر</a><button class="pill btn" id="mute" aria-label="الصوت">${muted ? "🔇" : "🔊"}</button><span class="pill">⭐ ${totalStars()}</span></div>
-    <div class="hero"><div class="mascot">🦉</div><h1>ألعاب حروف وألوان</h1><p>العب وتعلّم واجمع النجوم!</p></div>
-    <div class="feat">
-      <button class="gcard daily" data-g="daily"><span class="ic">📅</span><b>التحدي اليومي</b><small>${dly.last === todayKey() ? "✅ أنجزته اليوم، عُد غداً" : "10 أسئلة جديدة كل يوم + 3 نجوم هدية"}</small><span class="st">🔥 ${streakNow()} ${streakNow() === 1 ? "يوم" : "أيام"} متتالية</span></button>
-      <button class="gcard garden" data-g="garden"><span class="ic">🏆</span><b>حديقة الشخصيات</b><small>اجمع النجوم وافتح شخصيات جديدة</small><span class="st">${unlockedCount()} / ${CHARS.length}</span></button>
-    </div>
-    ${CATS.map(([k, name]) => `<h2 class="cat">${name}</h2><div class="grid">${GAMES.filter((g) => g.cat === k).map((g) => `<button class="gcard" data-g="${g.id}" style="background:${g.c}"><span class="ic">${g.ic}</span><b>${g.t}</b><small>${g.s}</small><span class="st">${stars(prog[g.id] || 0)}</span></button>`).join("")}</div>`).join("")}
-    <a class="cta" href="../#stories">📚 أعجبتك الألعاب؟ شاهد <b>قصصنا باسم طفلك</b></a>`;
-  $("#mute").onclick = () => { muted = !muted; try { localStorage.setItem("hg_mute", muted ? "1" : "0"); } catch { /* */ } $("#mute").textContent = muted ? "🔇" : "🔊"; };
-  app.querySelectorAll(".gcard").forEach((b) => b.onclick = () => { sfx.whoosh(); if (b.dataset.g === "garden") return go(garden); const g = b.dataset.g === "daily" ? DAILYGAME : GAMES.find((x) => x.id === b.dataset.g); go(() => frame(g)); });
+const CATSTY = { abc: ["#8B5CF6", "#5B21B6", "ابدأ بالحروف والكلمات"], num: ["#10B981", "#047857", "أعداد وجمع وطرح"], col: ["#F59E0B", "#B45309", "ألوان وأشكال جميلة"], ani: ["#EC4899", "#9D174D", "حيوانات وأصوات ومعاني"], rel: ["#14B8A6", "#0F766E", "سور قصيرة وأدعية"], time: ["#3B82F6", "#1D4ED8", "أيام الأسبوع والأشهر"] };
+const catIcon = (name) => name.split(" ")[0], catTitle = (name) => name.split(" ").slice(1).join(" ");
+const muteBtn = () => { const m = $("#mute"); if (!m) return; m.onclick = () => { muted = !muted; try { localStorage.setItem("hg_mute", muted ? "1" : "0"); } catch { /* */ } m.textContent = muted ? "🔇" : "🔊"; }; };
+
+function login() {
+  const ps = profiles();
+  app.innerHTML = `<div class="top"><a class="pill" href="../">🏪 المتجر</a><button class="pill btn" id="mute">${muted ? "🔇" : "🔊"}</button></div>
+    <div class="hero"><div class="mascot">🦉</div><h1>أهلاً بك!</h1><p>ما اسمك أيها البطل؟</p></div>
+    <form class="login" id="lf"><input id="nm" maxlength="14" autocomplete="off" placeholder="اكتب اسمك هنا" aria-label="اسم الطفل"><button class="btn-big" type="submit">🚀 هيا نلعب</button></form>
+    ${ps.length ? `<h2 class="cat">أو اختر اسمك</h2><div class="plist">${ps.map((p) => `<button class="pchip" data-p="${esc(p)}">👤 ${esc(p)}</button>`).join("")}</div>` : ""}`;
+  muteBtn();
+  const enter = (name) => { loadProfile(name); sfx.win(); confetti(innerWidth / 2, innerHeight / 3, 60); go(home); setTimeout(() => speak(`مرحباً يا ${name}، هيا نلعب`), 500); };
+  $("#lf").onsubmit = (e) => { e.preventDefault(); const v = $("#nm").value.trim().replace(/\s+/g, " ").slice(0, 14); if (!v) { sfx.bad(); $("#nm").classList.add("no"); setTimeout(() => $("#nm").classList.remove("no"), 400); return; } enter(v); };
+  app.querySelectorAll(".pchip").forEach((b) => b.onclick = () => enter(b.dataset.p));
+  if (!ps.length) setTimeout(() => $("#nm") && $("#nm").focus(), 300);
 }
+
+function home() {
+  const cnt = (k) => GAMES.filter((g) => g.cat === k);
+  app.innerHTML = `
+    <div class="top"><button class="pill btn" id="who">👤 ${esc(CHILD)}</button><button class="pill btn" id="mute" aria-label="الصوت">${muted ? "🔇" : "🔊"}</button><span class="pill">⭐ ${totalStars()}</span></div>
+    <div class="hero"><div class="mascot">🦉</div><h1>مرحباً يا ${esc(CHILD)}!</h1><p>اختر قسماً والعب واجمع النجوم</p></div>
+    <div class="feat">
+      <button class="gcard daily" data-g="daily"><span class="ic">${calIcon(true)}</span><b>التحدي اليومي</b><small>${dly.last === todayKey() ? "✅ أنجزته اليوم، عُد غداً" : "10 أسئلة + 3 نجوم هدية"}</small><span class="st">🔥 ${streakNow()} ${streakNow() === 1 ? "يوم" : "أيام"}</span></button>
+      <button class="gcard garden" data-g="garden"><span class="ic">🏆</span><b>حديقة الشخصيات</b><small>افتح شخصيات جديدة</small><span class="st">${unlockedCount()} / ${CHARS.length}</span></button>
+    </div>
+    <h2 class="cat">الأقسام</h2>
+    <div class="cats">${CATS.map(([k, name]) => { const gs = cnt(k), got = gs.reduce((a, g) => a + (prog[g.id] || 0), 0), all = gs.length * 3, st = CATSTY[k]; return `<button class="catcard" data-c="${k}" style="background:linear-gradient(135deg,${st[0]},${st[1]})"><span class="ci">${catIcon(name)}</span><span class="ct"><b>${catTitle(name)}</b><small>${st[2]}</small><span class="cbar"><i style="width:${Math.round(got / all * 100)}%"></i></span></span><span class="cn">${gs.length}<small>ألعاب</small></span></button>`; }).join("")}</div>
+    <a class="cta" href="../#stories">📚 أعجبتك الألعاب؟ شاهد <b>قصصنا باسم طفلك</b></a>`;
+  muteBtn();
+  $("#who").onclick = () => go(login);
+  app.querySelectorAll(".catcard").forEach((b) => b.onclick = () => { sfx.whoosh(); go(() => catView(b.dataset.c)); });
+  app.querySelectorAll(".gcard").forEach((b) => b.onclick = () => { sfx.whoosh(); if (b.dataset.g === "garden") return go(garden); go(() => frame(DAILYGAME)); });
+}
+function catView(k) {
+  const [, name] = CATS.find((c) => c[0] === k), st = CATSTY[k], gs = GAMES.filter((g) => g.cat === k);
+  app.innerHTML = `
+    <div class="top"><button class="pill btn" id="back">→ الأقسام</button><button class="pill btn" id="mute">${muted ? "🔇" : "🔊"}</button><span class="pill">⭐ ${totalStars()}</span></div>
+    <div class="cathead" style="background:linear-gradient(135deg,${st[0]},${st[1]})"><span>${catIcon(name)}</span><h1>${catTitle(name)}</h1><p>${st[2]}</p></div>
+    <div class="grid">${gs.map((g) => `<button class="gcard" data-g="${g.id}" style="background:${g.c}"><span class="ic">${g.ic}</span><b>${g.t}</b><small>${g.s}</small><span class="st">${stars(prog[g.id] || 0)}</span></button>`).join("")}</div>`;
+  muteBtn();
+  $("#back").onclick = () => go(home);
+  app.querySelectorAll(".gcard").forEach((b) => b.onclick = () => { sfx.whoosh(); const g = GAMES.find((x) => x.id === b.dataset.g); go(() => frame(g)); });
+}
+/* ---------- */
+const backFn = () => (cur && cur.cat ? () => catView(cur.cat) : home);
 const stars = (n) => "⭐".repeat(n) + "☆".repeat(3 - n);
 
 let cur = null;
@@ -212,7 +282,7 @@ function frame(g) {
     <div class="bar"><button class="pill btn" id="back">→ رجوع</button><div class="title">${g.ic} ${g.t}</div><button class="pill btn" id="mute">${muted ? "🔇" : "🔊"}</button></div>
     <div class="dots" id="dots"></div>
     <div class="stage" id="stage"></div>`;
-  $("#back").onclick = () => go(home);
+  $("#back").onclick = () => go(backFn());
   $("#mute").onclick = () => { muted = !muted; try { localStorage.setItem("hg_mute", muted ? "1" : "0"); } catch { /* */ } $("#mute").textContent = muted ? "🔇" : "🔊"; };
   g.run($("#stage"));
 }
@@ -224,6 +294,7 @@ function finish(stage, score, total, msg = "") {
   const st = ratio >= 0.9 ? 3 : ratio >= 0.65 ? 2 : ratio >= 0.35 ? 1 : 0;
   const before = totalStars();
   saveStars(cur.id, st); checkUnlock(before);
+  setTimeout(() => speak(st >= 2 ? `أحسنت وبارك الله فيك يا ${CHILD}` : st === 1 ? `جميل يا ${CHILD}، حاول مرة ثانية` : `لا بأس يا ${CHILD}، جرّب مرة أخرى`), 1200);
   sfx.win(); setTimeout(() => sfx.clap(), 700); confetti(innerWidth / 2, innerHeight / 3, 120); setTimeout(() => confetti(innerWidth * .2, innerHeight / 2, 60), 250); setTimeout(() => confetti(innerWidth * .8, innerHeight / 2, 60), 450);
   stage.innerHTML = `<div class="win"><div class="trophy">${st === 3 ? "🏆" : st === 2 ? "🥈" : st === 1 ? "🥉" : "💪"}</div>
     <h2>${st === 3 ? "ممتاز! أنت بطل!" : st === 2 ? "أحسنت!" : st === 1 ? "جميل! حاول مرة ثانية" : "لا بأس، جرّب مرة أخرى"}</h2>
@@ -231,7 +302,7 @@ function finish(stage, score, total, msg = "") {
     ${msg ? `<p class="prompt">${msg}</p>` : `<p class="prompt">${score} من ${total}</p>`}
     <div class="row"><button class="btn-big" id="again">🔄 العب مرة أخرى</button><button class="btn-big alt" id="menu">🏠 الألعاب</button></div></div>`;
   $("#again").onclick = () => go(() => frame(cur));
-  $("#menu").onclick = () => go(home);
+  $("#menu").onclick = () => go(backFn());
 }
 
 /* ---------- محرّك الأسئلة ---------- */
@@ -257,9 +328,9 @@ function quiz(stage, rounds, make, opt = {}) {
         const sh = stage.querySelector(".shadow"); if (sh) { sh.classList.remove("shadow"); setTimeout(() => sfx.whoosh(), 120); }
         const r = b.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top, 28);
         if (firstTry) { score++; setTimeout(() => sfx.star(), 260); }
-        if (q.after) speak(q.after); else if (Math.random() < 0.45) speak(CHEERS[rnd(CHEERS.length)]);
+        if (q.after) speak(q.after); else if (Math.random() < 0.6) speak(cheer());
         await wait(q.after ? 1300 : 900); i++; next();
-      } else { b.classList.add("no"); sfx.bad(); firstTry = false; setTimeout(() => b.classList.remove("no"), 450); }
+      } else { b.classList.add("no"); sfx.bad(); if (firstTry && Math.random() < 0.35) speak(tryAgain()); firstTry = false; setTimeout(() => b.classList.remove("no"), 450); }
     });
   }
   next();
@@ -569,12 +640,14 @@ function gOpposite(stage) {
 }
 
 /* ===== التحدي اليومي ===== */
+const GM_AR = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+const calIcon = (big) => { const d = new Date(); return `<span class="cal${big ? " big" : ""}"><i>${GM_AR[d.getMonth()]}</i><b>${d.getDate()}</b></span>`; };
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const yesterdayKey = () => { const d = new Date(Date.now() - 86400000); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const streakNow = () => (dly.last === todayKey() || dly.last === yesterdayKey()) ? dly.streak : 0;
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const hashStr = (s2) => { let h = 2166136261; for (const c of s2) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-const DAILYGAME = { id: "daily", ic: "📅", t: "التحدي اليومي", run: dailyRun };
+const DAILYGAME = { id: "daily", get ic() { return calIcon(); }, t: "التحدي اليومي", run: dailyRun };
 function dailyRun(stage) {
   const qg = GAMES.filter((g) => g.q), rng = mulberry(hashStr(todayKey()));
   const list = qg.map((g) => [rng(), g]).sort((a, b) => a[0] - b[0]).slice(0, 5).map((x) => x[1]);
@@ -584,7 +657,7 @@ function dailyRun(stage) {
     if (idx >= list.length) { DAILY.active = false; return dailyFinish(stage, total); }
     DAILY.offset = idx * 2;
     DAILY.cb = (sc) => { total += sc; idx++; sfx.whoosh(); runNext(); };
-    const t = $(".bar .title"); if (t) t.textContent = `📅 ${list[idx].ic} ${list[idx].t}`;
+    const t = $(".bar .title"); if (t) t.innerHTML = `${calIcon()} ${list[idx].ic} ${list[idx].t}`;
     list[idx].run(stage);
   };
   cleanup = () => { DAILY.active = false; };
@@ -597,14 +670,15 @@ function dailyFinish(stage, score) {
   if (dly.last !== todayKey() && score >= 5) { dly.streak = dly.last === yesterdayKey() ? dly.streak + 1 : 1; dly.last = todayKey(); dly.done++; saveDly(); bonus = true; }
   checkUnlock(before);
   sfx.win(); setTimeout(() => sfx.clap(), 700); confetti(innerWidth / 2, innerHeight / 3, 120); setTimeout(() => confetti(innerWidth * .2, innerHeight / 2, 60), 250); setTimeout(() => confetti(innerWidth * .8, innerHeight / 2, 60), 450);
-  const t = $(".bar .title"); if (t) t.textContent = "📅 التحدي اليومي";
+  const t = $(".bar .title"); if (t) t.innerHTML = `${calIcon()} التحدي اليومي`;
   setDots(0, 0, -1);
   stage.innerHTML = `<div class="win"><div class="trophy">${st === 3 ? "🏆" : st === 2 ? "🥈" : st === 1 ? "🥉" : "💪"}</div>
-    <h2>${score >= 5 ? "أنجزت تحدي اليوم!" : "حاول مرة ثانية"}</h2>
+    <h2>${score >= 5 ? `أحسنت يا ${esc(CHILD)}! أنجزت تحدي اليوم` : `حاول مرة ثانية يا ${esc(CHILD)}`}</h2>
     <div class="stars">${[1, 2, 3].map((i) => `<span class="${i <= st ? "" : "off"}">⭐</span>`).join("")}</div>
     <p class="prompt">${score} من 10</p>
     ${bonus ? `<p class="prompt bonus">🎁 ربحت 3 نجوم هدية · 🔥 ${dly.streak} ${dly.streak === 1 ? "يوم" : "أيام"} متتالية</p>` : score >= 5 ? `<p class="prompt">✅ سبق وربحت هدية اليوم</p>` : `<p class="prompt">أجب عن 5 أسئلة صحيحة على الأقل لتربح الهدية</p>`}
     <div class="row"><button class="btn-big alt" id="garden">🏆 حديقتي</button><button class="btn-big" id="menu">🏠 الألعاب</button></div></div>`;
+  setTimeout(() => speak(score >= 5 ? `أحسنت وبارك الله فيك يا ${CHILD}` : `حاول مرة ثانية يا ${CHILD}`), 1200);
   $("#garden").onclick = () => go(garden); $("#menu").onclick = () => go(home);
 }
 
@@ -727,7 +801,7 @@ function gDayNext(stage) {
     if (t === 0) { text = `ما اليوم الذي بعد ${DAYS[i]}؟`; ans = DAYS[(i + 1) % 7]; }
     else if (t === 1) { text = `ما اليوم الذي قبل ${DAYS[i]}؟`; ans = DAYS[(i + 6) % 7]; }
     else { const n = 1 + rnd(7); text = `ما ترتيب يوم ${DAYS[i]} في الأسبوع (يبدأ بالأحد)؟`; return { say: text, html: `<div class="prompt">${text}</div>`, answers: nopts(i + 1, 1, 7).map((a) => ({ ...a })) }; }
-    return { say: text, after: ans, html: `<div class="emo" style="animation:none">📅</div><div class="prompt">${text}</div>`, answers: shuffle([ans, ...pick(DAYS.filter((x) => x !== ans), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === ans })) };
+    return { say: text, after: ans, html: `<div class="emo" style="animation:none">${calIcon(true)}</div><div class="prompt">${text}</div>`, answers: shuffle([ans, ...pick(DAYS.filter((x) => x !== ans), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === ans })) };
   });
 }
 function gMonthNext(stage) {
@@ -739,5 +813,6 @@ function gMonthNext(stage) {
   });
 }
 
-home();
+const savedName = (() => { try { return localStorage.getItem("hg_cur") || ""; } catch { return ""; } })();
+if (savedName && profiles().includes(savedName)) { loadProfile(savedName); home(); } else login();
 })();
