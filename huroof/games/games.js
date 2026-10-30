@@ -105,58 +105,83 @@ const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
 /* ---------- صوت وئام (تسجيلات حقيقية فقط، بلا صوت الجهاز) ---------- */
 let AMAN = null, AEL = null, AKEYS = [], AQ = [], AGEN = {};
-fetch("audio/manifest.json?v=9").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
+fetch("audio/manifest.json?v=10").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
 const anorm = (t) => String(t).replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^ء-يa-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 function segment(t) {
-  const tok = t.split(" "), out = [];
+  const tok = t.split(" "), out = []; let all = true;
   for (let i = 0; i < tok.length;) {
     let hit = null, n = 0;
     for (let j = Math.min(tok.length, i + 5); j > i; j--) { const k = tok.slice(i, j).join(" "); if (AKEYS[k]) { hit = AKEYS[k]; n = j - i; break; } }
-    if (hit) { out.push(hit); i += n; } else i++;
+    if (hit) { out.push(hit); i += n; } else { all = false; i++; }
   }
-  return out;
+  return { out, all };
 }
-function clipsFor(text) {
-  if (!AMAN) return [];
-  const t = anorm(text);
-  const m = t.match(/^(.*?) يا (.+)$/);
-  if (m) {
-    const pre = m[1], nm = AMAN.praise[m[2]] ? m[2] : m[2].split(" ")[0];
-    if (/^(احسنت|بارك الله|ممتاز|رائع|شاطر|برافو)/.test(pre)) {
-      if (AMAN.praise[nm]) return [AMAN.praise[nm]];
-      if (/وبارك الله|بارك الله/.test(pre)) return [AGEN["احسنت وبارك الله فيك"]].filter(Boolean);
-      const k = /ممتاز/.test(pre) ? "ممتاز" : /رائع/.test(pre) ? "رائع" : "احسنت";
-      return [AGEN[k]].filter(Boolean);
+/* ---------- صوت حي لأي نص أو اسم (يُحفظ بعد أول مرة) ---------- */
+const LIVE_URL = "https://zcnwzpevehudhnsuljdy.supabase.co/functions/v1/wiam-tts";
+const LIVE = new Map(); let PEND = 0, SEQ = 0;
+const clean = (t) => String(t).replace(/[^؀-ۿ0-9 .!?,]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
+function liveUrl(text) {
+  text = clean(text); if (!text) return Promise.resolve(null);
+  if (LIVE.has(text)) return LIVE.get(text);
+  const p = fetch(LIVE_URL, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) })
+    .then((r) => (r.ok ? r.json() : null)).then((j) => (j && j.url) || null).catch(() => null);
+  LIVE.set(text, p); p.then((u) => { if (!u) LIVE.delete(text); });
+  return p;
+}
+function planFor(text) {
+  const raw = String(text).trim(); if (!AMAN) return { local: [] };
+  const t = anorm(raw);
+  const mm = raw.match(/(?:^|\s)يا\s+([^،.!؟?]+)/);
+  if (mm) {
+    const nm = mm[1].trim(), nn = anorm(nm), pre = t.split(" يا ")[0];
+    if (nn) {
+      if (/حاول|جرب|لا باس|تستطيع/.test(pre)) return { live: `حَاوِلْ مَرَّةً أُخْرَى يَا ${nm}!`, fallback: [AGEN["حاول مره اخري"]].filter(Boolean) };
+      if (/^مرحبا/.test(pre)) return { live: `مَرْحَبًا يَا ${nm}، هَيَّا نَلْعَبْ!`, fallback: [AGEN["هيا نلعب"]].filter(Boolean) };
+      if (/احسنت|بارك الله|ممتاز|رائع|شاطر|برافو|جميل|بطل/.test(pre)) {
+        const pk = AMAN.praise[nn] || AMAN.praise[nn.split(" ")[0]];
+        if (pk) return { local: [pk] };
+        const k = /وبارك|بارك الله/.test(pre) ? "احسنت وبارك الله فيك" : /ممتاز/.test(pre) ? "ممتاز" : /رائع/.test(pre) ? "رائع" : "احسنت";
+        return { live: `أَحْسَنْتَ يَا ${nm}!`, fallback: [AGEN[k]].filter(Boolean) };
+      }
     }
-    if (/^مرحبا/.test(pre)) return [AGEN["هيا نلعب"]].filter(Boolean);
-    if (/^(حاول|لا باس|انت تستطيع)/.test(pre)) return [AGEN["حاول مره اخري"]].filter(Boolean);
   }
-  if (AKEYS[t]) return [AKEYS[t]];
-  return segment(t);
+  if (AKEYS[t]) return { local: [AKEYS[t]] };
+  const sg = segment(t);
+  if (sg.all && sg.out.length) return { local: sg.out };
+  return { live: raw, fallback: sg.out };
 }
+function clipsFor(text) { const p = planFor(text); return p.local || p.fallback || []; }
 const clipFor = (t) => clipsFor(t)[0] || null;
-window.__hg = { clipFor, clipsFor: (t) => clipsFor(t), speak: (t) => speak(t) };
+window.__hg = { clipFor, clipsFor: (t) => clipsFor(t), planFor, speak: (t) => speak(t) };
+function prefetch(text) { try { const p = planFor(text); if (p.live) liveUrl(p.live); } catch { /* */ } }
 function voiceIdle() {
   return new Promise((res) => {
     const t0 = Date.now();
     (function chk() {
-      const busy = AQ.length || (AEL && !AEL.paused && !AEL.ended);
-      if (!busy || Date.now() - t0 > 7000) setTimeout(res, 150); else setTimeout(chk, 80);
+      const busy = PEND || AQ.length || (AEL && !AEL.paused && !AEL.ended);
+      if (!busy || Date.now() - t0 > 8000) setTimeout(res, 150); else setTimeout(chk, 80);
     })();
   });
 }
-function stopVoice() { AQ = []; try { if (AEL) AEL.pause(); } catch { /* */ } }
+function stopVoice() { SEQ++; AQ = []; try { if (AEL) AEL.pause(); } catch { /* */ } }
 function nextClip() {
   const fn = AQ.shift(); if (!fn) return;
-  try { AEL.src = "audio/" + fn + "?v=9"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
+  try { AEL.src = /^https?:/.test(fn) ? fn : "audio/" + fn + "?v=10"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
 }
-function speak(text) {
-  if (muted) return;
-  const q = clipsFor(text); if (!q.length) return;
+function playQ(q) {
+  if (!q.length) return;
   try {
     if (!AEL) { AEL = new Audio(); AEL.preload = "auto"; AEL.addEventListener("ended", nextClip); }
     AEL.pause(); AQ = q.slice(0, 6); nextClip();
   } catch { /* */ }
+}
+function speak(text) {
+  if (muted) return;
+  const my = ++SEQ, p = planFor(text);
+  if (p.local) { playQ(p.local); return; }
+  try { if (AEL) AEL.pause(); } catch { /* */ } AQ = [];
+  PEND++;
+  liveUrl(p.live).then((u) => { PEND--; if (my !== SEQ || muted) return; playQ(u ? [u] : (p.fallback || [])); });
 }
 
 /* ---------- الاحتفال ---------- */
@@ -191,7 +216,7 @@ const readJ = (k, d) => { try { return Object.assign(Array.isArray(d) ? [] : {},
 const writeJ = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* */ } };
 const profiles = () => { try { const p = JSON.parse(localStorage.getItem("hg_profiles") || "[]"); return Array.isArray(p) ? p : []; } catch { return []; } };
 function loadProfile(name) {
-  CHILD = name;
+  CHILD = name; prefetch(`أحسنت يا ${name}`); prefetch(`مرحباً يا ${name}، هيا نلعب`);
   if (!profiles().includes(name)) {
     const first = profiles().length === 0;
     writeJ("hg_profiles", [...profiles(), name]);
@@ -347,6 +372,7 @@ function quiz(stage, rounds, make, opt = {}) {
     stage.innerHTML = `${q.html}<div class="opts ${q.one ? "one" : q.answers.length === 3 ? "three" : ""}" id="opts">${q.answers.map((a, k) => `<button class="opt ${a.txt ? "txt" : ""} ${q.one ? "long" : ""}" data-k="${k}">${a.label}</button>`).join("")}</div>`;
     const say = $("#say"); if (say) say.onclick = () => speak(q.say);
     if (q.say) setTimeout(() => speak(q.say), 250);
+    if (q.after) prefetch(q.after);
     if (q.onload) q.onload();
     lock = false;
     stage.querySelectorAll(".opt").forEach((b) => b.onclick = async () => {
@@ -394,7 +420,7 @@ function gMissing(stage) {
     const pos = 1 + rnd(word.length - 1);
     const L = norm(word[pos]);
     const shown = [...word].map((c, k) => k === pos ? "＿" : c).join(" ");
-    return { say: word, after: word, html: `<div class="emo">${w[0]}</div><div class="bigw">${shown}</div><div class="prompt">ما الحرف الناقص؟</div>`, answers: letterOpts(L, 3).map((a) => ({ ...a, label: lbl(a.label.replace(/<\/?span>/g, "")) })) };
+    return { say: `${word}. ما الحرف الناقص؟`, after: word, html: `<div class="emo">${w[0]}</div><div class="bigw">${shown}</div><div class="prompt">ما الحرف الناقص؟</div>`, answers: letterOpts(L, 3).map((a) => ({ ...a, label: lbl(a.label.replace(/<\/?span>/g, "")) })) };
   });
 }
 /* 4) عدّ معي */
@@ -763,7 +789,7 @@ function gAyahEnd(stage) {
     const [sn, a] = seq[i], w = lastWord(a);
     const wrong = pick([...new Set(all.map((x) => lastWord(x[1])).filter((x) => x !== w))], 2);
     const shown = a.trim().split(/\s+/).slice(0, -1).join(" ") + " ＿＿＿";
-    return { say: a, after: a, one: false, html: `<div class="ayah">${shown}</div><div class="prompt">أكمل الآية <small>(سورة ${sn})</small></div>`, answers: shuffle([w, ...wrong]).map((x) => ({ label: lbl(x), txt: true, ok: x === w })) };
+    return { say: "أكمل الآية", one: false, html: `<div class="ayah">${shown}</div><div class="prompt">أكمل الآية <small>(سورة ${sn})</small></div>`, answers: shuffle([w, ...wrong]).map((x) => ({ label: lbl(x), txt: true, ok: x === w })) };
   });
 }
 function gWhichSurah(stage) {
@@ -772,7 +798,7 @@ function gWhichSurah(stage) {
   const seq = pick(all, 10);
   quiz(stage, 10, (i) => {
     const [sn, a] = seq[i];
-    return { say: a, after: `سورة ${sn}`, html: `<div class="ayah">${a}</div><div class="prompt">من أي سورة هذه الآية؟</div>`, answers: shuffle([sn, ...pick(names.filter((x) => x !== sn), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === sn })) };
+    return { say: "من أي سورة هذه الآية؟", after: `سورة ${sn}`, html: `<div class="ayah">${a}</div><div class="prompt">من أي سورة هذه الآية؟</div>`, answers: shuffle([sn, ...pick(names.filter((x) => x !== sn), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === sn })) };
   });
 }
 
@@ -805,7 +831,7 @@ function gDuaEnd(stage) {
   quiz(stage, seq.length, (i) => {
     const d = seq[i], w = lastWord(d[2]);
     const wrong = pick([...new Set(pool.map((x) => lastWord(x[2])).filter((x) => x !== w))], 2);
-    return { say: d[2], after: d[2], html: `<div class="emo">${d[1]}</div><div class="prompt">${d[0]}</div><div class="ayah">${d[2].split(/\s+/).slice(0, -1).join(" ")} ＿＿＿</div>`, answers: shuffle([w, ...wrong]).map((x) => ({ label: lbl(x), txt: true, ok: x === w })) };
+    return { say: `${d[0]}. أكمل الدعاء`, after: d[2], html: `<div class="emo">${d[1]}</div><div class="prompt">${d[0]}</div><div class="ayah">${d[2].split(/\s+/).slice(0, -1).join(" ")} ＿＿＿</div>`, answers: shuffle([w, ...wrong]).map((x) => ({ label: lbl(x), txt: true, ok: x === w })) };
   });
 }
 
