@@ -3543,3 +3543,15 @@ html.tpl-night .ks-price b { color: #B7791F; }
 .ks-books .ks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html.tpl-night .sh-float { background: #FFFFFF; color: var(--text); box-shadow: 0 8px 22px rgba(60, 30, 120, .2); border: 1px solid var(--line); }
 .hs-nav { position: static; }
+
+/* بانر الألعاب */
+.gm-banner-sec { padding: 14px 0 0; }
+.gm-banner { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 22px; color: #fff; text-decoration: none; background: linear-gradient(135deg, #8B5CF6, #6D3FE0 55%, #EC4899); box-shadow: 0 6px 0 rgba(0, 0, 0, .14), 0 14px 26px rgba(109, 63, 224, .28); position: relative; overflow: hidden; }
+.gm-banner::after { content: ""; position: absolute; width: 150px; height: 150px; border-radius: 50%; background: rgba(255, 255, 255, .14); top: -60px; left: -40px; }
+.gm-ic { font-size: 46px; line-height: 1; flex: none; animation: gm-bob 2.4s ease-in-out infinite; position: relative; z-index: 1; }
+@keyframes gm-bob { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-6px) rotate(6deg); } }
+.gm-tx { display: grid; gap: 2px; flex: 1; min-width: 0; position: relative; z-index: 1; }
+.gm-tx b { font-size: 20px; line-height: 1.3; }
+.gm-tx small { font-size: 14px; opacity: .95; line-height: 1.5; }
+.gm-go { flex: none; background: #fff; color: #6D3FE0; border-radius: 99px; padding: 8px 14px; font-weight: 700; font-size: 14px; position: relative; z-index: 1; white-space: nowrap; }
+@media (max-width: 420px) { .gm-go { display: none; } }

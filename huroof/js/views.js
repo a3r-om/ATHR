@@ -1056,8 +1056,9 @@
                 </div>
             </section>
             <nav class="hs-nav" aria-label="${esc(t("الأقسام"))}"><div class="wrap">
-                ${list.length ? `<a href="#stories">📚 ${esc(t("قصص 3D"))}</a>` : ""}${nameBooks.length ? `<a href="#books">✏️ ${esc(t("كتب باسم طفلك"))}</a>` : ""}${kidsList.length ? `<a href="#kids">🎨 ${esc(t("تعليمي للأطفال"))}</a>` : ""}${stuList.length ? `<a href="#students">🎓 ${esc(t("الصفوف 1-4"))}</a>` : ""}
+                <a href="${ATHR.base()}games/">🎮 ${esc(t("ألعاب"))}</a>${list.length ? `<a href="#stories">📚 ${esc(t("قصص 3D"))}</a>` : ""}${nameBooks.length ? `<a href="#books">✏️ ${esc(t("كتب باسم طفلك"))}</a>` : ""}${kidsList.length ? `<a href="#kids">🎨 ${esc(t("تعليمي للأطفال"))}</a>` : ""}${stuList.length ? `<a href="#students">🎓 ${esc(t("الصفوف 1-4"))}</a>` : ""}
             </div></nav>
+            <section class="gm-banner-sec"><div class="wrap"><a class="gm-banner" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("حروف وكلمات وتوصيل وذاكرة... العب وتعلّم!"))}</small></span><span class="gm-go">${esc(t("العب الآن"))} ←</span></a></div></section>
             <section class="section ks-best" id="stories" aria-labelledby="best-t">
                 <div class="wrap">
                     <div class="section-head ks-head"><h2 id="best-t">${esc(list.length ? t("📚 قصص ثلاثية الأبعاد، طفلك بطلها") : t("قصصنا الجديدة قريباً"))}</h2></div>
