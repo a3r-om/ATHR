@@ -105,7 +105,7 @@ const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
 /* ---------- صوت وئام (تسجيلات حقيقية فقط، بلا صوت الجهاز) ---------- */
 let AMAN = null, AEL = null, AKEYS = [], AQ = [], AGEN = {};
-fetch("audio/manifest.json?v=7").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
+fetch("audio/manifest.json?v=8").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
 const anorm = (t) => String(t).replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^ء-يa-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 function segment(t) {
   const tok = t.split(" "), out = [];
@@ -121,7 +121,7 @@ function clipsFor(text) {
   const t = anorm(text);
   const m = t.match(/^(.*?) يا (.+)$/);
   if (m) {
-    const pre = m[1], nm = m[2].split(" ")[0];
+    const pre = m[1], nm = AMAN.praise[m[2]] ? m[2] : m[2].split(" ")[0];
     if (/^(احسنت|بارك الله|ممتاز|رائع|شاطر|برافو)/.test(pre)) {
       if (AMAN.praise[nm]) return [AMAN.praise[nm]];
       if (/وبارك الله|بارك الله/.test(pre)) return [AGEN["احسنت وبارك الله فيك"]].filter(Boolean);
@@ -139,7 +139,7 @@ window.__hg = { clipFor, clipsFor: (t) => clipsFor(t), speak: (t) => speak(t) };
 function stopVoice() { AQ = []; try { if (AEL) AEL.pause(); } catch { /* */ } }
 function nextClip() {
   const fn = AQ.shift(); if (!fn) return;
-  try { AEL.src = "audio/" + fn + "?v=7"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
+  try { AEL.src = "audio/" + fn + "?v=8"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
 }
 function speak(text) {
   if (muted) return;
