@@ -118,10 +118,35 @@ let CHILD = "";
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const CHEERS_N = ["أحسنت يا {n}", "بارك الله فيك يا {n}", "ممتاز يا {n}", "رائع يا {n}", "شاطر يا {n}", "برافو يا {n}", "أحسنت وبارك الله فيك يا {n}"];
 const TRY_N = ["حاول مرة ثانية يا {n}", "لا بأس يا {n}، جرّب مرة أخرى", "أنت تستطيع يا {n}"];
-const cheer = () => CHEERS_N[rnd(CHEERS_N.length)].replace("{n}", CHILD);
+const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has && Math.random() < 0.7 ? CHEERS_N[0] : CHEERS_N[rnd(CHEERS_N.length)]).replace("{n}", CHILD); };
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
+/* ---------- أصوات حقيقية مسجّلة (وئام) مع رجوع لصوت الجهاز ---------- */
+let AMAN = null, AEL = null;
+fetch("audio/manifest.json?v=5").then((r) => r.json()).then((m) => { AMAN = m; }).catch(() => { /* */ });
+const anorm = (t) => String(t).replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\u0621-\u064Aa-z0-9 ]/g, "").trim();
+function clipFor(text) {
+  if (!AMAN) return null;
+  const t = anorm(text);
+  if (AMAN.w[t]) return AMAN.w[t];
+  const m = t.match(/^(احسنت|بارك الله|ممتاز|رائع|شاطر|برافو|احسنت وبارك الله).* يا (.+)$/);
+  if (m && AMAN.praise[m[2]]) return AMAN.praise[m[2]];
+  return null;
+}
+window.__hg = { clipFor: (t) => clipFor(t) };
+function playClip(fn) {
+  try {
+    if (!AEL) AEL = new Audio();
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    AEL.pause(); AEL.src = "audio/" + fn + "?v=5"; AEL.currentTime = 0;
+    const p = AEL.play(); if (p && p.catch) p.catch(() => {});
+    return true;
+  } catch { return false; }
+}
 function speak(text) {
-  if (muted || !("speechSynthesis" in window)) return;
+  if (muted) return;
+  const fn = clipFor(text);
+  if (fn && playClip(fn)) return;
+  if (!("speechSynthesis" in window)) return;
   try {
     speechSynthesis.cancel();
     setTimeout(() => {
