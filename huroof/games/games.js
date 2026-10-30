@@ -67,13 +67,18 @@ NOTES.forEach((f, i) => { DEFS["n" + i] = () => wavUrl([{ f, d: .22, v: .5 }, { 
 function makeSnd(name) {
   if (SND[name]) return SND[name];
   const url = DEFS[name]();
-  const els = [0, 1, 2].map(() => { const a = new Audio(url); a.preload = "auto"; a.volume = 1; return a; });
+  const els = [0, 1].map(() => { const a = new Audio(url); a.preload = "auto"; a.volume = 1; return a; });
   return (SND[name] = { els, i: 0 });
 }
 function unlockAudio() {
   if (unlocked) return; unlocked = true;
-  Object.keys(DEFS).forEach((k) => { const sn = makeSnd(k); sn.els.forEach((a) => { try { a.muted = true; const p = a.play(); if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; }); } catch { a.muted = false; } }); });
-  try { if ("speechSynthesis" in window) { speechSynthesis.getVoices(); const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch { /* */ }
+  // خفيف: عنصر واحد لأصوات الحروف والجمل، ولا نولّد كل الأصوات دفعة واحدة
+  try { if (!AEL) AEL = new Audio(); AEL.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA="; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
+  try { if ("speechSynthesis" in window) speechSynthesis.getVoices(); } catch { /* */ }
+  // تسخين الأصوات تدريجياً في أوقات الفراغ (صوت كل 150ms) بدل تجميد الشاشة
+  const names = Object.keys(DEFS); let i = 0;
+  const step = () => { if (i >= names.length) return; try { makeSnd(names[i++]); } catch { /* */ } setTimeout(step, 150); };
+  setTimeout(step, 600);
 }
 function play(name) {
   if (muted) return;
@@ -122,7 +127,7 @@ const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
 /* ---------- أصوات حقيقية مسجّلة (وئام) مع رجوع لصوت الجهاز ---------- */
 let AMAN = null, AEL = null;
-fetch("audio/manifest.json?v=5").then((r) => r.json()).then((m) => { AMAN = m; }).catch(() => { /* */ });
+fetch("audio/manifest.json?v=6").then((r) => r.json()).then((m) => { AMAN = m; }).catch(() => { /* */ });
 const anorm = (t) => String(t).replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\u0621-\u064Aa-z0-9 ]/g, "").trim();
 function clipFor(text) {
   if (!AMAN) return null;
@@ -132,12 +137,12 @@ function clipFor(text) {
   if (m && AMAN.praise[m[2]]) return AMAN.praise[m[2]];
   return null;
 }
-window.__hg = { clipFor: (t) => clipFor(t) };
+window.__hg = { clipFor: (t) => clipFor(t), speak: (t) => speak(t) };
 function playClip(fn) {
   try {
     if (!AEL) AEL = new Audio();
     if ("speechSynthesis" in window) speechSynthesis.cancel();
-    AEL.pause(); AEL.src = "audio/" + fn + "?v=5"; AEL.currentTime = 0;
+    AEL.pause(); AEL.src = "audio/" + fn + "?v=6"; AEL.currentTime = 0;
     const p = AEL.play(); if (p && p.catch) p.catch(() => {});
     return true;
   } catch { return false; }

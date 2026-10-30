@@ -6,7 +6,7 @@ html, body { margin: 0; min-height: 100%; }
 body { font-family: "Amiri", "Noto Naskh Arabic", serif; color: var(--ink); background: linear-gradient(180deg, #CFE8FF 0%, #EAF4FF 45%, #FFF7E6 100%); min-height: 100vh; min-height: 100dvh; overflow-x: hidden; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.cloud { position: absolute; width: 140px; height: 46px; background: #fff; border-radius: 99px; opacity: .8; animation: drift 60s linear infinite; }
+.cloud { position: absolute; width: 140px; height: 46px; background: #fff; border-radius: 99px; opacity: .8; animation: drift 60s linear infinite; will-change: transform; }
 .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
 .cloud::before { width: 62px; height: 62px; top: -30px; right: 24px; }
 .cloud::after { width: 48px; height: 48px; top: -20px; right: 74px; }
@@ -23,7 +23,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 
 /* الصفحة الرئيسية */
 .hero { text-align: center; padding: 6px 0 14px; }
-.mascot { font-size: 84px; line-height: 1; display: inline-block; animation: bob 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .12)); }
+.mascot { font-size: 84px; line-height: 1; display: inline-block; animation: bob 2.4s ease-in-out infinite; }
 @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
 .hero h1 { margin: 4px 0 2px; font-size: 38px; line-height: 1.25; color: var(--pri); text-shadow: 0 3px 0 #fff; }
 .hero p { margin: 0; font-size: 20px; color: #5B4A82; }
@@ -31,7 +31,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 .gcard { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 18px 10px 14px; border-radius: 24px; color: #fff; text-align: center; box-shadow: 0 6px 0 rgba(0, 0, 0, .16), 0 14px 24px rgba(60, 30, 120, .16); transition: transform .15s; overflow: hidden; }
 .gcard:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .16); }
 .gcard::after { content: ""; position: absolute; width: 120px; height: 120px; border-radius: 50%; background: rgba(255, 255, 255, .16); top: -40px; left: -30px; }
-.gcard .ic { font-size: 56px; line-height: 1.1; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .18)); position: relative; z-index: 1; }
+.gcard .ic { font-size: 56px; line-height: 1.1; position: relative; z-index: 1; }
 .gcard b { font-size: 24px; position: relative; z-index: 1; }
 .gcard small { font-size: 16px; opacity: .95; line-height: 1.4; position: relative; z-index: 1; }
 .gcard .st { margin-top: 6px; background: rgba(255, 255, 255, .24); border-radius: 99px; padding: 2px 12px; font-size: 18px; letter-spacing: 2px; position: relative; z-index: 1; }
@@ -184,7 +184,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 .catcard { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 26px; color: #fff; text-align: right; box-shadow: 0 6px 0 rgba(0, 0, 0, .16), 0 14px 24px rgba(60, 30, 120, .16); position: relative; overflow: hidden; }
 .catcard:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .16); }
 .catcard::after { content: ""; position: absolute; width: 130px; height: 130px; border-radius: 50%; background: rgba(255, 255, 255, .15); top: -50px; left: -30px; }
-.catcard .ci { font-size: 54px; line-height: 1; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .2)); position: relative; z-index: 1; }
+.catcard .ci { font-size: 54px; line-height: 1; position: relative; z-index: 1; }
 .catcard .ct { flex: 1; display: grid; gap: 3px; position: relative; z-index: 1; }
 .catcard .ct b { font-size: 26px; } .catcard .ct small { font-size: 16px; opacity: .95; }
 .cbar { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .3); overflow: hidden; margin-top: 4px; }
