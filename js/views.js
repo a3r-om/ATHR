@@ -445,6 +445,28 @@
         </article>`;
     };
 
+    // باقة مميزة تظهر أول بطاقة في «الأطقم» (مثل باقة اليوم الوطني): منتج الباقة + صور مكوناتها
+    V.featuredSetCard = function (v) {
+        const f = (v.cfg.sales || {}).featured_set;
+        if (!f || !f.enabled || !f.id) return "";
+        const pkg = v.byId.get(f.id);
+        if (!pkg || pkg.is_available === false) return "";
+        const parts = (f.items || []).map((id) => v.byId.get(id)).filter(Boolean).slice(0, 3);
+        if (!parts.length) return "";
+        const old = Number(pkg.old_price) || 0;
+        const pct = old > Number(pkg.price) ? Math.round((1 - Number(pkg.price) / old) * 100) : 0;
+        const imgs = parts.map((x) => `<span>${V.img(x) ? `<img src="${esc(V.img(x))}" alt="" loading="lazy" decoding="async" width="300" height="375">` : ""}</span>`).join("<i aria-hidden=\"true\">+</i>");
+        return `<article class="set-card set-feature">
+            <a class="set-imgs n${parts.length}" href="${ATHR.url.product(pkg)}" aria-label="${esc(V.label(v, pkg))}">${imgs}</a>
+            <div class="set-body">
+                <b class="set-name">${esc(V.pname(pkg))}</b>
+                <div class="price"><b>${local(v, Number(pkg.price))}</b>${old > Number(pkg.price) ? `<s>${local(v, old)}</s>` : ""}</div>
+                ${pct ? `<span class="set-save">${esc(t("وفّر {pct}% على الباقة كاملة", { pct }))}</span>` : ""}
+            </div>
+            <button class="btn btn-primary btn-sm" type="button" data-add="${esc(pkg.id)}">${esc(t("أضف الباقة"))}</button>
+        </article>`;
+    };
+
     // طقم واحد لكل تصميم (مثلاً: كوب ريال مدريد بلونيه + المحفظة = طقم واحد)
     V.setCards = function (v, max = 12) {
         const seen = new Set();
@@ -456,7 +478,7 @@
             seen.add(key);
             out.push(b);
         });
-        return out.slice(0, max).map((b) => V.bundleCard(v, b)).join("");
+        return V.featuredSetCard(v) + out.slice(0, max).map((b) => V.bundleCard(v, b)).join("");
     };
 
     // عروض الطقم في صفحة المنتج
