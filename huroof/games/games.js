@@ -15,33 +15,96 @@ const first = (w) => norm(w[1][0]);
 const COLORS = ["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444", "#14B8A6", "#F97316"];
 
 /* ---------- الصوت والنطق ---------- */
-let muted = false, actx = null;
+// أصوات مصنوعة بالكود وتُشغَّل بعناصر <audio> (تعمل حتى في وضع الصامت في الآيفون)
+let muted = false;
 try { muted = localStorage.getItem("hg_mute") === "1"; } catch { /* */ }
-function tone(freq, dur = 0.14, type = "sine", delay = 0, vol = 0.16) {
+try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch { /* */ }
+const SR = 22050;
+const SND = {}; // name -> {els:[Audio], i}
+let unlocked = false;
+function wavUrl(parts, dur) {
+  const n = Math.floor(SR * dur), f = new Float32Array(n);
+  for (const p of parts) {
+    const t0 = Math.floor((p.t || 0) * SR), len = Math.floor(p.d * SR), v = p.v == null ? 0.5 : p.v;
+    let ph = 0;
+    for (let i = 0; i < len && t0 + i < n; i++) {
+      const x = i / len, fr = p.f2 ? p.f + (p.f2 - p.f) * x : p.f, vib = p.vib ? Math.sin(i / SR * 40) * p.vib : 0;
+      ph += 2 * Math.PI * (fr + vib) / SR;
+      let s2;
+      if (p.w === "noise") s2 = (Math.random() * 2 - 1);
+      else if (p.w === "square") s2 = Math.sign(Math.sin(ph)) * 0.6;
+      else if (p.w === "saw") s2 = ((ph / Math.PI) % 2) - 1;
+      else s2 = Math.sin(ph) + 0.28 * Math.sin(ph * 2) + 0.1 * Math.sin(ph * 3);
+      const env = Math.min(1, i / (SR * 0.006)) * Math.pow(1 - x, p.dec == null ? 1.6 : p.dec);
+      f[t0 + i] += s2 * env * v;
+    }
+  }
+  let mx = 0; for (let i = 0; i < n; i++) mx = Math.max(mx, Math.abs(f[i]));
+  const k = mx > 0.95 ? 0.95 / mx : 1;
+  const buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf);
+  const wr = (o, str) => { for (let i = 0; i < str.length; i++) dv.setUint8(o + i, str.charCodeAt(i)); };
+  wr(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); wr(8, "WAVE"); wr(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, SR, true); dv.setUint32(28, SR * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); wr(36, "data"); dv.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f[i] * k)) * 32767, true);
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+const NOTES = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568, 1760, 2093, 2349];
+const DEFS = {
+  ok: () => wavUrl([{ f: 523, d: .16, t: 0 }, { f: 659, d: .16, t: .09 }, { f: 784, d: .16, t: .18 }, { f: 1047, d: .34, t: .27 }, { f: 2093, d: .2, t: .3, v: .15 }], .7),
+  bad: () => wavUrl([{ f: 300, f2: 190, d: .22, t: 0, w: "saw", v: .35 }, { f: 220, f2: 130, d: .3, t: .2, w: "saw", v: .35 }], .55),
+  tap: () => wavUrl([{ f: 900, f2: 700, d: .05, v: .35, dec: 2.5 }], .08),
+  pop: () => wavUrl([{ f: 380, f2: 1100, d: .1, v: .5, dec: 1.2 }, { f: 1500, d: .05, t: .06, v: .2 }], .2),
+  flip: () => wavUrl([{ f: 320, f2: 520, d: .07, w: "square", v: .2 }], .12),
+  star: () => wavUrl([{ f: 1319, d: .14, t: 0 }, { f: 1568, d: .14, t: .08 }, { f: 2093, d: .28, t: .16 }], .5),
+  win: () => wavUrl([{ f: 523, d: .14, t: 0 }, { f: 523, d: .14, t: .14 }, { f: 523, d: .14, t: .28 }, { f: 659, d: .2, t: .42 }, { f: 784, d: .2, t: .6 }, { f: 1047, d: .6, t: .8 }, { f: 1319, d: .6, t: .8, v: .25 }], 1.5),
+  unlock: () => wavUrl([{ f: 392, d: .12, t: 0 }, { f: 523, d: .12, t: .1 }, { f: 659, d: .12, t: .2 }, { f: 784, d: .12, t: .3 }, { f: 1047, d: .5, t: .4 }, { f: 1319, d: .5, t: .4, v: .3 }, { f: 1568, d: .5, t: .4, v: .25 }], 1.0),
+  whoosh: () => wavUrl([{ f: 100, d: .3, w: "noise", v: .35, dec: 1 }, { f: 300, f2: 900, d: .3, v: .12, dec: .8 }], .35),
+  boing: () => wavUrl([{ f: 180, f2: 520, d: .28, v: .5, vib: 25, dec: 1 }], .32),
+  coin: () => wavUrl([{ f: 988, d: .08, t: 0, w: "square", v: .25 }, { f: 1319, d: .3, t: .07, w: "square", v: .25 }], .4),
+  tick: () => wavUrl([{ f: 1400, d: .03, v: .3, dec: 2 }], .05),
+  clap: () => wavUrl([{ f: 800, d: .06, w: "noise", v: .4, dec: 2 }, { f: 800, d: .06, t: .12, w: "noise", v: .4, dec: 2 }, { f: 800, d: .08, t: .24, w: "noise", v: .4, dec: 2 }], .4)
+};
+NOTES.forEach((f, i) => { DEFS["n" + i] = () => wavUrl([{ f, d: .22, v: .5 }, { f: f * 2, d: .1, v: .1 }], .28); });
+function makeSnd(name) {
+  if (SND[name]) return SND[name];
+  const url = DEFS[name]();
+  const els = [0, 1, 2].map(() => { const a = new Audio(url); a.preload = "auto"; a.volume = 1; return a; });
+  return (SND[name] = { els, i: 0 });
+}
+function unlockAudio() {
+  if (unlocked) return; unlocked = true;
+  Object.keys(DEFS).forEach((k) => { const sn = makeSnd(k); sn.els.forEach((a) => { try { a.muted = true; const p = a.play(); if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; }); } catch { a.muted = false; } }); });
+  try { if ("speechSynthesis" in window) { speechSynthesis.getVoices(); const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch { /* */ }
+}
+function play(name) {
   if (muted) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === "suspended") actx.resume();
-    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + delay;
-    o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+    const sn = makeSnd(name), a = sn.els[sn.i++ % sn.els.length];
+    a.muted = false; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {});
   } catch { /* */ }
 }
+const buzz = (p) => { try { if (!muted && navigator.vibrate) navigator.vibrate(p); } catch { /* */ } };
 const sfx = {
-  ok() { tone(660, .12); tone(880, .16, "sine", .1); },
-  bad() { tone(180, .22, "sawtooth", 0, .1); },
-  pop() { tone(520, .08, "triangle"); tone(780, .08, "triangle", .05); },
-  flip() { tone(400, .05, "triangle"); },
-  win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .22, "sine", i * .12)); }
+  ok() { play("ok"); buzz(25); }, bad() { play("bad"); buzz([60, 40, 60]); }, pop() { play("pop"); }, flip() { play("flip"); },
+  win() { play("win"); buzz([40, 30, 40, 30, 90]); }, tap() { play("tap"); }, star() { play("star"); }, unlock() { play("unlock"); buzz([50, 40, 50, 40, 120]); },
+  whoosh() { play("whoosh"); }, boing() { play("boing"); }, coin() { play("coin"); }, tick() { play("tick"); }, clap() { play("clap"); },
+  note(i) { play("n" + (Math.max(0, i) % NOTES.length)); }
 };
+["pointerdown", "touchstart", "click", "keydown"].forEach((ev) => addEventListener(ev, unlockAudio, { once: false, passive: true }));
+// أي زر يُضغط يصدر نقرة خفيفة (والألعاب تضيف أصواتها الخاصة)
+addEventListener("pointerdown", (e) => { const b = e.target.closest && e.target.closest("button, a.pill, a.cta"); if (b && !b.classList.contains("opt") && !b.classList.contains("tile") && !b.classList.contains("ord") && !b.classList.contains("bubble") && !b.classList.contains("card") && !b.classList.contains("seqbtn")) sfx.tap(); }, true);
+let ARVOICE = null;
+function pickVoice() { try { const vs = speechSynthesis.getVoices(); ARVOICE = vs.find((v) => /^ar/i.test(v.lang)) || null; } catch { /* */ } }
+try { if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } } catch { /* */ }
+const CHEERS = ["أحسنت", "ممتاز", "رائع", "برافو", "شاطر"];
 function speak(text) {
   if (muted || !("speechSynthesis" in window)) return;
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "ar-SA"; u.rate = 0.85; u.pitch = 1.1;
-    speechSynthesis.speak(u);
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = (ARVOICE && ARVOICE.lang) || "ar-SA"; if (ARVOICE) u.voice = ARVOICE; u.rate = 0.85; u.pitch = 1.1; u.volume = 1;
+      speechSynthesis.speak(u);
+    }, 60);
   } catch { /* */ }
 }
 
@@ -71,31 +134,58 @@ function loop() {
 let prog = {};
 try { prog = JSON.parse(localStorage.getItem("hg_prog") || "{}") || {}; } catch { prog = {}; }
 const saveStars = (id, n) => { if ((prog[id] || 0) < n) { prog[id] = n; try { localStorage.setItem("hg_prog", JSON.stringify(prog)); } catch { /* */ } } };
-const totalStars = () => Object.values(prog).reduce((a, b) => a + b, 0);
+let dly = { last: "", streak: 0, done: 0 };
+try { dly = Object.assign(dly, JSON.parse(localStorage.getItem("hg_daily") || "{}")); } catch { /* */ }
+const saveDly = () => { try { localStorage.setItem("hg_daily", JSON.stringify(dly)); } catch { /* */ } };
+const totalStars = () => Object.values(prog).reduce((a, b) => a + b, 0) + dly.done * 3;
+const CHARS = [["🐣", "كتكوت"], ["🐰", "أرنوب"], ["🐱", "قطوة"], ["🐶", "جرجور"], ["🐼", "باندا"], ["🦊", "ثعلوب"], ["🦁", "الأسد ليو"], ["🐯", "نمرود"], ["🐨", "كوالا"], ["🐸", "قفقف"], ["🐵", "قرقور"], ["🦄", "يونيكورن"], ["🐬", "دلفين"], ["🐙", "أخطوط"], ["🦋", "فراشة"], ["🐢", "سلحوف"], ["🦉", "بومة الحكمة"], ["🐘", "دمبو"], ["🦒", "زرافة"], ["🐧", "بطريق"], ["🦕", "ديناصور"], ["🐲", "التنين"], ["🚀", "الصاروخ"], ["👑", "تاج الأبطال"]];
+const thr = (k) => k * 3;
+const unlockedCount = () => CHARS.filter((_, k) => totalStars() >= thr(k)).length;
+function checkUnlock(before) {
+  const after = totalStars(), nw = CHARS.map((c, k) => [c, k]).filter(([, k]) => thr(k) > before && thr(k) <= after);
+  if (!nw.length) return;
+  const [c] = nw[nw.length - 1];
+  setTimeout(() => {
+    sfx.unlock(); confetti(innerWidth / 2, innerHeight / 2, 100);
+    const el = document.createElement("div"); el.className = "unlock";
+    el.innerHTML = `<div class="u-in"><div class="u-e">${c[0]}</div><b>فتحت شخصية جديدة!</b><span>${c[1]}</span><small>شاهدها في «حديقة الشخصيات»</small></div>`;
+    document.body.appendChild(el); el.onclick = () => el.remove(); setTimeout(() => el.remove(), 4500);
+  }, 900);
+}
 
 /* ---------- الألعاب ---------- */
-const CATS = [["abc", "🔤 الحروف والكلمات"], ["num", "🔢 الأرقام والحساب"], ["col", "🎨 الألوان والأشكال"], ["ani", "🐾 الحيوانات والمعاني"]];
+const CATS = [["abc", "🔤 الحروف والكلمات"], ["num", "🔢 الأرقام والحساب"], ["col", "🎨 الألوان والأشكال"], ["ani", "🐾 الحيوانات والمعاني"], ["rel", "🕌 القرآن والأدعية"], ["time", "📅 الأيام والأشهر"]];
 const GAMES = [
-  { cat: "abc", id: "letters", ic: "🔤", t: "أين الحرف؟", s: "اسمع الحرف واختره", c: "linear-gradient(135deg,#8B5CF6,#6D3FE0)", run: gLetters },
-  { cat: "abc", id: "first", ic: "🍎", t: "الحرف الأول", s: "بماذا تبدأ الصورة؟", c: "linear-gradient(135deg,#F97316,#EA580C)", run: gFirst },
+  { q: true, cat: "abc", id: "letters", ic: "🔤", t: "أين الحرف؟", s: "اسمع الحرف واختره", c: "linear-gradient(135deg,#8B5CF6,#6D3FE0)", run: gLetters },
+  { q: true, cat: "abc", id: "first", ic: "🍎", t: "الحرف الأول", s: "بماذا تبدأ الصورة؟", c: "linear-gradient(135deg,#F97316,#EA580C)", run: gFirst },
   { cat: "abc", id: "build", ic: "🧩", t: "رتّب الكلمة", s: "كوّن الكلمة من الحروف", c: "linear-gradient(135deg,#10B981,#059669)", run: gBuild },
   { cat: "abc", id: "match", ic: "🔗", t: "وصّل بخط", s: "وصّل الصورة بالكلمة", c: "linear-gradient(135deg,#EC4899,#DB2777)", run: gMatch },
-  { cat: "abc", id: "missing", ic: "✍️", t: "أكمل الكلمة", s: "ما الحرف الناقص؟", c: "linear-gradient(135deg,#3B82F6,#2563EB)", run: gMissing },
+  { q: true, cat: "abc", id: "missing", ic: "✍️", t: "أكمل الكلمة", s: "ما الحرف الناقص؟", c: "linear-gradient(135deg,#3B82F6,#2563EB)", run: gMissing },
   { cat: "abc", id: "memory", ic: "🃏", t: "لعبة الذاكرة", s: "اعثر على الأزواج", c: "linear-gradient(135deg,#14B8A6,#0D9488)", run: gMemory },
   { cat: "abc", id: "bubbles", ic: "🫧", t: "فقاعات الحروف", s: "فرقع الحرف المطلوب", c: "linear-gradient(135deg,#06B6D4,#0891B2)", run: gBubbles },
-  { cat: "num", id: "count", ic: "🔢", t: "عدّ معي", s: "كم عددها؟", c: "linear-gradient(135deg,#F59E0B,#D97706)", run: gCount },
-  { cat: "num", id: "add", ic: "➕", t: "الجمع", s: "اجمع الأعداد", c: "linear-gradient(135deg,#22C55E,#15803D)", run: gAdd },
-  { cat: "num", id: "sub", ic: "➖", t: "الطرح", s: "اطرح الأعداد", c: "linear-gradient(135deg,#F43F5E,#BE123C)", run: gSub },
-  { cat: "num", id: "seq", ic: "🔟", t: "أكمل العدد", s: "ما الرقم الناقص؟", c: "linear-gradient(135deg,#6366F1,#4338CA)", run: gSeq },
-  { cat: "num", id: "cmp", ic: "⚖️", t: "أيهما أكثر؟", s: "قارن بين المجموعتين", c: "linear-gradient(135deg,#0EA5E9,#0369A1)", run: gCompare },
+  { q: true, cat: "num", id: "count", ic: "🔢", t: "عدّ معي", s: "كم عددها؟", c: "linear-gradient(135deg,#F59E0B,#D97706)", run: gCount },
+  { q: true, cat: "num", id: "add", ic: "➕", t: "الجمع", s: "اجمع الأعداد", c: "linear-gradient(135deg,#22C55E,#15803D)", run: gAdd },
+  { q: true, cat: "num", id: "sub", ic: "➖", t: "الطرح", s: "اطرح الأعداد", c: "linear-gradient(135deg,#F43F5E,#BE123C)", run: gSub },
+  { q: true, cat: "num", id: "seq", ic: "🔟", t: "أكمل العدد", s: "ما الرقم الناقص؟", c: "linear-gradient(135deg,#6366F1,#4338CA)", run: gSeq },
+  { q: true, cat: "num", id: "cmp", ic: "⚖️", t: "أيهما أكثر؟", s: "قارن بين المجموعتين", c: "linear-gradient(135deg,#0EA5E9,#0369A1)", run: gCompare },
   { cat: "num", id: "order", ic: "🏃", t: "رتّب الأرقام", s: "المس الأرقام بالترتيب", c: "linear-gradient(135deg,#D946EF,#A21CAF)", run: gOrder },
-  { cat: "col", id: "color", ic: "🌈", t: "ما هذا اللون؟", s: "تعرّف على الألوان", c: "linear-gradient(135deg,#F97316,#DB2777)", run: gColor },
-  { cat: "col", id: "coloritem", ic: "🍓", t: "أي شيء بهذا اللون؟", s: "اختر الشيء الملوّن", c: "linear-gradient(135deg,#EF4444,#B91C1C)", run: gColorItem },
-  { cat: "col", id: "shape", ic: "🔷", t: "ما هذا الشكل؟", s: "دائرة، مربع، مثلث...", c: "linear-gradient(135deg,#3B82F6,#1D4ED8)", run: gShape },
-  { cat: "ani", id: "animal", ic: "🦁", t: "اسم الحيوان", s: "ما اسم هذا الحيوان؟", c: "linear-gradient(135deg,#EAB308,#A16207)", run: gAnimal },
-  { cat: "ani", id: "sound", ic: "🔊", t: "ما صوته؟", s: "صوت كل حيوان", c: "linear-gradient(135deg,#14B8A6,#0F766E)", run: gSound },
-  { cat: "ani", id: "shadow", ic: "👤", t: "من هو الظل؟", s: "خمّن الحيوان من ظله", c: "linear-gradient(135deg,#475569,#1E293B)", run: gShadow },
-  { cat: "ani", id: "opp", ic: "↔️", t: "الأضداد", s: "ما عكس الكلمة؟", c: "linear-gradient(135deg,#A855F7,#7E22CE)", run: gOpposite }
+  { q: true, cat: "col", id: "color", ic: "🌈", t: "ما هذا اللون؟", s: "تعرّف على الألوان", c: "linear-gradient(135deg,#F97316,#DB2777)", run: gColor },
+  { q: true, cat: "col", id: "coloritem", ic: "🍓", t: "أي شيء بهذا اللون؟", s: "اختر الشيء الملوّن", c: "linear-gradient(135deg,#EF4444,#B91C1C)", run: gColorItem },
+  { q: true, cat: "col", id: "shape", ic: "🔷", t: "ما هذا الشكل؟", s: "دائرة، مربع، مثلث...", c: "linear-gradient(135deg,#3B82F6,#1D4ED8)", run: gShape },
+  { q: true, cat: "ani", id: "animal", ic: "🦁", t: "اسم الحيوان", s: "ما اسم هذا الحيوان؟", c: "linear-gradient(135deg,#EAB308,#A16207)", run: gAnimal },
+  { q: true, cat: "ani", id: "sound", ic: "🔊", t: "ما صوته؟", s: "صوت كل حيوان", c: "linear-gradient(135deg,#14B8A6,#0F766E)", run: gSound },
+  { q: true, cat: "ani", id: "shadow", ic: "👤", t: "من هو الظل؟", s: "خمّن الحيوان من ظله", c: "linear-gradient(135deg,#475569,#1E293B)", run: gShadow },
+  { q: true, cat: "ani", id: "opp", ic: "↔️", t: "الأضداد", s: "ما عكس الكلمة؟", c: "linear-gradient(135deg,#A855F7,#7E22CE)", run: gOpposite },
+  { cat: "rel", id: "surahorder", ic: "📖", t: "رتّب آيات السورة", s: "الإخلاص، الكوثر، العصر...", c: "linear-gradient(135deg,#059669,#065F46)", run: gSurahOrder },
+  { q: true, cat: "rel", id: "ayahend", ic: "✨", t: "أكمل الآية", s: "ما الكلمة الناقصة؟", c: "linear-gradient(135deg,#0D9488,#115E59)", run: gAyahEnd },
+  { q: true, cat: "rel", id: "whichsurah", ic: "🕋", t: "من أي سورة؟", s: "اعرف السورة من آيتها", c: "linear-gradient(135deg,#16A34A,#14532D)", run: gWhichSurah },
+  { q: true, cat: "rel", id: "duawhen", ic: "🤲", t: "ماذا نقول؟", s: "الدعاء المناسب لكل موقف", c: "linear-gradient(135deg,#7C3AED,#4C1D95)", run: gDuaWhen },
+  { q: true, cat: "rel", id: "duaend", ic: "🌙", t: "أكمل الدعاء", s: "ما الكلمة الناقصة؟", c: "linear-gradient(135deg,#6366F1,#3730A3)", run: gDuaEnd },
+  { cat: "time", id: "dayorder", ic: "📅", t: "رتّب أيام الأسبوع", s: "الأحد، الاثنين...", c: "linear-gradient(135deg,#F59E0B,#B45309)", run: gDayOrder },
+  { q: true, cat: "time", id: "daynext", ic: "🗓️", t: "ما اليوم؟", s: "قبل وبعد وترتيب الأيام", c: "linear-gradient(135deg,#EA580C,#9A3412)", run: gDayNext },
+  { cat: "time", id: "monthorder", ic: "🌙", t: "رتّب الأشهر الهجرية", s: "محرم، صفر، ربيع...", c: "linear-gradient(135deg,#0EA5E9,#075985)", run: gMonthOrder },
+  { q: true, cat: "time", id: "monthnext", ic: "🌛", t: "ما الشهر؟", s: "الأشهر الهجرية بالترتيب", c: "linear-gradient(135deg,#2563EB,#1E3A8A)", run: gMonthNext },
+  { cat: "time", id: "gregorder", ic: "📆", t: "رتّب أشهر السنة", s: "يناير، فبراير، مارس...", c: "linear-gradient(135deg,#DB2777,#831843)", run: gGregOrder }
 ];
 let cleanup = null;
 function go(fn) { if (cleanup) { cleanup(); cleanup = null; } try { speechSynthesis.cancel(); } catch { /* */ } fn(); window.scrollTo(0, 0); }
@@ -104,10 +194,14 @@ function home() {
   app.innerHTML = `
     <div class="top"><a class="pill" href="../">🏪 المتجر</a><button class="pill btn" id="mute" aria-label="الصوت">${muted ? "🔇" : "🔊"}</button><span class="pill">⭐ ${totalStars()}</span></div>
     <div class="hero"><div class="mascot">🦉</div><h1>ألعاب حروف وألوان</h1><p>العب وتعلّم واجمع النجوم!</p></div>
+    <div class="feat">
+      <button class="gcard daily" data-g="daily"><span class="ic">📅</span><b>التحدي اليومي</b><small>${dly.last === todayKey() ? "✅ أنجزته اليوم، عُد غداً" : "10 أسئلة جديدة كل يوم + 3 نجوم هدية"}</small><span class="st">🔥 ${streakNow()} ${streakNow() === 1 ? "يوم" : "أيام"} متتالية</span></button>
+      <button class="gcard garden" data-g="garden"><span class="ic">🏆</span><b>حديقة الشخصيات</b><small>اجمع النجوم وافتح شخصيات جديدة</small><span class="st">${unlockedCount()} / ${CHARS.length}</span></button>
+    </div>
     ${CATS.map(([k, name]) => `<h2 class="cat">${name}</h2><div class="grid">${GAMES.filter((g) => g.cat === k).map((g) => `<button class="gcard" data-g="${g.id}" style="background:${g.c}"><span class="ic">${g.ic}</span><b>${g.t}</b><small>${g.s}</small><span class="st">${stars(prog[g.id] || 0)}</span></button>`).join("")}</div>`).join("")}
     <a class="cta" href="../#stories">📚 أعجبتك الألعاب؟ شاهد <b>قصصنا باسم طفلك</b></a>`;
   $("#mute").onclick = () => { muted = !muted; try { localStorage.setItem("hg_mute", muted ? "1" : "0"); } catch { /* */ } $("#mute").textContent = muted ? "🔇" : "🔊"; };
-  app.querySelectorAll(".gcard").forEach((b) => b.onclick = () => { tone(600, .08); const g = GAMES.find((x) => x.id === b.dataset.g); go(() => frame(g)); });
+  app.querySelectorAll(".gcard").forEach((b) => b.onclick = () => { sfx.whoosh(); if (b.dataset.g === "garden") return go(garden); const g = b.dataset.g === "daily" ? DAILYGAME : GAMES.find((x) => x.id === b.dataset.g); go(() => frame(g)); });
 }
 const stars = (n) => "⭐".repeat(n) + "☆".repeat(3 - n);
 
@@ -128,8 +222,9 @@ function setDots(n, done, curI) {
 function finish(stage, score, total, msg = "") {
   const ratio = score / total;
   const st = ratio >= 0.9 ? 3 : ratio >= 0.65 ? 2 : ratio >= 0.35 ? 1 : 0;
-  saveStars(cur.id, st);
-  sfx.win(); confetti(innerWidth / 2, innerHeight / 3, 120); setTimeout(() => confetti(innerWidth * .2, innerHeight / 2, 60), 250); setTimeout(() => confetti(innerWidth * .8, innerHeight / 2, 60), 450);
+  const before = totalStars();
+  saveStars(cur.id, st); checkUnlock(before);
+  sfx.win(); setTimeout(() => sfx.clap(), 700); confetti(innerWidth / 2, innerHeight / 3, 120); setTimeout(() => confetti(innerWidth * .2, innerHeight / 2, 60), 250); setTimeout(() => confetti(innerWidth * .8, innerHeight / 2, 60), 450);
   stage.innerHTML = `<div class="win"><div class="trophy">${st === 3 ? "🏆" : st === 2 ? "🥈" : st === 1 ? "🥉" : "💪"}</div>
     <h2>${st === 3 ? "ممتاز! أنت بطل!" : st === 2 ? "أحسنت!" : st === 1 ? "جميل! حاول مرة ثانية" : "لا بأس، جرّب مرة أخرى"}</h2>
     <div class="stars">${[1, 2, 3].map((i) => `<span class="${i <= st ? "" : "off"}">⭐</span>`).join("")}</div>
@@ -140,26 +235,29 @@ function finish(stage, score, total, msg = "") {
 }
 
 /* ---------- محرّك الأسئلة ---------- */
+const DAILY = { active: false, n: 2, offset: 0, totalAll: 10, cb: null };
 function quiz(stage, rounds, make, opt = {}) {
   let i = 0, score = 0, lock = false;
-  const total = rounds;
+  const total = DAILY.active ? DAILY.n : rounds;
   function next() {
-    if (i >= total) return finish(stage, score, total);
-    setDots(total, i, i);
+    if (i >= total) { if (DAILY.active) { const cb = DAILY.cb; return cb(score); } return finish(stage, score, total); }
+    if (DAILY.active) setDots(DAILY.totalAll, DAILY.offset + i, DAILY.offset + i); else setDots(total, i, i);
     const q = make(i);
     let firstTry = true;
-    stage.innerHTML = `${q.html}<div class="opts ${q.answers.length === 3 ? "three" : ""}" id="opts">${q.answers.map((a, k) => `<button class="opt ${a.txt ? "txt" : ""}" data-k="${k}">${a.label}</button>`).join("")}</div>`;
+    stage.innerHTML = `${q.html}<div class="opts ${q.one ? "one" : q.answers.length === 3 ? "three" : ""}" id="opts">${q.answers.map((a, k) => `<button class="opt ${a.txt ? "txt" : ""} ${q.one ? "long" : ""}" data-k="${k}">${a.label}</button>`).join("")}</div>`;
     const say = $("#say"); if (say) say.onclick = () => speak(q.say);
     if (q.say) setTimeout(() => speak(q.say), 250);
+    if (q.onload) q.onload();
     lock = false;
     stage.querySelectorAll(".opt").forEach((b) => b.onclick = async () => {
       if (lock) return;
       const a = q.answers[+b.dataset.k];
       if (a.ok) {
-        lock = true; b.classList.add("ok"); sfx.ok(); const sh = stage.querySelector(".shadow"); if (sh) sh.classList.remove("shadow");
+        lock = true; b.classList.add("ok"); sfx.ok();
+        const sh = stage.querySelector(".shadow"); if (sh) { sh.classList.remove("shadow"); setTimeout(() => sfx.whoosh(), 120); }
         const r = b.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top, 28);
-        if (firstTry) score++;
-        if (q.after) speak(q.after);
+        if (firstTry) { score++; setTimeout(() => sfx.star(), 260); }
+        if (q.after) speak(q.after); else if (Math.random() < 0.45) speak(CHEERS[rnd(CHEERS.length)]);
         await wait(q.after ? 1300 : 900); i++; next();
       } else { b.classList.add("no"); sfx.bad(); firstTry = false; setTimeout(() => b.classList.remove("no"), 450); }
     });
@@ -205,7 +303,7 @@ function gCount(stage) {
   quiz(stage, 10, (i) => {
     const n = 1 + rnd(10), e = em[rnd(em.length)];
     const opts = shuffle([n, ...pick([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((x) => x !== n), 2)]);
-    return { say: "كم عددها؟", html: `<div class="count-box">${Array.from({ length: n }, (_, k) => `<span style="animation-delay:${k * 60}ms">${e}</span>`).join("")}</div><div class="prompt">كم عددها؟</div>`, answers: opts.map((x) => ({ label: lbl(x), ok: x === n })) };
+    return { onload: () => { for (let k = 0; k < n; k++) setTimeout(() => sfx.note(k), 120 + k * 150); }, say: "كم عددها؟", html: `<div class="count-box">${Array.from({ length: n }, (_, k) => `<span style="animation-delay:${k * 60}ms">${e}</span>`).join("")}</div><div class="prompt">كم عددها؟</div>`, answers: opts.map((x) => ({ label: lbl(x), ok: x === n })) };
   });
 }
 
@@ -227,7 +325,7 @@ function gBuild(stage) {
       if (t.classList.contains("used")) return;
       if (t.dataset.c === chars[filled]) {
         const slot = stage.querySelectorAll(".slot")[filled];
-        slot.textContent = t.dataset.c; slot.classList.add("f"); t.classList.add("used"); sfx.pop(); filled++;
+        slot.textContent = t.dataset.c; slot.classList.add("f"); t.classList.add("used"); sfx.note(filled); filled++;
         if (filled === chars.length) {
           if (!mistakes) score++;
           sfx.ok(); speak(word); confetti(innerWidth / 2, innerHeight / 3, 60);
@@ -287,7 +385,7 @@ function gMatch(stage) {
       e.addEventListener("pointerdown", (ev) => {
         if (e.classList.contains("done")) return;
         e.setPointerCapture(ev.pointerId); drag = { el: e, moved: false };
-        E.forEach((x) => x.classList.remove("sel")); e.classList.add("sel"); selected = e; speak(e.dataset.w);
+        E.forEach((x) => x.classList.remove("sel")); e.classList.add("sel"); selected = e; sfx.tap(); speak(e.dataset.w);
       });
       e.addEventListener("pointermove", (ev) => {
         if (!drag || drag.el !== e) return; drag.moved = true;
@@ -321,7 +419,7 @@ function gMemory(stage) {
     if (opened.length === 2) {
       moves++; $("#mv").textContent = moves; lock = true;
       const [a, b] = opened.map((x) => cards[+x.dataset.i]);
-      if (a.k === b.k) { opened.forEach((x) => x.classList.add("done")); matched++; $("#pr").textContent = matched; sfx.ok(); speak(a.k); confetti(innerWidth / 2, innerHeight / 2, 30); opened = []; lock = false; if (matched === 6) { await wait(900); finish(stage, Math.max(0, 14 - moves), 14, `أنهيتها في ${moves} حركة`); } }
+      if (a.k === b.k) { opened.forEach((x) => x.classList.add("done")); matched++; $("#pr").textContent = matched; sfx.ok(); setTimeout(() => sfx.star(), 200); speak(a.k); confetti(innerWidth / 2, innerHeight / 2, 30); opened = []; lock = false; if (matched === 6) { await wait(900); finish(stage, Math.max(0, 14 - moves), 14, `أنهيتها في ${moves} حركة`); } }
       else { await wait(900); opened.forEach((x) => x.classList.remove("flip")); opened = []; lock = false; }
     }
   });
@@ -351,9 +449,9 @@ function gBubbles(stage) {
       if (b.classList.contains("pop")) return;
       b.classList.add("pop"); setTimeout(() => b.remove(), 260);
       if (L === target) {
-        score++; popped++; $("#sc").textContent = score; sfx.pop(); const r = b.getBoundingClientRect(); confetti(r.left + 40, r.top + 40, 14);
+        score++; popped++; $("#sc").textContent = score; sfx.note(2 + rnd(9)); const r = b.getBoundingClientRect(); confetti(r.left + 40, r.top + 40, 14);
         if (popped % 5 === 0) { target = LETTERS[rnd(28)][0]; $("#tg").textContent = target; speak(`الآن فرقع حرف ${LN[target]}`); }
-      } else { sfx.bad(); score = Math.max(0, score - 1); $("#sc").textContent = score; }
+      } else { sfx.boing(); score = Math.max(0, score - 1); $("#sc").textContent = score; }
     };
     area.appendChild(b);
     setTimeout(() => b.remove(), 9000);
@@ -403,7 +501,7 @@ function gOrder(stage) {
     const n = sizes[r]; let need = 1;
     stage.innerHTML = `<div class="prompt">المس الأرقام من <b>1</b> إلى <b>${n}</b> بالترتيب</div><div class="ordgrid">${shuffle(Array.from({ length: n }, (_, i) => i + 1)).map((x) => `<button class="ord" data-n="${x}" style="background:${COLORS[x % COLORS.length]}">${x}</button>`).join("")}</div>`;
     stage.querySelectorAll(".ord").forEach((b) => b.onclick = async () => {
-      if (+b.dataset.n === need) { b.classList.add("hit"); sfx.pop(); speak(String(need)); need++; if (need > n) { sfx.ok(); confetti(innerWidth / 2, innerHeight / 3, 50); await wait(900); r++; next(); } }
+      if (+b.dataset.n === need) { b.classList.add("hit"); sfx.note(need - 1); speak(String(need)); need++; if (need > n) { sfx.ok(); confetti(innerWidth / 2, innerHeight / 3, 50); await wait(900); r++; next(); } }
       else { mistakes++; sfx.bad(); b.classList.add("no"); setTimeout(() => b.classList.remove("no"), 400); }
     });
   }
@@ -467,6 +565,177 @@ function gOpposite(stage) {
     const p = seq[i], flip = Math.random() < 0.5, q = flip ? p[1] : p[0], a = flip ? p[0] : p[1];
     const others = pick(OPP.flatMap((x) => x).filter((x) => x !== q && x !== a), 2);
     return { say: `ما عكس ${q}؟`, after: `عكس ${q} هو ${a}`, html: `<div class="bigw">${q}</div><div class="prompt">ما عكس هذه الكلمة؟</div>`, answers: shuffle([a, ...others]).map((x) => ({ label: lbl(x), txt: true, ok: x === a })) };
+  });
+}
+
+/* ===== التحدي اليومي ===== */
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const yesterdayKey = () => { const d = new Date(Date.now() - 86400000); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const streakNow = () => (dly.last === todayKey() || dly.last === yesterdayKey()) ? dly.streak : 0;
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const hashStr = (s2) => { let h = 2166136261; for (const c of s2) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const DAILYGAME = { id: "daily", ic: "📅", t: "التحدي اليومي", run: dailyRun };
+function dailyRun(stage) {
+  const qg = GAMES.filter((g) => g.q), rng = mulberry(hashStr(todayKey()));
+  const list = qg.map((g) => [rng(), g]).sort((a, b) => a[0] - b[0]).slice(0, 5).map((x) => x[1]);
+  let idx = 0, total = 0;
+  DAILY.active = true; DAILY.n = 2; DAILY.totalAll = 10;
+  const runNext = () => {
+    if (idx >= list.length) { DAILY.active = false; return dailyFinish(stage, total); }
+    DAILY.offset = idx * 2;
+    DAILY.cb = (sc) => { total += sc; idx++; sfx.whoosh(); runNext(); };
+    const t = $(".bar .title"); if (t) t.textContent = `📅 ${list[idx].ic} ${list[idx].t}`;
+    list[idx].run(stage);
+  };
+  cleanup = () => { DAILY.active = false; };
+  runNext();
+}
+function dailyFinish(stage, score) {
+  const ratio = score / 10, st = ratio >= 0.9 ? 3 : ratio >= 0.65 ? 2 : ratio >= 0.35 ? 1 : 0;
+  const before = totalStars();
+  let bonus = false;
+  if (dly.last !== todayKey() && score >= 5) { dly.streak = dly.last === yesterdayKey() ? dly.streak + 1 : 1; dly.last = todayKey(); dly.done++; saveDly(); bonus = true; }
+  checkUnlock(before);
+  sfx.win(); setTimeout(() => sfx.clap(), 700); confetti(innerWidth / 2, innerHeight / 3, 120); setTimeout(() => confetti(innerWidth * .2, innerHeight / 2, 60), 250); setTimeout(() => confetti(innerWidth * .8, innerHeight / 2, 60), 450);
+  const t = $(".bar .title"); if (t) t.textContent = "📅 التحدي اليومي";
+  setDots(0, 0, -1);
+  stage.innerHTML = `<div class="win"><div class="trophy">${st === 3 ? "🏆" : st === 2 ? "🥈" : st === 1 ? "🥉" : "💪"}</div>
+    <h2>${score >= 5 ? "أنجزت تحدي اليوم!" : "حاول مرة ثانية"}</h2>
+    <div class="stars">${[1, 2, 3].map((i) => `<span class="${i <= st ? "" : "off"}">⭐</span>`).join("")}</div>
+    <p class="prompt">${score} من 10</p>
+    ${bonus ? `<p class="prompt bonus">🎁 ربحت 3 نجوم هدية · 🔥 ${dly.streak} ${dly.streak === 1 ? "يوم" : "أيام"} متتالية</p>` : score >= 5 ? `<p class="prompt">✅ سبق وربحت هدية اليوم</p>` : `<p class="prompt">أجب عن 5 أسئلة صحيحة على الأقل لتربح الهدية</p>`}
+    <div class="row"><button class="btn-big alt" id="garden">🏆 حديقتي</button><button class="btn-big" id="menu">🏠 الألعاب</button></div></div>`;
+  $("#garden").onclick = () => go(garden); $("#menu").onclick = () => go(home);
+}
+
+/* ===== حديقة الشخصيات ===== */
+function garden() {
+  const tot = totalStars(), nextK = CHARS.findIndex((_, k) => tot < thr(k)), uc = unlockedCount();
+  app.innerHTML = `<div class="top"><button class="pill btn" id="back">→ رجوع</button><span class="pill">⭐ ${tot}</span></div>
+    <div class="hero"><div class="mascot">🏆</div><h1>حديقة الشخصيات</h1><p>${uc} من ${CHARS.length} شخصية مفتوحة</p></div>
+    ${nextK >= 0 ? `<div class="gprog"><div class="gbar"><i style="width:${Math.min(100, Math.round(((tot - thr(nextK - 1 < 0 ? 0 : nextK - 1)) / (thr(nextK) - thr(nextK - 1 < 0 ? 0 : nextK - 1))) * 100))}%"></i></div><small>تحتاج ${thr(nextK) - tot} ⭐ لتفتح <b>${CHARS[nextK][0]}</b></small></div>` : `<p class="prompt">🎉 فتحت كل الشخصيات! أنت بطل حقيقي</p>`}
+    <div class="chars">${CHARS.map((c, k) => tot >= thr(k) ? `<button class="chr on" data-k="${k}"><span>${c[0]}</span><b>${c[1]}</b></button>` : `<div class="chr off"><span>❓</span><b>🔒 ${thr(k)} ⭐</b></div>`).join("")}</div>`;
+  $("#back").onclick = () => go(home);
+  app.querySelectorAll(".chr.on").forEach((b) => b.onclick = () => { const c = CHARS[+b.dataset.k]; sfx.note(+b.dataset.k); b.classList.remove("jump"); void b.offsetWidth; b.classList.add("jump"); speak(c[1]); confetti(b.getBoundingClientRect().left + 40, b.getBoundingClientRect().top, 16); });
+}
+
+/* ===== لعبة الترتيب العامة ===== */
+function seqGame(stage, sets) {
+  let r = 0, mistakes = 0;
+  function next() {
+    if (r >= sets.length) return finish(stage, Math.max(0, sets.length - Math.floor(mistakes / 2)), sets.length, mistakes ? `أخطاء: ${mistakes}` : "بدون أخطاء!");
+    setDots(sets.length, r, r);
+    const set = sets[r], items = set.items; let need = 0;
+    const long = items.some((x) => x.length > 16);
+    stage.innerHTML = `<div class="prompt">${set.title}</div><div class="seqout ${long ? "long" : ""}" id="out"></div><div class="seqbtns ${long ? "long" : ""}">${shuffle(items.map((t, i) => ({ t, i }))).map((x) => `<button class="seqbtn" data-i="${x.i}">${x.t}</button>`).join("")}</div>`;
+    stage.querySelectorAll(".seqbtn").forEach((b) => b.onclick = async () => {
+      if (+b.dataset.i === need) {
+        b.style.visibility = "hidden"; sfx.note(need); $("#out").insertAdjacentHTML("beforeend", `<span class="seqit">${items[need]}</span>`); speak(items[need]); need++;
+        if (need === items.length) { sfx.ok(); setTimeout(() => sfx.star(), 250); confetti(innerWidth / 2, innerHeight / 3, 50); await wait(1500); r++; next(); }
+      } else { mistakes++; sfx.bad(); b.classList.add("no"); setTimeout(() => b.classList.remove("no"), 400); }
+    });
+  }
+  next();
+}
+
+/* ===== القرآن الكريم ===== */
+const SURAHS = [
+  ["الفاتحة", ["بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", "الرَّحْمَٰنِ الرَّحِيمِ", "مَالِكِ يَوْمِ الدِّينِ", "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ"]],
+  ["الإخلاص", ["قُلْ هُوَ اللَّهُ أَحَدٌ", "اللَّهُ الصَّمَدُ", "لَمْ يَلِدْ وَلَمْ يُولَدْ", "وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ"]],
+  ["الفلق", ["قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ", "مِن شَرِّ مَا خَلَقَ", "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ", "وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ", "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ"]],
+  ["الناس", ["قُلْ أَعُوذُ بِرَبِّ النَّاسِ", "مَلِكِ النَّاسِ", "إِلَٰهِ النَّاسِ", "مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ", "الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ", "مِنَ الْجِنَّةِ وَالنَّاسِ"]],
+  ["الكوثر", ["إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ", "فَصَلِّ لِرَبِّكَ وَانْحَرْ", "إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ"]],
+  ["العصر", ["وَالْعَصْرِ", "إِنَّ الْإِنسَانَ لَفِي خُسْرٍ", "إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ"]],
+  ["النصر", ["إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ", "وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا", "فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ إِنَّهُ كَانَ تَوَّابًا"]]
+];
+function gSurahOrder(stage) {
+  const pool = SURAHS.filter((s2) => s2[1].length <= 4);
+  seqGame(stage, pick(pool, 3).map((s2) => ({ title: `رتّب آيات سورة <b style="color:var(--pri)">${s2[0]}</b>`, items: s2[1] })));
+}
+const lastWord = (t) => t.trim().split(/\s+/).pop();
+function gAyahEnd(stage) {
+  const all = SURAHS.flatMap((s2) => s2[1].filter((a) => a.trim().split(/\s+/).length >= 3).map((a) => [s2[0], a]));
+  const seq = pick(all, 10);
+  quiz(stage, 10, (i) => {
+    const [sn, a] = seq[i], w = lastWord(a);
+    const wrong = pick([...new Set(all.map((x) => lastWord(x[1])).filter((x) => x !== w))], 2);
+    const shown = a.trim().split(/\s+/).slice(0, -1).join(" ") + " ＿＿＿";
+    return { say: a, after: a, one: false, html: `<div class="ayah">${shown}</div><div class="prompt">أكمل الآية <small>(سورة ${sn})</small></div>`, answers: shuffle([w, ...wrong]).map((x) => ({ label: lbl(x), txt: true, ok: x === w })) };
+  });
+}
+function gWhichSurah(stage) {
+  const names = SURAHS.map((x) => x[0]);
+  const all = SURAHS.flatMap((s2) => s2[1].map((a) => [s2[0], a]));
+  const seq = pick(all, 10);
+  quiz(stage, 10, (i) => {
+    const [sn, a] = seq[i];
+    return { say: a, after: `سورة ${sn}`, html: `<div class="ayah">${a}</div><div class="prompt">من أي سورة هذه الآية؟</div>`, answers: shuffle([sn, ...pick(names.filter((x) => x !== sn), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === sn })) };
+  });
+}
+
+/* ===== الأدعية ===== */
+const DUAS = [
+  ["قبل الأكل", "🍽️", "بِسْمِ اللَّهِ"],
+  ["بعد الأكل", "🥛", "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِينَ"],
+  ["عند النوم", "😴", "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا"],
+  ["عند الاستيقاظ", "⏰", "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ"],
+  ["عند العطاس", "🤧", "الْحَمْدُ لِلَّهِ"],
+  ["عند دخول المسجد", "🕌", "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ"],
+  ["عند الخروج من المسجد", "🚪", "اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ"],
+  ["عند ركوب السيارة", "🚗", "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَى رَبِّنَا لَمُنقَلِبُونَ"],
+  ["عند نزول المطر", "🌧️", "اللَّهُمَّ صَيِّبًا نَافِعًا"],
+  ["عند لبس الثوب", "👕", "الْحَمْدُ لِلَّهِ الَّذِي كَسَانِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ"],
+  ["عند الغضب", "😠", "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ"],
+  ["عند دخول المنزل", "🏠", "بِسْمِ اللَّهِ وَلَجْنَا وَبِسْمِ اللَّهِ خَرَجْنَا وَعَلَى رَبِّنَا تَوَكَّلْنَا"],
+  ["عند الخروج من المنزل", "🚶", "بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ"]
+];
+function gDuaWhen(stage) {
+  const seq = pick(DUAS, 8);
+  quiz(stage, 8, (i) => {
+    const d = seq[i];
+    return { say: `ماذا نقول ${d[0]}؟`, after: d[2], one: true, html: `<div class="emo">${d[1]}</div><div class="prompt">ماذا نقول <b style="color:var(--pri)">${d[0]}</b>؟</div>`, answers: shuffle([d, ...pick(DUAS.filter((x) => x !== d), 2)]).map((x) => ({ label: lbl(x[2]), txt: true, ok: x === d })) };
+  });
+}
+function gDuaEnd(stage) {
+  const pool = DUAS.filter((d) => d[2].split(/\s+/).length >= 3);
+  const seq = pick(pool, Math.min(8, pool.length));
+  quiz(stage, seq.length, (i) => {
+    const d = seq[i], w = lastWord(d[2]);
+    const wrong = pick([...new Set(pool.map((x) => lastWord(x[2])).filter((x) => x !== w))], 2);
+    return { say: d[2], after: d[2], html: `<div class="emo">${d[1]}</div><div class="prompt">${d[0]}</div><div class="ayah">${d[2].split(/\s+/).slice(0, -1).join(" ")} ＿＿＿</div>`, answers: shuffle([w, ...wrong]).map((x) => ({ label: lbl(x), txt: true, ok: x === w })) };
+  });
+}
+
+/* ===== الأيام والأشهر ===== */
+const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const HMONTHS = ["محرّم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوّال", "ذو القعدة", "ذو الحجة"];
+const GMONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+const win = (arr, len, cyc) => { const st = rnd(cyc ? arr.length : arr.length - len + 1); return Array.from({ length: len }, (_, k) => arr[(st + k) % arr.length]); };
+function gDayOrder(stage) {
+  seqGame(stage, [{ title: "رتّب أيام الأسبوع من الأحد", items: DAYS }, { title: "رتّب هذه الأيام المتتابعة", items: win(DAYS, 4, true) }, { title: "رتّب هذه الأيام المتتابعة", items: win(DAYS, 5, true) }]);
+}
+function gMonthOrder(stage) {
+  seqGame(stage, [{ title: "رتّب هذه الأشهر الهجرية", items: win(HMONTHS, 4, false) }, { title: "رتّب هذه الأشهر الهجرية", items: win(HMONTHS, 5, false) }, { title: "رتّب هذه الأشهر الهجرية", items: win(HMONTHS, 6, false) }]);
+}
+function gGregOrder(stage) {
+  seqGame(stage, [{ title: "رتّب هذه الأشهر", items: win(GMONTHS, 4, false) }, { title: "رتّب هذه الأشهر", items: win(GMONTHS, 6, false) }, { title: "رتّب هذه الأشهر", items: win(GMONTHS, 8, false) }]);
+}
+function gDayNext(stage) {
+  quiz(stage, 10, () => {
+    const i = rnd(7), t = rnd(3);
+    let text, ans;
+    if (t === 0) { text = `ما اليوم الذي بعد ${DAYS[i]}؟`; ans = DAYS[(i + 1) % 7]; }
+    else if (t === 1) { text = `ما اليوم الذي قبل ${DAYS[i]}؟`; ans = DAYS[(i + 6) % 7]; }
+    else { const n = 1 + rnd(7); text = `ما ترتيب يوم ${DAYS[i]} في الأسبوع (يبدأ بالأحد)؟`; return { say: text, html: `<div class="prompt">${text}</div>`, answers: nopts(i + 1, 1, 7).map((a) => ({ ...a })) }; }
+    return { say: text, after: ans, html: `<div class="emo" style="animation:none">📅</div><div class="prompt">${text}</div>`, answers: shuffle([ans, ...pick(DAYS.filter((x) => x !== ans), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === ans })) };
+  });
+}
+function gMonthNext(stage) {
+  quiz(stage, 10, () => {
+    const i = rnd(12), t = rnd(3);
+    if (t === 2) { const text = `ما ترتيب شهر ${HMONTHS[i]} بين الأشهر الهجرية؟`; return { say: text, html: `<div class="emo" style="animation:none">🌙</div><div class="prompt">${text}</div>`, answers: nopts(i + 1, 1, 12) }; }
+    const nxt = t === 0, ans = HMONTHS[(i + (nxt ? 1 : 11)) % 12], text = `ما الشهر ${nxt ? "الذي بعد" : "الذي قبل"} ${HMONTHS[i]}؟`;
+    return { say: text, after: ans, html: `<div class="emo" style="animation:none">🌙</div><div class="prompt">${text}</div>`, answers: shuffle([ans, ...pick(HMONTHS.filter((x) => x !== ans), 2)]).map((x) => ({ label: lbl(x), txt: true, ok: x === ans })) };
   });
 }
 
