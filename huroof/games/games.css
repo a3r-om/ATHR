@@ -118,3 +118,24 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 @media (min-width: 560px) { .grid { grid-template-columns: repeat(3, 1fr); } .hero h1 { font-size: 46px; } }
 @media (max-width: 380px) { .big { font-size: 90px; } .opt { font-size: 44px; min-height: 84px; } .slot { width: 58px; height: 72px; font-size: 42px; } .tile { width: 62px; height: 74px; font-size: 42px; } .m-it.w { font-size: 30px; } }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; } }
+
+/* ألعاب جديدة */
+.cat { font-size: 26px; margin: 22px 4px 0; color: var(--pri); text-shadow: 0 2px 0 #fff; }
+.eq { font-size: 64px; font-weight: 700; color: var(--pri); direction: ltr; text-align: center; }
+.count-box.sm { font-size: 38px; gap: 4px; }
+.seq { display: flex; gap: 10px; direction: ltr; justify-content: center; }
+.seq span { width: 66px; height: 76px; display: grid; place-items: center; font-size: 46px; font-weight: 700; background: #fff; border: 4px solid #E3D8FF; border-radius: 16px; }
+.seq span.q { background: var(--sun); border-color: #F5A400; color: var(--ink); }
+.grp { display: block; font-size: 28px; line-height: 1.15; word-break: break-all; }
+.opt:has(.grp) { min-height: 110px; }
+.ordgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+.ord { height: 86px; border-radius: 20px; color: #fff; font-size: 48px; font-weight: 700; box-shadow: 0 5px 0 rgba(0, 0, 0, .22); }
+.ord:active { transform: translateY(3px); }
+.ord.hit { opacity: .25; pointer-events: none; transform: scale(.9); }
+.ord.no { animation: shake .4s; }
+.swatch { width: 170px; height: 170px; border-radius: 36px; border: 6px solid #fff; box-shadow: 0 8px 0 rgba(0, 0, 0, .12), 0 0 0 2px #E3D8FF; }
+.cname { display: inline-block; color: #fff; padding: 0 14px; border-radius: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+.shape { width: 170px; height: 170px; filter: drop-shadow(0 8px 4px rgba(0, 0, 0, .15)); }
+.emo.shadow { filter: brightness(0) opacity(.85); animation: none; }
+.emo { transition: filter .4s; }
+.gcard { min-height: 170px; }
