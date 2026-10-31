@@ -696,7 +696,7 @@
         const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
         if (ATHR.isDigital(cfg)) {
             return [
-                [V.icon.file, t("قصص PDF جاهزة للطباعة")],
+                [V.icon.file, t("ملفات PDF جاهزة للطباعة")],
                 [V.icon.inbox, t("تصلك على واتساب")],
                 [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
             ];
@@ -756,7 +756,6 @@
         const cats = v.categories.filter((c) => v.counts.get(c.id));
         if (!cats.length) return "";
         return `<nav class="tiles wrap" aria-label="${esc(t("الأقسام"))}">
-            <a class="tile tile-games" href="${ATHR.base()}games/"><span class="tile-img" style="display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,#8B5CF6,#EC4899)">🎮</span><span class="tile-name">${esc(t("ألعاب تعليمية"))}</span></a>
             ${cats.map((c) => {
                 const img = V.categoryImage(v, c);
                 return `<a class="tile${current && current.id === c.id ? " on" : ""}" href="${ATHR.url.category(c)}"${current && current.id === c.id ? ' aria-current="page"' : ""}>
@@ -1688,7 +1687,7 @@
                 </div>
                 ${V.productReviews(v, p)}
             </div>
-            ${related.length ? V.rail(v, { id: "related", title: act ? t("كتب أخرى لطفلك") : t("قصص أخرى لطفلك"), items: related }) : ""}`;
+            ${related.length ? V.rail(v, { id: "related", title: act ? t("ملفات قد تعجبك") : t("ملفات قد تعجبك"), items: related }) : ""}`;
     };
 
     V.product = function (v, p) {
@@ -1806,7 +1805,7 @@
         const free = cfg.order.free_enabled && Number(cfg.order.free_min) > 0;
         const cod = (cfg.order.payments || []).some((p) => p.enabled && p.type === "cod");
         const points = ATHR.isDigital(cfg) ? [
-            [V.icon.file, t("قصص PDF جاهزة للطباعة")],
+            [V.icon.file, t("ملفات PDF جاهزة للطباعة")],
             [V.icon.inbox, t("تصلك على واتساب")],
             [V.icon.card, cod ? t("الدفع عند الاستلام") : t("تحويل بنكي آمن")]
         ] : [
