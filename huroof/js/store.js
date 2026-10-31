@@ -977,6 +977,7 @@
         if (bc) {
             cfg = { ...dbCfg };
             delete cfg.stories;
+            ["name", "logo_url", "show_name", "logo_shape"].forEach((k) => { if (bc[k] !== undefined) cfg[k] = bc[k]; });
             ["texts", "theme", "sales"].forEach((k) => { if (bc[k]) cfg[k] = { ...(dbCfg[k] || {}), ...bc[k] }; });
             if (bc.contact) cfg.contact = { ...(dbCfg.contact || {}), faq: bc.contact.faq, faq_home: bc.contact.faq_home };
             if (bc.en) cfg.en = { ...(dbCfg.en || {}), ...bc.en };

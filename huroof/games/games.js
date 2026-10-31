@@ -346,7 +346,7 @@ function setDots(n, done, curI) {
 const SID = (() => { try { let v = localStorage.getItem("hg_sid"); if (!v) { v = Math.random().toString(36).slice(2, 12) + Date.now().toString(36).slice(-4); localStorage.setItem("hg_sid", v); } return v; } catch { return "anon" + Math.random().toString(36).slice(2, 8); } })();
 function track(ev, game, stars) { try { fetch("https://zcnwzpevehudhnsuljdy.supabase.co/functions/v1/game-log", { method: "POST", headers: { "content-type": "text/plain" }, body: JSON.stringify({ sid: SID, ev, game: game || "", stars }), keepalive: true }).catch(() => {}); } catch { /* */ } }
 track("open");
-const WA_TXT = () => encodeURIComponent(`السلام عليكم، لعب طفلي ${CHILD} في ألعاب حروف وألوان وأرغب بقصة باسمه`);
+const WA_TXT = () => encodeURIComponent(`السلام عليكم، لعب طفلي ${CHILD} في ألعاب زاد التعليمية وأرغب بقصة باسمه`);
 function finish(stage, score, total, msg = "") {
   const ratio = score / total;
   const st = ratio >= 0.9 ? 3 : ratio >= 0.65 ? 2 : ratio >= 0.35 ? 1 : 0;
