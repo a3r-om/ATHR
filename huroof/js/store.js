@@ -1260,6 +1260,7 @@
         let url;
         try { url = new URL(a.href, location.href); } catch { return null; }
         if (url.origin !== location.origin || !url.pathname.startsWith(BASE)) return null;
+        if (url.pathname.startsWith(BASE + "games")) return null;
         if (/\.[a-z0-9]{2,5}$/i.test(url.pathname) && !/\/index\.html$/i.test(url.pathname)) return null;
         return url;
     }
