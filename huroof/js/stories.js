@@ -1175,7 +1175,7 @@
 
     function loadFonts() {
         if (!fontsPromise) {
-            fontsPromise = Promise.all([["400", "amiri-regular"], ["700", "amiri-bold"]].map(([w, f]) =>
+            fontsPromise = Promise.all([["400", "cairo-regular"], ["700", "cairo-bold"]].map(([w, f]) =>
                 new FontFace(FONT, `url(${ASSETS}fonts/${f}.woff) format("woff")`, { weight: w, display: "block" }).load().then((face) => { document.fonts.add(face); return face; })
             )).catch((e) => { console.warn("Story fonts:", e); fontsPromise = null; return null; });
         }
@@ -1201,7 +1201,7 @@
     }
 
     function font(size, weight = 400) {
-        return `${weight} ${Math.round(size)}px ${FONT}, Amiri, "Times New Roman", serif`;
+        return `${weight} ${Math.round(size)}px ${FONT}, Cairo, sans-serif`;
     }
 
     function roundRect(ctx, x, y, w, h, r) {

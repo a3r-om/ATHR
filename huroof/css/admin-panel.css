@@ -16,7 +16,7 @@
     z-index: 80;
     background: var(--a-bg);
     color: var(--a-text);
-    font-family: "Amiri", serif;
+    font-family: "Cairo", system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.6;
     color-scheme: light;

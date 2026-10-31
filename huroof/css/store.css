@@ -1,3 +1,5 @@
+@font-face{font-family:"Cairo";src:url("../fonts/cairo-regular.woff") format("woff");font-weight:400 600;font-display:swap}
+@font-face{font-family:"Cairo";src:url("../fonts/cairo-bold.woff") format("woff");font-weight:700 900;font-display:swap}
 /* =====================================================
    حروف وألوان — واجهة المتجر (مبنية على نظام متجر أثر)
    الألوان والخطوط تأتي من لوحة التحكم عبر متغيرات CSS.
@@ -24,8 +26,8 @@
     --r: 14px;
     --r-sm: 10px;
     --r-pill: 999px;
-    --font-head: "Amiri", serif;
-    --font-body: "Amiri", serif;
+    --font-head: "Cairo", system-ui, sans-serif;
+    --font-body: "Cairo", system-ui, sans-serif;
     --shadow: 0 1px 2px rgba(37, 26, 27, .06), 0 8px 24px rgba(37, 26, 27, .08);
     --shadow-up: 0 -6px 22px rgba(37, 26, 27, .12);
     --wrap: 1120px;
@@ -1438,7 +1440,7 @@ select.input { appearance: auto; }
    ألوان لوحة التحكم تُخفَّف هنا تلقائياً حتى يبقى أي لون مختار هادئاً */
 #view[data-route="gift"] { padding: 0; }
 .gift-page {
-    --g-bg: #4A0A14; --g-box: #8E1A2C; --g-ribbon: #F2C964; --g-paper: #FFF8EC; --g-ink: #3B2A20; --g-accent: #8E1A2C; --g-font: "Amiri";
+    --g-bg: #4A0A14; --g-box: #8E1A2C; --g-ribbon: #F2C964; --g-paper: #FFF8EC; --g-ink: #3B2A20; --g-accent: #8E1A2C; --g-font: "Cairo";
     --c-bg: color-mix(in srgb, var(--g-bg) 8%, #FAF7F2);
     --c-box: color-mix(in srgb, var(--g-box) 42%, #F1ECE6);
     --c-lid: color-mix(in srgb, var(--c-box) 88%, #3A302B);
@@ -2396,329 +2398,10 @@ html.owner-boot #view, html.owner-boot #footer, html.owner-boot .bars { display:
 html.owner-boot body::before { content: ""; position: fixed; inset: 0; z-index: 94; background: var(--bg); }
 html.owner-boot body::after { content: ""; position: fixed; top: calc(50% - 38px); left: calc(50% - 20px); z-index: 94; width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; border: 3.5px solid color-mix(in srgb, var(--primary) 18%, transparent); border-top-color: var(--primary); animation: ol-spin .8s linear infinite; }
 
-/* ===== AMIRI-SCALE:START (مولّد تلقائياً — لا تعدّله يدوياً) ===== */
-html.tpl-huroof body { font-size: 17.5px; }
-html.tpl-huroof .small { font-size: 15px; }
-html.tpl-huroof .cur-btn { font-size: 15.5px; }
-html.tpl-huroof #curFlag { font-size: 20px; }
-html.tpl-huroof .brand-name { font-size: 22.5px; }
-html.tpl-huroof .search input { font-size: 18px; }
-html.tpl-huroof .cart-count { font-size: 14px; }
-html.tpl-huroof .bar { font-size: 15px; }
-html.tpl-huroof .bar-cart button { font-size: 20px; }
-html.tpl-huroof .preview-flag { font-size: 15.5px; }
-html.tpl-huroof .btn { font-size: 17.5px; }
-html.tpl-huroof .btn-sm { font-size: 16px; }
-html.tpl-huroof .link-btn { font-size: 16px; }
-html.tpl-huroof .select { font-size: 15.5px; }
-html.tpl-huroof .ad-text h2 { font-size: clamp(23.5px, 6vw, 32px); }
-html.tpl-huroof .hero h1 { font-size: clamp(26.5px, 7.4vw, 53px); }
-html.tpl-huroof .hero p { font-size: 17px; }
-html.tpl-huroof .hero-features li { font-size: 14.5px; }
-html.tpl-huroof .hero-compact h1 { font-size: clamp(22.5px, 5.6vw, 29.5px); }
-html.tpl-huroof .hero-mini li { font-size: 14px; }
-html.tpl-huroof .tile-name { font-size: 14.5px; }
-html.tpl-huroof .section-head h1, html.tpl-huroof .section-head h2 { font-size: 22.5px; }
-html.tpl-huroof .section-head h1 small, html.tpl-huroof .section-head h2 small { font-size: 15px; }
-html.tpl-huroof .section-head .more { font-size: 16px; }
-html.tpl-huroof .cat-desc { font-size: 16px; }
-html.tpl-huroof .cur-note { font-size: 15px; }
-html.tpl-huroof .empty h1 { font-size: 25.5px; }
-html.tpl-huroof .badge { font-size: 13.5px; }
-html.tpl-huroof .card-name { font-size: 16px; }
-html.tpl-huroof .grid.one .card-name { font-size: 18px; }
-html.tpl-huroof .card-rate { font-size: 14px; }
-html.tpl-huroof .color-tag { font-size: 14.5px; }
-html.tpl-huroof .sw-name { font-size: 14px; }
-html.tpl-huroof .price b { font-size: 17.5px; }
-html.tpl-huroof .price s { font-size: 14.5px; }
-html.tpl-huroof .price .save { font-size: 14.5px; }
-html.tpl-huroof .base-price { font-size: 13.5px; }
-html.tpl-huroof .card-action .btn { font-size: 16px; }
-html.tpl-huroof .stepper button { font-size: 23.5px; }
-html.tpl-huroof .stepper output { font-size: 18px; }
-html.tpl-huroof .set-name { font-size: 16px; }
-html.tpl-huroof .set-save { font-size: 14.5px; }
-html.tpl-huroof .review figcaption { font-size: 15px; }
-html.tpl-huroof .stars { font-size: 17.5px; }
-html.tpl-huroof .stars.sm { font-size: 14px; }
-html.tpl-huroof .rate-summary b { font-size: 32px; }
-html.tpl-huroof .rate-summary span:last-child { font-size: 15.5px; }
-html.tpl-huroof .seo-intro .intro { font-size: 16px; }
-html.tpl-huroof .crumbs { font-size: 14.5px; }
-html.tpl-huroof .stage-count { font-size: 14px; }
-html.tpl-huroof .thumbs .play { font-size: 22.5px; }
-html.tpl-huroof .pdp h1 { font-size: clamp(23.5px, 6vw, 34px); }
-html.tpl-huroof .pdp-rate { font-size: 15.5px; }
-html.tpl-huroof .pdp .price b { font-size: 25.5px; }
-html.tpl-huroof .pdp .price s { font-size: 17.5px; }
-html.tpl-huroof .pdp-color { font-size: 16px; }
-html.tpl-huroof .variants-label { font-size: 16px; }
-html.tpl-huroof .variant { font-size: 14.5px; }
-html.tpl-huroof .buy-row .btn { font-size: 18px; }
-html.tpl-huroof .volume { font-size: 15.5px; }
-html.tpl-huroof .offer strong { font-size: 16px; }
-html.tpl-huroof .offer .price b { font-size: 17.5px; }
-html.tpl-huroof .info-row div { font-size: 15.5px; }
-html.tpl-huroof .info-box .link-btn { font-size: 15px; }
-html.tpl-huroof .trust li { font-size: 15.5px; }
-html.tpl-huroof .pdp-details h2 { font-size: 19px; }
-html.tpl-huroof .bb-info b { font-size: 19px; }
-html.tpl-huroof .bb-info small { font-size: 14.5px; }
-html.tpl-huroof .mini-info { font-size: 16px; }
-html.tpl-huroof .mini-info b { font-size: 16px; }
-html.tpl-huroof .sheet-added .sheet-head h2 { font-size: 20px; }
-html.tpl-huroof .added-offer > b { font-size: 17.5px; }
-html.tpl-huroof .added-title { font-size: 17.5px; }
-html.tpl-huroof .progress { font-size: 15.5px; }
-html.tpl-huroof .vol-hint { font-size: 15.5px; }
-html.tpl-huroof .page-title { font-size: 25.5px; }
-html.tpl-huroof .page-title small { font-size: 16px; }
-html.tpl-huroof .panel h2 { font-size: 19px; }
-html.tpl-huroof .cart-line .name { font-size: 17px; }
-html.tpl-huroof .cl-meta { font-size: 14.5px; }
-html.tpl-huroof .cl-meta .color-tag { font-size: 14.5px; }
-html.tpl-huroof .cart-line .stepper.sm button { font-size: 20px; }
-html.tpl-huroof .cart-line .stepper.sm output { font-size: 16px; }
-html.tpl-huroof .cl-total { font-size: 17px; }
-html.tpl-huroof .remove { font-size: 15px; }
-html.tpl-huroof .save-line { font-size: 16px; }
-html.tpl-huroof .hint { font-size: 16px; }
-html.tpl-huroof .row { font-size: 17px; }
-html.tpl-huroof .row.total { font-size: 20px; }
-html.tpl-huroof .ship-list { font-size: 15.5px; }
-html.tpl-huroof .field > span:first-child { font-size: 16px; }
-html.tpl-huroof .field small { font-size: 14.5px; }
-html.tpl-huroof .input { font-size: 18px; }
-html.tpl-huroof .err { font-size: 15px; }
-html.tpl-huroof .bank-row small { font-size: 14px; }
-html.tpl-huroof .copy { font-size: 15px; }
-html.tpl-huroof .saved-note { font-size: 15.5px; }
-html.tpl-huroof .phone-wrap select.dial-pick { font-size: 17.5px; }
-html.tpl-huroof .order-no { font-size: 32px; }
-html.tpl-huroof .page h1 { font-size: 25.5px; }
-html.tpl-huroof .policy h2 { font-size: 19px; }
-html.tpl-huroof .rate-input legend { font-size: 16px; }
-html.tpl-huroof .rate-input label { font-size: 38px; }
-html.tpl-huroof .footer { font-size: 16px; }
-html.tpl-huroof .footer h2 { font-size: 18px; }
-html.tpl-huroof .footer-links a { font-size: 15.5px; }
-html.tpl-huroof .footer-brand strong { font-size: 22.5px; }
-html.tpl-huroof .footer-bottom { font-size: 14.5px; }
-html.tpl-huroof .sheet-head h2 { font-size: 21.5px; }
-html.tpl-huroof .close { font-size: 23.5px; }
-html.tpl-huroof .menu-sub { font-size: 17px; }
-html.tpl-huroof .menu-label { font-size: 14.5px; }
-html.tpl-huroof .cur-flag { font-size: 29.5px; }
-html.tpl-huroof .cur-rate { font-size: 14.5px; }
-html.tpl-huroof .toast { font-size: 15px; }
-html.tpl-huroof .menu-cat { font-size: 15.5px; }
-html.tpl-huroof .menu-act { font-size: 17.5px; }
-html.tpl-huroof .menu-act small { font-size: 15px; }
-html.tpl-huroof .ma-ico.flag { font-size: 23.5px; }
-html.tpl-huroof .menu-social a { font-size: 15.5px; }
-html.tpl-huroof .lang-btn { font-size: 15.5px; }
-html.tpl-huroof .menu-toggle { font-size: 17.5px; }
-html.tpl-huroof .menu-toggle small { font-size: 14.5px; }
-html.tpl-huroof .ma-ico.lang { font-size: 15px; }
-html.tpl-huroof .footer-social a:not(.fsoc-icon) { font-size: 15.5px; }
-html.tpl-huroof .mode-seg button { font-size: 15px; }
-html.tpl-huroof .menu-brand { font-size: 22.5px; }
-html.tpl-huroof .mrow { font-size: 18px; }
-html.tpl-huroof .mi.flag { font-size: 22.5px; }
-html.tpl-huroof .ml small { font-size: 14.5px; }
-html.tpl-huroof .mval { font-size: 15.5px; }
-html.tpl-huroof .mgroup .menu-cat { font-size: 15px; }
-html.tpl-huroof .mgroup .menu-cat .mc-n { font-size: 13.5px; }
-html.tpl-huroof .menu .menu-label { font-size: 14.5px; }
-html.tpl-huroof .mini-seg button { font-size: 14.5px; }
-html.tpl-huroof .mf { font-size: 15px; }
-html.tpl-huroof .mgroup.owner .mrow { font-size: 17px; }
-html.tpl-huroof .gp-text b { font-size: 19px; }
-html.tpl-huroof .gp-text small { font-size: 15px; }
-html.tpl-huroof .gp-go { font-size: 16px; }
-html.tpl-huroof .gcta-txt b { font-size: 18px; }
-html.tpl-huroof .gcta-txt small { font-size: 14.5px; }
-html.tpl-huroof .bar-gift button { font-size: 20px; }
-html.tpl-huroof .occ-field > span { font-size: 16px; }
-html.tpl-huroof .occ span { font-size: 15.5px; }
-html.tpl-huroof .occ-custom > span { font-size: 15px; }
-html.tpl-huroof .sug { font-size: 15px; }
-html.tpl-huroof .gift-card-note { font-size: 15.5px; }
-html.tpl-huroof .gd-card small { font-size: 15px; }
-html.tpl-huroof .gd-emoji { font-size: 36px; }
-html.tpl-huroof .gx-kicker { font-size: 15.5px; }
-html.tpl-huroof .gx-title { font-size: clamp(32px, 8.4vw, 44.5px); }
-html.tpl-huroof .gx-tag { font-size: 17.5px; }
-html.tpl-huroof .gx-cta { font-size: 19px; }
-html.tpl-huroof .gx-hint { font-size: 15px; }
-html.tpl-huroof .gc-to { font-size: 16px; }
-html.tpl-huroof .gc-name { font-size: clamp(36px, 10vw, 46.5px); }
-html.tpl-huroof .gc-occ { font-size: 21.5px; }
-html.tpl-huroof .gc-msg { font-size: clamp(22.5px, 5.6vw, 25.5px); }
-html.tpl-huroof .gc-from { font-size: 16px; }
-html.tpl-huroof .gc-from b { font-size: 26.5px; }
-html.tpl-huroof .gc-foot { font-size: 15px; }
-html.tpl-huroof .foot-points li { font-size: 14.5px; }
-html.tpl-huroof .foot-acc summary { font-size: 18px; }
-html.tpl-huroof .foot-follow > span { font-size: 18px; }
-html.tpl-huroof .mk-line { font-size: 15.5px; }
-html.tpl-huroof .gfor-opt i { font-size: 32px; }
-html.tpl-huroof .gfor-opt b { font-size: 18px; }
-html.tpl-huroof .ob-ico { font-size: 27.5px; }
-html.tpl-huroof .ob-txt > b { font-size: 20px; }
-html.tpl-huroof .ob-txt > span { font-size: 16px; }
-html.tpl-huroof .ob-pct { font-size: 19px; }
-html.tpl-huroof .ob-left small { font-size: 15px; }
-html.tpl-huroof .ob-left b { font-size: 17.5px; }
-html.tpl-huroof .clock i { font-size: 18px; }
-html.tpl-huroof .bar-offer .clock i { font-size: 14.5px; }
-html.tpl-huroof .chip { font-size: 16px; }
-html.tpl-huroof .chip small { font-size: 14px; }
-html.tpl-huroof .card-action .notify-link { font-size: 15px; }
-html.tpl-huroof .notify-done > span { font-size: 46.5px; }
-html.tpl-huroof .coupon-box summary { font-size: 17px; }
-html.tpl-huroof .cp-ico { font-size: 23.5px; }
-html.tpl-huroof .cp-txt b { font-size: 17.5px; }
-html.tpl-huroof .cp-txt small { font-size: 14.5px; }
-html.tpl-huroof .perks { font-size: 15.5px; }
-html.tpl-huroof .pdp-desc { font-size: 17.5px; }
-html.tpl-huroof .pp-now { font-size: 32px; }
-html.tpl-huroof .pp-was { font-size: 23.5px; }
-html.tpl-huroof .pchip { font-size: 16px; }
-html.tpl-huroof .cf-in small { font-size: 11px; }
-html.tpl-huroof .cf-count { font-size: 13.5px; }
-html.tpl-huroof .cf-pill { font-size: 11.5px; }
-html.tpl-huroof .card-low { font-size: 14.5px; }
-html.tpl-huroof .loyal-note > span { font-size: 25.5px; }
-html.tpl-huroof .loyal-note b { font-size: 17.5px; }
-html.tpl-huroof .loyal-note small { font-size: 15px; }
-html.tpl-huroof .search-loose { font-size: 16px; }
-html.tpl-huroof[class] .hero.hero-compact:not(.has-image) h1 { font-size: clamp(22.5px, 5.6vw, 29.5px); }
-html.tpl-huroof .pts-head h1 { font-size: 25.5px; }
-html.tpl-huroof .pts-big b { font-size: 61.5px; }
-html.tpl-huroof .pts-big span { font-size: 16px; }
-html.tpl-huroof .pts-scale { font-size: 14px; }
-html.tpl-huroof .pts-goal { font-size: 18.5px; }
-html.tpl-huroof .pts-pending { font-size: 15.5px; }
-html.tpl-huroof .pts-coupon b { font-size: 22.5px; }
-html.tpl-huroof .pts-coupon small { font-size: 14.5px; }
-html.tpl-huroof .pts-note { font-size: 14.5px; }
-html.tpl-huroof .pts-how h2 { font-size: 18px; }
-html.tpl-huroof .pts-how ul { font-size: 16px; }
-html.tpl-huroof .loyal-link { font-size: 15.5px; }
-html.tpl-huroof .card-proof { font-size: 13.5px; }
-html.tpl-huroof .pdp-proof li { font-size: 15.5px; }
-html.tpl-huroof .hero-proof { font-size: 14.5px; }
-html.tpl-huroof .rv-verified { font-size: 13.5px; }
-html.tpl-huroof .proof-pop .pp-txt b { font-size: 15px; }
-html.tpl-huroof .proof-pop .pp-txt > span { font-size: 15px; }
-html.tpl-huroof .proof-pop small { font-size: 13.5px; }
-html.tpl-huroof .proof-pop .pp-x { font-size: 22.5px; }
-html.tpl-huroof .cart-info .progress { font-size: 14.5px; }
-html.tpl-huroof .cart-info .vol-hint, html.tpl-huroof .panel.cart-info .progress + .vol-hint { font-size: 14.5px; }
-html.tpl-huroof .cart-info .save-line { font-size: 14.5px; }
-html.tpl-huroof .cart-info .hint { font-size: 14.5px; }
-html.tpl-huroof .cart-info .hint .btn-sm { font-size: 14.5px; }
-html.tpl-huroof .cart-sug h2 { font-size: 16px; }
-html.tpl-huroof .csug-add { font-size: 20px; }
-html.tpl-huroof .csug-name { font-size: 13.5px; }
-html.tpl-huroof .csug-price { font-size: 14px; }
-html.tpl-huroof .cart-sum h2 { font-size: 17.5px; }
-html.tpl-huroof .cart-sum .row { font-size: 15.5px; }
-html.tpl-huroof .cart-sum .row.total { font-size: 18px; }
-html.tpl-huroof .cart-sum .ship-list { font-size: 14.5px; }
-html.tpl-huroof .cart-sum .btn { font-size: 17px; }
-html.tpl-huroof .cart-sum .gcta-txt b { font-size: 16px; }
-html.tpl-huroof .cart-sum .link-btn { font-size: 15px; }
-html.tpl-huroof .cart-sum .trust li { font-size: 13.5px; }
-html.tpl-huroof .page-title { font-size: 22.5px; }
-html.tpl-huroof .page-title small { font-size: 14.5px; }
-html.tpl-huroof .page h1 { font-size: 22.5px; }
-html.tpl-huroof .section-head h1, html.tpl-huroof .section-head h2 { font-size: 19px; }
-html.tpl-huroof .section-head h1 small, html.tpl-huroof .section-head h2 small { font-size: 14px; }
-html.tpl-huroof .section-head .more { font-size: 15px; }
-html.tpl-huroof .panel h2 { font-size: 17.5px; }
-html.tpl-huroof .btn { font-size: 17px; }
-html.tpl-huroof .btn-sm { font-size: 15px; }
-html.tpl-huroof .buy-row .btn { font-size: 17.5px; }
-html.tpl-huroof .bb-info b { font-size: 18px; }
-html.tpl-huroof .bb-info small { font-size: 14px; }
-html.tpl-huroof .link-btn { font-size: 15.5px; }
-html.tpl-huroof .chip { font-size: 15px; }
-html.tpl-huroof .chip small { font-size: 13.5px; }
-html.tpl-huroof .stepper button { font-size: 21.5px; }
-html.tpl-huroof .stepper output { font-size: 17px; }
-html.tpl-huroof .field > span:first-child { font-size: 15px; }
-html.tpl-huroof .field small { font-size: 13.5px; }
-html.tpl-huroof .phone-wrap .dial { font-size: 16px; }
-html.tpl-huroof .phone-wrap select.dial-pick { font-size: 16px; }
-html.tpl-huroof .check-line { font-size: 15.5px; }
-html.tpl-huroof .mk-line { font-size: 14.5px; }
-html.tpl-huroof .err { font-size: 14px; }
-html.tpl-huroof .option { font-size: 16px; }
-html.tpl-huroof .option small { font-size: 13.5px; }
-html.tpl-huroof .option .opt-price { font-size: 15.5px; }
-html.tpl-huroof .bank-row strong { font-size: 16px; }
-html.tpl-huroof .copy { font-size: 14px; }
-html.tpl-huroof .sum-mobile summary { font-size: 16px; }
-html.tpl-huroof .saved-note { font-size: 14px; }
-html.tpl-huroof .saved-note .link-btn { font-size: 14px; }
-html.tpl-huroof .who-pick > p.small { font-size: 13.5px; }
-html.tpl-huroof .seg2 span { font-size: 16px; }
-html.tpl-huroof .gfor-opt i { font-size: 22.5px; }
-html.tpl-huroof .gfor-opt b { font-size: 16px; }
-html.tpl-huroof .occ-field > span { font-size: 15px; }
-html.tpl-huroof .occ span { font-size: 14.5px; }
-html.tpl-huroof .occ-custom > span { font-size: 14px; }
-html.tpl-huroof .msg-sugs .sug { font-size: 14px; }
-html.tpl-huroof .gift-card-note { font-size: 14px; }
-html.tpl-huroof .gcta-txt b { font-size: 16px; }
-html.tpl-huroof .gcta-txt small { font-size: 13.5px; }
-html.tpl-huroof .row { font-size: 15.5px; }
-html.tpl-huroof .row.total { font-size: 18px; }
-html.tpl-huroof .ship-list { font-size: 14.5px; }
-html.tpl-huroof .trust li { font-size: 13.5px; }
-html.tpl-huroof .card-name { font-size: 15.5px; }
-html.tpl-huroof .card-action .btn { font-size: 15px; }
-html.tpl-huroof .badge { font-size: 13px; }
-html.tpl-huroof .tile-name { font-size: 14px; }
-html.tpl-huroof .gp-text b { font-size: 17.5px; }
-html.tpl-huroof .gp-text small { font-size: 14px; }
-html.tpl-huroof .gp-go { font-size: 15px; }
-html.tpl-huroof .pdp h1 { font-size: clamp(21.5px, 5.2vw, 27.5px); }
-html.tpl-huroof .pdp .price b { font-size: 23.5px; }
-html.tpl-huroof .pdp .price s { font-size: 16px; }
-html.tpl-huroof .pdp-color { font-size: 15.5px; }
-html.tpl-huroof .info-box { font-size: 15px; }
-html.tpl-huroof .pdp-details h2 { font-size: 17.5px; }
-html.tpl-huroof .footer { font-size: 15px; }
-html.tpl-huroof .foot-about { font-size: 14.5px; }
-html.tpl-huroof .foot-points li { font-size: 13.5px; }
-html.tpl-huroof .foot-acc summary { font-size: 16px; }
-html.tpl-huroof .foot-follow > span { font-size: 16px; }
-html.tpl-huroof .footer-bottom { font-size: 13.5px; }
-html.tpl-huroof .gift-cod, html.tpl-huroof #payExtra > p { font-size: 14px !important; }
-html.tpl-huroof .volume { font-size: 14.5px; }
-html.tpl-huroof .info-row div { font-size: 14.5px; }
-html.tpl-huroof .perks { font-size: 14px; }
-html.tpl-huroof .cart-count { font-size: 13.5px; }
-html.tpl-huroof .search input { font-size: 18px; }
-html.tpl-huroof .lang-btn { font-size: 15px; }
-html.tpl-huroof .cur-btn { font-size: 15px; }
-html.tpl-huroof #curFlag { font-size: 19px; }
-html.tpl-huroof .owner-loading { font-size: 17.5px; }
-@media (min-width: 760px) {
-    html.tpl-huroof .hero p { font-size: 18px; }
-    html.tpl-huroof .hero-mini li { font-size: 16px; }
-    html.tpl-huroof .tile-name { font-size: 15.5px; }
-    html.tpl-huroof .hero-proof { font-size: 16px; }
-}
-/* ===== AMIRI-SCALE:END ===== */
 
 /* ===== HUROOF-TEMPLATE ===== */
 /* =====================================================
-   حروف وألوان — القالب الأصلي: بيج هادئ، ورق أبيض، ألوان أقلام التلوين، وخط Amiri
+   حروف وألوان — القالب الأصلي: بيج هادئ، ورق أبيض، ألوان أقلام التلوين، وخط Cairo
    (الألوان نفسها من المتجر الأول: البيج #F3E9D9 والورق #FFFCF6 والحبر #2B2620)
 ===================================================== */
 html.tpl-huroof {
@@ -2820,7 +2503,7 @@ html.tpl-huroof .faq-list, .faq-list { display: grid; gap: 8px; max-width: 780px
 .faq-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0 14px; }
 .faq-item summary { cursor: pointer; padding: 9px 0; font-weight: 700; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .faq-item summary::-webkit-details-marker { display: none; }
-.faq-item summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--muted); flex: none; font-family: "Amiri", serif; }
+.faq-item summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--muted); flex: none; font-family: "Cairo", system-ui, sans-serif; }
 .faq-item[open] summary::after { content: "−"; }
 .faq-item p { padding-bottom: 12px; color: var(--muted); margin: 0; max-width: 62ch; }
 html.tpl-huroof .home-faq { background: var(--desk-2); margin-top: 18px; padding: 22px 0; }
@@ -3556,4 +3239,4 @@ html.tpl-night .sh-float { background: #FFFFFF; color: var(--text); box-shadow: 
 .gm-go { flex: none; background: #fff; color: #6D3FE0; border-radius: 99px; padding: 8px 14px; font-weight: 700; font-size: 14px; position: relative; z-index: 1; white-space: nowrap; }
 @media (max-width: 420px) { .gm-go { display: none; } }
 
-button, input, select, textarea, summary, option { font-family: "Amiri", serif; }
+button, input, select, textarea, summary, option { font-family: "Cairo", system-ui, sans-serif; }

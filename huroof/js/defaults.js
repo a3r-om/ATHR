@@ -49,8 +49,8 @@ const ATHR_DEFAULTS = {
         grid_mobile: 2,
         show_search: false,
         show_sort: false,
-        font_head: "Amiri",
-        font_body: "Amiri",
+        font_head: "Cairo",
+        font_body: "Cairo",
         hero_show: true,
         hero_compact: false,
         hero_pattern: false,
@@ -1319,7 +1319,7 @@ ATHR.FONT_PARAMS = {
     "El Messiri": "El+Messiri:wght@500;700",
     "Lalezar": "Lalezar",
     "Noto Kufi Arabic": "Noto+Kufi+Arabic:wght@500;700",
-    "Amiri": "Amiri:wght@400;700",
+    "Cairo": "Cairo:wght@400;600;700",
     "Changa": "Changa:wght@500;700",
     "Readex Pro": "Readex+Pro:wght@400;600",
     "IBM Plex Sans Arabic": "IBM+Plex+Sans+Arabic:wght@400;600;700",
@@ -1367,8 +1367,8 @@ ATHR.onColor = function (hex) {
 ATHR.themeVars = function (config) {
     const t = config.theme || {};
     const c = ATHR.themeColors(config);
-    const head = `"Amiri"`;
-    const body = `"Amiri"`;
+    const head = `"Cairo"`;
+    const body = `"Cairo"`;
     const onPrimary = ATHR.onColor(c.primary);
     let css = `:root{--primary:${c.primary};--hero:${c.hero};--bg:${c.bg};--text:${c.text};--on-primary:${onPrimary};--logo-filter:${onPrimary === "#FFFFFF" ? "none" : "brightness(0)"};--font-head:${head},${body},system-ui,sans-serif;--font-body:${body},system-ui,-apple-system,"Segoe UI",sans-serif}`;
     // اللون الأساسي أسود تقريباً: في الوضع الداكن نجعل الأزرار فاتحة حتى تبقى واضحة
@@ -1390,13 +1390,13 @@ ATHR.TEMPLATES = [
         base: "huroof",
         name: "ليلة الحكايات",
         desc: "سماء ليلية بنفسجية بنجوم وهلال ذهبي، وأزرار مضيئة. مثالي لمتجر القصص الشخصية.",
-        theme: { primary: "#8B5CF6", hero: "#120A22", bg: "#170D2B", text: "#EFEAF8", font_head: "Amiri", font_body: "Amiri", radius: "round", header: "light", hero_pattern: false }
+        theme: { primary: "#8B5CF6", hero: "#120A22", bg: "#170D2B", text: "#EFEAF8", font_head: "Cairo", font_body: "Cairo", radius: "round", header: "light", hero_pattern: false }
     },
     {
         id: "huroof",
         name: "حروف وألوان",
-        desc: "الشكل الأصلي للمتجر: بيج هادئ وورق أبيض وألوان أقلام التلوين، وخط Amiri.",
-        theme: { primary: "#2B2620", hero: "#2B2620", bg: "#F3E9D9", text: "#2B2620", font_head: "Amiri", font_body: "Amiri", radius: "medium", header: "light", hero_pattern: false }
+        desc: "الشكل الأصلي للمتجر: بيج هادئ وورق أبيض وألوان أقلام التلوين، وخط Cairo.",
+        theme: { primary: "#2B2620", hero: "#2B2620", bg: "#F3E9D9", text: "#2B2620", font_head: "Cairo", font_body: "Cairo", radius: "medium", header: "light", hero_pattern: false }
     },
     {
         id: "classic",
@@ -1420,7 +1420,7 @@ ATHR.TEMPLATES = [
         id: "luxe",
         name: "أسود فاخر",
         desc: "أسود وذهبي: واجهة كبيرة في المنتصف، أقسام كبطاقات مجلة، وإطار ذهبي حول صور المنتجات.",
-        theme: { primary: "#121212", hero: "#0B0B0C", bg: "#F5F2EC", text: "#1A1814", font_head: "Amiri", font_body: "IBM Plex Sans Arabic", radius: "sharp", header: "color", hero_pattern: true }
+        theme: { primary: "#121212", hero: "#0B0B0C", bg: "#F5F2EC", text: "#1A1814", font_head: "Cairo", font_body: "IBM Plex Sans Arabic", radius: "sharp", header: "color", hero_pattern: true }
     },
     {
         id: "bold",
@@ -1469,7 +1469,7 @@ ATHR.themeClasses = function (config) {
 ATHR.headColor = (config) => (ATHR.template(config).id === "night" ? "#170D2B" : config.theme && config.theme.header === "light" ? "#FFFFFF" : ATHR.themeColors(config).primary);
 
 ATHR.fontHref = function (config) {
-    return "https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap";
+    return "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap";
     const t = config.theme || {};
     const families = [t.font_head, t.font_body].filter((f, i, arr) => ATHR.FONT_PARAMS[f] && arr.indexOf(f) === i);
     return families.length ? `https://fonts.googleapis.com/css2?${families.map((f) => `family=${ATHR.FONT_PARAMS[f]}`).join("&")}&display=swap` : "";

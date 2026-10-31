@@ -2512,7 +2512,7 @@
     // خط عربي مزخرف لبطاقة الإهداء فقط
     function giftFont() {
         const font = (C().gift || {}).font || "Aref Ruqaa";
-        const param = null; /* خط واحد: Amiri */
+        const param = null; /* خط واحد: Cairo */
         let link = document.getElementById("giftFont");
         if (!param) {
             if (link) link.remove();
