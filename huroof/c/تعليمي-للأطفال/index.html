@@ -29,7 +29,7 @@
 <script>window.ATHR_BASE = "/huroof/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("huroof_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("huroof_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
 /* رابط لوحة التحكم: شاشة انتظار من أول لحظة، وملفات اللوحة تبدأ التحميل مع ملفات المتجر */
-if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=340cc2c3d6"], ["style", B + "css/admin-panel.css?v=340cc2c3d6"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
+if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=d303454369"], ["style", B + "css/admin-panel.css?v=d303454369"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
 </head>
 <body>
 
@@ -61,6 +61,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             <a href="/huroof/">الرئيسية</a><span class="sep" aria-hidden="true">›</span><span aria-current="page">تعليمي للأطفال</span>
         </nav>
             <nav class="tiles wrap" aria-label="الأقسام">
+            <a class="tile tile-games" href="/huroof/games/"><span class="tile-img" style="display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,#8B5CF6,#EC4899)">🎮</span><span class="tile-name">ألعاب تعليمية</span></a>
             <a class="tile on" href="/huroof/c/%D8%AA%D8%B9%D9%84%D9%8A%D9%85%D9%8A-%D9%84%D9%84%D8%A3%D8%B7%D9%81%D8%A7%D9%84/" aria-current="page">
                     <span class="tile-img"><img src="/huroof/images/categories/coloring.jpg" alt="" loading="lazy" decoding="async" width="180" height="236"></span>
                     <span class="tile-name">تعليمي للأطفال</span>
@@ -254,11 +255,11 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 
 <script src="/huroof/js/supabase-config.js?v=3a3f59bac8" defer></script>
 <script src="/huroof/js/defaults.js?v=4e8199ed44" defer></script>
-<script src="/huroof/js/views.js?v=b904f8f0ee" defer></script>
+<script src="/huroof/js/views.js?v=aa689c2b6f" defer></script>
 <script src="/huroof/js/i18n-en.js?v=5e8cbf81b1" defer></script>
 <script src="/huroof/js/thumbs.js?v=99914b932b" defer></script>
 <script src="/huroof/js/rates.js?v=3245f6932f" defer></script>
 <script src="/huroof/js/catalog.js?v=c37b0331d3" defer></script>
-<script src="/huroof/js/store.js?v=340cc2c3d6" defer></script>
+<script src="/huroof/js/store.js?v=d303454369" defer></script>
 </body>
 </html>

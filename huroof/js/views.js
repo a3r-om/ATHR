@@ -756,6 +756,7 @@
         const cats = v.categories.filter((c) => v.counts.get(c.id));
         if (!cats.length) return "";
         return `<nav class="tiles wrap" aria-label="${esc(t("الأقسام"))}">
+            <a class="tile tile-games" href="${ATHR.base()}games/"><span class="tile-img" style="display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,#8B5CF6,#EC4899)">🎮</span><span class="tile-name">${esc(t("ألعاب تعليمية"))}</span></a>
             ${cats.map((c) => {
                 const img = V.categoryImage(v, c);
                 return `<a class="tile${current && current.id === c.id ? " on" : ""}" href="${ATHR.url.category(c)}"${current && current.id === c.id ? ' aria-current="page"' : ""}>
@@ -941,7 +942,8 @@
             </div>`
             : "";
         const curCat = current ? v.catById.get(current) : null;
-        return `<div class="section-head">
+        const gamesBanner = `<a class="gm-banner gm-home" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("حروف وكلمات وتوصيل وذاكرة... العب وتعلّم!"))}</small></span><span class="gm-go">${esc(t("العب الآن"))} ←</span></a>`;
+        return `${gamesBanner}<div class="section-head">
                 <h2 id="catalog-t">${esc(curCat ? V.cname(curCat) : t("كل المنتجات"))} <small class="muted">(${all.length})</small></h2>
                 ${V.sortSelect(v, sort)}
             </div>
