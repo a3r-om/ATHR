@@ -1143,18 +1143,22 @@
         </nav>`;
     };
 
-    // تقسيم داخلي لقسم الصفوف حسب المادة (بدون أقسام جديدة)
+    // تقسيم داخلي لقسم الصفوف حسب الصف (بدون أقسام جديدة)
     V.subjectGroups = function (v, cat, list) {
         if (!/الصفوف-1-إلى-4/.test(cat.slug || "")) return "";
-        const G = [["الرياضيات", /^الرياضيات|الضرب|الكسور/], ["اللغة العربية", /^اللغة العربية|تتبّع وكتابة الحروف العربية|قراءة وفهم/], ["English", /^English/], ["التربية الإسلامية", /^التربية/]];
-        const used = new Set();
-        const out = G.map(([name, re]) => {
-            const items = list.filter((p) => !used.has(p.id) && re.test(p.name));
-            items.forEach((p) => used.add(p.id));
-            return items.length ? `<h2 class="sub-h">${esc(t(name))} <small class="muted">(${items.length})</small></h2>${V.grid(v, items)}` : "";
-        }).join("");
-        const rest = list.filter((p) => !used.has(p.id));
-        return out + (rest.length ? V.grid(v, rest) : "");
+        const extra = { 1: /تتبّع وكتابة الحروف العربية|English Letters Tracing/, 2: /جدول الضرب/, 3: /قراءة وفهم|الكسور/, 4: /$^/ };
+        const names = ["الصف الأول", "الصف الثاني", "الصف الثالث", "الصف الرابع"];
+        const gr = (p) => {
+            const m = names.findIndex((n) => p.name.includes(n));
+            if (m >= 0) return m + 1;
+            for (const k of [1, 2, 3, 4]) if (extra[k].test(p.name)) return k;
+            return 0;
+        };
+        const buckets = [1, 2, 3, 4].map((g) => list.filter((p) => gr(p) === g));
+        const rest = list.filter((p) => !gr(p));
+        const chips = `<div class="cat-chips grade-jump">${names.map((n, i) => buckets[i].length ? `<a class="chip" href="#grade-${i + 1}">${esc(t(n))} <small>${buckets[i].length}</small></a>` : "").join("")}</div>`;
+        const out = buckets.map((items, i) => items.length ? `<h2 class="sub-h" id="grade-${i + 1}">${esc(t(names[i]))} <small class="muted">(${items.length})</small></h2>${V.grid(v, items)}` : "").join("");
+        return chips + out + (rest.length ? V.grid(v, rest) : "");
     };
 
     V.category = function (v, cat, { sort = "default", shown = 0 } = {}) {
