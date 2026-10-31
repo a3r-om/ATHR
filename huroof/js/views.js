@@ -851,7 +851,7 @@
     V.giftStyle = function (v, gender = "") {
         const g = v.cfg.gift || {};
         const c = ATHR.giftColors(v.cfg, gender);
-        const font = ATHR.FONT_PARAMS[g.font] ? `"${g.font}"` : g.font === "system" ? "system-ui" : `"Aref Ruqaa"`;
+        const font = `"Amiri"`;
         return `--g-bg:${c.bg};--g-box:${c.box};--g-ribbon:${c.ribbon};--g-paper:${c.paper};--g-ink:${c.ink};--g-accent:${c.accent};--g-font:${font}`;
     };
 

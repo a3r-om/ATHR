@@ -1367,8 +1367,8 @@ ATHR.onColor = function (hex) {
 ATHR.themeVars = function (config) {
     const t = config.theme || {};
     const c = ATHR.themeColors(config);
-    const head = ATHR.FONT_PARAMS[t.font_head] ? `"${t.font_head}"` : "system-ui";
-    const body = ATHR.FONT_PARAMS[t.font_body] ? `"${t.font_body}"` : "system-ui";
+    const head = `"Amiri"`;
+    const body = `"Amiri"`;
     const onPrimary = ATHR.onColor(c.primary);
     let css = `:root{--primary:${c.primary};--hero:${c.hero};--bg:${c.bg};--text:${c.text};--on-primary:${onPrimary};--logo-filter:${onPrimary === "#FFFFFF" ? "none" : "brightness(0)"};--font-head:${head},${body},system-ui,sans-serif;--font-body:${body},system-ui,-apple-system,"Segoe UI",sans-serif}`;
     // اللون الأساسي أسود تقريباً: في الوضع الداكن نجعل الأزرار فاتحة حتى تبقى واضحة
@@ -1469,6 +1469,7 @@ ATHR.themeClasses = function (config) {
 ATHR.headColor = (config) => (ATHR.template(config).id === "night" ? "#170D2B" : config.theme && config.theme.header === "light" ? "#FFFFFF" : ATHR.themeColors(config).primary);
 
 ATHR.fontHref = function (config) {
+    return "https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap";
     const t = config.theme || {};
     const families = [t.font_head, t.font_body].filter((f, i, arr) => ATHR.FONT_PARAMS[f] && arr.indexOf(f) === i);
     return families.length ? `https://fonts.googleapis.com/css2?${families.map((f) => `family=${ATHR.FONT_PARAMS[f]}`).join("&")}&display=swap` : "";

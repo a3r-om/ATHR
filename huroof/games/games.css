@@ -3,7 +3,7 @@
 :root { --ink: #2B1B4F; --pri: #6D3FE0; --pri2: #8B5CF6; --ok: #22B45E; --bad: #EF4444; --sun: #FFC93C; --card: #fff; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; min-height: 100%; }
-body { font-family: "Amiri", "Noto Naskh Arabic", serif; color: var(--ink); background: linear-gradient(180deg, #CFE8FF 0%, #EAF4FF 45%, #FFF7E6 100%); min-height: 100vh; min-height: 100dvh; overflow-x: hidden; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+body { font-family: "Amiri", serif; color: var(--ink); background: linear-gradient(180deg, #CFE8FF 0%, #EAF4FF 45%, #FFF7E6 100%); min-height: 100vh; min-height: 100dvh; overflow-x: hidden; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
 .cloud { position: absolute; right: -200px; width: 140px; height: 46px; background: #fff; border-radius: 99px; opacity: .8; animation: drift 60s linear infinite; will-change: translate; }
@@ -209,3 +209,5 @@ button, .opt, .tile, .gcard, .catcard, .bubble { touch-action: manipulation; -we
 
 .cta-wa { display: block; margin: 16px auto 0; max-width: 360px; padding: 14px 18px; border-radius: 22px; background: #25D366; color: #fff; font-weight: 800; font-size: 22px; text-align: center; text-decoration: none; box-shadow: 0 5px 0 #168a43; }
 .cta-wa:active { transform: translateY(3px); box-shadow: 0 2px 0 #168a43; }
+
+button, input, select, textarea { font-family: "Amiri", serif; }

@@ -28,12 +28,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="/huroof/css/store.css?v=b9abc4e153">
+<link rel="stylesheet" href="/huroof/css/store.css?v=8e3d020a44">
 <style id="themeVars">:root{--primary:#8B5CF6;--hero:#FFFFFF;--bg:#FFFFFF;--text:#2B1B4F;--on-primary:#141414;--logo-filter:brightness(0);--font-head:"Amiri","Amiri",system-ui,sans-serif;--font-body:"Amiri",system-ui,-apple-system,"Segoe UI",sans-serif}</style>
 <script>window.ATHR_BASE = "/huroof/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("huroof_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("huroof_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
 /* رابط لوحة التحكم: شاشة انتظار من أول لحظة، وملفات اللوحة تبدأ التحميل مع ملفات المتجر */
-if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=b130cb5c18"], ["style", B + "css/admin-panel.css?v=b130cb5c18"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
+if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); var B = window.ATHR_BASE; [["script", B + "js/vendor/supabase.js"], ["script", B + "js/admin-panel.js?v=a6ecc47a33"], ["style", B + "css/admin-panel.css?v=a6ecc47a33"]].forEach(function (x) { var l = document.createElement("link"); l.rel = "preload"; l.as = x[0]; l.href = x[1]; document.head.appendChild(l); }); } })();</script>
 </head>
 <body>
 
@@ -172,12 +172,12 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="/huroof/js/supabase-config.js?v=3a3f59bac8" defer></script>
-<script src="/huroof/js/defaults.js?v=7755e0cd56" defer></script>
-<script src="/huroof/js/views.js?v=c2b2a1e70f" defer></script>
+<script src="/huroof/js/defaults.js?v=117f930e0d" defer></script>
+<script src="/huroof/js/views.js?v=fe9eda2dfe" defer></script>
 <script src="/huroof/js/i18n-en.js?v=5e8cbf81b1" defer></script>
 <script src="/huroof/js/thumbs.js?v=99914b932b" defer></script>
 <script src="/huroof/js/rates.js?v=3245f6932f" defer></script>
 <script src="/huroof/js/catalog.js?v=7d9cf6dc7b" defer></script>
-<script src="/huroof/js/store.js?v=b130cb5c18" defer></script>
+<script src="/huroof/js/store.js?v=a6ecc47a33" defer></script>
 </body>
 </html>
