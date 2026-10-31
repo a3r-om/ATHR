@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-mode="light" class="tpl-huroof head-light">
+<html lang="ar" dir="rtl" data-mode="light" class="r-round tpl-classic head-light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="/huroof/css/store.css?v=b81548c30b">
-<style id="themeVars">:root{--primary:#2B2620;--hero:#2B2620;--bg:#F3E9D9;--text:#2B2620;--on-primary:#FFFFFF;--logo-filter:none;--font-head:"Cairo","Cairo",system-ui,sans-serif;--font-body:"Cairo",system-ui,-apple-system,"Segoe UI",sans-serif}html[data-mode="dark"]{--btn-bg:#F1EEE8;--btn-ink:#141414}@media (prefers-color-scheme:dark){html[data-mode="auto"]{--btn-bg:#F1EEE8;--btn-ink:#141414}}</style>
+<link rel="stylesheet" href="/huroof/css/store.css?v=6c6a425940">
+<style id="themeVars">:root{--primary:#2B59E6;--hero:#2B59E6;--bg:#F6F8FC;--text:#101828;--on-primary:#FFFFFF;--logo-filter:none;--font-head:"Cairo","Cairo",system-ui,sans-serif;--font-body:"Cairo",system-ui,-apple-system,"Segoe UI",sans-serif}</style>
 <script>window.ATHR_BASE = "/huroof/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("huroof_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("huroof_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
 /* رابط لوحة التحكم: شاشة انتظار من أول لحظة، وملفات اللوحة تبدأ التحميل مع ملفات المتجر */
@@ -53,7 +53,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
     </div>
 </header>
 
-<div id="bars" class="bars"><div class="bar bar-announce">جديد في المتجر: أوراق عمل المواد الدراسية للصفوف 1–4، وأدوات جاهزة للمعلمات.</div></div>
+<div id="bars" class="bars"></div>
 
 <main id="view" tabindex="-1" data-route="shipping" data-prerendered="1">
 <nav class="crumbs wrap" aria-label="مسار التصفح">
@@ -75,7 +75,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
                     <li>اكتب اسمك ورقم واتساب واختر طريقة الدفع، بدون تسجيل حساب.</li>
                     <li>أرسل الطلب عبر واتساب بضغطة، وبعد تأكيد الدفع نرسل لك القصة في نفس المحادثة.</li>
                 </ol>
-                <h2>أسئلة متكررة</h2><div class="faq-list"><details class="faq-item"><summary>كيف يصلني الملف؟</summary><p>بعد ما ترسل الطلب على واتساب ونؤكد الدفع، نرسل لك الملفات في نفس المحادثة: الملفات بصيغة PDF.</p></details><details class="faq-item"><summary>هل أحتاج برنامجاً خاصاً لفتح الملفات؟</summary><p>لا. ملفات PDF تفتح على أي جوال أو كمبيوتر، ويمكن طباعتها مباشرة أو من أي مكتبة.</p></details><details class="faq-item"><summary>هل الملفات ملوّنة أم أبيض وأسود؟</summary><p>صفحات التلوين وأوراق العمل بالأبيض والأسود لتوفير الحبر، والقصص والشهادات واللوحات ملوّنة، وكلها تُطبع جيداً على أي طابعة.</p></details><details class="faq-item"><summary>ما مقاس الطباعة؟</summary><p>كل ملفات PDF بمقاس A4، والشهادات وبعض جداول المعلمة بالعرض.</p></details><details class="faq-item"><summary>هل في الملفات حلول؟</summary><p>نعم، ملفات المواد الدراسية الأربع، وجدول الضرب، والقراءة والفهم، والكسور، وكتاب «العب وتعلّم»، وبطاقات الأنشطة، كلها فيها صفحات حلول في آخرها.</p></details><details class="faq-item"><summary>هل أقدر أطبع الملف أكثر من مرة؟</summary><p>نعم، تطبعه كلما احتجت لاستخدامك الشخصي أو لطلاب فصلك. لا يُسمح بإعادة بيع الملف أو نشره.</p></details><details class="faq-item"><summary>هل أقدر أجرّب قبل الشراء؟</summary><p>نعم، اطلب صفحة مجانية من أي ملف على واتساب، أو افتح الملف هنا لترى صفحات منه.</p></details><details class="faq-item"><summary>كيف أدفع؟</summary><p>نرسل لك المبلغ وطريقة الدفع على واتساب مع تأكيد طلبك.</p></details></div>
+                <h2>أسئلة متكررة</h2><div class="faq-list"><details class="faq-item"><summary>كيف يصلني الملف؟</summary><p>بعد ما ترسل الطلب على واتساب ونؤكد الدفع، نرسل لك الملفات في نفس المحادثة: الملفات بصيغة PDF.</p></details><details class="faq-item"><summary>هل أحتاج برنامجاً خاصاً لفتح الملفات؟</summary><p>لا. ملفات PDF تفتح على أي جوال أو كمبيوتر، ويمكن طباعتها مباشرة أو من أي مكتبة.</p></details><details class="faq-item"><summary>هل الملفات ملوّنة أم أبيض وأسود؟</summary><p>صفحات التلوين وأوراق العمل بالأبيض والأسود لتوفير الحبر، والشهادات واللوحات ملوّنة، وكلها تُطبع جيداً على أي طابعة.</p></details><details class="faq-item"><summary>ما مقاس الطباعة؟</summary><p>كل ملفات PDF بمقاس A4، والشهادات وبعض جداول المعلمة بالعرض.</p></details><details class="faq-item"><summary>هل في الملفات حلول؟</summary><p>نعم، ملفات المواد الدراسية الأربع، وجدول الضرب، والقراءة والفهم، والكسور، وكتاب «العب وتعلّم»، وبطاقات الأنشطة، كلها فيها صفحات حلول في آخرها.</p></details><details class="faq-item"><summary>هل أقدر أطبع الملف أكثر من مرة؟</summary><p>نعم، تطبعه كلما احتجت لاستخدامك الشخصي أو لطلاب فصلك. لا يُسمح بإعادة بيع الملف أو نشره.</p></details><details class="faq-item"><summary>هل أقدر أجرّب قبل الشراء؟</summary><p>نعم، اطلب صفحة مجانية من أي ملف على واتساب، أو افتح الملف هنا لترى صفحات منه.</p></details><details class="faq-item"><summary>كيف أدفع؟</summary><p>نرسل لك المبلغ وطريقة الدفع على واتساب مع تأكيد طلبك.</p></details></div>
                 <h2>العملات</h2>
                 <p class="muted">نعرض الأسعار بعملة دولتك تقريبيًا، ويُحسب الطلب بالريال العماني.</p>
                 
@@ -116,7 +116,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <script src="/huroof/js/i18n-en.js?v=5e8cbf81b1" defer></script>
 <script src="/huroof/js/thumbs.js?v=99914b932b" defer></script>
 <script src="/huroof/js/rates.js?v=3245f6932f" defer></script>
-<script src="/huroof/js/catalog.js?v=10e1b72297" defer></script>
+<script src="/huroof/js/catalog.js?v=b6eb022436" defer></script>
 <script src="/huroof/js/store.js?v=340cc2c3d6" defer></script>
 </body>
 </html>

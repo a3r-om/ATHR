@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-mode="light" class="tpl-huroof head-light">
+<html lang="ar" dir="rtl" data-mode="light" class="r-round tpl-classic head-light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="fontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="/huroof/css/store.css?v=b81548c30b">
-<style id="themeVars">:root{--primary:#2B2620;--hero:#2B2620;--bg:#F3E9D9;--text:#2B2620;--on-primary:#FFFFFF;--logo-filter:none;--font-head:"Cairo","Cairo",system-ui,sans-serif;--font-body:"Cairo",system-ui,-apple-system,"Segoe UI",sans-serif}html[data-mode="dark"]{--btn-bg:#F1EEE8;--btn-ink:#141414}@media (prefers-color-scheme:dark){html[data-mode="auto"]{--btn-bg:#F1EEE8;--btn-ink:#141414}}</style>
+<link rel="stylesheet" href="/huroof/css/store.css?v=6c6a425940">
+<style id="themeVars">:root{--primary:#2B59E6;--hero:#2B59E6;--bg:#F6F8FC;--text:#101828;--on-primary:#FFFFFF;--logo-filter:none;--font-head:"Cairo","Cairo",system-ui,sans-serif;--font-body:"Cairo",system-ui,-apple-system,"Segoe UI",sans-serif}</style>
 <script>window.ATHR_BASE = "/huroof/";
 (function () { var d = document.documentElement; try { var m = JSON.parse(localStorage.getItem("huroof_mode")); if (m === "light" || m === "dark" || m === "auto") d.setAttribute("data-mode", m); } catch (e) {} try { if (JSON.parse(localStorage.getItem("huroof_lang")) === "en") { d.lang = "en"; d.dir = "ltr"; d.classList.add("i18n-wait"); setTimeout(function () { d.classList.remove("i18n-wait"); }, 2500); } } catch (e) {}
 /* رابط لوحة التحكم: شاشة انتظار من أول لحظة، وملفات اللوحة تبدأ التحميل مع ملفات المتجر */
@@ -53,18 +53,15 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
     </div>
 </header>
 
-<div id="bars" class="bars"><div class="bar bar-announce">جديد في المتجر: أوراق عمل المواد الدراسية للصفوف 1–4، وأدوات جاهزة للمعلمات.</div></div>
+<div id="bars" class="bars"></div>
 
 <main id="view" tabindex="-1" data-route="home" data-prerendered="1">
 
-            <section class="hero">
-            
+            <section class="hero hero-compact">
             <div class="wrap hero-inner">
                 <h1>ملفات تعليمية جاهزة للطباعة</h1>
-                <p>تلوين وأنشطة للأطفال، وأوراق عمل للمواد الدراسية من الصف الأول إلى الرابع مع الحلول، ومواد للمعلمات. اختر الملف، يصلك على واتساب، واطبعه أو اعرضه في الفصل.</p>
-                <ul class="hero-features"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>PDF بمقاس A4</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>يصلك على واتساب</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>تطبعه أكثر من مرة</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>حزم بسعر أقل</li></ul>
+                <ul class="hero-mini"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7.5l4 4v13h-11.5z"/><path d="M14 3.5v4h4M9.5 12h5M9.5 15.5h5"/></svg><span>قصص PDF جاهزة للطباعة</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v10M8 9.8l4 3.7 4-3.7"/><path d="M4 13.5v5.5h16v-5.5"/></svg><span>تصلك على واتساب</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span>تحويل بنكي آمن</span></li></ul>
                 
-                <div class="hero-shots" aria-hidden="true"><span class="hs hs1"><img src="/huroof/images/p/c1-0.jpg" alt="" loading="lazy" decoding="async" width="200" height="250"></span><span class="hs hs2"><img src="/huroof/images/p/c2-0.jpg" alt="" loading="lazy" decoding="async" width="200" height="250"></span><span class="hs hs3"><img src="/huroof/images/p/c3-0.jpg" alt="" loading="lazy" decoding="async" width="200" height="250"></span></div>
             </div>
         </section>
             <nav class="tiles wrap" aria-label="الأقسام">
@@ -555,12 +552,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
             </div>
         </section>
             
-            <section class="section home-faq" id="faq" aria-labelledby="faq-t">
-            <div class="wrap">
-                <div class="section-head"><h2 id="faq-t">أسئلة متكررة</h2><a class="more" href="/huroof/shipping/">كل الأسئلة</a></div>
-                <div class="faq-list"><details class="faq-item"><summary>كيف يصلني الملف؟</summary><p>بعد ما ترسل الطلب على واتساب ونؤكد الدفع، نرسل لك الملفات في نفس المحادثة: الملفات بصيغة PDF.</p></details><details class="faq-item"><summary>هل أحتاج برنامجاً خاصاً لفتح الملفات؟</summary><p>لا. ملفات PDF تفتح على أي جوال أو كمبيوتر، ويمكن طباعتها مباشرة أو من أي مكتبة.</p></details><details class="faq-item"><summary>هل الملفات ملوّنة أم أبيض وأسود؟</summary><p>صفحات التلوين وأوراق العمل بالأبيض والأسود لتوفير الحبر، والقصص والشهادات واللوحات ملوّنة، وكلها تُطبع جيداً على أي طابعة.</p></details><details class="faq-item"><summary>ما مقاس الطباعة؟</summary><p>كل ملفات PDF بمقاس A4، والشهادات وبعض جداول المعلمة بالعرض.</p></details><details class="faq-item"><summary>هل في الملفات حلول؟</summary><p>نعم، ملفات المواد الدراسية الأربع، وجدول الضرب، والقراءة والفهم، والكسور، وكتاب «العب وتعلّم»، وبطاقات الأنشطة، كلها فيها صفحات حلول في آخرها.</p></details></div>
-            </div>
-        </section>
+            
             <section class="wrap seo-intro"><p class="intro">حروف وألوان متجر عُماني لملفات تعليمية جاهزة للطباعة: تلوين وأنشطة للأطفال، وأوراق عمل لطلاب الابتدائي، ومواد للمعلمات. كل الرسومات أصلية، والملفات تصلك على واتساب.</p></section>
 </main>
 
@@ -597,7 +589,7 @@ if (/^#(admin|orders)$/.test(location.hash)) { d.classList.add("owner-boot"); va
 <script src="/huroof/js/i18n-en.js?v=5e8cbf81b1" defer></script>
 <script src="/huroof/js/thumbs.js?v=99914b932b" defer></script>
 <script src="/huroof/js/rates.js?v=3245f6932f" defer></script>
-<script src="/huroof/js/catalog.js?v=10e1b72297" defer></script>
+<script src="/huroof/js/catalog.js?v=b6eb022436" defer></script>
 <script src="/huroof/js/store.js?v=340cc2c3d6" defer></script>
 </body>
 </html>
