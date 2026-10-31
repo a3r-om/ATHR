@@ -105,7 +105,7 @@ const cheer = () => { const has = AMAN && AMAN.praise[anorm(CHILD)]; return (has
 const tryAgain = () => TRY_N[rnd(TRY_N.length)].replace("{n}", CHILD);
 /* ---------- صوت وئام (تسجيلات حقيقية فقط، بلا صوت الجهاز) ---------- */
 let AMAN = null, AEL = null, AKEYS = [], AQ = [], AGEN = {};
-fetch("audio/manifest.json?v=11").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
+fetch("audio/manifest.json?v=12").then((r) => r.json()).then((m) => { AMAN = m; AGEN = m.gen || {}; AKEYS = Object.assign({}, m.w, AGEN); }).catch(() => { /* */ });
 const anorm = (t) => String(t).replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^ء-يa-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 function segment(t) {
   const tok = t.split(" "), out = []; let all = true;
@@ -166,7 +166,7 @@ function voiceIdle() {
 function stopVoice() { SEQ++; AQ = []; try { if (AEL) AEL.pause(); } catch { /* */ } }
 function nextClip() {
   const fn = AQ.shift(); if (!fn) return;
-  try { AEL.src = /^https?:/.test(fn) ? fn : "audio/" + fn + "?v=11"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
+  try { AEL.src = /^https?:/.test(fn) ? fn : "audio/" + fn + "?v=12"; const p = AEL.play(); if (p && p.catch) p.catch(() => {}); } catch { /* */ }
 }
 function playQ(q) {
   if (!q.length) return;
@@ -331,7 +331,7 @@ const stars = (n) => "⭐".repeat(n) + "☆".repeat(3 - n);
 
 let cur = null;
 function frame(g) {
-  cur = g;
+  cur = g; track("start", g.id);
   app.innerHTML = `
     <div class="bar"><button class="pill btn" id="back">→ رجوع</button><div class="title">${g.ic} ${g.t}</div><button class="pill btn" id="mute">${muted ? "🔇" : "🔊"}</button></div>
     <div class="dots" id="dots"></div>
@@ -343,18 +343,24 @@ function frame(g) {
 function setDots(n, done, curI) {
   $("#dots").innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? "on" : ""}${i === curI ? " cur" : ""}"></i>`).join("");
 }
+const SID = (() => { try { let v = localStorage.getItem("hg_sid"); if (!v) { v = Math.random().toString(36).slice(2, 12) + Date.now().toString(36).slice(-4); localStorage.setItem("hg_sid", v); } return v; } catch { return "anon" + Math.random().toString(36).slice(2, 8); } })();
+function track(ev, game, stars) { try { fetch("https://zcnwzpevehudhnsuljdy.supabase.co/functions/v1/game-log", { method: "POST", headers: { "content-type": "text/plain" }, body: JSON.stringify({ sid: SID, ev, game: game || "", stars }), keepalive: true }).catch(() => {}); } catch { /* */ } }
+track("open");
+const WA_TXT = () => encodeURIComponent(`السلام عليكم، لعب طفلي ${CHILD} في ألعاب حروف وألوان وأرغب بقصة باسمه`);
 function finish(stage, score, total, msg = "") {
   const ratio = score / total;
   const st = ratio >= 0.9 ? 3 : ratio >= 0.65 ? 2 : ratio >= 0.35 ? 1 : 0;
   const before = totalStars();
-  saveStars(cur.id, st); checkUnlock(before);
+  saveStars(cur.id, st); checkUnlock(before); track("finish", cur.id, st);
   setTimeout(() => speak(st >= 2 ? `أحسنت وبارك الله فيك يا ${CHILD}` : st === 1 ? `جميل يا ${CHILD}، حاول مرة ثانية` : `لا بأس يا ${CHILD}، جرّب مرة أخرى`), 1200);
   sfx.win(); setTimeout(() => sfx.clap(), 700); confetti(innerWidth / 2, innerHeight / 3, 120); setTimeout(() => confetti(innerWidth * .2, innerHeight / 2, 60), 250); setTimeout(() => confetti(innerWidth * .8, innerHeight / 2, 60), 450);
   stage.innerHTML = `<div class="win"><div class="trophy">${st === 3 ? "🏆" : st === 2 ? "🥈" : st === 1 ? "🥉" : "💪"}</div>
     <h2>${st === 3 ? "ممتاز! أنت بطل!" : st === 2 ? "أحسنت!" : st === 1 ? "جميل! حاول مرة ثانية" : "لا بأس، جرّب مرة أخرى"}</h2>
     <div class="stars">${[1, 2, 3].map((i) => `<span class="${i <= st ? "" : "off"}">⭐</span>`).join("")}</div>
     ${msg ? `<p class="prompt">${msg}</p>` : `<p class="prompt">${score} من ${total}</p>`}
-    <div class="row"><button class="btn-big" id="again">🔄 العب مرة أخرى</button><button class="btn-big alt" id="menu">🏠 الألعاب</button></div></div>`;
+    <div class="row"><button class="btn-big" id="again">🔄 العب مرة أخرى</button><button class="btn-big alt" id="menu">🏠 الألعاب</button></div>
+    <a class="cta-wa" id="wa" target="_blank" rel="noopener" href="https://wa.me/96877336242?text=${WA_TXT()}">📖 اصنع قصة باسم ${esc(CHILD)}</a></div>`;
+  $("#wa").onclick = () => track("cta", cur.id);
   $("#again").onclick = () => go(() => frame(cur));
   $("#menu").onclick = () => go(backFn());
 }
