@@ -3393,7 +3393,7 @@
             if (cfg.contact.menu_home !== false) main.push(row(`${ico(V.icon.home)}<span class="ml">${esc(t("الصفحة الرئيسية"))}</span>`, { href: BASE }));
             if (cfg.sales.favorites !== false) main.push(row(`${ico(V.icon.heart, " fav")}<span class="ml">${esc(t("المفضلة"))}</span>${favIds().length ? `<small class="mval">${favIds().length}</small>` : ""}`, { href: `${BASE}fav/` }));
             if (ATHR.loyaltyOn(cfg)) main.push(row(`${ico(V.icon.star, " star")}<span class="ml">${esc(t("نقاطي"))}<small>${esc(t("رصيدك وكم باقي على الخصم"))}</small></span>${PTS.data ? `<small class="mval">${Number(PTS.data.points) || 0}</small>` : ""}`, { href: `${BASE}points/` }));
-            main.push(row(`${ico("🎮")}<span class="ml">${esc(t("ألعاب تعليمية"))}<small>${esc(t("مجانية للأطفال"))}</small></span>`, { href: `${BASE}games/` }));
+            main.push(row(`${ico("🎮")}<span class="ml">${esc(t("ألعاب تعليمية"))}<small>${esc(t("للأطفال مجاناً"))}</small></span>`, { href: `${BASE}games/` }));
             if (cats.length) {
                 main.push(`<button class="mrow" type="button" data-menu-cats aria-expanded="${menuCatsOpen}" aria-controls="menuCats">${ico(V.icon.grid)}<span class="ml">${esc(t("تسوّق حسب القسم"))}</span><small class="mval">${cats.length}</small><span class="mchev down">${V.icon.chevron}</span></button>
                     <div class="menu-cats" id="menuCats"${menuCatsOpen ? "" : " hidden"}>${cats.map((c) => {

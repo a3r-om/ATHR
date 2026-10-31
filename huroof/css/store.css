@@ -3335,3 +3335,9 @@ body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antial
 .foot-acc, .foot-acc a, .foot-acc p, .foot-acc span, .foot-follow, .foot-follow > span { color: var(--text); }
 .foot-acc a.btn-wa, .foot-acc .btn-wa { color: #fff; }
 .foot-points li { color: var(--text); }
+
+.sub-h{font-size:18px;margin:22px 0 10px;color:var(--text);display:flex;align-items:center;gap:8px}.sub-h:first-child{margin-top:4px}
+
+.gm-banner{padding:12px 16px!important;border-radius:var(--r,20px)!important;background:linear-gradient(135deg,#7C5CF0,#B05CE8)!important;box-shadow:0 6px 18px rgba(124,92,240,.22)!important}
+.gm-ic{font-size:34px!important;animation:none!important}.gm-tx b{font-size:17px!important}.gm-tx small{font-size:13px!important}
+.gm-banner::after{display:none}.gm-go{font-size:13px!important}

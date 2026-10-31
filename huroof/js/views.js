@@ -942,7 +942,7 @@
             </div>`
             : "";
         const curCat = current ? v.catById.get(current) : null;
-        const gamesBanner = `<a class="gm-banner gm-home" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("حروف وكلمات وتوصيل وذاكرة... العب وتعلّم!"))}</small></span><span class="gm-go">${esc(t("العب الآن"))} ←</span></a>`;
+        const gamesBanner = `<a class="gm-banner gm-home" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("العب وتعلّم الحروف والأرقام"))}</small></span><span class="gm-go">${esc(t("ابدأ اللعب"))} ←</span></a>`;
         return `${gamesBanner}<div class="section-head">
                 <h2 id="catalog-t">${esc(curCat ? V.cname(curCat) : t("كل المنتجات"))} <small class="muted">(${all.length})</small></h2>
                 ${V.sortSelect(v, sort)}
@@ -1060,7 +1060,7 @@
             <nav class="hs-nav" aria-label="${esc(t("الأقسام"))}"><div class="wrap">
                 <a href="${ATHR.base()}games/">🎮 ${esc(t("ألعاب"))}</a>${list.length ? `<a href="#stories">📚 ${esc(t("قصص 3D"))}</a>` : ""}${nameBooks.length ? `<a href="#books">✏️ ${esc(t("كتب باسم طفلك"))}</a>` : ""}${kidsList.length ? `<a href="#kids">🎨 ${esc(t("تعليمي للأطفال"))}</a>` : ""}${stuList.length ? `<a href="#students">🎓 ${esc(t("الصفوف 1-4"))}</a>` : ""}
             </div></nav>
-            <section class="gm-banner-sec"><div class="wrap"><a class="gm-banner" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("حروف وكلمات وتوصيل وذاكرة... العب وتعلّم!"))}</small></span><span class="gm-go">${esc(t("العب الآن"))} ←</span></a></div></section>
+            <section class="gm-banner-sec"><div class="wrap"><a class="gm-banner" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("العب وتعلّم الحروف والأرقام"))}</small></span><span class="gm-go">${esc(t("ابدأ اللعب"))} ←</span></a></div></section>
             <section class="section ks-best" id="stories" aria-labelledby="best-t">
                 <div class="wrap">
                     <div class="section-head ks-head"><h2 id="best-t">${esc(list.length ? t("📚 قصص ثلاثية الأبعاد، طفلك بطلها") : t("قصصنا الجديدة قريباً"))}</h2></div>
@@ -1143,6 +1143,20 @@
         </nav>`;
     };
 
+    // تقسيم داخلي لقسم الصفوف حسب المادة (بدون أقسام جديدة)
+    V.subjectGroups = function (v, cat, list) {
+        if (!/الصفوف-1-إلى-4/.test(cat.slug || "")) return "";
+        const G = [["الرياضيات", /^الرياضيات|الضرب|الكسور/], ["اللغة العربية", /^اللغة العربية|تتبّع وكتابة الحروف العربية|قراءة وفهم/], ["English", /^English/], ["التربية الإسلامية", /^التربية/]];
+        const used = new Set();
+        const out = G.map(([name, re]) => {
+            const items = list.filter((p) => !used.has(p.id) && re.test(p.name));
+            items.forEach((p) => used.add(p.id));
+            return items.length ? `<h2 class="sub-h">${esc(t(name))} <small class="muted">(${items.length})</small></h2>${V.grid(v, items)}` : "";
+        }).join("");
+        const rest = list.filter((p) => !used.has(p.id));
+        return out + (rest.length ? V.grid(v, rest) : "");
+    };
+
     V.category = function (v, cat, { sort = "default", shown = 0 } = {}) {
         const list = V.sortList(V.listings(v, v.products.filter((p) => p.category_id === cat.id)), sort);
         const desc = L(cat, "description");
@@ -1156,7 +1170,7 @@
                     </div>
                     ${desc ? `<p class="cat-desc">${esc(desc)}</p>` : ""}
                     ${V.curNote(v)}
-                    <div id="gridBox">${list.length ? V.limitedGrid(v, list, shown) : `<div class="empty"><p>${esc(t("لا توجد منتجات في هذا القسم حاليًا."))}</p><a class="btn btn-primary" href="${ATHR.url.home()}">${esc(t("تصفّح كل المنتجات"))}</a></div>`}</div>
+                    <div id="gridBox">${list.length ? (V.subjectGroups(v, cat, list) || V.limitedGrid(v, list, shown)) : `<div class="empty"><p>${esc(t("لا توجد منتجات في هذا القسم حاليًا."))}</p><a class="btn btn-primary" href="${ATHR.url.home()}">${esc(t("تصفّح كل المنتجات"))}</a></div>`}</div>
                 </div>
             </section>`;
     };
