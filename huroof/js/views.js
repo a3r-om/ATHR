@@ -943,11 +943,11 @@
         const curCat = current ? v.catById.get(current) : null;
         const gamesBanner = `<a class="gm-banner gm-home" href="${ATHR.base()}games/"><span class="gm-ic" aria-hidden="true">🎮</span><span class="gm-tx"><b>${esc(t("ألعاب تعليمية مجانية"))}</b><small>${esc(t("العب وتعلّم الحروف والأرقام"))}</small></span><span class="gm-go">${esc(t("ابدأ اللعب"))} ←</span></a>`;
         const whyRow = current ? "" : `<section class="why-row" aria-label="${esc(t("لماذا ملفاتنا"))}">${[
-            ["🎯", t("جاهزة بدون بحث"), t("ملفات مرتّبة لكل صف، وفّر وقتك بدل البحث بين مئات الملفات.")],
-            ["✅", t("حلول كاملة"), t("صفحات حلول في آخر كل ملف توفّر عليك وقت المراجعة.")],
-            ["🎨", t("تصميم ملوّن موحّد"), t("صفحات جذابة بنفس الجودة من أول صفحة لآخر صفحة.")],
-            ["🖨️", t("اطبعه كل ما احتجت"), t("لك ولطلاب فصلك، ويصلك على واتساب خلال ساعات.")]
-        ].map(([i, h, p]) => `<div class="why-c"><span aria-hidden="true">${i}</span><b>${esc(h)}</b><small>${esc(p)}</small></div>`).join("")}</section>`;
+            ["🎯", t("جاهزة بدون بحث")],
+            ["✅", t("حلول كاملة")],
+            ["🎨", t("ملوّنة وجذابة")],
+            ["🖨️", t("اطبعه كل ما احتجت")]
+        ].map(([i, h]) => `<div class="why-c"><span aria-hidden="true">${i}</span><b>${esc(h)}</b></div>`).join("")}</section>`;
         return `${whyRow}${gamesBanner}<div class="section-head">
                 <h2 id="catalog-t">${esc(curCat ? V.cname(curCat) : t("كل المنتجات"))} <small class="muted">(${all.length})</small></h2>
                 ${V.sortSelect(v, sort)}
