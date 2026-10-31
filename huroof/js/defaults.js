@@ -362,6 +362,10 @@ ATHR.fullConfig = (saved) => {
     c.sales.gift_enabled = false;
     c.sales.gift_banner = false;
     c.sales.gift_button = false;
+    c.sales.gift_prepaid = false;
+    c.sales.gift_card = false;
+    // لا نقاط ولاء في المتجر
+    if (c.sales.loyalty) c.sales.loyalty.enabled = false;
     c.stories.wrap_enabled = false;
     c.stories.ded_enabled = false;
     return c;
@@ -1225,7 +1229,8 @@ ATHR.absUrl = function (config, path) {
 // المخزون: الكمية المتوفرة (null = بدون حد)
 ATHR.stockOf = (p) => (p && p.stock !== null && p.stock !== undefined && p.stock !== "" && Number.isFinite(Number(p.stock)) ? Math.max(0, Math.floor(Number(p.stock))) : null);
 // نقاط الولاء لمبلغ معيّن (بالريال العماني)
-ATHR.loyaltyOn = (config) => Boolean(config && config.sales && config.sales.loyalty && config.sales.loyalty.enabled && Number(config.sales.loyalty.per_omr) > 0);
+ATHR.loyaltyOn = () => false;
+ATHR._loyaltyOnOld = (config) => Boolean(config && config.sales && config.sales.loyalty && config.sales.loyalty.enabled && Number(config.sales.loyalty.per_omr) > 0);
 // «نقطة واحدة / نقطتان / 3 نقاط / 11 نقطة» و «1 point / 5 points»
 ATHR.pointsText = (n) => {
     const k = Math.round(Number(n) || 0);
@@ -1397,6 +1402,12 @@ ATHR.TEMPLATES = [
         name: "حروف وألوان",
         desc: "الشكل الأصلي للمتجر: بيج هادئ وورق أبيض وألوان أقلام التلوين، وخط Cairo.",
         theme: { primary: "#2B2620", hero: "#2B2620", bg: "#F3E9D9", text: "#2B2620", font_head: "Cairo", font_body: "Cairo", radius: "medium", header: "light", hero_pattern: false }
+    },
+    {
+        id: "apple",
+        name: "ستايل Apple",
+        desc: "مثل أنظمة آيفون: خط الجهاز، شريط زجاجي شفاف، أزرار وخانات وقوائم ومفاتيح بنفس أسلوب iOS، وبطاقات بيضاء ناعمة.",
+        theme: { primary: "#5B34D6", hero: "#4B2AB5", bg: "#F2F2F7", text: "#1C1C1E", font_head: "system", font_body: "system", radius: "round", header: "light", hero_pattern: false }
     },
     {
         id: "classic",

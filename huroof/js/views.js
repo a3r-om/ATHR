@@ -1740,6 +1740,39 @@
     // SHIPPING / POLICY PAGE
     // =====================================================
 
+    // سياسة الخصوصية: تصف ما يحدث فعلاً في المتجر (مطلوبة أيضاً لتشغيل وكيل واتساب في Meta)
+    V.privacy = function (v) {
+        const cfg = v.cfg;
+        const name = ATHR.storeName(cfg);
+        const wa = ATHR.isValidWhatsapp(cfg.order.whatsapp);
+        const waLink = wa ? `<a href="${esc(ATHR.waLink(cfg.order.whatsapp))}" target="_blank" rel="noopener">${esc(t("واتساب المتجر"))}</a>` : esc(t("واتساب المتجر"));
+        const P = (s) => `<p>${esc(t(s, { name }))}</p>`;
+        const LI = (arr) => `<ul>${arr.map((s) => `<li>${esc(t(s, { name }))}</li>`).join("")}</ul>`;
+        return `${V.crumbs([{ name: t("الرئيسية"), href: ATHR.url.home() }, { name: t("سياسة الخصوصية") }])}
+            <article class="wrap page policy">
+                <h1>${esc(t("سياسة الخصوصية"))}</h1>
+                ${P("نحترم خصوصيتك. هذه الصفحة توضّح البيانات اللي نحتاجها في متجر «{name}» وكيف نستخدمها.")}
+                <h2>${esc(t("البيانات اللي نحتاجها"))}</h2>
+                ${LI([
+                    "عند الطلب: اسمك ورقم واتساب، والملفات التي اخترتها، وطريقة الدفع. ما نطلب إنشاء حساب ولا عنوان توصيل لأن الملفات رقمية.",
+                    "عند مراسلتنا على واتساب: نحفظ المحادثة حتى نخدمك ونرسل لك ملفاتك ونتابع طلبك."
+                ])}
+                <h2>${esc(t("المساعد الآلي في واتساب"))}</h2>
+                ${P("قد يرد عليك في واتساب مساعد آلي يكتب الرد من معلومات المتجر باستخدام خدمة ذكاء اصطناعي (Google Gemini). نرسل لهذه الخدمة نص المحادثة واسمك الأول فقط، ولا نرسل رقم هاتفك. وتقدر تطلب التحدث مع صاحب المتجر في أي وقت.")}
+                <h2>${esc(t("كيف نستخدم بياناتك"))}</h2>
+                ${LI([
+                    "لتجهيز طلبك وإرسال ملفاتك والتواصل معك بخصوصه.",
+                    "لخدمة العملاء والرد على أسئلتك.",
+                    "نرسل لك العروض فقط إذا وافقت، وتقدر توقفها متى شئت برسالة."
+                ])}
+                <h2>${esc(t("مع من نشاركها"))}</h2>
+                ${P("لا نبيع بياناتك لأي أحد. نشارك فقط ما يلزم مع الخدمات التقنية التي يعمل عليها المتجر (الاستضافة وقاعدة البيانات وواتساب). وقد نستخدم إحصاءات زيارات مجمّعة وأدوات قياس الإعلانات دون بيانات تعريفية.")}
+                <h2>${esc(t("حذف بياناتك"))}</h2>
+                <p>${esc(t("تقدر تطلب حذف بياناتك ومحادثاتك في أي وقت برسالة على"))} ${waLink}.</p>
+                <p class="muted">${esc(t("آخر تحديث: أكتوبر 2026"))}</p>
+            </article>`;
+    };
+
     V.shipping = function (v) {
         const cfg = v.cfg;
         const enabledCount = ATHR.countries(cfg).filter((c) => c.enabled).length;
@@ -1833,6 +1866,7 @@
         const bottom = [
             `© ${new Date().getFullYear()} ${esc(ATHR.storeName(cfg))}`,
             cfg.contact.policy_show ? `<a href="${ATHR.url.page("shipping")}">${esc(ct(v, "contact.policy_title"))}</a>` : "",
+            `<a href="${ATHR.url.page("privacy")}">${esc(t("سياسة الخصوصية"))}</a>`,
             cfg.contact.reviews_share_btn ? `<a href="${ATHR.url.page("review")}" rel="nofollow">${esc(ct(v, "contact.reviews_share_text"))}</a>` : ""
         ].filter(Boolean);
         return `<div class="wrap foot">
@@ -1898,6 +1932,7 @@
             }
             case "category": return route.cat ? `${V.cname(route.cat)} | ${name}` : name;
             case "shipping": return `${ct(v, "contact.policy_title")} | ${name}`;
+            case "privacy": return `${t("سياسة الخصوصية")} | ${name}`;
             case "cart": return `${t("السلة")} | ${name}`;
             case "checkout": return `${t("إتمام الطلب")} | ${name}`;
             case "done": return `${t("تم استلام طلبك")} | ${name}`;

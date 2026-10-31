@@ -1211,13 +1211,12 @@
             case "cart":
             case "checkout":
             case "shipping":
+            case "privacy":
                 return { name: a };
             case "done": return { name: "done", no: params.get("no") || "" };
             case "review": return { name: "review", p: params.get("p") || "", o: params.get("o") || "" };
             case "search": return { name: "search", q: params.get("q") || "" };
             case "fav": return { name: "fav" };
-            case "points": return { name: "points" };
-            case "gift": return { name: "gift", c: params.get("c") || "" };
             default: return { name: "notfound" };
         }
     }
@@ -1289,13 +1288,12 @@
             case "product": renderProduct(route, { changed }); break;
             case "search": renderSearch(route); break;
             case "fav": renderFav(); break;
-            case "points": renderPoints(); break;
             case "shipping": view.innerHTML = V.shipping(v()); break;
+            case "privacy": view.innerHTML = V.privacy(v()); break;
             case "cart": renderCart(); break;
             case "checkout": renderCheckout(); break;
             case "done": renderDone(route.no); break;
             case "review": renderReview(route); break;
-            case "gift": giftFont(); view.innerHTML = V.giftPage(v(), ATHR.giftDecode(route.c)); break;
             default: renderNotFound();
         }
 
@@ -2497,7 +2495,7 @@
 
     // هدية: الطلب يُرسل لشخص آخر (رقم صاحب الهدية ورقم المُهدى إليه وعنوانه)
     function giftOn() {
-        return Boolean(C().sales.gift_enabled);
+        return false;
     }
 
     function giftMode(keep) {
@@ -3487,8 +3485,16 @@
         try { return `sb-${new URL(API.url).hostname.split(".")[0]}-auth-token`; } catch { return ""; }
     })();
 
+    // جهاز صاحب المتجر لا يُحتسب في الزيارات: إما مسجّل دخول للوحة، أو عليه علامة دائمة
+    // (تُوضع تلقائياً عند أول دخول للوحة، أو بفتح الرابط ?notrack=1 ، ويلغيها ?notrack=0)
+    const NOTRACK_KEY = "athr_notrack";
+    try {
+        const nt = new URLSearchParams(location.search).get("notrack");
+        if (nt === "1") localStorage.setItem(NOTRACK_KEY, "1");
+        else if (nt === "0") localStorage.removeItem(NOTRACK_KEY);
+    } catch { /* اختياري */ }
     const ownerDevice = () => {
-        try { return Boolean(AUTH_KEY && localStorage.getItem(AUTH_KEY)); } catch { return false; }
+        try { return Boolean((AUTH_KEY && localStorage.getItem(AUTH_KEY)) || localStorage.getItem(NOTRACK_KEY) === "1"); } catch { return false; }
     };
 
     function detectChannel() {
@@ -4230,6 +4236,7 @@
             if (!data || !data.session) return;
             const { data: row } = await sb.from("admin_users").select("id").eq("id", data.session.user.id).maybeSingle();
             S.isAdmin = Boolean(row);
+            if (S.isAdmin) { try { localStorage.setItem(NOTRACK_KEY, "1"); } catch { /* اختياري */ } }
             renderChrome();
             if (S.isAdmin) (window.requestIdleCallback || ((fn) => setTimeout(fn, 1500)))(() => loadAdminScripts().catch(() => {}), { timeout: 5000 });
         } catch { /* not signed in */ }
