@@ -21,7 +21,7 @@
     };
 
     const KEYS = {
-        cache: "huroof_cache_v4",
+        cache: "huroof_cache_v5",
         cart: "huroof_cart_v2",
         customer: "huroof_customer",
         lastOrder: "huroof_last_order",
@@ -970,8 +970,19 @@
             // الإثبات الاجتماعي (اختياري): لو تعذر، يعمل المتجر بدونه
             rest("rpc/social_proof", { method: "POST", body: {}, timeout: 8000 }).catch(() => null)
         ]);
+        // نصوص ومظهر المتجر تأتي من نسخة البناء (حتى لا تعود إعدادات قديمة من قاعدة البيانات)
+        const dbCfg = (settings && settings[0] && settings[0].config) || {};
+        const bc = (window.ATHR_CATALOG && window.ATHR_CATALOG.data && window.ATHR_CATALOG.data.config) || null;
+        let cfg = dbCfg;
+        if (bc) {
+            cfg = { ...dbCfg };
+            delete cfg.stories;
+            ["texts", "theme", "sales"].forEach((k) => { if (bc[k]) cfg[k] = { ...(dbCfg[k] || {}), ...bc[k] }; });
+            if (bc.contact) cfg.contact = { ...(dbCfg.contact || {}), faq: bc.contact.faq, faq_home: bc.contact.faq_home };
+            if (bc.en) cfg.en = { ...(dbCfg.en || {}), ...bc.en };
+        }
         return {
-            config: (settings && settings[0] && settings[0].config) || {},
+            config: cfg,
             categories: categories || [],
             products: products || [],
             reviews: reviews || [],

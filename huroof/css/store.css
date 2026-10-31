@@ -3343,3 +3343,8 @@ body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antial
 .gm-banner::after{display:none}.gm-go{font-size:13px!important}
 .grade-jump{margin:4px 0 6px}.sub-h{scroll-margin-top:84px}
 .grade-jump .chip{text-decoration:none;color:inherit}
+
+.why-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.why-c{background:#fff;border:1px solid var(--line,#E4E8F0);border-radius:var(--r,20px);padding:12px 12px 12px;display:grid;gap:3px;align-content:start}
+.why-c span{font-size:24px;line-height:1}.why-c b{font-size:14.5px;color:var(--text)}.why-c small{font-size:12.5px;line-height:1.55;color:#667085}
+@media(min-width:760px){.why-row{grid-template-columns:repeat(4,1fr)}}
