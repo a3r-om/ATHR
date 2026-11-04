@@ -12,60 +12,60 @@
      "bg": "#570418",
      "link": "",
      "text": "",
-     "type": "video",
+     "type": "image",
      "title": "",
      "button": "",
      "image_alt": "",
-     "image_url": "",
+     "image_url": "https://roa-om.com/images/banners/gift.webp",
      "video_alt": "",
-     "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793223121945-3f0c0a83cd7e4edc.mp4"
+     "video_url": ""
     },
     {
      "bg": "#570418",
      "link": "",
      "text": "",
-     "type": "video",
+     "type": "image",
      "title": "",
      "button": "",
      "image_alt": "",
-     "image_url": "",
+     "image_url": "https://roa-om.com/images/banners/sale.webp",
      "video_alt": "",
-     "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793220218186-c9e9efc577524eb1.mp4"
+     "video_url": ""
     },
     {
      "bg": "#570418",
      "link": "https://roa-om.com/p/%D9%83%D9%88%D8%A8-%D8%B1%D9%8A%D8%AF%D8%A8%D9%88%D9%84-%D8%A7%D9%84%D9%85%D8%B6%D9%8A%D8%A6-%D9%88%D8%B1%D8%AF%D9%8A/",
      "text": "",
-     "type": "video",
+     "type": "image",
      "title": "",
      "button": "",
      "image_alt": "",
-     "image_url": "",
+     "image_url": "https://roa-om.com/images/banners/redbull.webp",
      "video_alt": "",
-     "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793222557226-c74e9fad94c047d6.mp4"
+     "video_url": ""
     },
     {
      "bg": "#570418",
      "link": "https://roa-om.com/p/%D9%83%D9%88%D8%A8-%D8%AD%D8%B1%D8%A7%D8%B1%D9%8A-750-%D9%85%D9%84-%D9%88%D8%B1%D8%AF%D9%8A/",
      "text": "",
-     "type": "video",
+     "type": "image",
      "title": "",
      "button": "",
      "image_alt": "",
-     "image_url": "",
+     "image_url": "https://roa-om.com/images/banners/thermal.webp",
      "video_alt": "",
-     "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793222683410-6848679d23ab47eb.mp4"
+     "video_url": ""
     }
    ],
    "show": true,
    "text": "",
-   "type": "video",
+   "type": "image",
    "title": "",
    "button": "",
    "image_alt": "",
-   "image_url": "",
+   "image_url": "https://roa-om.com/images/banners/national.webp",
    "video_alt": "",
-   "video_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1793388637449-f413e4207d184125.mp4"
+   "video_url": ""
   },
   "ai": {
    "model": "",
