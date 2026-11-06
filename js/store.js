@@ -1890,7 +1890,7 @@
     }
 
     const LOC_KEYS = ["wilaya", "gov", "address", "office"];
-    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion", "gift_occasion_text", "gift_for"];
+    const GIFT_KEYS = ["gift_name", "gift_phone", "gift_message", "gift_hide_price", "gift_seen", "sender_country", "gift_occasion", "gift_occasion_text", "gift_for", "gift_from", "gift_sender"];
 
     // اختيار الزبون: الهدية لولد (أزرق) أو لبنت (وردي)
     function giftForField(saved) {
@@ -1995,6 +1995,15 @@
                             </div>
                             ${field("gift_message", t("رسالة الهدية (اختياري)"), `<textarea class="input" name="gift_message" rows="2" maxlength="300" placeholder="${esc(t("اكتب رسالتك أو اختر من المقترحات"))}">${esc(saved.gift_message || "")}</textarea>`)}
                             <div class="msg-sugs" id="msgSugs">${giftSugs(saved.gift_occasion)}</div>
+                            <div class="field from-field"><span>${esc(t("من المُهدي؟"))}</span>
+                                <div class="seg2" role="radiogroup" aria-label="${esc(t("من المُهدي؟"))}">
+                                    <label><input type="radio" name="gift_from" value="name"${saved.gift_from === "anon" ? "" : " checked"}><span>${V.icon.user}${esc(t("أكتب اسمي"))}</span></label>
+                                    <label><input type="radio" name="gift_from" value="anon"${saved.gift_from === "anon" ? " checked" : ""}><span>${V.icon.gift}${esc(t("مجهول"))}</span></label>
+                                </div>
+                                <label class="from-name"${saved.gift_from === "anon" ? " hidden" : ""}><input class="input" name="gift_sender" maxlength="40" autocomplete="given-name" placeholder="${esc(t("اسمك كما يظهر في بطاقة الإهداء"))}" value="${esc(saved.gift_sender || "")}"></label>
+                                <small class="from-help">${esc(saved.gift_from === "anon" ? t("لن يظهر اسمك في البطاقة ولا في رسالة واتساب.") : t("يظهر اسمك في بطاقة الإهداء ورسالة واتساب."))}</small>
+                                <span class="err" data-err="gift_sender"></span>
+                            </div>
                             ${cfg.sales.gift_card !== false ? `<p class="gift-card-note">💌 ${esc(t("يستلم المُهدى إليه بطاقة إهداء رقمية فيها رسالتك بعد تأكيد الطلب."))}</p>` : ""}
                             <label class="check-line"><input type="checkbox" name="gift_hide_price" value="1"${hidePrice ? " checked" : ""}><span>${esc(t("لا تذكر السعر للمُهدى إليه"))}</span></label>
                         </div>` : ""}
@@ -2172,6 +2181,7 @@
             if (ATHR.giftGendersOn(cfg) && !ATHR.GIFT_FOR.includes(values.gift_for)) errors.gift_for = t("اختر: الهدية لولد أو لبنت.");
             if (!giftPhone.valid) errors.gift_phone = t("اكتب رقم المُهدى إليه الصحيح: {hint}.", { hint: L(giftPhone.rule, "hint") });
             else if (phone.valid && ATHR.storePhone(giftPhone.local, S.country, "XX") === ATHR.storePhone(phone.local, senderCode, "XX")) errors.gift_phone = t("رقم المُهدى إليه نفس رقمك. اكتب رقم الشخص الذي ستصله الهدية.");
+            if (values.gift_from !== "anon" && String(values.gift_sender || "").trim().length < 2) errors.gift_sender = t("اكتب اسمك، أو اختر «مجهول».");
             if (values.gift_occasion === "custom" && cfg.gift.custom_occasion !== false && ATHR.cleanOccasion(values.gift_occasion_text).length < 2) errors.gift_occasion_text = t("اكتب اسم المناسبة، مثل: عيد الأم.");
         }
         if (!isOm && !String(values.gov || "").trim()) errors.gov = t("اكتب المدينة.");
@@ -2260,7 +2270,7 @@
             source: "web",
             country: S.country,
             channel,
-            customer_name: null,
+            customer_name: gift && values.gift_from !== "anon" ? String(values.gift_sender || "").trim().replace(/\s+/g, " ").slice(0, 40) || null : null,
             phone: ATHR.storePhone(phone.local, senderCode, S.country),
             governorate: isOm ? null : String(values.gov || "").trim(),
             wilaya: isOm && (gift || cfg.order.show_wilaya) ? String(values.wilaya || "").trim() || null : null,
@@ -2364,7 +2374,7 @@
         if (!order.gift || cfg.sales.gift_card === false) return "";
         const occ = ATHR.giftOccasion(order.gift_occasion, cfg, order.gift_occasion_text);
         const cardUrl = new URL(ATHR.giftCardPath(order), location.origin).href;
-        const from = String(order.customer_name || "").trim().split(/\s+/)[0];
+        const from = String(order.customer_name || "").trim();
         const text = ATHR.giftWhatsApp({ to: order.gift_name, from, msg: order.gift_message, occasion: order.gift_occasion, occasionText: order.gift_occasion_text, link: cardUrl, store: ATHR.storeName(cfg), config: cfg });
         const wa = order.gift_phone ? ATHR.waLink(ATHR.customerWhatsapp(order.gift_phone, code), text) : "";
         const gf = ATHR.giftGendersOn(cfg) ? ATHR.giftFor(order.gift_for, cfg) : null;
@@ -3276,6 +3286,19 @@
             renderCheckout(keep);
             renderBars();
             toast(t("التوصيل والدفع الآن لـ{country}", { country: L(CC(), "name") }));
+            return;
+        }
+        if (el.name === "gift_from") {
+            const anon = el.value === "anon";
+            const own = $(".from-name");
+            if (own) {
+                own.hidden = anon;
+                if (!anon) setTimeout(() => own.querySelector("input")?.focus(), 30);
+            }
+            const help = $(".from-help");
+            if (help) help.textContent = anon ? t("لن يظهر اسمك في البطاقة ولا في رسالة واتساب.") : t("يظهر اسمك في بطاقة الإهداء ورسالة واتساب.");
+            const err = $('[data-err="gift_sender"]');
+            if (err) { err.textContent = ""; err.closest(".field")?.classList.remove("invalid"); }
             return;
         }
         if (el.name === "gift_occasion") {

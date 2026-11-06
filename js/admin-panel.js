@@ -4685,7 +4685,7 @@
             const o = A.orders.find((x) => x.id === d.orderGiftCard);
             if (o && o.gift_phone) {
                 const link = siteLink(ATHR.giftCardPath(o));
-                const from = String(o.customer_name || "").trim().split(/\s+/)[0];
+                const from = String(o.customer_name || "").trim();
                 const text = ATHR.withLang("ar", () => ATHR.giftWhatsApp({ to: o.gift_name, from, msg: o.gift_message, occasion: o.gift_occasion, occasionText: o.gift_occasion_text, link, store: ATHR.storeName(cfg()), config: cfg() }));
                 window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), text), "_blank", "noopener");
             }
@@ -6046,6 +6046,7 @@
                     <b>الإجمالي: ${money(o.total)}</b>
                 </div>
                 ${o.notes ? `<p class="oc-note">ملاحظة العميل: ${esc(o.notes)}</p>` : ""}
+                ${o.gift ? `<p class="oc-note">🎁 المُهدي: ${o.customer_name ? esc(o.customer_name) : "مجهول (بدون اسم)"}</p>` : ""}
                 ${o.gift && o.gift_message ? `<p class="oc-note">🎁 رسالة الهدية: ${esc(o.gift_message)}</p>` : ""}
                 <div class="oc-ctrl">
                     <label><span class="sr">الدفع</span><select class="ai sm" data-order-id="${esc(o.id)}" data-order-field="payment_type">

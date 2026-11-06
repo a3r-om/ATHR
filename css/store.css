@@ -2936,3 +2936,11 @@ html.tpl-roa .thanks-head .check svg { stroke: var(--roa-crema); }
 html.tpl-roa[data-mode="dark"] .seg2 { background: var(--img-bg); }
 html.tpl-roa[data-mode="dark"] .seg2 span { color: var(--text); }
 html.tpl-roa[data-mode="dark"] .seg2 input:checked + span { background: var(--roa-crema); color: var(--roa-rosso); }
+
+/* من المُهدي: اسمي أو مجهول */
+.from-field { display: grid; gap: 8px; }
+.from-field > span:first-child { font-weight: 600; }
+.from-field .seg2 { margin: 0; }
+.from-name { display: block; }
+.from-name[hidden] { display: none; }
+.from-help { color: var(--muted); font-size: 12.5px; }

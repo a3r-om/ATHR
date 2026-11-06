@@ -918,7 +918,7 @@ ATHR.leftText = function (ms) {
 
 ATHR.giftCardPath = (order) => ATHR.url.page("gift", `c=${ATHR.giftCode({
     to: order.gift_name,
-    from: String(order.customer_name || "").trim().split(/\s+/)[0],
+    from: String(order.customer_name || "").trim(),
     msg: order.gift_message,
     occasion: order.gift_occasion,
     occasionText: order.gift_occasion_text,
@@ -951,7 +951,7 @@ ATHR.orderText = function (order, config, { first = "", last = "", cardUrl = "" 
         const occ = ATHR.giftOccasion(order.gift_occasion, cfg, order.gift_occasion_text);
         const gfor = order.gift ? ATHR.giftFor(order.gift_for, cfg) : null;
         block([
-            `👤 ${giftTo ? "من: " : ""}${[order.customer_name, order.phone ? phone(order.phone) : ""].filter(Boolean).join(" · ")}`,
+            `👤 ${giftTo ? "من: " : ""}${[order.customer_name || (order.gift ? "مجهول للمُهدى إليه" : ""), order.phone ? phone(order.phone) : ""].filter(Boolean).join(" · ")}`,
             giftTo ? `🎁 إلى: ${[order.gift_name, order.gift_phone ? phone(order.gift_phone) : ""].filter(Boolean).join(" · ")}` : order.gift ? "🎁 الطلب هدية" : "",
             gfor ? `${gfor.emoji} الهدية لـ: ${gfor.label} ${gfor.heart}` : "",
             order.gift && order.gift_occasion && occ.id !== "other" ? `🎉 المناسبة: ${occ.emoji} ${occ.name}` : "",
