@@ -3615,6 +3615,46 @@
     // START
     // =====================================================
 
+    // تمرير تلقائي هادئ لشريط الأقسام في الرئيسية حتى يرى الزائر كل الأقسام (يتوقف عند اللمس ويكمل بعد لحظات)
+    function startTilesAuto() {
+        const SPEED = 28; // بكسل في الثانية
+        let el = null;
+        let pos = 0;
+        let dir = 1;
+        let holdUntil = 0;
+        let last = 0;
+        const bump = (ms) => { holdUntil = Math.max(holdUntil, performance.now() + ms); };
+        ["touchstart", "pointerdown", "wheel", "mouseenter", "focusin"].forEach((ev) => document.addEventListener(ev, (e) => {
+            if (e.target && e.target.closest && e.target.closest(".tiles")) bump(ev === "mouseenter" ? 1500 : 4000);
+        }, { passive: true, capture: true }));
+        document.addEventListener("touchend", (e) => { if (e.target.closest && e.target.closest(".tiles")) bump(3500); }, { passive: true, capture: true });
+        const tick = (now) => {
+            requestAnimationFrame(tick);
+            const dt = Math.min(64, now - (last || now)) / 1000;
+            last = now;
+            const cur = document.querySelector("#view nav.tiles");
+            if (!cur || document.visibilityState !== "visible") return;
+            if (cur !== el) {
+                el = cur;
+                el.style.scrollSnapType = "none";
+                pos = Math.abs(el.scrollLeft);
+                dir = 1;
+                holdUntil = now + 1500;
+            }
+            const max = el.scrollWidth - el.clientWidth;
+            if (max < 8) return;
+            const r = el.getBoundingClientRect();
+            if (r.bottom < 0 || r.top > innerHeight) return;
+            if (now < holdUntil) { pos = Math.abs(el.scrollLeft); return; }
+            const rtl = getComputedStyle(el).direction === "rtl";
+            pos += dir * SPEED * dt;
+            if (pos >= max) { pos = max; dir = -1; holdUntil = now + 1200; }
+            else if (pos <= 0) { pos = 0; dir = 1; holdUntil = now + 1200; }
+            el.scrollLeft = rtl ? -pos : pos;
+        };
+        requestAnimationFrame(tick);
+    }
+
     function trackVisit() {
         const lastSeen = Number(storage.get(KEYS.lastSeen, 0)) || 0;
         S.returningGap = lastSeen ? Date.now() - lastSeen : 0;
@@ -3630,6 +3670,7 @@
     convertLegacyHash();
     S.route = parseRoute();
     trackVisit();
+    startTilesAuto();
     S.country = guessCountry();
     updateCartUI();
     sessionChannel();
