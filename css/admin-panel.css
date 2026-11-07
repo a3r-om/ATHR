@@ -1298,3 +1298,9 @@ html.theme-dark .wa .link-mini { color: #F1B7C0; }
 .tm-roa .tm-card { background: #FAF6EE; border-radius: 10px; overflow: hidden; }
 .tm-roa .tm-img { background: #E6D8C2; }
 .tm-roa .tm-tile img { border-radius: 9px; }
+
+/* حالة: جاري التجهيز */
+.ost.preparing { color: #1F5FA8; font-weight: 700; }
+.oc-wait.preparing { color: #1F5FA8; }
+.oc.preparing { border-inline-start: 4px solid #1F5FA8; }
+.ab-mini.prep { color: #1F5FA8; border-color: #9DBBE0; font-weight: 700; }

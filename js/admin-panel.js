@@ -2348,7 +2348,7 @@
 
     // ---------- تنزيل الطلبات ----------
     function ordersRows(list) {
-        const status = { new: "جديد", delivered: "تم التسليم" };
+        const status = { new: "جديد", preparing: "جاري التجهيز", delivered: "تم التسليم" };
         const pay = { bank: "تحويل بنكي", cod: "عند الاستلام", online: "دفع إلكتروني", other: "أخرى" };
         return [
             ["رقم الطلب", "التاريخ", "الوقت", "العميل", "الهاتف", "الدولة", "المحافظة", "الولاية", "المنتجات", "القطع", "المجموع", "الخصم", "كود الخصم", "خصم الكود", "التوصيل", "الإجمالي", "الدفع", "الحالة", "المصدر", "هدية"],
@@ -3173,7 +3173,7 @@
                     ${orders.length ? `<ul class="prof-orders">${orders.slice(0, 12).map((o) => `<li>
                         <span><b dir="ltr">${esc(o.order_no || "")}</b><small>${esc(sinceText(o.ordered_at || o.created_at))}${o.gift ? " · 🎁 هدية" : ""}</small></span>
                         <span class="po-items">${esc((o.items || []).map((i) => `${i.label || i.name}${Number(i.qty) > 1 ? ` ×${i.qty}` : ""}`).join("، "))}</span>
-                        <span class="po-total"><b>${money(o.total)}</b><small class="ost ${esc(o.status)}">${o.status === "delivered" ? "تم التسليم" : "جديد"}</small></span>
+                        <span class="po-total"><b>${money(o.total)}</b><small class="ost ${esc(o.status)}">${o.status === "delivered" ? "تم التسليم" : o.status === "preparing" ? "جاري التجهيز" : "جديد"}</small></span>
                     </li>`).join("")}</ul>` : `<p class="adm-muted">ما لقينا طلباته في آخر 1000 طلب.</p>`}
                 </section>
                 <section class="prof-sec"><h3>📝 ملاحظة عنه</h3>
@@ -4694,6 +4694,13 @@
             return;
         }
         if (d.orderWaGift) { const o = A.orders.find((x) => x.id === d.orderWaGift); if (o && o.gift_phone) window.open(ATHR.waLink(ATHR.customerWhatsapp(o.gift_phone, o.country || "OM"), ""), "_blank", "noopener"); return; }
+        if (d.orderPrep) {
+            const o = A.orders.find((x) => x.id === d.orderPrep);
+            if (!o) return;
+            await updateOrderField(o.id, "status", "preparing");
+            if (o.status === "preparing" && o.phone) window.open(customerWa(o, preparingText(o)), "_blank", "noopener");
+            return;
+        }
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
         if (d.orderCopy) { const o = A.orders.find((x) => x.id === d.orderCopy); if (o) ATHR.store.copyText(orderText(o), "نُسخ الطلب"); return; }
         if (d.orderHide) { const o = A.orders.find((x) => x.id === d.orderHide); if (o) updateOrderField(o.id, "hidden", !o.hidden); return; }
@@ -5333,7 +5340,7 @@
                     <input class="ai" type="search" id="ordersSearch" placeholder="ابحث بالاسم أو الرقم أو الولاية أو المحافظة أو العنوان أو المنتج" value="${esc(A.filter.q)}">
                     <div class="ob-filters">
                         <div class="seg" role="group" aria-label="الحالة">
-                            ${[["all", "الكل"], ["new", "جديد"], ["delivered", "تم التسليم"], ["hidden", "مخفي"]].map(([v, l]) => `<button type="button" data-status="${v}" aria-pressed="${A.filter.status === v}">${l}</button>`).join("")}
+                            ${[["all", "الكل"], ["new", "جديد"], ["preparing", "جاري التجهيز"], ["delivered", "تم التسليم"], ["hidden", "مخفي"]].map(([v, l]) => `<button type="button" data-status="${v}" aria-pressed="${A.filter.status === v}">${l}</button>`).join("")}
                         </div>
                         <select class="ai sm" id="payFilter" aria-label="طريقة الدفع">
                             <option value="all"${A.filter.pay === "all" ? " selected" : ""}>كل طرق الدفع</option>
@@ -5990,6 +5997,7 @@
 
     function waiting(o) {
         if (o.status === "delivered") return "تم التسليم";
+        if (o.status === "preparing") return "جاري التجهيز";
         const mins = Math.max(0, Math.round((Date.now() - new Date(o.ordered_at).getTime()) / 60000));
         if (mins < 60) return `منذ ${mins} دقيقة`;
         const hours = Math.round(mins / 60);
@@ -6024,10 +6032,10 @@
 
         body.innerHTML = stats + `<div class="cust-actions"><button class="ab-mini" type="button" data-a="xlsx-orders">⬇️ تنزيل الطلبات Excel (${list.length})</button></div>` + list.map((o) => {
             const when = ATHR.muscatParts(o.ordered_at);
-            return `<article class="oc${o.status === "delivered" ? " delivered" : ""}${o.hidden ? " is-hidden" : ""}">
+            return `<article class="oc${o.status === "delivered" ? " delivered" : o.status === "preparing" ? " preparing" : ""}${o.hidden ? " is-hidden" : ""}">
                 <header class="oc-head">
                     <div><b dir="ltr">${esc(o.order_no)}</b> <span class="tag${o.channel === "wa_agent" ? " wa" : ""}">${o.source === "web" ? "من المتجر" : o.source === "paste" ? "من واتساب" : o.channel === "wa_agent" ? "🤖 من وكيل واتساب" : "يدوي"}</span>${o.source === "web" && o.channel && o.channel !== "direct" ? ` <span class="tag ch">عبر ${esc(CHANNELS[o.channel] || o.channel)}</span>` : ""}${o.gift ? ` <span class="tag gift">🎁 هدية</span>` : ""}${o.coupon ? ` <span class="tag cp" dir="ltr">🎟️ ${esc(o.coupon)}</span>` : ""}</div>
-                    <span class="oc-wait${o.status === "new" ? " new" : ""}">${esc(waiting(o))}</span>
+                    <span class="oc-wait${o.status === "new" ? " new" : o.status === "preparing" ? " preparing" : ""}">${esc(waiting(o))}</span>
                 </header>
                 <p class="adm-muted oc-when">${esc(when.day)} ${esc(when.date)} — ${esc(when.time)}</p>
                 <div class="oc-cust">
@@ -6056,6 +6064,7 @@
                     </select></label>
                     <label><span class="sr">الحالة</span><select class="ai sm" data-order-id="${esc(o.id)}" data-order-field="status">
                         <option value="new"${o.status === "new" ? " selected" : ""}>جديد</option>
+                        <option value="preparing"${o.status === "preparing" ? " selected" : ""}>جاري التجهيز</option>
                         <option value="delivered"${o.status === "delivered" ? " selected" : ""}>تم التسليم</option>
                     </select></label>
                 </div>
@@ -6065,6 +6074,7 @@
                     ${o.phone ? `<button type="button" class="ab-mini wa" data-order-wa="${esc(o.id)}">${giftTo(o) ? "واتساب صاحب الهدية" : "واتساب"}</button>` : ""}
                     ${giftTo(o) && o.gift_phone ? `<button type="button" class="ab-mini wa" data-order-wa-gift="${esc(o.id)}">واتساب المُهدى إليه</button>` : ""}
                     ${giftTo(o) && o.gift_phone && cfg().sales.gift_card !== false ? `<button type="button" class="ab-mini wa" data-order-gift-card="${esc(o.id)}">💌 أرسل بطاقة الإهداء</button>` : ""}
+                    ${o.status === "new" ? `<button type="button" class="ab-mini prep" data-order-prep="${esc(o.id)}">جاري التجهيز</button>` : ""}
                     ${o.status === "new" && o.phone ? `<button type="button" class="ab-mini" data-order-remind="${esc(o.id)}">تذكير بالطلب</button>` : ""}
                     ${o.status === "delivered" && o.phone ? `<button type="button" class="ab-mini wa" data-order-review="${esc(o.id)}">اطلب تقييم</button>` : ""}
                     <button type="button" class="ab-mini" data-order-copy="${esc(o.id)}">نسخ</button>
@@ -6152,6 +6162,11 @@
         });
     }
 
+    function preparingText(o) {
+        const name = String(o.customer_name || "").trim().split(/\s+/)[0];
+        return `${name ? `هلا ${name}،` : "هلا،"} طلبك رقم ${o.order_no || ""} جاري تجهيزه الآن، وبنتواصل معك لتأكيد موعد التوصيل. شكرًا لثقتك بنا 🤍`;
+    }
+
     function orderText(o) {
         const card = giftTo(o) && cfg().sales.gift_card !== false;
         return ATHR.orderText(o, cfg(), { cardUrl: card ? siteLink(ATHR.giftCardPath(o)) : "" });
@@ -6213,6 +6228,7 @@
                     <label class="af"><span>طريقة التوصيل</span><input class="ai" name="delivery_name" list="delList" value="${esc(o ? o.delivery_name || "" : "")}"></label>
                     <label class="af"><span>الحالة</span><select class="ai" name="status">
                         <option value="new"${!o || o.status === "new" ? " selected" : ""}>جديد</option>
+                        <option value="preparing"${o && o.status === "preparing" ? " selected" : ""}>جاري التجهيز</option>
                         <option value="delivered"${o && o.status === "delivered" ? " selected" : ""}>تم التسليم</option>
                     </select></label>
                 </div>
