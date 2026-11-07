@@ -639,7 +639,11 @@ async function main() {
         };
         writeFile("index.html", page({
             route: "home",
-            headHTML: head({ title, description, canonical: SITE, verify: true, jsonld: [ld] }),
+            headHTML: head({ title, description, canonical: SITE, verify: true, jsonld: [ld] }) + (() => {
+                // أول إعلان (صورة) يبدأ تحميله من أول لحظة، قبل ما تشتغل الصفحة
+                const a = v.cfg.ad.show ? ATHR.adSlides(v.cfg).find((x) => ATHR.adReady(x)) : null;
+                return a && a.type === "image" && a.image_url ? `\n<link rel="preload" as="image" href="${esc(V.asset(a.image_url))}" fetchpriority="high">` : "";
+            })(),
             view: V.home(v)
         }));
         addUrl(SITE);

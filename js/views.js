@@ -645,7 +645,7 @@
             ? `<a class="${cls}" href="${esc(link)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
             : `<div class="${cls}">${inner}</div>`;
         if (ad.type === "image" && ad.image_url) {
-            return open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(txt("image_alt") || "")}"${first ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"'}>`, "ad-media");
+            return open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(txt("image_alt") || "")}" width="900" height="418"${first ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"'}>`, "ad-media");
         }
         if (ad.type === "video" && ad.video_url) {
             // نسخة الفيديو المضغوطة من بناء المتجر (تشتغل في كل الجوالات) + صورة غلاف تظهر فوراً
