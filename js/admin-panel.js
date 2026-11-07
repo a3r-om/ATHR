@@ -207,9 +207,9 @@
                 <form class="adm-card adm-login-card" id="loginForm" novalidate>
                     <div class="adm-login-logo"><img src="${esc(asset(ATHR.logos(config).light || ATHR.logos(config).header))}" alt=""></div>
                     <h1>لوحة التحكم</h1>
-                    <p class="adm-muted">ادخل بحساب المتجر لتعديل المتجر ومتابعة الطلبات.</p>
-                    <label class="af"><span>البريد الإلكتروني</span><input class="ai" id="loginEmail" type="email" autocomplete="email" dir="ltr" required></label>
-                    <label class="af"><span>كلمة المرور</span><input class="ai" id="loginPass" type="password" autocomplete="current-password" dir="ltr" required></label>
+                    <p class="adm-muted">ادخل بحساب المتجر لتعديل المتجر ومتابعة الطلبات. الدخول يُحفظ على هذا الجهاز، فلا تحتاج تسجيله مرة ثانية (تجنّب التصفح الخاص).</p>
+                    <label class="af"><span>البريد الإلكتروني</span><input class="ai" id="loginEmail" name="username" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" dir="ltr" required></label>
+                    <label class="af"><span>كلمة المرور</span><input class="ai" id="loginPass" name="password" type="password" autocomplete="current-password" dir="ltr" required></label>
                     <p class="adm-error" id="loginError" role="alert">${esc(error)}</p>
                     <button class="ab ab-primary ab-block" type="submit" id="loginBtn">دخول</button>
                     <button class="ab ab-ghost ab-block" type="button" data-a="close">رجوع للمتجر</button>
@@ -241,6 +241,8 @@
             err.textContent = "هذا الحساب ليس لديه صلاحية إدارة المتجر.";
             return;
         }
+        // نطلب من المتصفح يحتفظ بالجلسة فلا يطلب الدخول مرة ثانية
+        try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch { /* ignore */ }
         open(A.view || "admin");
     }
 
