@@ -4698,7 +4698,6 @@
             const o = A.orders.find((x) => x.id === d.orderPrep);
             if (!o) return;
             await updateOrderField(o.id, "status", "preparing");
-            if (o.status === "preparing" && o.phone) window.open(customerWa(o, preparingText(o)), "_blank", "noopener");
             return;
         }
         if (d.orderRemind) { const o = A.orders.find((x) => x.id === d.orderRemind); if (o) window.open(customerWa(o, reminderText(o)), "_blank", "noopener"); return; }
@@ -6160,11 +6159,6 @@
             no: o.order_no,
             total: money(o.total)
         });
-    }
-
-    function preparingText(o) {
-        const name = String(o.customer_name || "").trim().split(/\s+/)[0];
-        return `${name ? `هلا ${name}،` : "هلا،"} طلبك رقم ${o.order_no || ""} جاري تجهيزه الآن، وبنتواصل معك لتأكيد موعد التوصيل. شكرًا لثقتك بنا 🤍`;
     }
 
     function orderText(o) {
