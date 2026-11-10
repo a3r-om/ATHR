@@ -1304,3 +1304,8 @@ html.theme-dark .wa .link-mini { color: #F1B7C0; }
 .oc-wait.preparing { color: #1F5FA8; }
 .oc.preparing { border-inline-start: 4px solid #1F5FA8; }
 .ab-mini.prep { color: #1F5FA8; border-color: #9DBBE0; font-weight: 700; }
+
+/* صورة صغيرة للمنتج في بطاقة الطلب */
+.oc-it { display: flex; align-items: center; gap: 10px; }
+.oc-th { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 8px; object-fit: cover; background: var(--a-line); }
+.oc-th.empty { display: inline-block; }

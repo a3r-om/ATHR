@@ -6009,6 +6009,19 @@
         return (o.items || []).map((it) => `${it.label || it.name} × ${it.qty} = ${money(it.total)}`);
     }
 
+    // قائمة منتجات الطلب مع صورة صغيرة لكل منتج (من قائمة المنتجات الحالية)
+    function itemsHtml(o) {
+        const hasText = o.items_text && o.items_text.trim();
+        const prods = A.server ? A.server.products : [];
+        if (hasText || !Array.isArray(o.items)) return itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("");
+        return o.items.map((it) => {
+            const p = prods.find((x) => x.id === it.id);
+            const src = p && p.image_url ? ATHR.thumb(p.image_url, "s") || p.image_url : "";
+            const img = src ? `<img class="oc-th" src="${esc(src)}" alt="" width="40" height="40" loading="lazy" decoding="async">` : `<span class="oc-th empty"></span>`;
+            return `<li class="oc-it">${img}<span>${esc(`${it.label || it.name} × ${it.qty} = ${money(it.total)}`)}</span></li>`;
+        }).join("");
+    }
+
     function renderOrdersList() {
         const body = $("#ordersBody");
         if (!body) return;
@@ -6047,7 +6060,7 @@
                     <span>${(o.country || "OM") === "OM" ? "" : `${esc(countryLabel(o.country))} — `}${esc([o.governorate, o.wilaya].filter(Boolean).join(" — "))}</span>
                     ${o.address || o.office ? `<span>${o.office ? `المكتب: ${esc(o.office)}` : esc(o.address)}</span>` : ""}
                 </div>
-                <ul class="oc-items">${itemsList(o).map((l) => `<li>${esc(l.replace(/^•\s*/, ""))}</li>`).join("")}</ul>
+                <ul class="oc-items">${itemsHtml(o)}</ul>
                 <div class="oc-sum">
                     ${Number(o.discount) > 0 ? `<span>${esc(o.discount_label || "الخصم")}: -${money(o.discount)}</span>` : ""}
                     ${o.coupon ? `<span>🎟️ كود ${esc(o.coupon)}${Number(o.coupon_discount) > 0 ? `: -${money(o.coupon_discount)}` : Number(o.delivery_price) === 0 ? " (توصيل مجاني)" : ""}</span>` : ""}
