@@ -3646,7 +3646,7 @@
             </g>`;
         }).join("");
         return `<div class="fin-chart">
-            <div class="fin-legend"><span><i class="sw s"></i>المبيعات</span><span><i class="sw e"></i>المصاريف</span><small class="adm-muted">اضغط على أي شهر</small></div>
+            <div class="fin-legend"><span><i class="fin-sw s"></i>المبيعات</span><span><i class="fin-sw e"></i>المصاريف</span><small class="adm-muted">اضغط على أي شهر</small></div>
             <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="المبيعات والمصاريف آخر 6 شهور">${grid}${groups}</svg>
         </div>`;
     }

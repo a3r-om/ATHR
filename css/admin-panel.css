@@ -1004,9 +1004,9 @@ html.theme-dark .adm { --fin-sales: #DB6B79; --fin-exp: #9E7F2E; }
 .fin-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12.5px; font-weight: 600; }
 .fin-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .fin-legend small { margin-inline-start: auto; font-weight: 400; }
-.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.sw.s { background: var(--fin-sales); }
-.sw.e { background: var(--fin-exp); }
+.fin-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.fin-sw.s { background: var(--fin-sales); }
+.fin-sw.e { background: var(--fin-exp); }
 .fin-chart svg { width: 100%; height: auto; display: block; overflow: visible; }
 .fin-chart .fg { stroke: var(--a-line); stroke-width: 1; }
 .fin-chart .ft { fill: var(--a-muted); font-size: 10px; text-anchor: start; }
