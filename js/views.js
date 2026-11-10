@@ -645,7 +645,9 @@
             ? `<a class="${cls}" href="${esc(link)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
             : `<div class="${cls}">${inner}</div>`;
         if (ad.type === "image" && ad.image_url) {
-            return open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(txt("image_alt") || "")}" width="900" height="418"${first ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"'}>`, "ad-media");
+            // صورة خفيفة ثابتة تظهر فوراً خلف الصورة المتحركة، فلا يظهر مربع فارغ أو علامة خطأ
+            const poster = V.adPoster(ad.image_url);
+            return open(`<img src="${esc(V.asset(ad.image_url))}" alt="${esc(txt("image_alt") || "")}" width="900" height="418"${poster ? ` style="background:url('${esc(poster)}') center/cover no-repeat"` : ""}${first ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"'}>`, "ad-media");
         }
         if (ad.type === "video" && ad.video_url) {
             // نسخة الفيديو المضغوطة من بناء المتجر (تشتغل في كل الجوالات) + صورة غلاف تظهر فوراً
@@ -1438,6 +1440,10 @@
     };
 
     // مسار صورة داخل المتجر (images/...) أو رابط كامل
+    V.adPoster = (src) => {
+        const m = /^(https?:\/\/[^?#]*\/images\/banners\/[a-z0-9-]+)\.webp(?:[?#].*)?$/i.exec(String(src || ""));
+        return m ? `${m[1]}-p.jpg` : "";
+    };
     V.asset = (src) => (!src || /^https?:|^data:|^\//i.test(src) ? src : ATHR.base() + src);
 
     V.brand = function (v) {

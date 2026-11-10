@@ -3616,6 +3616,19 @@
     // =====================================================
 
     // تمرير تلقائي هادئ لشريط الأقسام في الرئيسية حتى يرى الزائر كل الأقسام (يتوقف عند اللمس ويكمل بعد لحظات)
+    // لو فشل تحميل صورة الإعلان: نعيد المحاولة مرة، وإلا تبقى الصورة الثابتة ظاهرة بدل علامة الخطأ
+    document.addEventListener("error", (e) => {
+        const img = e.target;
+        if (!img || img.tagName !== "IMG" || !img.closest || !img.closest(".ad-media")) return;
+        if (!img.dataset.retried) {
+            img.dataset.retried = "1";
+            const u = img.getAttribute("src");
+            setTimeout(() => img.setAttribute("src", u + (u.includes("?") ? "&" : "?") + "r=" + Date.now()), 1200);
+        } else {
+            img.removeAttribute("src");
+        }
+    }, true);
+
     function startTilesAuto() {
         const SPEED = 28; // بكسل في الثانية
         let el = null;
