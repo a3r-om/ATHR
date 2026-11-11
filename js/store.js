@@ -908,10 +908,30 @@
         if (p && p.then) p.then(() => box && box.classList.remove("ad-paused")).catch(() => { if (box) box.classList.add("ad-paused"); });
     }
 
+    // الصور المتحركة: تحمّل وتشتغل للإعلان الظاهر فقط، والباقي يبقى بصورة ثابتة خفيفة (يوفّر نحو 2.5 ميجا ويخفف الجهاز)
+    function animateAds() {
+        const box = $("#ad");
+        if (!box) return;
+        const multi = box.classList.contains("ad-multi");
+        const slides = [...box.querySelectorAll(".ad-slide")];
+        box.querySelectorAll("img[data-anim]").forEach((img) => {
+            const slide = img.closest(".ad-slide");
+            const idx = slide ? slides.indexOf(slide) : 0;
+            const active = !multi || idx === AD.i;
+            if (active && img.getAttribute("src") !== img.dataset.anim) img.setAttribute("src", img.dataset.anim);
+            else if (!active && img.dataset.poster && img.getAttribute("src") !== img.dataset.poster) img.setAttribute("src", img.dataset.poster);
+        });
+        if (multi && slides.length > 1) {
+            const nxt = slides[(AD.i + 1) % slides.length].querySelector("img[data-anim]");
+            if (nxt) { const pre = new Image(); pre.src = nxt.dataset.anim; } // تحميل مسبق للإعلان التالي
+        }
+    }
+
     // إعلان واحد: يشتغل فيديوه. أكثر من إعلان: يشتغل فيديو الإعلان الظاهر بس، والباقي يوقف
     function playAd() {
         const box = $("#ad");
         if (!box) return;
+        animateAds();
         if (!box.classList.contains("ad-multi")) {
             const vid = box.querySelector("video");
             if (vid) playVideo(vid);
@@ -3615,57 +3635,52 @@
     // START
     // =====================================================
 
-    // تمرير تلقائي هادئ لشريط الأقسام في الرئيسية حتى يرى الزائر كل الأقسام (يتوقف عند اللمس ويكمل بعد لحظات)
-    // لو فشل تحميل صورة الإعلان: نعيد المحاولة مرة، وإلا تبقى الصورة الثابتة ظاهرة بدل علامة الخطأ
+    // لو فشل تحميل الصورة المتحركة: نرجع للصورة الثابتة الخفيفة (ما تظهر علامة خطأ)
     document.addEventListener("error", (e) => {
         const img = e.target;
         if (!img || img.tagName !== "IMG" || !img.closest || !img.closest(".ad-media")) return;
-        if (!img.dataset.retried) {
+        if (img.dataset.poster && img.getAttribute("src") !== img.dataset.poster) {
+            img.setAttribute("src", img.dataset.poster);
+            delete img.dataset.anim;
+        } else if (!img.dataset.retried) {
             img.dataset.retried = "1";
             const u = img.getAttribute("src");
             setTimeout(() => img.setAttribute("src", u + (u.includes("?") ? "&" : "?") + "r=" + Date.now()), 1200);
-        } else {
-            img.removeAttribute("src");
         }
     }, true);
 
+    // تمرير تلقائي لشريط الأقسام في الرئيسية: ينتقل قسم بعد قسم بتمرير سلس من المتصفح نفسه (على المعالج الرسومي، بدون تقطيع)
+    // يتوقف عند لمس الزائر للشريط ويكمل بعد لحظات، وعند آخر قسم يرجع للأول
     function startTilesAuto() {
-        const SPEED = 28; // بكسل في الثانية
+        const STEP_MS = 2600;
         let el = null;
-        let pos = 0;
-        let dir = 1;
         let holdUntil = 0;
-        let last = 0;
-        const bump = (ms) => { holdUntil = Math.max(holdUntil, performance.now() + ms); };
-        ["touchstart", "pointerdown", "wheel", "mouseenter", "focusin"].forEach((ev) => document.addEventListener(ev, (e) => {
-            if (e.target && e.target.closest && e.target.closest(".tiles")) bump(ev === "mouseenter" ? 1500 : 4000);
+        let timer = 0;
+        const bump = (ms) => { holdUntil = Math.max(holdUntil, Date.now() + ms); };
+        ["touchstart", "pointerdown", "wheel", "focusin"].forEach((ev) => document.addEventListener(ev, (e) => {
+            if (e.target && e.target.closest && e.target.closest("nav.tiles")) bump(5000);
         }, { passive: true, capture: true }));
-        document.addEventListener("touchend", (e) => { if (e.target.closest && e.target.closest(".tiles")) bump(3500); }, { passive: true, capture: true });
-        const tick = (now) => {
-            requestAnimationFrame(tick);
-            const dt = Math.min(64, now - (last || now)) / 1000;
-            last = now;
+        document.addEventListener("touchend", (e) => { if (e.target.closest && e.target.closest("nav.tiles")) bump(4000); }, { passive: true, capture: true });
+        const rtlOf = (n) => getComputedStyle(n).direction === "rtl";
+        const step = () => {
+            timer = setTimeout(step, STEP_MS);
+            if (document.visibilityState !== "visible" || Date.now() < holdUntil) return;
             const cur = document.querySelector("#view nav.tiles");
-            if (!cur || document.visibilityState !== "visible") return;
-            if (cur !== el) {
-                el = cur;
-                el.style.scrollSnapType = "none";
-                pos = Math.abs(el.scrollLeft);
-                dir = 1;
-                holdUntil = now + 1500;
-            }
-            const max = el.scrollWidth - el.clientWidth;
+            if (!cur) return;
+            if (cur !== el) { el = cur; holdUntil = Date.now() + 1500; return; }
+            const max = cur.scrollWidth - cur.clientWidth;
             if (max < 8) return;
-            const r = el.getBoundingClientRect();
+            const r = cur.getBoundingClientRect();
             if (r.bottom < 0 || r.top > innerHeight) return;
-            if (now < holdUntil) { pos = Math.abs(el.scrollLeft); return; }
-            const rtl = getComputedStyle(el).direction === "rtl";
-            pos += dir * SPEED * dt;
-            if (pos >= max) { pos = max; dir = -1; holdUntil = now + 1200; }
-            else if (pos <= 0) { pos = 0; dir = 1; holdUntil = now + 1200; }
-            el.scrollLeft = rtl ? -pos : pos;
+            const rtl = rtlOf(cur);
+            const pos = Math.abs(cur.scrollLeft);
+            const first = cur.firstElementChild;
+            const w = first ? first.getBoundingClientRect().width + (parseFloat(getComputedStyle(cur).columnGap || getComputedStyle(cur).gap) || 0) : 120;
+            // آخر موضع: نرجع للبداية؛ وإلا ننتقل بمقدار قسمين تقريبًا
+            const next = pos >= max - 4 ? 0 : Math.min(max, pos + w * 2);
+            cur.scrollTo({ left: rtl ? -next : next, behavior: "smooth" });
         };
-        requestAnimationFrame(tick);
+        timer = setTimeout(step, STEP_MS);
     }
 
     function trackVisit() {
