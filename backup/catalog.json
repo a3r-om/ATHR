@@ -2523,5 +2523,12 @@
    "created_at": "2026-09-13T21:26:30.45736+00:00"
   }
  ],
- "product_media": []
+ "product_media": [
+  {
+   "product_id": "d70e1e1d-5a21-4857-a15e-e2bcf29b9266",
+   "media_type": "image",
+   "media_url": "https://wfzcfedtebaacjdzogpj.supabase.co/storage/v1/object/public/product-images/1794501121837-0d0dc1008221462e.jpg",
+   "sort_order": 0
+  }
+ ]
 }
