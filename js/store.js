@@ -3680,6 +3680,11 @@
                 track.appendChild(c);
             });
             nav.appendChild(track);
+            const rtl = rtlOf(nav);
+            nav.dataset.rtl = rtl ? "1" : "";
+            // الحركة دائمًا من اليمين لليسار: في العربية يبدأ المسار مزاحًا لليمين بمقدار نسخة كاملة ثم يرجع للصفر
+            nav.style.setProperty("--mq-a", (rtl ? set : 0) + "px");
+            nav.style.setProperty("--mq-b", (rtl ? 0 : -set) + "px");
             nav.style.setProperty("--mq-d", set + "px");
             nav.style.setProperty("--mq-dur", (set / SPEED).toFixed(1) + "s");
             nav.classList.add("mq-ready");
@@ -3688,7 +3693,7 @@
 
         function play(nav, pos) {
             nav.scrollLeft = 0;
-            nav.style.setProperty("--mq-delay", "-" + ((pos / (dist(nav) || 1)) * (dist(nav) / SPEED)).toFixed(2) + "s");
+            nav.style.setProperty("--mq-delay", "-" + (pos / SPEED).toFixed(2) + "s");
             nav.classList.remove("mq-manual");
             nav.classList.add("mq");
         }
@@ -3697,17 +3702,18 @@
             if (!nav.classList.contains("mq")) return;
             const track = nav.querySelector(".tiles-track");
             const m = new DOMMatrixReadOnly(getComputedStyle(track).transform);
-            const pos = Math.max(0, -m.m41);
+            const tx = m.m41;
             nav.classList.remove("mq");
             nav.classList.add("mq-manual");
-            nav.scrollLeft = rtlOf(nav) ? -pos : pos;
+            nav.scrollLeft = nav.dataset.rtl ? -tx : -tx;
         }
 
         function resume(nav) {
             const d = dist(nav);
             if (!d || !nav.isConnected) return;
-            const pos = Math.abs(nav.scrollLeft) % d;
-            play(nav, pos);
+            const m = Math.abs(nav.scrollLeft) % d;
+            // المسافة المقطوعة في الدورة: عربي d - m، إنجليزي m
+            play(nav, nav.dataset.rtl ? d - m : m);
         }
 
         const touched = (e) => {

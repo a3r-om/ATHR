@@ -419,7 +419,7 @@ main { flex: 1; outline: none; }
 @media (hover: hover) { .tiles.mq:hover .tiles-track { animation-play-state: paused; } }
 .tiles.mq-ready { scroll-snap-type: none; }
 .tiles.mq { overflow-x: hidden; }
-@keyframes tilesMq { to { transform: translate3d(calc(var(--mq-d) * -1), 0, 0); } }
+@keyframes tilesMq { from { transform: translate3d(var(--mq-a, 0px), 0, 0); } to { transform: translate3d(var(--mq-b, 0px), 0, 0); } }
 @media (min-width: 1152px) { .tiles { padding-inline: calc((100% - var(--wrap)) / 2); } }
 
 .tile {
