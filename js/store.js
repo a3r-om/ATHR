@@ -3747,6 +3747,50 @@
         }, 700);
     }
 
+    // رمز الريال العماني: يستبدل النص «ر.ع» بصورة الرمز الرسمي (PNG شفاف) في كل الأسعار داخل المتجر
+    // التحويل على العرض فقط، أما النصوص المنسوخة ورسائل الواتساب والـSEO فتبقى «ر.ع»
+    function startOmrSymbol() {
+        const RE = /ر\.\s?ع/;
+        const SRC = (window.ATHR_BASE || "/") + "images/omr.png";
+        const SKIP = "script,style,textarea,input,select,option,title,#adm,[data-no-omr]";
+        const fix = (root) => {
+            if (!root || ATHR.lang === "en") return;
+            const base = root.nodeType === 3 ? root.parentNode : root;
+            if (!base || !base.closest || base.closest(SKIP)) return;
+            const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: (n) => RE.test(n.nodeValue) && n.parentNode && !n.parentNode.closest(SKIP) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+            });
+            const list = [];
+            while (w.nextNode()) list.push(w.currentNode);
+            list.forEach((n) => {
+                const parts = n.nodeValue.split(/ر\.\s?ع/);
+                const frag = document.createDocumentFragment();
+                parts.forEach((p, i) => {
+                    if (i) {
+                        const im = document.createElement("img");
+                        const cm = (getComputedStyle(n.parentNode).color.match(/[\d.]+/g) || [0, 0, 0]).map(Number);
+                        const light = (0.299 * cm[0] + 0.587 * cm[1] + 0.114 * cm[2]) > 170;
+                        im.src = SRC; im.alt = "ر.ع"; im.className = light ? "omr omr-w" : "omr"; im.width = 19; im.height = 10; im.decoding = "async";
+                        frag.appendChild(im);
+                    }
+                    if (p) frag.appendChild(document.createTextNode(p));
+                });
+                n.parentNode.replaceChild(frag, n);
+            });
+        };
+        let queued = new Set(), raf = 0;
+        const flush = () => { raf = 0; const q = queued; queued = new Set(); q.forEach((n) => { if (n.isConnected) fix(n); }); };
+        const mo = new MutationObserver((muts) => {
+            muts.forEach((mu) => {
+                if (mu.type === "characterData") queued.add(mu.target);
+                else mu.addedNodes.forEach((n) => { if (n.nodeType === 1 || n.nodeType === 3) queued.add(n); });
+            });
+            if (!raf) raf = requestAnimationFrame(flush);
+        });
+        const go = () => { fix(document.body); mo.observe(document.body, { childList: true, subtree: true, characterData: true }); };
+        if (document.body) go(); else document.addEventListener("DOMContentLoaded", go);
+    }
+
     function trackVisit() {
         const lastSeen = Number(storage.get(KEYS.lastSeen, 0)) || 0;
         S.returningGap = lastSeen ? Date.now() - lastSeen : 0;
@@ -3763,6 +3807,7 @@
     S.route = parseRoute();
     trackVisit();
     startTilesAuto();
+    startOmrSymbol();
     S.country = guessCountry();
     updateCartUI();
     sessionChannel();

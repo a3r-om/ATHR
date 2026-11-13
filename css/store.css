@@ -2957,3 +2957,7 @@ html.tpl-roa[data-mode="dark"] .seg2 input:checked + span { background: var(--ro
 /* سرعة وسلاسة: رسم البطاقات خارج الشاشة عند الحاجة فقط، وإزالة تأخير اللمس */
 .grid > * { content-visibility: auto; contain-intrinsic-size: auto 290px; }
 a, button, .tile, .card { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+/* رمز الريال العماني (صورة) */
+img.omr { display: inline-block; width: auto; height: .8em; vertical-align: -.02em; margin-inline: .12em .02em; object-fit: contain; pointer-events: none; user-select: none; }
+img.omr.omr-w { filter: brightness(0) invert(1); }
