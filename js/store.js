@@ -3683,8 +3683,8 @@
             const rtl = rtlOf(nav);
             nav.dataset.rtl = rtl ? "1" : "";
             // الحركة دائمًا من اليمين لليسار: في العربية يبدأ المسار مزاحًا لليمين بمقدار نسخة كاملة ثم يرجع للصفر
-            nav.style.setProperty("--mq-a", (rtl ? set : 0) + "px");
-            nav.style.setProperty("--mq-b", (rtl ? 0 : -set) + "px");
+            nav.style.setProperty("--mq-a", (rtl ? 0 : -set) + "px");
+            nav.style.setProperty("--mq-b", (rtl ? set : 0) + "px");
             nav.style.setProperty("--mq-d", set + "px");
             nav.style.setProperty("--mq-dur", (set / SPEED).toFixed(1) + "s");
             nav.classList.add("mq-ready");
@@ -3713,7 +3713,7 @@
             if (!d || !nav.isConnected) return;
             const m = Math.abs(nav.scrollLeft) % d;
             // المسافة المقطوعة في الدورة: عربي d - m، إنجليزي m
-            play(nav, nav.dataset.rtl ? d - m : m);
+            play(nav, nav.dataset.rtl ? m : d - m);
         }
 
         const touched = (e) => {
