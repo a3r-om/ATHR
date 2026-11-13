@@ -411,6 +411,15 @@ main { flex: 1; outline: none; }
     scroll-snap-type: x proximity;
 }
 .tiles::-webkit-scrollbar { display: none; }
+.tiles-track { display: flex; gap: inherit; width: max-content; flex: none; }
+.tiles.mq-ready { -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+.tiles.mq-ready .tiles-track { will-change: transform; }
+.tiles.mq .tiles-track { animation: tilesMq var(--mq-dur, 60s) linear infinite; animation-delay: var(--mq-delay, 0s); }
+.tiles.mq.mq-off .tiles-track, .tab-hidden .tiles.mq .tiles-track { animation-play-state: paused; }
+@media (hover: hover) { .tiles.mq:hover .tiles-track { animation-play-state: paused; } }
+.tiles.mq-ready { scroll-snap-type: none; }
+.tiles.mq { overflow-x: hidden; }
+@keyframes tilesMq { to { transform: translate3d(calc(var(--mq-d) * -1), 0, 0); } }
 @media (min-width: 1152px) { .tiles { padding-inline: calc((100% - var(--wrap)) / 2); } }
 
 .tile {

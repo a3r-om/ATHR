@@ -3649,38 +3649,96 @@
         }
     }, true);
 
-    // تمرير تلقائي لشريط الأقسام في الرئيسية: ينتقل قسم بعد قسم بتمرير سلس من المتصفح نفسه (على المعالج الرسومي، بدون تقطيع)
-    // يتوقف عند لمس الزائر للشريط ويكمل بعد لحظات، وعند آخر قسم يرجع للأول
+    // شريط الأقسام في الرئيسية: انسياب مستمر وبطيء (حركة CSS على المعالج الرسومي = سلسة 60 إطار بدون تقطيع)
+    // عند لمس الزائر للشريط يتحول لتمرير يدوي طبيعي من نفس الموضع، وبعد ثواني من السكون يكمل الانسياب من حيث وقف
     function startTilesAuto() {
-        const STEP_MS = 2600;
-        let el = null;
-        let holdUntil = 0;
-        let timer = 0;
-        const bump = (ms) => { holdUntil = Math.max(holdUntil, Date.now() + ms); };
-        ["touchstart", "pointerdown", "wheel", "focusin"].forEach((ev) => document.addEventListener(ev, (e) => {
-            if (e.target && e.target.closest && e.target.closest("nav.tiles")) bump(5000);
-        }, { passive: true, capture: true }));
-        document.addEventListener("touchend", (e) => { if (e.target.closest && e.target.closest("nav.tiles")) bump(4000); }, { passive: true, capture: true });
-        const rtlOf = (n) => getComputedStyle(n).direction === "rtl";
-        const step = () => {
-            timer = setTimeout(step, STEP_MS);
-            if (document.visibilityState !== "visible" || Date.now() < holdUntil) return;
-            const cur = document.querySelector("#view nav.tiles");
-            if (!cur) return;
-            if (cur !== el) { el = cur; holdUntil = Date.now() + 1500; return; }
-            const max = cur.scrollWidth - cur.clientWidth;
-            if (max < 8) return;
-            const r = cur.getBoundingClientRect();
-            if (r.bottom < 0 || r.top > innerHeight) return;
-            const rtl = rtlOf(cur);
-            const pos = Math.abs(cur.scrollLeft);
-            const first = cur.firstElementChild;
-            const w = first ? first.getBoundingClientRect().width + (parseFloat(getComputedStyle(cur).columnGap || getComputedStyle(cur).gap) || 0) : 120;
-            // آخر موضع: نرجع للبداية؛ وإلا ننتقل بمقدار قسمين تقريبًا
-            const next = pos >= max - 4 ? 0 : Math.min(max, pos + w * 2);
-            cur.scrollTo({ left: rtl ? -next : next, behavior: "smooth" });
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const SPEED = 26;       // بكسل في الثانية
+        const IDLE_MS = 3500;   // سكون قبل استئناف الانسياب
+        let idleTimer = 0;
+        let cur = null;
+
+        const dist = (nav) => parseFloat(nav.style.getPropertyValue("--mq-d")) || 0;
+        const rtlOf = (nav) => getComputedStyle(nav).direction === "rtl";
+
+        function enhance(nav) {
+            if (nav.dataset.mq || nav.querySelector(".tile.on")) return;
+            const tiles = Array.from(nav.children).filter((n) => n.classList.contains("tile"));
+            if (tiles.length < 3) return;
+            const gap = parseFloat(getComputedStyle(nav).columnGap || getComputedStyle(nav).gap) || 0;
+            const set = tiles.reduce((w, t) => w + t.getBoundingClientRect().width, 0) + gap * tiles.length;
+            if (set < nav.clientWidth * 1.1) return;
+            nav.dataset.mq = "1";
+            const track = document.createElement("div");
+            track.className = "tiles-track";
+            tiles.forEach((t) => track.appendChild(t));
+            tiles.forEach((t) => {
+                const c = t.cloneNode(true);
+                c.setAttribute("aria-hidden", "true");
+                c.tabIndex = -1;
+                c.querySelectorAll("img").forEach((i) => { i.loading = "eager"; });
+                track.appendChild(c);
+            });
+            nav.appendChild(track);
+            nav.style.setProperty("--mq-d", set + "px");
+            nav.style.setProperty("--mq-dur", (set / SPEED).toFixed(1) + "s");
+            nav.classList.add("mq-ready");
+            play(nav, 0);
+        }
+
+        function play(nav, pos) {
+            nav.scrollLeft = 0;
+            nav.style.setProperty("--mq-delay", "-" + ((pos / (dist(nav) || 1)) * (dist(nav) / SPEED)).toFixed(2) + "s");
+            nav.classList.remove("mq-manual");
+            nav.classList.add("mq");
+        }
+
+        function toManual(nav) {
+            if (!nav.classList.contains("mq")) return;
+            const track = nav.querySelector(".tiles-track");
+            const m = new DOMMatrixReadOnly(getComputedStyle(track).transform);
+            const pos = Math.max(0, -m.m41);
+            nav.classList.remove("mq");
+            nav.classList.add("mq-manual");
+            nav.scrollLeft = rtlOf(nav) ? -pos : pos;
+        }
+
+        function resume(nav) {
+            const d = dist(nav);
+            if (!d || !nav.isConnected) return;
+            const pos = Math.abs(nav.scrollLeft) % d;
+            play(nav, pos);
+        }
+
+        const touched = (e) => {
+            const nav = e.target && e.target.closest && e.target.closest("nav.tiles.mq-ready");
+            if (!nav) return;
+            toManual(nav);
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => resume(nav), IDLE_MS);
         };
-        timer = setTimeout(step, STEP_MS);
+        ["touchstart", "pointerdown", "wheel", "focusin"].forEach((ev) => document.addEventListener(ev, touched, { passive: true, capture: true }));
+        ["touchend", "scroll"].forEach((ev) => document.addEventListener(ev, (e) => {
+            const nav = e.target && e.target.closest && e.target.closest("nav.tiles.mq-manual");
+            if (!nav) return;
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => resume(nav), IDLE_MS);
+        }, { passive: true, capture: true }));
+
+        // إيقاف الحركة عندما يكون الشريط خارج الشاشة أو التبويب مخفي
+        const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("mq-off", !e.isIntersecting))) : null;
+        document.addEventListener("visibilitychange", () => {
+            document.documentElement.classList.toggle("tab-hidden", document.visibilityState !== "visible");
+        });
+
+        // الشريط يُعاد رسمه عند تغيير الصفحة: نفحص كل ثانية ونفعّل الجديد
+        setInterval(() => {
+            const nav = document.querySelector("#view nav.tiles");
+            if (!nav || nav === cur) return;
+            cur = nav;
+            if (io) io.observe(nav);
+            enhance(nav);
+        }, 700);
     }
 
     function trackVisit() {
