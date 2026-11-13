@@ -725,11 +725,11 @@
         startDeferredMedia();
 
         if (!hydrate && changed) {
-            if (scroll === "top") window.scrollTo(0, 0);
-            else if (scroll === "restore") window.scrollTo(0, (history.state && history.state.scroll) || 0);
+            if (scroll === "top") window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+            else if (scroll === "restore") window.scrollTo({ top: (history.state && history.state.scroll) || 0, left: 0, behavior: "instant" });
             else if (scroll === "hash" && location.hash.length > 1) {
                 const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-                if (target) setTimeout(() => target.scrollIntoView({ block: "start" }), 20);
+                if (target) setTimeout(() => target.scrollIntoView({ block: "start", behavior: "instant" }), 20);
             }
             if (scroll !== "keep") $("#view").focus({ preventScroll: true });
         }
@@ -2683,7 +2683,7 @@
                 body: { product_id: values.product || null, order_no: values.order_no || null, name: name.slice(0, 60), rating, text: text.slice(0, 1000), status: "pending" }
             });
             renderReview(S.route, { sent: true });
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, left: 0, behavior: "instant" });
         } catch (error) {
             console.warn(error);
             err.textContent = t("تعذر الإرسال. تأكد من الإنترنت وحاول مرة أخرى.");
@@ -3566,7 +3566,7 @@
             });
             history.replaceState(null, "", path || BASE);
             applyData({ ...data, reviews: S.reviews, proof: S.proof });
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, left: 0, behavior: "instant" });
         },
         exitPreview(reopen) {
             S.preview = false;
