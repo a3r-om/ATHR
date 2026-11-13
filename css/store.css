@@ -2953,3 +2953,7 @@ html.tpl-roa[data-mode="dark"] .seg2 input:checked + span { background: var(--ro
 .from-name { display: block; }
 .from-name[hidden] { display: none; }
 .from-help { color: var(--muted); font-size: 12.5px; }
+
+/* سرعة وسلاسة: رسم البطاقات خارج الشاشة عند الحاجة فقط، وإزالة تأخير اللمس */
+.grid > * { content-visibility: auto; contain-intrinsic-size: auto 290px; }
+a, button, .tile, .card { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
