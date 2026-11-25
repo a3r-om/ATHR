@@ -1,1 +1,1 @@
-window.ATHR_RATES={"date":"2026-11-23","rates":{"AED":9.5419,"SAR":9.7432,"KWD":0.8092,"QAR":9.4574,"BHD":0.9769}};
+window.ATHR_RATES={"date":"2026-11-24","rates":{"AED":9.5468,"SAR":9.7483,"KWD":0.811,"QAR":9.4623,"BHD":0.9774}};
